@@ -1,0 +1,15 @@
+<div class="bookmark-icon-container">
+  <%= turbo_frame_tag "bookmark_count_#{emotion_log.id}" do %>
+    <span class="bookmark-count"><%= emotion_log.bookmarks.count %></span>
+  <% end %>
+  
+  <% if user_signed_in? %>
+    <% if current_user.bookmark?(emotion_log) %>
+      <%= render 'unbookmark', emotion_log: emotion_log %>
+    <% else %>
+      <%= render 'bookmark', emotion_log: emotion_log %>
+    <% end %>
+  <% else %>
+    <%= link_to 'ログインしてブックマークする', new_user_session_path, class: 'btn btn-primary' %>
+  <% end %>
+</div>

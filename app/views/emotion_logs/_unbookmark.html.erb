@@ -1,0 +1,8 @@
+<%= link_to(
+      bookmark_path(current_user.bookmarks.find_by(emotion_log_id: emotion_log.id)),
+      id: "bookmark-button-emotion-log-#{emotion_log.id}",
+      data: { turbo_method: :delete, turbo: true }
+    ) do %>
+  <%= image_tag "3dheart.png", alt: "unbookmark", class: 'btn btn-danger btn-sm' %>
+<% end %>
+<%#ブックマーク済みの時のボタン>%>
