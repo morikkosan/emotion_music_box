@@ -1,0 +1,59 @@
+<!-- app/views/emotion_logs/show.html.erb -->
+
+<div class="container mt-5">
+  <h1 class="text-center mt-4">
+    <i class="bi bi-heart-pulse"></i> Emotion Log <i class="bi bi-heart-pulse"></i>
+  </h1>
+
+  <!-- レコードの情報を表示する部分 -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <strong>記録日時:</strong>
+      <%= @emotion_log.created_at.strftime('%Y-%m-%d %H:%M:%S') %>
+    </div>
+    <div class="card-body">
+      <p><strong>感情:</strong> <%= @emotion_log.emotion %></p>
+      <p><strong>日記:</strong> <%= @emotion_log.description %></p>
+        <% if current_user == @emotion_log.user %>
+        <%= button_to '編集', edit_emotion_log_path(@emotion_log), method: :get, class: 'btn btn-danger btn-sm' %>
+        <% end %>
+        <br>
+ <% if @emotion_log.music_url.present? %>
+  <audio controls class="ms-3" preload="none">
+    <source src="<%= @emotion_log.music_url %>" type="audio/mpeg">
+    お使いのブラウザはオーディオ要素をサポートしていません。
+  </audio>
+<% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- 同じ画面で更新できるようにフォームを設置(ユーザー用) -->
+  <!-- <div class="card">
+    <div class="card-header">
+      <strong>感情・日記を更新する</strong>
+    </div>
+    <div class="card-body">
+      <%= form_with model: @emotion_log, local: true do |form| %>
+        <div class="mb-3">
+          <%= form.label :emotion, "感情", class: "form-label" %>
+          <%= form.text_field :emotion, class: "form-control" %>
+        </div>
+
+        <div class="mb-3">
+          <%= form.label :description, "日記", class: "form-label" %>
+          <%= form.text_area :description, class: "form-control" %>
+        </div>
+
+        <div class="text-center">
+          <%= form.submit "更新する", class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div> -->
+
+  <!-- 戻るボタンなど -->
+  <div class="text-center mt-3">
+    <%= link_to '一覧へ戻る', emotion_logs_path, class: 'btn btn-secondary' %>
+  </div>
+</div>

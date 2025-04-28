@@ -1,0 +1,144 @@
+<div class="container mt-5 position-relative">
+  <div class="text-center mt-4 d-flex align-items-center justify-content-center w-90">
+    <%= link_to emotion_logs_path do %>
+      <%= image_tag "logo1.png", alt: "Emotion List Logo", class: "img-fluid", style: "max-width: 700px; width: 100%;" %>
+    <% end %>
+  </div>
+
+  <!-- DJロボットの画像 -->
+  <div class="dj-icon" style="position: absolute; top: 20px; right: 20px;">
+    <%= image_tag "dj_robot_icon.png",
+      alt: "DJ Robot",
+      style: "width: 300px; height: auto; cursor: pointer;",
+      onclick: "toggleAudio()" %>
+    <!-- オーバーレイ：再生/停止のアイコン表示 -->
+    <div id="audioButtonIcon" style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 40px;
+        color: rgb(255, 255, 255);
+        pointer-events: none;">
+      ▶
+    </div>
+  </div>
+  
+  <!-- オーディオ要素 -->
+  <audio id="audioPlayer" loop>
+    <source src="/audios/index.mp3" type="audio/mpeg">
+    お使いのブラウザはオーディオ要素に対応していません。
+  </audio>
+  
+
+
+<div class="banner-container text-center mt-3">
+  <% if user_signed_in? %>
+    <div class="mypage-links">
+      <%= link_to "#", id: "logout-link", class: "mypage-icon-link", data: { logout_url: destroy_user_session_path } do %>
+  <div class="mypage-item">
+    <%= image_tag "log_out.png", alt: "Log Out", class: "mypage-fluid" %>
+    <div class="mypage-text">ログアウト</div>
+  </div>
+<% end %>
+    
+
+      <%= link_to edit_user_registration_path, class: "mypage-icon-link" do %>
+        <div class="mypage-item">
+          <%= image_tag "profile_edit.png", alt: "Profile Edit", class: "mypage-fluid" %>
+          <div class="mypage-text">プロフィール編集</div>
+        </div>
+      <% end %>
+
+      <%= link_to my_emotion_logs_path, class: "mypage-icon-link" do %>
+      <div class="mypage-item">
+        <%= image_tag "mypage_logo.png", alt: "MY PAGE Logo", class: "mypage-fluid" %>
+        <div class="mypage-text">マイページ</div>
+      </div>
+    <% end %>
+
+      <%= link_to bookmarks_emotion_logs_path, class: "mypage-icon-link" do %>
+        <div class="mypage-item">
+          <%= image_tag "favorite.png", alt: "Bookmark", class: "mypage-fluid" %>
+          <div class="mypage-text">お気に入りリスト</div>
+        </div>
+        <% end %>
+
+      <%= link_to "#", class: "mypage-icon-link" do %>
+        <div class="mypage-item">
+          <%= image_tag "form_contact.png", alt: "FORM CONTACT", class: "mypage-fluid" %>
+          <div class="mypage-text">お問い合わせ</div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+
+<% unless user_signed_in? %>
+<%= link_to "SoundCloudでログイン", user_soundcloud_omniauth_authorize_path, class: "btn btn-primary" %>
+<% end %>
+
+<% unless user_signed_in? %>
+<%= link_to "SoundCloudでログイン", user_soundcloud_omniauth_authorize_path, class: "btn btn-primary" %>
+<% end %>
+  
+
+&nbsp;&nbsp;
+
+<br>
+<br>
+<div id="hp-bar-container">
+  <span class="today_mental_text">👆Today's stress level<span id="bar-width-display"></span>)👆</span>
+  <p id="hp-status-text">メンタル正常</p>  <!-- ここにメッセージを表示 -->
+  <div id="hp-bar"></div>
+</div>
+<br>
+<br>
+<br>
+<br>
+
+
+
+
+  <!-- 感情ログ一覧 -->
+<!-- 感情ログ一覧 -->
+<div class="row justify-content-center">
+  <% @emotion_logs.each do |log| %>
+    <div class="col-md-8 mb-4">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <strong><%= log.created_at.strftime('%Y-%m-%d %H:%M:%S') %></strong>
+          <% if current_user == log.user %>
+            <%= button_to '削除', emotion_log_path(log), method: :delete, class: 'btn btn-danger btn-sm' %>
+          <% else %>
+            <%= render 'bookmark_buttons', { emotion_log: log } %>
+          <% end %> 
+        </div> <!-- card-header -->
+
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <p class="card-text mb-0">
+              <%= link_to log.emotion, emotion_log_path(log), class: "button" %>
+              <span class="ms-3">
+                <%= log.description.present? ? log.description.truncate(10) : "一言はありません" %>
+              </span>
+            </p>
+
+            <%= render 'mini_music_player', log: log %>
+            <!-- log という変数を log という名前で _mini_music_player.erb に渡す -->
+          </div>
+        </div> <!-- card-body -->
+      </div> <!-- card -->
+    </div> <!-- col-md-8 -->
+  <% end %> <!-- each の閉じタグ -->
+</div> <!-- row -->
+
+  <!-- ページネーション -->
+<div class="mt-3 text-center">
+  <%= paginate @emotion_logs %>
+</div>
+<div class="mt-3 text-center">
+    <%= link_to '新しい感情を記録', new_emotion_log_path, class: 'btn btn-primary' %>
+  </div>
+
