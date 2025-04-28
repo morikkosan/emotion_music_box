@@ -1,0 +1,18 @@
+<!-- <%= button_to path, method: method, data: { turbo: false }, class: "gsi-material-button #{provider}" do %>
+  <div class="gsi-material-button-state"></div>
+  <div class="gsi-material-button-content-wrapper">
+    <div class="gsi-material-button-icon">
+      <% if provider.to_s == "google_oauth2" %>
+        <%= render "devise/shared/oauth_icons/google" %>
+      <% elsif provider.to_s == "github" %>
+        <%= render "devise/shared/oauth_icons/github" %>
+      <% elsif provider.to_s == "facebook" %>
+        <%= render "devise/shared/oauth_icons/facebook" %>
+      <% end %>
+    </div>
+    <span class="gsi-material-button-contents">
+      Sign in with <%= OmniAuth::Utils.camelize(provider) %>
+    </span>
+  </div>
+<% end %>
+ -->

@@ -1,0 +1,21 @@
+<% if log.music_url.present? %>
+  <div class="ms-3 mini-player">
+    <% if log.music_url.include?("soundcloud.com") %>
+      <!-- SoundCloud の埋め込みプレーヤー -->
+      <iframe 
+        width="500" 
+        height="150" 
+        scrolling="no" 
+        frameborder="no" 
+        allow="autoplay"
+        src="https://w.soundcloud.com/player/?url=<%= CGI.escape(log.music_url) %>&auto_play=false">
+      </iframe>
+    <% else %>
+      <!-- 通常の MP3 再生 -->
+      <audio controls class="mini-audio" preload="none">
+        <source src="<%= log.music_url %>" type="audio/mpeg">
+        お使いのブラウザはオーディオ要素をサポートしていません。
+      </audio>
+    <% end %>
+  </div>
+<% end %>

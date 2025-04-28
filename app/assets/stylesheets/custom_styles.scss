@@ -1,0 +1,545 @@
+
+body {
+  font-family: 'Poppins', sans-serif;
+  color: #585656;
+  background-color: rgba(0, 0, 0, 0.5); /* 半透明の黒を背景色として設定 */
+  background-image: url('/assets/daishizen.jpg'); /* 背景画像を設定 */
+  background-size: 80% auto; /* 横幅を80%に縮小 */
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-attachment: fixed;
+  background-blend-mode: multiply; /* 背景画像と背景色を乗算でブレンド */
+}
+
+.banner-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dj-audio-container {
+  display: inline-block;
+  position: relative;
+}
+
+.dj-audio-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+}
+
+.dj-icon {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dj-icon:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+
+
+.card {
+  background: linear-gradient(135deg, rgba(50, 50, 50, 0.8), rgba(20, 20, 20, 0.9)); /* サイバー風のグラデーション */
+  border: 2px solid rgba(100, 0, 255, 0.8); /* 紫っぽい光る枠 */
+  box-shadow: 0 0 15px rgba(100, 0, 255, 0.5); /* ふんわりとした発光 */
+  color: #fff; /* テキストを白に */
+  border-radius: 12px; /* 角を少し丸く */
+  padding: 15px;
+  transition: 0.3s ease-in-out;
+}
+
+.card:hover {
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.7); /* ホバー時にピンクっぽく光る */
+  transform: scale(1.02); /* 少し拡大 */
+}
+
+.card-header {
+  background: rgba(255, 0, 255, 0.2); /* 半透明の背景 */
+  border-bottom: 1px solid rgba(255, 0, 255, 0.5);
+  font-weight: bold;
+}
+
+.card-text {
+  font-family: "Audiowide", sans-serif; /* 未来的なフォント */
+  letter-spacing: 1px; /* 文字の間隔を広めに */
+}
+
+.btn.btn-danger.btn-sm {
+  background: rgba(255, 0, 255, 0.3); /* ボタンを半透明の紫に */
+  padding: 5px 12px;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+
+.btn.btn-danger.btn-sm:hover {
+  background: rgba(255, 0, 255, 0.7);
+  box-shadow: 0 0 10px rgba(255, 0, 255, 0.9);
+}
+
+
+h1 i {
+  color: #f39c12;
+}
+
+// リンクの色をカスタマイズ
+a {
+  color: #0d6efd;
+  &:hover {
+    color: #0a58ca;
+  }
+}
+
+.btn-primary {
+  background-color: #d70c0c; // カスタムブルー
+  border-color: #185abc;
+  &:hover {
+    background-color: #185abc;
+    border-color: #123d82;
+  }
+}
+
+//ロゴ
+// .img-fluid {
+//   max-width: none; /* 最大幅の制限を解除 */
+//   height: auto;    /* アスペクト比を保持 */
+//   margin: 0 auto;  /* 中央揃え */
+// }
+
+h1 {
+  color: transparent; /* 文字を透明に設定 */
+  background: linear-gradient(90deg, #ff2994, #af08de); /* グラデーションの色 */
+  -webkit-background-clip: text; /* 背景を文字の形にクリップ */
+  -webkit-text-fill-color: transparent; /* 文字を透明に設定 */
+  font-family: 'Nunito', sans-serif; /* 丸みの強いフォント */
+  font-weight: bold; /* 太字 */
+  letter-spacing: 2px; /* 文字間隔 */
+  text-transform: uppercase; /* 大文字に変換 */
+  text-shadow: 1px 1px 2px rgba(231, 205, 205, 0.1); /* 軽い影で柔らかさを演出 */
+}
+
+h1 i.bi bi-heart-pulse {
+  font-size: 30px; /* アイコンのサイズ */
+  color: #FF007F; /* アイコンの色 */
+  margin-right: 10px; /* 文字との間隔 */
+}
+// .chart-container {
+//   max-width: 500px;
+//   background: #f9f9f9; /* 背景を柔らかく */
+//   border: 1px solid #ddd;
+//   border-radius: 8px;
+//   padding: 10px;
+//   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+// }
+// .chart-container {
+//   background: linear-gradient(135deg, #2c3e50, #4ca1af); /* グラデーション背景 */
+//   border-radius: 15px; /* 角を丸くする */
+//   padding: 20px;
+//   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 影を追加 */
+//   color:#ddd
+// }
+
+.button {
+  width: 160px;
+  height: 50px;
+  border: none;
+  border-radius: 25px;
+  background: linear-gradient(45deg, #353944, #f06595);
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.button:hover {
+  background: linear-gradient(45deg, #f06595, #ff6b6b);
+  box-shadow: 0 15px 20px rgba(0, 0, 0, 0.5);
+  transform: translateY(-5px);
+}
+
+
+#comment-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* コメントが画面外に出たら非表示 */
+  pointer-events: none; /* クリックを無効化 */
+}
+
+.comment {
+  position: absolute;
+  white-space: nowrap; /* 文字が折り返されないようにする */
+  font-size: 24px; /* 文字サイズ */
+  color: white; /* 白文字 */
+  text-shadow: 1px 1px 2px black; /* 文字の影 */
+}
+
+#hp-bar {
+  transition: width 1s ease-in-out;
+  height: 20px;
+  background-color: green; /* 初期のHPバーの色 */
+  position: relative;
+  display: block; /* 確実に表示 */
+  width: 50%; /* 初期値を 50% にする（0HP の状態） */
+}
+
+#hp-bar-container {
+  width: 100%;
+  text-align: center;
+  margin-top: 10px;
+  position: relative;
+}
+
+#hp-status-text {
+  font-size: 25px; /* 文字を大きくする */
+  font-family: "Audiowide", "Mochiy Pop One", "Poppins", "Arial", sans-serif; /* ギザギザしたフォントを追加 */
+  position: absolute; /* 絶対配置 */
+  width: 100%; /* 横幅いっぱいにする */
+  top: -40px; /* HPバーの上に配置 */
+  left: 50%; /* 左端基準で中央に寄せる */
+  transform: translateX(-50%); /* 水平方向の中央配置 */
+  text-align: center; /* テキストを中央揃え */
+  color: white !important; /* 文字色を白にする */
+  text-shadow: 2px 2px 5px black; /* 影をつけて見やすくする */
+  background-color: rgba(0, 0, 0, 0.9); /* 文字の背景を濃い黒にする */
+  padding: 5px 10px; /* 余白を追加 */
+  border-radius: 30px; /* 角を丸くする */
+}
+
+
+#hp-bar {
+  height: 20px; /* バーの高さを調整 */
+  max-width: 50%; /* 最大幅を80%に設定、これで少し短くなる */
+  width: 100%; /* 横幅いっぱいに表示される */
+  background-color: green; /* HPバーのデフォルトの色 */
+  transition: width 0.5s ease-in-out; /* アニメーションの効果 */
+  border-radius: 10px; /* バーの角を丸くする */
+}
+/* ページネーションのスタイル */
+/* ページネーション全体のデザイン */
+.pagination {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0;
+}
+
+/* 各ページリンクのスタイル */
+.page-item .page-link {
+  border: none;        /* 枠線をなくす */
+  color: #696969;      /* 文字の色を変える */
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+/* 表示しているページ番号のデザイン */
+.page-item.active .page-link {
+  background: #e348c9; /* 背景の色を変える */
+  border-radius: 15px; /* 角を丸くする */
+  color: white;
+}
+
+/* ホバー時のデザイン */
+.page-item .page-link:hover {
+  background: #f095df; /* ホバー時の色 */
+  border-radius: 15px; /* 角を丸くする */
+}
+
+
+/* 📌 ネオンマゼンタの未来感デザイン */
+/* 📌 迫力のある白文字＋ネオンマゼンタの未来デザイン */
+.today_mental_text {
+  font-size: 35px; /* 🎯 文字を大きくして迫力UP */
+  font-family: "Orbitron", "Rajdhani", "Bebas Neue", "Michroma", sans-serif; /* 🎯 未来感のあるフォント */
+  font-weight: 900; /* 🎯 極太で迫力を出す */
+  position: absolute; /* 絶対配置 */
+  width: 100%; /* 横幅いっぱいにする */
+  top: 40px; /* HPバーの上に配置 */
+  left: 50%; /* 左端基準で中央に寄せる */
+  transform: translateX(-50%); /* 水平方向の中央配置 */
+  text-align: center; /* テキストを中央揃え */
+  color: white !important; /* 🎯 白色を強調 */
+  letter-spacing: 3px; /* 🎯 文字間隔を少し広げる */
+  text-shadow: 
+    0 0 20px rgba(255, 255, 255, 1),  /* 🌟 強めの白い輝き */
+    0 0 35px rgba(255, 0, 255, 0.8),  /* 🌟 マゼンタのネオン光 */
+    0 0 45px rgba(255, 0, 255, 0.6);  /* 🌟 ぼんやりした発光 */
+  background: linear-gradient(135deg, rgba(50, 0, 50, 0.7), rgba(0, 0, 0, 0.9)); /* 🎯 ダークなグラデーション背景 */
+  padding: 10px 25px; /* 🎯 余白を広げてさらに迫力を出す */
+  border-radius: 10px; /* 🎯 少し丸くして立体感を出す */
+  box-shadow: 
+    0 0 20px rgba(255, 0, 255, 0.8), /* 🎯 ネオンマゼンタの反射光 */
+    0 0 30px rgba(255, 0, 255, 0.6); /* 🎯 ぼんやりした光 */
+  transition: all 0.3s ease; /* 🎯 ホバー時の動きをつける */
+}
+
+/* 📌 `barWidth` の数値もサイバーな感じに */
+#bar-width-display {
+  font-weight: bold;
+  font-size: 28px;
+  color: rgb(0, 85, 165); /* 🎯 文字色は白 */
+  display: inline-block;
+  margin-left: 10px; /* 🎯 数値とテキストの間隔を調整 */
+  text-shadow: 
+    // 0 0 15px rgba(255, 255, 255, 1),  /* 🎯 強い白光 */
+    0 0 25px rgba(183, 13, 73, 0.8),  /* 🎯 マゼンタネオン */
+    0 0 35px rgba(212, 212, 59, 0.6);  /* 🎯 ぼんやりした光 */
+  z-index: 10; /* 🎯 HPバーより前面 */
+}
+
+
+
+
+
+.today_mental_text:hover {
+  transform: translateX(-50%) scale(1.05); /* ホバー時に少し拡大 */
+  box-shadow: 0 0 30px rgba(255, 0, 255, 1); /* ホバー時に光のエフェクトを強調 */
+}
+
+
+
+// #hp-bar-background {
+//   position: absolute;
+//   top: 0;
+//   left: 0;
+//   width: 100%;
+//   height: 100%;
+//   background-color: black; /* 減少部分の色 */
+// }
+
+/* 🔽 ボタンのロゴとテキストを横並びに */
+.gsi-material-button {
+  display: flex;
+  align-items: center;  /* 縦方向の中央揃え */
+  justify-content: center; /* テキストとアイコンを中央に */
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+  background-color: white;
+  color: black;
+  width: 250px; /* 横長のサイズ */
+  margin: 10px auto;
+  text-decoration: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: 0.3s;
+}
+
+.gsi-material-button:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* 🔽 ロゴとテキストを横並びにする */
+.gsi-material-button-content-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px; /* ロゴとテキストの間隔を調整 */
+}
+
+/* 🔽 ロゴのサイズと配置を調整 */
+.gsi-material-button-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 🔽 `img` ではなく `SVG` でも適用する */
+.gsi-material-button-icon svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.gsi-material-button:hover {
+  transform: translateY(-3px); /* 浮き上がる */
+  border-color: magenta; /* ボーダーの色をマゼンタに変更 */
+  box-shadow: 0 0 15px rgba(255, 0, 255, 0.5); /* 🔥 ボタンの周囲にマゼンタの光を追加 */
+}
+
+/* 🔥 クリック時に少し沈む */
+.gsi-material-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.mypage-fluid {
+  width: 90px; /* 画像サイズを大きく */
+  height: auto;
+  margin-right: 15px; /* 画像とテキストの間のスペースを広げる */
+}
+.mypage-icon-link:hover img {
+  transform: translateY(-3px); /* 浮き上がる */
+  border-color: magenta; /* ボーダーの色をマゼンタに変更 */
+  box-shadow: 0 0 15px rgba(255, 0, 255, 0.5); /* 🔥 ボタンの周囲にマゼンタの光を追加 */
+}
+.mypage-icon-link {
+  text-decoration: none; /* 下線を削除 */
+}
+
+.mypage-item:hover {
+  box-shadow: 0 0 15px rgba(255, 0, 255, 0.7); /* ホバー時にピンクっぽい光 */
+  transform: scale(1.05); /* ホバー時に少し拡大 */
+}
+
+.mypage-item:hover .mypage-text {
+  color: #ff69b4; /* ホバー時にピンクに変更 */
+}
+
+.mypage-links {
+  display: flex !important;  /* 強制的に横並びにする */
+  justify-content: center;  /* 水平方向に中央配置 */
+  align-items: center; /* アイコンとテキストを中央揃え */
+  gap: 40px; /* 各アイコンの間隔を広げる */
+  flex-wrap: nowrap; /* 折り返しを防ぐ */
+}
+
+
+.mypage-item {
+  display: flex;
+  align-items: center;
+  background: black; /* 背景を黒く */
+  padding: 15px; /* 余白を少し増やす */
+  border-radius: 20px; /* 角をさらに丸く */
+  width: auto; /* コンテンツサイズに合わせる */
+  white-space: nowrap; /* テキストの折り返しを防ぐ */
+  transition: all 0.3s ease-in-out; /* なめらかな変化 */
+}
+.mypage-text {
+  color: white;
+  font-size: 18px; /* 文字サイズを少し大きく */
+  font-weight: bold;
+  text-align: left;
+  transition: color 0.3s ease-in-out; /* 文字色の変化をスムーズに */
+}
+
+.bookmark-icon-container img {
+  max-width: 60px;  /* お好みのサイズに調整 */
+  height: auto;
+}
+
+#loading-indicator {
+  display: none;
+  visibility: hidden; /* 念のため追加 */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000; /* 他の要素の上に表示 */
+}
+
+
+// パックマン
+/* サイバーネオン風パックマン */
+/* サイバーネオン風パックマン（大サイズ版） */
+.circle-packman-1 {
+  --size: 100px; /* サイズを大きく */
+  --stroke-width: calc(var(--size) / 2);
+  --color: rgb(255, 4, 155); /* ネオンシアン */
+  --animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  --animation-duration: 1.2s;
+  position: relative;
+  width: var(--size);
+  height: var(--size);
+  filter: drop-shadow(0 0 12px var(--color)); /* 大きくすると影も強調 */
+}
+
+.circle-packman-1::before,
+.circle-packman-1::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-width: var(--stroke-width);
+  border-style: solid;
+  border-radius: 50%;
+}
+
+.circle-packman-1::before {
+  border-color: var(--color) transparent transparent var(--color);
+  animation: neon-packman-animation-before var(--animation-duration) var(--animation-timing-function) infinite;
+}
+
+.circle-packman-1::after {
+  border-color: transparent transparent var(--color) var(--color);
+  animation: neon-packman-animation-after var(--animation-duration) var(--animation-timing-function) infinite;
+}
+
+@keyframes neon-packman-animation-before {
+  0% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(45deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes neon-packman-animation-after {
+  0% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-45deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* パックマンを包むラッパー要素（HTMLに追加してください） */
+.pacman-wrapper {
+  position: absolute; /* 画面上で自由に配置できるように */
+  top: 50%;         /* 垂直方向の位置調整 */
+  transform: translateY(-50%);
+  /* 左から右へ移動するアニメーションを追加 */
+  animation: movePacman 5s linear infinite;
+}
+
+/* 左から右へ移動するアニメーション */
+@keyframes movePacman {
+  0% {
+    left: -150px;  /* 画面外から開始 */
+  }
+  100% {
+    left: 100vw;   /* 画面の右端まで移動 */
+  }
+}
+
+
+
+/* app/assets/stylesheets/application.css　ポップアップメッセージ */
+.cyber-popup {
+  background: linear-gradient(135deg, #00b3ff, #ff0088) !important;
+  color: #fff !important;
+  font-family: 'Orbitron', sans-serif !important;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+
+@keyframes neonGlow {
+  0% {
+    box-shadow: 0 0 5px #00f2ff, 0 0 10px #00f2ff, 0 0 20px #00f2ff;
+  }
+  50% {
+    box-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 40px #ff00ff;
+  }
+  100% {
+    box-shadow: 0 0 5px #00f2ff, 0 0 10px #00f2ff, 0 0 20px #00f2ff;
+  }
+}
