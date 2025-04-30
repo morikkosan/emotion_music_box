@@ -16,6 +16,7 @@ Rails.application.configure do
   # 開発用ホストを許可（yourproductiondomain.com を WSLでhosts設定した場合）
   config.hosts << "moriappli-emotion.com"
   config.hosts << "emotion-music-box.onrender.com"
+  config.hosts << "www.moriappli-emotion.com"  # ←追加！
 
   config.enable_reloading = true
   config.eager_load = false
