@@ -37,10 +37,11 @@ Rails.application.configure do
   config.action_controller.raise_on_missing_callback_actions = true
   config.assets.paths << Rails.root.join("app", "assets", "builds")
 
-  Rails.logger.info "🔍 ENV[\"DB_NAME\"]: #{ENV['DB_NAME']}"
-Rails.logger.info "🔍 ENV[\"DB_USER\"]: #{ENV['DB_USER']}"
-Rails.logger.info "🔍 ENV[\"DB_PASSWORD\"]: #{ENV['DB_PASSWORD']}"
-Rails.logger.info "🔍 ENV[\"DB_HOST\"]: #{ENV['DB_HOST']}"
-Rails.logger.info "🔍 ENV[\"DB_PORT\"]: #{ENV['DB_PORT']}"
-
+  config.after_initialize do
+    Rails.logger.info "🔍 ENV[\"DB_NAME\"]: #{ENV['DB_NAME']}"
+    Rails.logger.info "🔍 ENV[\"DB_USER\"]: #{ENV['DB_USER']}"
+    Rails.logger.info "🔍 ENV[\"DB_PASSWORD\"]: #{ENV['DB_PASSWORD']&.slice(0, 6)}..."
+    Rails.logger.info "🔍 ENV[\"DB_HOST\"]: #{ENV['DB_HOST']}"
+    Rails.logger.info "🔍 ENV[\"DB_PORT\"]: #{ENV['DB_PORT']}"
+  end
 end
