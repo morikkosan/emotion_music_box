@@ -1,0 +1,43 @@
+# Query: apple
+# ContextLines: 1
+
+11 results - 6 files
+
+Gemfile:
+  45  gem 'omniauth-github'
+  46: gem 'omniauth-apple'
+  47  gem 'omniauth-facebook'
+
+Gemfile.lock:
+  243        rack-protection
+  244:     omniauth-apple (1.3.0)
+  245        json-jwt
+
+  448    omniauth
+  449:   omniauth-apple
+  450    omniauth-facebook
+
+app/controllers/users/omniauth_callbacks_controller.rb:
+  18  
+  19:   # def apple
+  20:   #   handle_auth "Apple"
+  21    # end
+
+app/models/user.rb:
+  6           :recoverable, :rememberable, :validatable,
+  7:          :omniauthable, omniauth_providers: %i[google_oauth2 github apple facebook]
+  8  
+
+app/views/layouts/application.html.erb:
+   7    <meta name="viewport" content="width=device-width,initial-scale=1">
+   8:   <meta name="apple-mobile-web-app-capable" content="yes">
+   9    <%= csrf_meta_tags %>
+
+  16    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  17:   <link rel="apple-touch-icon" href="/icon.png">
+  18  
+
+config/initializers/devise.rb:
+  280    config.omniauth :github, ENV['GITHUB_CLIENT_ID'], ENV['GITHUB_CLIENT_SECRET'], { provider_ignores_state: true }
+  281:   config.omniauth :apple, ENV['APPLE_CLIENT_ID'], ENV['APPLE_CLIENT_SECRET'], { provider_ignores_state: true }
+  282    config.omniauth :facebook, ENV['FACEBOOK_CLIENT_ID'], ENV['FACEBOOK_CLIENT_SECRET'], { provider_ignores_state: true }

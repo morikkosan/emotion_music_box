@@ -1,15 +1,26 @@
 Rails.application.routes.draw do
-  root "home#index"
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+  devise_for :users,
+    controllers: {
+      omniauth_callbacks: 'users/omniauth_callbacks',
+      registrations: 'users/registrations'
+    },
+    path: ''
 
-  # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
-  # Can be used by load balancers and uptime monitors to verify that the app is live.
+  root "emotion_logs#index"
+
+  resources :emotion_logs do
+    collection do
+      get :chart_data
+      get :bookmarks
+    end
+  end
+
+  get :'my_emotion_logs', to: 'emotion_logs#my_emotion_logs'
+  get 'jamendo/search', to: 'jamendo#search'
+  resources :bookmarks, only: %i[create destroy]
+  get "/soundcloud_client_id", to: "sound_cloud#client_id"
+
   get "up" => "rails/health#show", as: :rails_health_check
-
-  # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
-  # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
-  # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
-
-  # Defines the root path route ("/")
-  # root "posts#index"
+  get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
+  get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 end

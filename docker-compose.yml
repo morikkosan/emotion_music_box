@@ -1,0 +1,70 @@
+version: '3'
+services:
+  redis:
+    image: redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  db:
+    image: postgres
+    restart: always
+    environment:
+      TZ: Asia/Tokyo
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d app_production -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: >  # 👈 buildと同じレベルに揃える！！
+      bash -c "
+      rm -f tmp/pids/server.pid;
+      bundle exec rails db:prepare;
+      mkdir -p /etc/ssl/private;
+      chmod 700 /etc/ssl/private;
+      ./bin/rails server -b 'ssl://0.0.0.0:443?key=/etc/ssl/private/moriappli-emotion.com-key.pem&cert=/etc/ssl/certs/moriappli-emotion.com.pem'"
+    tty: true
+    stdin_open: true
+    volumes:
+      - .:/rails
+      - bundle_data:/usr/local/bundle:cached
+      - node_modules:/rails/node_modules
+      - ./docker/certs/moriappli-emotion.com.pem:/etc/ssl/certs/moriappli-emotion.com.pem:ro
+      - ./docker/certs/moriappli-emotion.com-key.pem:/etc/ssl/private/moriappli-emotion.com-key.pem:ro
+
+    environment:
+      - TZ=Asia/Tokyo
+      - SESSION_SECRET=${SESSION_SECRET}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - REDIS_URL=redis://redis:6379/0
+      - SOUNDCLOUD_REDIRECT_URI=https://moriappli-emotion.com/auth/soundcloud/callback
+      - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
+      - APP_DATABASE_PASSWORD=password
+      - SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+      - RAILS_ENV=production  # 👈ここ！！！
+    env_file:
+      - .env
+    ports:
+      - "443:443"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: always
+
+volumes:
+  bundle_data:
+  postgresql_data:
+  node_modules:
