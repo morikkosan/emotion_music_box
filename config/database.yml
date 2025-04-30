@@ -18,14 +18,11 @@ test:
   host: db
 
 production:
-  primary:
-    adapter: postgresql
-    encoding: unicode
-    pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-    database: <%= ENV["DB_NAME"] %>
-    username: <%= ENV["DB_USER"] %>
-    password: <%= ENV["DB_PASSWORD"] %>
-    host: <%= ENV["DB_HOST"] %>
-    port: <%= ENV["DB_PORT"] || 5432 %>
-    variables:
-      sslmode: require
+  <<: *default
+  database: <%= ENV["DB_NAME"] %>
+  username: <%= ENV["DB_USER"] %>
+  password: <%= ENV["DB_PASSWORD"] %>
+  host: <%= ENV["DB_HOST"] %>
+  port: <%= ENV.fetch("DB_PORT", 5432) %>
+  variables:
+    sslmode: require
