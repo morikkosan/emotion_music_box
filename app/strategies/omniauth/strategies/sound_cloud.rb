@@ -11,6 +11,19 @@ module OmniAuth
         token_url: 'https://secure.soundcloud.com/oauth/token'
       }
 
+      # 👇ここを追加する
+      option :authorize_params, {
+        client_id: ENV['SOUNDCLOUD_CLIENT_ID']
+      }
+
+      option :token_params, {
+        client_id: ENV['SOUNDCLOUD_CLIENT_ID'],
+        client_secret: ENV['SOUNDCLOUD_CLIENT_SECRET'], # ← これを追加！
+        redirect_uri: ENV['SOUNDCLOUD_REDIRECT_URI']
+      }
+      
+
+
       uid { raw_info['id'] }
 
       info do
