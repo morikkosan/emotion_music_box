@@ -1,7 +1,7 @@
 # config/puma.rb
 
 # ポート番号（Renderでは ENV["PORT"] が使われる）
-port ENV.fetch("PORT") { 3000 }
+port ENV.fetch("PORT")
 
 # SSLバインド（ローカルで SSL を使う場合）
 if ENV["USE_LOCAL_SSL"] == "true"
