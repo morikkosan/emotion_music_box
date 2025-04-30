@@ -15,12 +15,12 @@ test:
   database: app_test
 
 production:
-  primary: &primary_production
+  primary:
     <<: *default
     database: <%= ENV["DB_NAME"] %>
     username: <%= ENV["DB_USER"] %>
     password: <%= ENV["DB_PASSWORD"] %>
     host: <%= ENV["DB_HOST"] %>
     port: <%= ENV.fetch("DB_PORT", 5432) %>
-
-
+    variables:
+      sslmode: require
