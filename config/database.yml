@@ -17,25 +17,24 @@ test:
 production:
   primary: &primary_production
     <<: *default
-    database: app_production
-    username: postgres
-    password: <%= ENV["APP_DATABASE_PASSWORD"] %>
-    host: db # ← ここも追加
+    database: <%= ENV["DB_NAME"] %>
+    username: <%= ENV["DB_USER"] %>
+    password: <%= ENV["DB_PASSWORD"] %>
+    host: <%= ENV["DB_HOST"] %>
+    port: <%= ENV.fetch("DB_PORT", 5432) %>
 
   cache:
     <<: *primary_production
-    database: app_production_cache
+    database: <%= ENV["DB_NAME"] %>_cache
     migrations_paths: db/cache_migrate
-    host: db # ← ここも追加
 
   queue:
     <<: *primary_production
-    database: app_production_queue
+    database: <%= ENV["DB_NAME"] %>_queue
     migrations_paths: db/queue_migrate
-    host: db # ← ここも追加
 
   cable:
     <<: *primary_production
-    database: app_production_cable
+    database: <%= ENV["DB_NAME"] %>_cable
     migrations_paths: db/cable_migrate
-    host: db # ← ここも追加
+
