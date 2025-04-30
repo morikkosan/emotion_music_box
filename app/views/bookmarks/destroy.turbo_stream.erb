@@ -1,0 +1,7 @@
+<%= turbo_stream.replace "bookmark_count_#{@emotion_log.id}" do %>
+  <%= render partial: "emotion_logs/bookmark_count", locals: { emotion_log: @emotion_log } %>
+<% end %>
+<%= turbo_stream.replace "bookmark-button-emotion-log-#{@emotion_log.id}" do %>
+  <%= render 'emotion_logs/bookmark', emotion_log: @emotion_log %>
+<% end %>
+

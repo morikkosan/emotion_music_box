@@ -1,0 +1,30 @@
+<%- if devise_mapping.omniauthable? %>
+  <!-- まずSoundCloudボタンを最初に表示 -->
+  <%= button_to user_soundcloud_omniauth_authorize_path, 
+        method: :post, data: { turbo: false }, class: "gsi-material-button soundcloud" do %>
+    <div class="gsi-material-button-content-wrapper">
+      <!-- <div class="gsi-material-button-icon">
+      </div> -->
+      <span class="gsi-material-button-contents">
+        Sign in with SoundCloud
+      </span>
+    </div>
+  <% end %>
+
+  <!-- 他のプロバイダ（Google, Facebook）は後で連携可能にする -->
+  <% resource_class.omniauth_providers.each do |provider| %>
+    <% next if provider == :soundcloud %> <!-- SoundCloud以外を後回しにする -->
+    <% provider_name = provider.to_s.downcase.gsub('google_oauth2', 'google') %>
+
+    <%= button_to send("user_#{provider}_omniauth_authorize_path"), 
+          method: :post, data: { turbo: false }, class: "gsi-material-button #{provider_name}" do %>
+      <div class="gsi-material-button-content-wrapper">
+        <!-- <div class="gsi-material-button-icon">
+        </div> -->
+        <span class="gsi-material-button-contents">
+          Sign in with <%= OmniAuth::Utils.camelize(provider_name) %>
+        </span>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>
