@@ -1,0 +1,12 @@
+ja:
+  devise:
+    sessions:
+      signed_in: "ログインに成功しました！"
+      signed_out: "ログアウトに成功しました！"
+    failure:
+      invalid: "ログインに失敗しました・・"
+    omniauth_callbacks:
+      success: "%{kind}アカウントでログインしました。"
+      failure: "%{kind}アカウントでのログインに失敗しました。"
+    registrations:
+      updated: "アカウントを更新したよ！"
