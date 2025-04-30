@@ -1,4 +1,5 @@
 version: '3'
+
 services:
   redis:
     image: redis
@@ -6,27 +7,11 @@ services:
     ports:
       - "6379:6379"
 
-  db:
-    image: postgres
-    restart: always
-    environment:
-      TZ: Asia/Tokyo
-      POSTGRES_PASSWORD: password
-    volumes:
-      - postgresql_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d app_production -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   web:
     build:
       context: .
       dockerfile: Dockerfile
-    command: >  # 👈 buildと同じレベルに揃える！！
+    command: >
       bash -c "
       rm -f tmp/pids/server.pid;
       bundle exec rails db:prepare;
@@ -50,21 +35,17 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - SOUNDCLOUD_REDIRECT_URI=https://moriappli-emotion.com/auth/soundcloud/callback
       - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
-      - APP_DATABASE_PASSWORD=password
       - SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
-      - RAILS_ENV=production  # 👈ここ！！！
+      - RAILS_ENV=production
     env_file:
-      - .env
+      - .env.production
     ports:
       - "443:443"
     depends_on:
-      db:
-        condition: service_healthy
       redis:
         condition: service_started
     restart: always
 
 volumes:
   bundle_data:
-  postgresql_data:
   node_modules:
