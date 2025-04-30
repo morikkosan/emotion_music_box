@@ -1,15 +1,18 @@
-# Puma configuration for SSL and app server
+# config/puma.rb
 
-ssl_bind '0.0.0.0', '3002', {
-  key: "/etc/ssl/private/moriappli-emotion.com-key.pem",
-  cert: "/etc/ssl/certs/moriappli-emotion.com.pem"
-}
+# ポート番号（Renderでは ENV["PORT"] が使われる）
+port ENV.fetch("PORT") { 3000 }
 
-threads_count = ENV.fetch("RAILS_MAX_THREADS", 3)
+# SSLバインド（ローカルで SSL を使う場合）
+if ENV["USE_LOCAL_SSL"] == "true"
+  ssl_bind '0.0.0.0', '3002', {
+    key:  "config/ssl/moriappli-emotion.com-key.pem",
+    cert: "config/ssl/moriappli-emotion.com.pem"
+  }
+end
+
+threads_count = ENV.fetch("RAILS_MAX_THREADS", 3).to_i
 threads threads_count, threads_count
 
-port ENV.fetch("PORT", 3002) # 念のためportも明示しておく
-
 plugin :tmp_restart
-
 pidfile ENV["PIDFILE"] if ENV["PIDFILE"]
