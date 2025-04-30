@@ -87,4 +87,5 @@ RUN groupadd --system --gid 1000 rails && \
 USER 1000:1000
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 EXPOSE 3002
-CMD ["bash", "-c", "bundle exec rails db:prepare && ./bin/rails server -b 'ssl://0.0.0.0:3002?key=/etc/ssl/private/moriappli-emotion.com-key.pem&cert=/etc/ssl/certs/moriappli-emotion.com.pem'"]
+CMD ["bash", "-c", "if [ ! -f tmp/migrated ]; then bundle exec rails db:prepare && touch tmp/migrated; fi && ./bin/rails server -b 'ssl://0.0.0.0:3002?key=/etc/ssl/private/moriappli-emotion.com-key.pem&cert=/etc/ssl/certs/moriappli-emotion.com.pem'"]
+
