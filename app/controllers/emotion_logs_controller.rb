@@ -19,7 +19,11 @@ class EmotionLogsController < ApplicationController
   end
 
   def new
-    @emotion_log = current_user.emotion_logs.build
+    @emotion_log = EmotionLog.new
+    respond_to do |format|
+      format.turbo_stream # ←これでnew.turbo_stream.erbを返す
+      format.html
+    end
   end
 
   def create
