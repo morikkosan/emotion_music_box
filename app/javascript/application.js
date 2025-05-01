@@ -5,6 +5,8 @@ Rails.start();
 import "@hotwired/turbo-rails";
 import "./controllers";
 import * as bootstrap from "bootstrap";
+window.bootstrap = bootstrap;
+
 // import "chartkick/chart.js"; // Chartkickを利用するために必要
 import "./custom/comments";
 import "./custom/gages_test";
@@ -12,7 +14,7 @@ import "./custom/flash_messages";  // パスが正しいか確認
 
 // Turboを完全に無効化
 document.addEventListener("turbo:load", function () {
-  Turbo.session.drive = false;
+  // Turbo.session.drive = false;
   console.log("Turbo is disabled");
 
   const button = document.getElementById("search-button");
@@ -24,8 +26,25 @@ document.addEventListener("turbo:load", function () {
 
   }
 });
+// turbo:frame-render を使って差し替え後に必ずモーダルを開く
+// document.addEventListener("turbo:frame-render", function (event) {
+//   if (event.target.id === "modal") {
+//     const modalEl = event.target.querySelector(".modal");
+//     if (modalEl) {
+//       const modal = new bootstrap.Modal(modalEl);
+//       modal.show();
+//       console.log("✅ モーダル表示成功");
+//     } else {
+//       console.warn("❌ modal-container が見つかりませんでした");
+//     }
+//   }
+// });
 
 
+
+document.addEventListener("turbo:load", () => {
+  console.log("✅ Turbo loaded OK");
+});
 // ✅ ページネーション用の変数
 let currentPage = 1;
 let searchResults = [];
@@ -240,27 +259,30 @@ window.selectMusic = function(audioUrl, trackName, artistName, button) {
   const trackElement = button.parentElement;
   const playerContainer = document.createElement("div");
   playerContainer.classList.add("music-player-container");
+  playerContainer.setAttribute("data-turbo", "false"); // ← 追加
 
   // 🔹 SoundCloud の埋め込みプレーヤーのURLを作成
   // 🔸 audioUrl には `track.permalink_url` が入っている想定
-  const embedUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(audioUrl)}&auto_play=true`;
+  const embedUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(audioUrl)}`;
 
-  // 🔹 SoundCloud の埋め込みプレーヤーを表示
   playerContainer.innerHTML = `
-    <iframe
-      width="100%"
-      height="166"
-      scrolling="no"
-      frameborder="no"
-      allow="autoplay"
-      src="${embedUrl}">
-    </iframe>
+<iframe
+    width="600"
+    height="166"
+    scrolling="no"
+    frameborder="no"
+    allow="autoplay"
+    src="${embedUrl}">
+  </iframe>
 
-    <button class="btn btn-sm btn-primary mt-2" type="button"
-      onclick="chooseTrack('${audioUrl}', '${trackName}', '${artistName}')">
-      この曲にする
-    </button>
-  `;
+
+
+  <button class="btn btn-sm btn-primary mt-2" type="button"
+    onclick="chooseTrack('${audioUrl}', '${trackName}', '${artistName}')">
+    この曲にする
+  </button>
+`;
+
 
   trackElement.appendChild(playerContainer);
 
