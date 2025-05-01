@@ -1,0 +1,38 @@
+<div class="container mt-5">
+  <h1 class="text-center mt-4">
+    <i class="bi bi-heart-pulse"></i>Record emotions<i class="bi bi-heart-pulse"></i>
+  </h1>
+
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+<%= form_with model: emotion_log, id: "emotion-form" do |form| %>
+        <div class="mb-4">
+          <%= form.label :date, '日付' %>
+          <%= form.date_field :date, class: 'form-control', max: Date.today.to_s %>
+        </div>
+
+        <div class="mb-4">
+          <%= form.label :emotion, '感情' %>
+          <%= form.select :emotion, [
+            ['めちゃくちゃ気分良い', 'めちゃくちゃ気分良い'],
+            ['気分良い', '気分良い'],
+            ['いつも通り', 'いつも通り'],
+            ['イライラ', 'イライラ'],
+            ['限界', '限界']], {}, class: 'form-control' %>
+        </div>
+
+        <!-- 音楽検索UIなど省略（ここにそのまま残してOK） -->
+
+        <div class="d-flex justify-content-center">
+          <%= form.submit '記録する', class: 'btn btn-primary' %>
+        </div>
+      <% end %>
+
+      <%= link_to '一覧に戻る', root_path, class: 'btn btn-secondary mt-3' %>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.soundcloudToken = "<%= current_user.soundcloud_token %>";
+</script>
