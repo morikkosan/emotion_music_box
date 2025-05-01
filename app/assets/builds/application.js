@@ -5719,7 +5719,7 @@ function setFormMode(mode) {
   );
   config.forms.mode = mode;
 }
-var Turbo2 = /* @__PURE__ */ Object.freeze({
+var Turbo = /* @__PURE__ */ Object.freeze({
   __proto__: null,
   navigator: navigator$1,
   session,
@@ -6427,7 +6427,7 @@ if (customElements.get("turbo-stream-source") === void 0) {
     element = element.parentElement;
   }
 })();
-window.Turbo = { ...Turbo2, StreamActions };
+window.Turbo = { ...Turbo, StreamActions };
 start2();
 
 // node_modules/@hotwired/turbo-rails/app/javascript/turbo/cable.js
@@ -9017,6 +9017,23 @@ var hello_controller_default = class extends Controller {
 // app/javascript/controllers/index.js
 application.register("hello", hello_controller_default);
 
+// node_modules/bootstrap/dist/js/bootstrap.esm.js
+var bootstrap_esm_exports = {};
+__export(bootstrap_esm_exports, {
+  Alert: () => Alert,
+  Button: () => Button,
+  Carousel: () => Carousel,
+  Collapse: () => Collapse,
+  Dropdown: () => Dropdown,
+  Modal: () => Modal,
+  Offcanvas: () => Offcanvas,
+  Popover: () => Popover,
+  ScrollSpy: () => ScrollSpy,
+  Tab: () => Tab,
+  Toast: () => Toast,
+  Tooltip: () => Tooltip
+});
+
 // node_modules/@popperjs/core/lib/index.js
 var lib_exports = {};
 __export(lib_exports, {
@@ -10705,7 +10722,7 @@ var defineJQueryPlugin = (plugin) => {
   });
 };
 var execute = (possibleCallback, args = [], defaultValue = possibleCallback) => {
-  return typeof possibleCallback === "function" ? possibleCallback(...args) : defaultValue;
+  return typeof possibleCallback === "function" ? possibleCallback.call(...args) : defaultValue;
 };
 var executeAfterTransition = (callback, transitionElement, waitForTransition = true) => {
   if (!waitForTransition) {
@@ -10982,7 +10999,7 @@ var Manipulator = {
     const bsKeys = Object.keys(element.dataset).filter((key) => key.startsWith("bs") && !key.startsWith("bsConfig"));
     for (const key of bsKeys) {
       let pureKey = key.replace(/^bs/, "");
-      pureKey = pureKey.charAt(0).toLowerCase() + pureKey.slice(1, pureKey.length);
+      pureKey = pureKey.charAt(0).toLowerCase() + pureKey.slice(1);
       attributes[pureKey] = normalizeData(element.dataset[key]);
     }
     return attributes;
@@ -11030,7 +11047,7 @@ var Config2 = class {
     }
   }
 };
-var VERSION = "5.3.3";
+var VERSION = "5.3.5";
 var BaseComponent = class extends Config2 {
   constructor(element, config2) {
     super();
@@ -12014,7 +12031,7 @@ var Dropdown = class _Dropdown extends BaseComponent {
   }
   _createPopper() {
     if (typeof lib_exports === "undefined") {
-      throw new TypeError("Bootstrap's dropdowns require Popper (https://popper.js.org)");
+      throw new TypeError("Bootstrap's dropdowns require Popper (https://popper.js.org/docs/v2/)");
     }
     let referenceElement = this._element;
     if (this._config.reference === "parent") {
@@ -12089,7 +12106,7 @@ var Dropdown = class _Dropdown extends BaseComponent {
     }
     return {
       ...defaultBsPopperConfig,
-      ...execute(this._config.popperConfig, [defaultBsPopperConfig])
+      ...execute(this._config.popperConfig, [void 0, defaultBsPopperConfig])
     };
   }
   _selectMenuItem({
@@ -13070,7 +13087,7 @@ var TemplateFactory = class extends Config2 {
     return this._config.sanitize ? sanitizeHtml(arg, this._config.allowList, this._config.sanitizeFn) : arg;
   }
   _resolvePossibleFunction(arg) {
-    return execute(arg, [this]);
+    return execute(arg, [void 0, this]);
   }
   _putElementInTemplate(element, templateElement) {
     if (this._config.html) {
@@ -13151,7 +13168,7 @@ var DefaultType$3 = {
 var Tooltip = class _Tooltip extends BaseComponent {
   constructor(element, config2) {
     if (typeof lib_exports === "undefined") {
-      throw new TypeError("Bootstrap's tooltips require Popper (https://popper.js.org)");
+      throw new TypeError("Bootstrap's tooltips require Popper (https://popper.js.org/docs/v2/)");
     }
     super(element, config2);
     this._isEnabled = true;
@@ -13191,7 +13208,6 @@ var Tooltip = class _Tooltip extends BaseComponent {
     if (!this._isEnabled) {
       return;
     }
-    this._activeTrigger.click = !this._activeTrigger.click;
     if (this._isShown()) {
       this._leave();
       return;
@@ -13363,7 +13379,7 @@ var Tooltip = class _Tooltip extends BaseComponent {
     return offset2;
   }
   _resolvePossibleFunction(arg) {
-    return execute(arg, [this._element]);
+    return execute(arg, [this._element, this._element]);
   }
   _getPopperConfig(attachment) {
     const defaultBsPopperConfig = {
@@ -13399,7 +13415,7 @@ var Tooltip = class _Tooltip extends BaseComponent {
     };
     return {
       ...defaultBsPopperConfig,
-      ...execute(this._config.popperConfig, [defaultBsPopperConfig])
+      ...execute(this._config.popperConfig, [void 0, defaultBsPopperConfig])
     };
   }
   _setListeners() {
@@ -14396,8 +14412,8 @@ console.log("\u2705 updateHPBar is now available globally:", typeof window.updat
 // app/javascript/application.js
 console.log("JavaScript is loaded successfully!");
 Rails.start();
+window.bootstrap = bootstrap_esm_exports;
 document.addEventListener("turbo:load", function() {
-  Turbo.session.drive = false;
   console.log("Turbo is disabled");
   const button = document.getElementById("search-button");
   if (button) {
@@ -14406,6 +14422,9 @@ document.addEventListener("turbo:load", function() {
     });
     button.dataset.listenerAdded = "true";
   }
+});
+document.addEventListener("turbo:load", () => {
+  console.log("\u2705 Turbo loaded OK");
 });
 var currentPage = 1;
 var searchResults = [];
@@ -14535,22 +14554,25 @@ window.selectMusic = function(audioUrl, trackName, artistName, button) {
   const trackElement = button.parentElement;
   const playerContainer = document.createElement("div");
   playerContainer.classList.add("music-player-container");
-  const embedUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(audioUrl)}&auto_play=true`;
+  playerContainer.setAttribute("data-turbo", "false");
+  const embedUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(audioUrl)}`;
   playerContainer.innerHTML = `
-    <iframe
-      width="100%"
-      height="166"
-      scrolling="no"
-      frameborder="no"
-      allow="autoplay"
-      src="${embedUrl}">
-    </iframe>
+<iframe
+    width="600"
+    height="166"
+    scrolling="no"
+    frameborder="no"
+    allow="autoplay"
+    src="${embedUrl}">
+  </iframe>
 
-    <button class="btn btn-sm btn-primary mt-2" type="button"
-      onclick="chooseTrack('${audioUrl}', '${trackName}', '${artistName}')">
-      \u3053\u306E\u66F2\u306B\u3059\u308B
-    </button>
-  `;
+
+
+  <button class="btn btn-sm btn-primary mt-2" type="button"
+    onclick="chooseTrack('${audioUrl}', '${trackName}', '${artistName}')">
+    \u3053\u306E\u66F2\u306B\u3059\u308B
+  </button>
+`;
   trackElement.appendChild(playerContainer);
   alert(`\u300C${trackName}\u300D\u3092\u9078\u629E\u3057\u307E\u3057\u305F\uFF01`);
 };
@@ -14585,8 +14607,8 @@ window.prevPage = prevPage;
 
 bootstrap/dist/js/bootstrap.esm.js:
   (*!
-    * Bootstrap v5.3.3 (https://getbootstrap.com/)
-    * Copyright 2011-2024 The Bootstrap Authors (https://github.com/twbs/bootstrap/graphs/contributors)
+    * Bootstrap v5.3.5 (https://getbootstrap.com/)
+    * Copyright 2011-2025 The Bootstrap Authors (https://github.com/twbs/bootstrap/graphs/contributors)
     * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
     *)
 */

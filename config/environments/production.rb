@@ -15,8 +15,6 @@ Rails.application.configure do
 
   # 開発用ホストを許可（yourproductiondomain.com を WSLでhosts設定した場合）
   config.hosts << "moriappli-emotion.com"
-  config.hosts << "emotion-music-box.onrender.com"
-  config.hosts << "www.moriappli-emotion.com"  # ←追加！
 
   config.enable_reloading = true
   config.eager_load = false
@@ -37,12 +35,4 @@ Rails.application.configure do
   config.action_view.annotate_rendered_view_with_filenames = true
   config.action_controller.raise_on_missing_callback_actions = true
   config.assets.paths << Rails.root.join("app", "assets", "builds")
-
-  config.after_initialize do
-    Rails.logger.info "🔍 ENV[\"DB_NAME\"]: #{ENV['DB_NAME']}"
-    Rails.logger.info "🔍 ENV[\"DB_USER\"]: #{ENV['DB_USER']}"
-    Rails.logger.info "🔍 ENV[\"DB_PASSWORD\"]: #{ENV['DB_PASSWORD']&.slice(0, 6)}..."
-    Rails.logger.info "🔍 ENV[\"DB_HOST\"]: #{ENV['DB_HOST']}"
-    Rails.logger.info "🔍 ENV[\"DB_PORT\"]: #{ENV['DB_PORT']}"
-  end
 end

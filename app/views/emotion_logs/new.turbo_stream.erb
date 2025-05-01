@@ -1,0 +1,21 @@
+<%= turbo_stream.update "modal" do %>
+  <div class="modal fade" id="modal-container" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+      <div class="modal-content p-4">
+        <%= render partial: "form", locals: { emotion_log: @emotion_log } %>
+      </div>
+    </div>
+  </div>
+  <script>
+    setTimeout(() => {
+      const modalEl = document.getElementById("modal-container");
+      if (modalEl) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+        console.log("✅ モーダル表示成功");
+      } else {
+        console.warn("❌ modal-container が見つかりませんでした");
+      }
+    }, 0);
+  </script>
+<% end %>

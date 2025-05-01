@@ -46,7 +46,7 @@
 
 <!-- ✅ ここが修正ポイント！ -->
 <body data-flash-notice="<%= j flash.now[:notice] %>" data-flash-alert="<%= j flash.now[:alert] %>">
-
+  <turbo-frame id="modal"></turbo-frame>
   <p>🔍 Debug: <%= current_user.inspect %></p>
 
   <div id="comment-container"></div>
