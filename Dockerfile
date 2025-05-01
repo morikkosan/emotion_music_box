@@ -49,6 +49,7 @@ ENV PATH="/rails/node_modules/.bin:$PATH"
 # Install JS & Ruby dependencies
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
+RUN chown -R 1000:1000 /rails/node_modules
 COPY Gemfile Gemfile.lock ./
 RUN bundle config set --local without 'development test' && bundle install
 
@@ -58,8 +59,22 @@ RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
 FROM base
 
-# Reinstall ca-certificates
-RUN apt-get update -qq && apt-get install --no-install-recommends -y ca-certificates && update-ca-certificates && rm -rf /var/lib/apt/lists/*
+# Install Node.js (for Yarn)
+ARG NODE_VERSION=20.18.0
+RUN curl -sL https://github.com/nodenv/node-build/archive/master.tar.gz | tar xz -C /tmp/ && \
+    /tmp/node-build-master/bin/node-build "${NODE_VERSION}" /usr/local/node && \
+    rm -rf /tmp/node-build-master
+
+ENV PATH="/usr/local/node/bin:$PATH"
+
+# Install Yarn
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
+    echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list && \
+    apt-get update -qq && apt-get install --no-install-recommends -y yarn && \
+    rm -rf /var/lib/apt/lists/*
+
+
+RUN yarn global add esbuild
 
 # Copy built artifacts
 COPY --from=build /usr/local/bundle /usr/local/bundle

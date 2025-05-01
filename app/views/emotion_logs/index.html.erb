@@ -138,7 +138,9 @@
 <div class="mt-3 text-center">
   <%= paginate @emotion_logs %>
 </div>
-<div class="mt-3 text-center">
-    <%= link_to '新しい感情を記録', new_emotion_log_path, class: 'btn btn-primary' %>
+<%= link_to '今日の気持ちを記録する',
+            new_emotion_log_path(format: :turbo_stream),
+            data: { turbo_frame: "modal" },
+            class: 'btn btn-primary' %>
   </div>
 
