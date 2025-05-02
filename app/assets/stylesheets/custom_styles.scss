@@ -543,3 +543,9 @@ h1 i.bi bi-heart-pulse {
     box-shadow: 0 0 5px #00f2ff, 0 0 10px #00f2ff, 0 0 20px #00f2ff;
   }
 }
+
+
+.modal-body {
+  max-height: 80vh;
+  overflow-y: auto;
+}
