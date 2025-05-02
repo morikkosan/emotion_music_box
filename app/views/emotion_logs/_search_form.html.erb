@@ -2,12 +2,14 @@
 <div data-controller="search-music"
      data-search-music-target="section"
      class="p-4">
+  <!-- ① ローディング -->
   <div data-search-music-target="loading"
        class="text-center mb-3"
        style="display:none">
     <span class="spinner-border" role="status"></span>
   </div>
 
+  <!-- ② 検索フォーム -->
   <div class="input-group mb-3">
     <input type="text"
            class="form-control"
@@ -20,8 +22,13 @@
     </button>
   </div>
 
+  <!-- ③ 結果リスト -->
   <div data-search-music-target="results" class="list-group mb-3"></div>
 
+  <!-- ④ 埋め込みプレイヤー領域 -->
+  <div data-search-music-target="player" class="mb-3"></div>
+
+  <!-- ⑤ 隠しフィールド・選択曲名 -->
   <%= form_with(model: emotion_log, local: true) do |f| %>
     <%= f.hidden_field :music_url, data: { search_music_target: "audio" } %>
     <div class="mb-3">

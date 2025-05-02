@@ -14197,9 +14197,10 @@ var search_music_controller_default = class extends Controller {
     "track",
     // hidden 曲名
     "loading",
-    // 로딩インジケータ
-    "section"
+    // 로딩イン디케ータ
+    "section",
     // フォーム全体（選択後に非表示）
+    "player"
   ];
   connect() {
     console.log("\u{1F3A7} search_music_controller connected");
@@ -14304,9 +14305,30 @@ var search_music_controller_default = class extends Controller {
   }
   // 「選択」ボタン押下時
   select(e) {
+    console.log("\u26A1\uFE0F select fired:", e.target, "playerTarget:", this.playerTarget);
     const { audio, name, artist } = e.target.dataset;
     this.audioTarget.value = audio;
     this.trackTarget.value = `${name} - ${artist}`;
+    this.playerTarget.innerHTML = `
+      <iframe
+        width="100%"
+        height="166"
+        scrolling="no"
+        frameborder="no"
+        allow="autoplay"
+        src="https://w.soundcloud.com/player/?url=${encodeURIComponent(audio)}&auto_play=true">
+      </iframe>
+      <button
+        type="button"
+        class="btn btn-primary mt-2"
+        data-action="search-music#confirm"
+      >\u3053\u306E\u66F2\u306B\u3059\u308B</button>
+    `;
+    this.playerTarget.scrollIntoView({ behavior: "smooth" });
+    console.log("\u25B6 \u633F\u5165\u5F8C\u306E playerTarget.innerHTML:", this.playerTarget.innerHTML);
+  }
+  // 「この曲にする」ボタン押下時
+  confirm() {
     this.sectionTarget.style.display = "none";
   }
 };

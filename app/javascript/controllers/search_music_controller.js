@@ -1,4 +1,3 @@
-// app/javascript/controllers/search_music_controller.js
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
@@ -7,8 +6,9 @@ export default class extends Controller {
     "results",  // 結果表示エリア
     "audio",    // hidden 音声URL
     "track",    // hidden 曲名
-    "loading",  // 로딩インジケータ
-    "section"   // フォーム全体（選択後に非表示）
+    "loading",  // 로딩イン디케ータ
+    "section",  // フォーム全体（選択後に非表示）
+    "player"
   ]
 
   connect() {
@@ -21,9 +21,9 @@ export default class extends Controller {
   async search() {
     const q = this.queryTarget.value.trim();
     if (!q) { alert("検索ワードを入力してください"); return; }
-  
+
     this.loadingTarget.style.display = "";
-  
+
     try {
       const res = await fetch(
         `/soundcloud/search?q=${encodeURIComponent(q)}`, {
@@ -31,13 +31,13 @@ export default class extends Controller {
           credentials: "same-origin"
         }
       );
-  
+
       const json = await res.json().catch(() => null);
       if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
-  
+
       this.searchResults = json;
       this.currentPage   = 1;
-      this._renderPage();    // ← ここを display() から変更！
+      this._renderPage();
     } catch (e) {
       console.error("検索エラー:", e);
       alert("検索に失敗しました： " + e.message);
@@ -45,7 +45,6 @@ export default class extends Controller {
       this.loadingTarget.style.display = "none";
     }
   }
-  
 
   // ページごとに結果を描画
   _renderPage() {
@@ -129,10 +128,39 @@ export default class extends Controller {
 
   // 「選択」ボタン押下時
   select(e) {
+    console.log("⚡️ select fired:", e.target, "playerTarget:", this.playerTarget)
+
     const { audio, name, artist } = e.target.dataset
+
+    // hidden fields
     this.audioTarget.value = audio
     this.trackTarget.value = `${name} - ${artist}`
-    // 検索フォームを閉じる
+
+    // プレイヤー + 確認ボタン
+    this.playerTarget.innerHTML = `
+      <iframe
+        width="100%"
+        height="166"
+        scrolling="no"
+        frameborder="no"
+        allow="autoplay"
+        src="https://w.soundcloud.com/player/?url=${encodeURIComponent(audio)}&auto_play=true">
+      </iframe>
+      <button
+        type="button"
+        class="btn btn-primary mt-2"
+        data-action="search-music#confirm"
+      >この曲にする</button>
+    `
+    this.playerTarget.scrollIntoView({ behavior: 'smooth' })
+
+    console.log("▶ 挿入後の playerTarget.innerHTML:", this.playerTarget.innerHTML)
+
+  }
+
+  // 「この曲にする」ボタン押下時
+  confirm() {
+    // モーダル・検索UIを閉じる
     this.sectionTarget.style.display = "none"
   }
 }
