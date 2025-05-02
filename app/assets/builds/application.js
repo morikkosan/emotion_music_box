@@ -9002,21 +9002,6 @@ Controller.targets = [];
 Controller.outlets = [];
 Controller.values = {};
 
-// app/javascript/controllers/application.js
-var application = Application.start();
-application.debug = false;
-window.Stimulus = application;
-
-// app/javascript/controllers/hello_controller.js
-var hello_controller_default = class extends Controller {
-  connect() {
-    this.element.textContent = "Hello World!";
-  }
-};
-
-// app/javascript/controllers/index.js
-application.register("hello", hello_controller_default);
-
 // node_modules/bootstrap/dist/js/bootstrap.esm.js
 var bootstrap_esm_exports = {};
 __export(bootstrap_esm_exports, {
@@ -14191,6 +14176,146 @@ var Toast = class _Toast extends BaseComponent {
 enableDismissTrigger(Toast);
 defineJQueryPlugin(Toast);
 
+// app/javascript/controllers/modal_controller.js
+var modal_controller_default = class extends Controller {
+  connect() {
+    console.log("\u2705 Stimulus modal_controller connected");
+    const modal = Modal.getOrCreateInstance(this.element);
+    modal.show();
+  }
+};
+
+// app/javascript/controllers/search_music_controller.js
+var search_music_controller_default = class extends Controller {
+  static targets = [
+    "query",
+    // 検索ワード入力
+    "results",
+    // 結果表示エリア
+    "audio",
+    // hidden 音声URL
+    "track",
+    // hidden 曲名
+    "loading",
+    // 로딩インジケータ
+    "section"
+    // フォーム全体（選択後に非表示）
+  ];
+  connect() {
+    console.log("\u{1F3A7} search_music_controller connected");
+    this.currentPage = 1;
+    this.searchResults = [];
+  }
+  // 検索ボタン押下時に呼ばれる
+  async search() {
+    const q = this.queryTarget.value.trim();
+    if (!q) {
+      alert("\u691C\u7D22\u30EF\u30FC\u30C9\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044");
+      return;
+    }
+    this.loadingTarget.style.display = "";
+    try {
+      const res = await fetch(
+        `/soundcloud/search?q=${encodeURIComponent(q)}`,
+        {
+          headers: { "Accept": "application/json" },
+          credentials: "same-origin"
+        }
+      );
+      const json = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
+      this.searchResults = json;
+      this.currentPage = 1;
+      this._renderPage();
+    } catch (e) {
+      console.error("\u691C\u7D22\u30A8\u30E9\u30FC:", e);
+      alert("\u691C\u7D22\u306B\u5931\u6557\u3057\u307E\u3057\u305F\uFF1A " + e.message);
+    } finally {
+      this.loadingTarget.style.display = "none";
+    }
+  }
+  // ページごとに結果を描画
+  _renderPage() {
+    this.resultsTarget.innerHTML = "";
+    if (this.searchResults.length === 0) {
+      this.resultsTarget.innerHTML = "<p>\u8A72\u5F53\u3059\u308B\u97F3\u697D\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3067\u3057\u305F\u3002</p>";
+      return;
+    }
+    const perPage = 10;
+    const start4 = (this.currentPage - 1) * perPage;
+    const page = this.searchResults.slice(start4, start4 + perPage);
+    page.forEach((track) => {
+      const div = document.createElement("div");
+      div.classList.add("mb-3");
+      div.innerHTML = `
+        <p><strong>${track.title}</strong> - ${track.user.username}</p>
+        <a
+          href="${track.permalink_url}"
+          class="btn btn-info btn-sm mt-2"
+          target="_blank"
+        >SoundCloud\u3067\u518D\u751F</a>
+        <button
+          type="button"
+          class="btn btn-success btn-sm mt-2"
+          data-action="search-music#select"
+          data-audio="${track.permalink_url}"
+          data-name="${track.title}"
+          data-artist="${track.user.username}"
+        >\u9078\u629E</button>
+        <hr/>
+      `;
+      this.resultsTarget.appendChild(div);
+    });
+    const total = Math.ceil(this.searchResults.length / perPage);
+    const nav = document.createElement("div");
+    nav.classList.add("pagination-controls", "my-3");
+    if (this.currentPage > 1) {
+      const prev = document.createElement("button");
+      prev.type = "button";
+      prev.className = "btn btn-secondary me-2";
+      prev.textContent = "\u524D\u3078";
+      prev.dataset.action = "search-music#prevPage";
+      nav.appendChild(prev);
+    }
+    const info = document.createElement("span");
+    info.textContent = `\u30DA\u30FC\u30B8 ${this.currentPage} / ${total}`;
+    nav.appendChild(info);
+    if (this.currentPage < total) {
+      const next = document.createElement("button");
+      next.type = "button";
+      next.className = "btn btn-secondary ms-2";
+      next.textContent = "\u6B21\u3078";
+      next.dataset.action = "search-music#nextPage";
+      nav.appendChild(next);
+    }
+    this.resultsTarget.appendChild(nav);
+  }
+  prevPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this._renderPage();
+    }
+  }
+  nextPage() {
+    if (this.currentPage * 10 < this.searchResults.length) {
+      this.currentPage++;
+      this._renderPage();
+    }
+  }
+  // 「選択」ボタン押下時
+  select(e) {
+    const { audio, name, artist } = e.target.dataset;
+    this.audioTarget.value = audio;
+    this.trackTarget.value = `${name} - ${artist}`;
+    this.sectionTarget.style.display = "none";
+  }
+};
+
+// app/javascript/controllers/index.js
+var application = Application.start();
+application.register("modal", modal_controller_default);
+application.register("search-music", search_music_controller_default);
+
 // app/javascript/custom/comments.js
 document.addEventListener("DOMContentLoaded", function() {
   function createComment(text) {
@@ -14413,190 +14538,24 @@ console.log("\u2705 updateHPBar is now available globally:", typeof window.updat
 console.log("JavaScript is loaded successfully!");
 Rails.start();
 window.bootstrap = bootstrap_esm_exports;
-document.addEventListener("turbo:load", function() {
-  console.log("Turbo is disabled");
-  const button = document.getElementById("search-button");
-  if (button) {
-    button.addEventListener("click", () => {
-      searchMusicWithPagination();
-    });
-    button.dataset.listenerAdded = "true";
+document.addEventListener("turbo:after-stream-render", (event) => {
+  const turboStreamEl = event.detail.newStreamElement;
+  if (turboStreamEl.getAttribute("target") === "modal-content") {
+    const modalContainer = document.getElementById("modal-container");
+    if (modalContainer) {
+      const modalInstance = Modal.getOrCreateInstance(modalContainer);
+      modalInstance.show();
+    }
   }
 });
 document.addEventListener("turbo:load", () => {
   console.log("\u2705 Turbo loaded OK");
+  const button = document.getElementById("search-button");
+  if (button && button.dataset.listenerAdded !== "true") {
+    button.addEventListener("click", searchMusicWithPagination);
+    button.dataset.listenerAdded = "true";
+  }
 });
-var currentPage = 1;
-var searchResults = [];
-async function getSoundCloudClientID() {
-  try {
-    const response = await fetch("/soundcloud_client_id");
-    const data = await response.json();
-    return data.client_id;
-  } catch (error2) {
-    console.error("SoundCloud Client ID\u3092\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F:", error2);
-    return null;
-  }
-}
-async function searchMusicWithPagination() {
-  const clientId = await getSoundCloudClientID();
-  if (!clientId) {
-    alert("SoundCloud API \u30AD\u30FC\u304C\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093");
-    return;
-  }
-  const query = document.getElementById("music-search")?.value.trim();
-  if (!query) {
-    alert("\u691C\u7D22\u30EF\u30FC\u30C9\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044");
-    return;
-  }
-  console.log("\u{1F50D} \u691C\u7D22\u30EF\u30FC\u30C9:", query);
-  const loadingIndicator = document.getElementById("loading-indicator");
-  if (loadingIndicator) loadingIndicator.style.display = "block";
-  try {
-    const searchQuery = query;
-    const url = `https://api.soundcloud.com/tracks?q=${encodeURIComponent(searchQuery)}&limit=50`;
-    const token = window.soundcloudToken;
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Authorization": `OAuth ${token}`
-      }
-    });
-    const data = await response.json();
-    if (Array.isArray(data)) {
-      searchResults = data.map((track) => ({
-        name: track.title,
-        artist_name: track.user.username,
-        // ⚠ これだと埋め込みプレーヤーに無効
-        // audio: track.streamable ? `${track.stream_url}?client_id=${clientId}` : null,
-        // ✅ 公式プレーヤーで有効な公開URLを使う
-        audio: track.permalink_url,
-        // ←埋め込みにはこちらを使う
-        permalink: track.permalink_url
-      }));
-    } else {
-      console.error("Unexpected response format:", data);
-      alert("\u97F3\u697D\u60C5\u5831\u306E\u53D6\u5F97\u306B\u5931\u6557\u3057\u307E\u3057\u305F");
-    }
-    currentPage = 1;
-    displaySearchResults();
-  } catch (error2) {
-    console.error("\u691C\u7D22\u30A8\u30E9\u30FC:", error2);
-    alert("\u691C\u7D22\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002");
-  } finally {
-    if (loadingIndicator) loadingIndicator.style.display = "none";
-  }
-}
-window.displaySearchResults = function() {
-  const container = document.getElementById("search-results");
-  if (!container) return;
-  container.innerHTML = "";
-  if (!searchResults || searchResults.length === 0) {
-    container.innerHTML = "<p>\u8A72\u5F53\u3059\u308B\u97F3\u697D\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3067\u3057\u305F\u3002</p>";
-    return;
-  }
-  const itemsPerPage = 10;
-  const start4 = (currentPage - 1) * itemsPerPage;
-  const end2 = start4 + itemsPerPage;
-  const paginatedResults = searchResults.slice(start4, end2);
-  paginatedResults.forEach((track) => {
-    const audioUrl = track.audio;
-    const permalink = track.permalink;
-    const trackElement = document.createElement("div");
-    trackElement.innerHTML = `
-      <p><strong>${track.name}</strong> - ${track.artist_name}</p>
-      <a href="${permalink}" target="_blank" class="btn btn-sm btn-info mt-2">
-        SoundCloud\u3067\u518D\u751F
-      </a>
-      ${audioUrl ? `<button class="btn btn-sm btn-success mt-2"
-            type="button"
-            onclick="selectMusic('${audioUrl}', '${track.name}', '${track.artist_name}', this)">
-        \u9078\u629E
-      </button>` : ""}
-      <hr>
-    `;
-    container.appendChild(trackElement);
-  });
-  displayPaginationControls(container);
-};
-function displayPaginationControls(container) {
-  const totalPages = Math.ceil(searchResults.length / 10);
-  const paginationContainer = document.createElement("div");
-  paginationContainer.classList.add("pagination-controls");
-  if (currentPage > 1) {
-    paginationContainer.innerHTML += `<button class="btn btn-secondary mt-2" onclick="prevPage()">\u524D\u3078</button> `;
-  }
-  paginationContainer.innerHTML += ` <span>\u30DA\u30FC\u30B8 ${currentPage} / ${totalPages}</span> `;
-  if (currentPage < totalPages) {
-    paginationContainer.innerHTML += `<button class="btn btn-secondary mt-2" onclick="nextPage()">\u6B21\u3078</button>`;
-  }
-  container.appendChild(paginationContainer);
-}
-window.nextPage = function() {
-  if (currentPage * 10 < searchResults.length) {
-    currentPage++;
-    displaySearchResults();
-  }
-};
-window.prevPage = function() {
-  if (currentPage > 1) {
-    currentPage--;
-    displaySearchResults();
-  }
-};
-window.selectMusic = function(audioUrl, trackName, artistName, button) {
-  console.log("\u9078\u629E\u3057\u305F\u97F3\u697D\u306EURL:", audioUrl);
-  const audioInput = document.getElementById("selected-audio");
-  if (audioInput) {
-    audioInput.value = audioUrl;
-  }
-  document.querySelectorAll(".music-player-container").forEach((player) => player.remove());
-  const trackElement = button.parentElement;
-  const playerContainer = document.createElement("div");
-  playerContainer.classList.add("music-player-container");
-  playerContainer.setAttribute("data-turbo", "false");
-  const embedUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(audioUrl)}`;
-  playerContainer.innerHTML = `
-<iframe
-    width="600"
-    height="166"
-    scrolling="no"
-    frameborder="no"
-    allow="autoplay"
-    src="${embedUrl}">
-  </iframe>
-
-
-
-  <button class="btn btn-sm btn-primary mt-2" type="button"
-    onclick="chooseTrack('${audioUrl}', '${trackName}', '${artistName}')">
-    \u3053\u306E\u66F2\u306B\u3059\u308B
-  </button>
-`;
-  trackElement.appendChild(playerContainer);
-  alert(`\u300C${trackName}\u300D\u3092\u9078\u629E\u3057\u307E\u3057\u305F\uFF01`);
-};
-window.chooseTrack = function(audioUrl, trackName, artistName) {
-  console.log("\u3053\u306E\u66F2\u306B\u6C7A\u5B9A:", audioUrl);
-  const trackField = document.getElementById("selected-track");
-  if (trackField) {
-    trackField.value = `${trackName} / ${artistName}`;
-  }
-  alert(`\u300C${trackName}\u300D\u3092\u9078\u629E\u3057\u307E\u3057\u305F\uFF01`);
-  const searchSection = document.getElementById("search-section");
-  if (searchSection) {
-    searchSection.style.display = "none";
-  }
-};
-window.getSoundCloudClientID = getSoundCloudClientID;
-window.searchMusicWithPagination = searchMusicWithPagination;
-window.displaySearchResults = displaySearchResults;
-window.translateText = translateText;
-window.selectMusic = selectMusic;
-window.chooseTrack = chooseTrack;
-window.toggleMusic = null;
-window.nextPage = nextPage;
-window.prevPage = prevPage;
 /*! Bundled license information:
 
 @hotwired/turbo/dist/turbo.es2017-esm.js:

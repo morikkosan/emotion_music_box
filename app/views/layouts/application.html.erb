@@ -46,8 +46,9 @@
 
 <!-- ✅ ここが修正ポイント！ -->
 <body data-flash-notice="<%= j flash.now[:notice] %>" data-flash-alert="<%= j flash.now[:alert] %>">
-  <turbo-frame id="modal"></turbo-frame>
-  <p>🔍 Debug: <%= current_user.inspect %></p>
+
+  <turbo-frame id="modal-container"></turbo-frame>
+ <p>🔍 Debug: <%= current_user.inspect %></p>
 
   <div id="comment-container"></div>
 
@@ -70,6 +71,9 @@
 
 <script>
   window.SOUNDCLOUD_CLIENT_ID = "<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>";
+
+  window.soundcloudToken = "<%= ENV['SOUNDCLOUD_OAUTH_TOKEN'] %>";
+
 </script>
 
 <p style="color: rgb(241, 239, 239);">音楽は <a href="https://soundcloud.com" target="_blank" rel="noopener noreferrer" >SOUND CLOUD</a> より提供されています。</p>

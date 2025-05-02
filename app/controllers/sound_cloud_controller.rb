@@ -1,47 +1,51 @@
+# app/controllers/sound_cloud_controller.rb
 class SoundCloudController < ApplicationController
   require 'httparty'
+  # 認証不要にして誰でも使えるようにするか、
+  # before_action :authenticate_user! を残すかはお好みで
 
-  # SoundCloud APIからのclient_idを取得する
-  def client_id
-    render json: { client_id: ENV["SOUNDCLOUD_CLIENT_ID"] }
-  end
-
-  # ユーザーのアクセストークンを使って検索
+  # POST /soundcloud/search?q=...
   def search
-    # クエリパラメータがなければデフォルトを使用
     query = params[:q].to_s.strip.presence || "relax"
 
-    # 現在のユーザーからアクセストークンを取得
-    access_token = current_user.soundcloud_token
-
-    if access_token.nil?
-      render json: { error: "SoundCloudのアクセストークンがありません。ログインしてから検索してください。" }, status: :unauthorized
+    # 1) Client Credentials でアプリトークン取得
+    token = fetch_app_token
+    unless token
+      render json: { error: "アプリ用トークン取得に失敗しました" }, status: :bad_request
       return
     end
 
-    # SoundCloud APIの検索URL（アクセストークンを使用）
-    url = "https://api.soundcloud.com/tracks?q=#{URI.encode_www_form_component(query)}&limit=20"
+    # 2) 取得したトークンで検索
+    url = "https://api.soundcloud.com/tracks" +
+          "?q=#{URI.encode_www_form_component(query)}&limit=20"
+    sc_res = HTTParty.get(url, headers: { "Authorization" => "OAuth #{token}" })
 
-    begin
-      # リクエストにアクセストークンを追加
-      response = HTTParty.get(url, headers: { "Authorization" => "OAuth #{access_token}" })
-
-      # 成功した場合
-      if response.success?
-        json_data = JSON.parse(response.body)
-        @tracks = json_data || []  # もし結果がない場合は空配列を返す
-        render json: @tracks
-      else
-        # エラーの場合
-        render json: { error: "APIエラー: #{response.code}" }, status: :bad_request
-      end
-
-    rescue HTTParty::Error => e
-      # HTTPエラーの処理
-      render json: { error: "HTTPエラー: #{e.message}" }, status: :internal_server_error
-    rescue JSON::ParserError => e
-      # JSON解析エラーの処理
-      render json: { error: "JSON解析エラー: #{e.message}" }, status: :internal_server_error
+    if sc_res.success?
+      render json: JSON.parse(sc_res.body)
+    else
+      render json: {
+        error: "SoundCloud APIエラー",
+        code:  sc_res.code,
+        body:  sc_res.parsed_response
+      }, status: sc_res.code
     end
+  rescue => e
+    render json: { error: "例外発生: #{e.message}" }, status: :internal_server_error
+  end
+
+  private
+
+  # アプリ単位トークンを取得
+  def fetch_app_token
+    res = HTTParty.post(
+      "https://api.soundcloud.com/oauth2/token",
+      body: {
+        client_id:     ENV["SOUNDCLOUD_CLIENT_ID"],
+        client_secret: ENV["SOUNDCLOUD_CLIENT_SECRET"],
+        grant_type:    "client_credentials"
+      }
+    )
+    return JSON.parse(res.body)["access_token"] if res.success?
+    nil
   end
 end
