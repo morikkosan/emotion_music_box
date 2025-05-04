@@ -1,11 +1,19 @@
-<div class="container mt-5">
+<div class="container mt-5"
+data-controller="search-music">
   <h1 class="text-center mt-4">
-    <i class="bi bi-heart-pulse"></i>Record emotions<i class="bi bi-heart-pulse"></i>
+    <i class="bi bi-heart-pulse"></i> Record emotions <i class="bi bi-heart-pulse"></i>
   </h1>
 
   <div class="row justify-content-center">
     <div class="col-md-8">
-<%= form_with model: emotion_log, id: "emotion-form" do |form| %>
+  <%= form_with model: emotion_log,
+              id: "emotion-form",
+              local: true,
+              data: {
+                controller: "submit-handler",
+                action: "submit->submit-handler#submit"
+              } do |form| %>
+
         <div class="mb-4">
           <%= form.label :date, '日付' %>
           <%= form.date_field :date, class: 'form-control', max: Date.today.to_s %>
@@ -13,37 +21,33 @@
 
         <div class="mb-4">
           <%= form.label :emotion, '感情' %>
-          <%= form.select :emotion, [
-            ['めちゃくちゃ気分良い', 'めちゃくちゃ気分良い'],
-            ['気分良い', '気分良い'],
-            ['いつも通り', 'いつも通り'],
-            ['イライラ', 'イライラ'],
-            ['限界', '限界']], {}, class: 'form-control' %>
+          <%= form.select :emotion, ['最高', '気分良い', 'いつも通り', 'イライラ', '限界'], {}, class: 'form-control' %>
         </div>
 
-            <!-- 音楽検索UIなど省略（ここにそのまま残してOK） -->
-    <div class="mb-4">
-      <%= form.label :track_name, "選択した曲名" %>
-      <%= form.text_field :track_name, id: "selected-track", class: "form-control" %>
-    </div>
-    <div id="soundcloud-player-container" class="mt-3"></div>
+        <div class="mb-4">
+          <%= form.label :track_name, "選択した曲名" %>
+          <%= form.text_field :track_name, id: "selected-track", class: "form-control" %>
+          <%= form.hidden_field :music_url %> <!-- ← バリデーション回避 -->
 
-    <!-- ...他のフォーム要素... -->
+        </div>
 
-            <div class mb-4>
-            <%= form.label :description, '一言 吐いてみて' %>
-            <%= form.text_field :description, class: 'form-control' %>
-            </div>
-            <div class="d-flex justify-content-center">
-              <%= form.submit '記録する', class: 'btn btn-primary' %>
-            </div>
-          <% end %>
+        <div class="mb-4">
+          <%= form.label :description, '一言 吐いてみて' %>
+          <%= form.text_field :description, class: 'form-control' %>
+        </div>
+
+        <div class="d-flex justify-content-center">
+          <%= form.submit '記録する', class: 'btn btn-primary me-2' %>
+        <button type="button"
+                class="btn btn-warning"
+                data-action="search-music#backToSearch">
+          曲を選び直す
+        </button>
+
+        </div>
+      <% end %>
 
       <%= link_to '一覧に戻る', root_path, class: 'btn btn-secondary mt-3' %>
     </div>
   </div>
 </div>
-
-<script>
-  window.soundcloudToken = "<%= current_user.soundcloud_token %>";
-</script>
