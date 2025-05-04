@@ -12,6 +12,8 @@ Rails.application.routes.draw do
     collection do
       get :chart_data
       get :bookmarks
+      get :form
+      get  :form_switch
     end
   end
 

@@ -5719,7 +5719,7 @@ function setFormMode(mode) {
   );
   config.forms.mode = mode;
 }
-var Turbo = /* @__PURE__ */ Object.freeze({
+var Turbo2 = /* @__PURE__ */ Object.freeze({
   __proto__: null,
   navigator: navigator$1,
   session,
@@ -6427,7 +6427,7 @@ if (customElements.get("turbo-stream-source") === void 0) {
     element = element.parentElement;
   }
 })();
-window.Turbo = { ...Turbo, StreamActions };
+window.Turbo = { ...Turbo2, StreamActions };
 start2();
 
 // node_modules/@hotwired/turbo-rails/app/javascript/turbo/cable.js
@@ -14179,35 +14179,34 @@ defineJQueryPlugin(Toast);
 // app/javascript/controllers/modal_controller.js
 var modal_controller_default = class extends Controller {
   connect() {
-    console.log("\u2705 Stimulus modal_controller connected");
-    const modal = Modal.getOrCreateInstance(this.element);
-    modal.show();
+    console.log("\u{1F7E2} modal_controller connected");
+    const modals = document.querySelectorAll("#modal-container");
+    if (modals.length > 1) {
+      modals.forEach((el, idx) => {
+        if (idx < modals.length - 1) el.remove();
+      });
+    }
+    const bsModal = Modal.getOrCreateInstance(this.element);
+    bsModal.show();
+    const desc = this.element.querySelector("#emotion_log_description");
+    if (desc) setTimeout(() => desc.focus(), 100);
   }
 };
 
 // app/javascript/controllers/search_music_controller.js
 var search_music_controller_default = class extends Controller {
-  static targets = [
-    "query",
-    // 検索ワード入力
-    "results",
-    // 結果表示エリア
-    "audio",
-    // hidden 音声URL
-    "track",
-    // hidden 曲名
-    "loading",
-    // 로딩イン디케ータ
-    "section",
-    // フォーム全体（選択後に非表示）
-    "player"
-  ];
+  static targets = ["query", "results", "audio", "track", "loading", "section"];
+  /* =============================
+   * ライフサイクル
+   * ===========================*/
   connect() {
     console.log("\u{1F3A7} search_music_controller connected");
     this.currentPage = 1;
     this.searchResults = [];
   }
-  // 検索ボタン押下時に呼ばれる
+  /* =============================
+   * 検索処理
+   * ===========================*/
   async search() {
     const q = this.queryTarget.value.trim();
     if (!q) {
@@ -14216,27 +14215,26 @@ var search_music_controller_default = class extends Controller {
     }
     this.loadingTarget.style.display = "";
     try {
-      const res = await fetch(
-        `/soundcloud/search?q=${encodeURIComponent(q)}`,
-        {
-          headers: { "Accept": "application/json" },
-          credentials: "same-origin"
-        }
-      );
+      const res = await fetch(`/soundcloud/search?q=${encodeURIComponent(q)}`, {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin"
+      });
       const json = await res.json().catch(() => null);
       if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
       this.searchResults = json;
       this.currentPage = 1;
-      this._renderPage();
+      this.renderPage();
     } catch (e) {
       console.error("\u691C\u7D22\u30A8\u30E9\u30FC:", e);
-      alert("\u691C\u7D22\u306B\u5931\u6557\u3057\u307E\u3057\u305F\uFF1A " + e.message);
+      alert("\u691C\u7D22\u306B\u5931\u6557\u3057\u307E\u3057\u305F\uFF1A" + e.message);
     } finally {
       this.loadingTarget.style.display = "none";
     }
   }
-  // ページごとに結果を描画
-  _renderPage() {
+  /* =============================
+   * 検索結果ページ描画
+   * ===========================*/
+  renderPage() {
     this.resultsTarget.innerHTML = "";
     if (this.searchResults.length === 0) {
       this.resultsTarget.innerHTML = "<p>\u8A72\u5F53\u3059\u308B\u97F3\u697D\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3067\u3057\u305F\u3002</p>";
@@ -14247,24 +14245,17 @@ var search_music_controller_default = class extends Controller {
     const page = this.searchResults.slice(start4, start4 + perPage);
     page.forEach((track) => {
       const div = document.createElement("div");
-      div.classList.add("mb-3");
+      div.classList.add("track-result", "mb-3");
       div.innerHTML = `
-        <p><strong>${track.title}</strong> - ${track.user.username}</p>
-        <a
-          href="${track.permalink_url}"
-          class="btn btn-info btn-sm mt-2"
-          target="_blank"
-        >SoundCloud\u3067\u518D\u751F</a>
-        <button
-          type="button"
-          class="btn btn-success btn-sm mt-2"
-          data-action="search-music#select"
-          data-audio="${track.permalink_url}"
-          data-name="${track.title}"
-          data-artist="${track.user.username}"
-        >\u9078\u629E</button>
-        <hr/>
-      `;
+        <div class="d-flex align-items-center">
+          <img src="${track.artwork_url || "https://placehold.jp/100x100.png"}" class="img-thumbnail me-3" style="width:100px;height:100px;">
+          <div>
+            <p><strong>${track.title}</strong><br>${track.user.username}</p>
+            <a href="${track.permalink_url}" class="btn btn-info btn-sm" target="_blank">SoundCloud\u3067\u518D\u751F</a>
+            <button type="button" class="btn btn-success btn-sm" data-action="search-music#select" data-audio="${track.permalink_url}" data-name="${track.title}" data-artist="${track.user.username}">\u9078\u629E</button>
+          </div>
+        </div>
+        <div class="player-slot mt-2"></div><hr/>`;
       this.resultsTarget.appendChild(div);
     });
     const total = Math.ceil(this.searchResults.length / perPage);
@@ -14294,42 +14285,109 @@ var search_music_controller_default = class extends Controller {
   prevPage() {
     if (this.currentPage > 1) {
       this.currentPage--;
-      this._renderPage();
+      this.renderPage();
     }
   }
   nextPage() {
     if (this.currentPage * 10 < this.searchResults.length) {
       this.currentPage++;
-      this._renderPage();
+      this.renderPage();
     }
   }
-  // 「選択」ボタン押下時
+  /* =============================
+   * 曲選択 → プレイヤー表示
+   * ===========================*/
   select(e) {
-    console.log("\u26A1\uFE0F select fired:", e.target, "playerTarget:", this.playerTarget);
     const { audio, name, artist } = e.target.dataset;
     this.audioTarget.value = audio;
     this.trackTarget.value = `${name} - ${artist}`;
-    this.playerTarget.innerHTML = `
-      <iframe
-        width="100%"
-        height="166"
-        scrolling="no"
-        frameborder="no"
-        allow="autoplay"
-        src="https://w.soundcloud.com/player/?url=${encodeURIComponent(audio)}&auto_play=true">
-      </iframe>
-      <button
-        type="button"
-        class="btn btn-primary mt-2"
-        data-action="search-music#confirm"
-      >\u3053\u306E\u66F2\u306B\u3059\u308B</button>
-    `;
-    this.playerTarget.scrollIntoView({ behavior: "smooth" });
-    console.log("\u25B6 \u633F\u5165\u5F8C\u306E playerTarget.innerHTML:", this.playerTarget.innerHTML);
+    document.querySelectorAll(".player-slot").forEach((s) => s.innerHTML = "");
+    const slot = e.target.closest(".track-result").querySelector(".player-slot");
+    slot.innerHTML = `<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=${encodeURIComponent(audio)}&auto_play=true"></iframe><button type="button" class="btn btn-primary mt-2" data-action="search-music#confirm">\u3053\u306E\u66F2\u306B\u3059\u308B</button>`;
+    slot.scrollIntoView({ behavior: "smooth", block: "center" });
   }
-  // 「この曲にする」ボタン押下時
-  confirm() {
-    this.sectionTarget.style.display = "none";
+  /* =============================
+   * 検索フォーム → 記録フォーム
+   * ===========================*/
+  async confirm() {
+    await this.fetchAndSwap(`/emotion_logs/form_switch.turbo_stream?music_url=${encodeURIComponent(this.audioTarget.value)}&track_name=${encodeURIComponent(this.trackTarget.value)}`);
+  }
+  /* =============================
+   * 記録フォーム → 検索フォームへ戻る（モーダル作り直し）
+   * ===========================*/
+  async backToSearch() {
+    const modalEl = document.getElementById("modal-container");
+    if (modalEl) Modal.getOrCreateInstance(modalEl).hide();
+    const res = await fetch("/emotion_logs/new.turbo_stream", {
+      headers: { Accept: "text/vnd.turbo-stream.html" },
+      credentials: "same-origin"
+    });
+    if (!res.ok) {
+      alert("\u691C\u7D22\u30D5\u30A9\u30FC\u30E0\u518D\u53D6\u5F97\u306B\u5931\u6557");
+      return;
+    }
+    turbo_es2017_esm_exports.renderStreamMessage(await res.text());
+    const newModal = document.getElementById("modal-container");
+    if (newModal) Modal.getOrCreateInstance(newModal).show();
+    if (window.Stimulus?.enhance && newModal) {
+      const content = document.getElementById("modal-content");
+      if (content) window.Stimulus.enhance(content);
+    }
+  }
+  /* =============================
+   * Turbo Stream 取得＆モーダル更新（confirm 用）
+   * ===========================*/
+  async fetchAndSwap(url) {
+    try {
+      const res = await fetch(url, {
+        headers: { Accept: "text/vnd.turbo-stream.html" },
+        credentials: "same-origin"
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      turbo_es2017_esm_exports.renderStreamMessage(await res.text());
+      if (window.Stimulus?.enhance) {
+        const content = document.getElementById("modal-content");
+        if (content) window.Stimulus.enhance(content);
+      }
+      const modal = document.getElementById("modal-container");
+      if (modal) Modal.getOrCreateInstance(modal).show();
+    } catch (e) {
+      console.error("\u30E2\u30FC\u30C0\u30EB\u5207\u66FF\u30A8\u30E9\u30FC:", e);
+      alert("\u30E2\u30FC\u30C0\u30EB\u5207\u66FF\u306B\u5931\u6557\u3057\u307E\u3057\u305F");
+    }
+  }
+};
+
+// app/javascript/controllers/submit_handler_controller.js
+var submit_handler_controller_default = class extends Controller {
+  connect() {
+    console.log("\u{1F4DD} submit-handler connected");
+  }
+  submit(event) {
+    event.preventDefault();
+    const form = this.element;
+    const formData = new FormData(form);
+    fetch(form.action, {
+      method: "POST",
+      headers: { Accept: "application/json" },
+      body: formData
+    }).then((res) => res.json()).then((data) => {
+      if (data.success) {
+        const toastEl = document.getElementById("save-toast");
+        if (toastEl) {
+          const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+          toast.show();
+        }
+        setTimeout(() => {
+          window.location.href = data.redirect_url;
+        }, 1500);
+        return;
+      }
+      alert("\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + (data.errors || []).join("\\n"));
+    }).catch((error2) => {
+      console.error("\u9001\u4FE1\u30A8\u30E9\u30FC:", error2);
+      alert("\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
+    });
   }
 };
 
@@ -14337,6 +14395,7 @@ var search_music_controller_default = class extends Controller {
 var application = Application.start();
 application.register("modal", modal_controller_default);
 application.register("search-music", search_music_controller_default);
+application.register("submit-handler", submit_handler_controller_default);
 
 // app/javascript/custom/comments.js
 document.addEventListener("DOMContentLoaded", function() {
@@ -14560,14 +14619,10 @@ console.log("\u2705 updateHPBar is now available globally:", typeof window.updat
 console.log("JavaScript is loaded successfully!");
 Rails.start();
 window.bootstrap = bootstrap_esm_exports;
-document.addEventListener("turbo:after-stream-render", (event) => {
-  const turboStreamEl = event.detail.newStreamElement;
-  if (turboStreamEl.getAttribute("target") === "modal-content") {
-    const modalContainer = document.getElementById("modal-container");
-    if (modalContainer) {
-      const modalInstance = Modal.getOrCreateInstance(modalContainer);
-      modalInstance.show();
-    }
+document.addEventListener("turbo:after-stream-render", (ev) => {
+  if (ev.target instanceof Turbo.StreamElement && ev.target.target === "modal-content") {
+    const modal = document.getElementById("modal-container");
+    if (modal) Modal.getOrCreateInstance(modal).show();
   }
 });
 document.addEventListener("turbo:load", () => {

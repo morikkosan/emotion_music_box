@@ -19,12 +19,17 @@ class EmotionLogsController < ApplicationController
   end
 
   def new
-    @emotion_log = EmotionLog.new
+    @emotion_log = EmotionLog.new(
+      music_url: params[:music_url],
+      track_name: params[:track_name]
+    )
+  
     respond_to do |format|
-      format.turbo_stream # ←これでnew.turbo_stream.erbを返す
+      format.turbo_stream
       format.html
     end
   end
+  
 
   def create
     @emotion_log = current_user.emotion_logs.build(emotion_log_params)
@@ -69,6 +74,43 @@ class EmotionLogsController < ApplicationController
   def show
     @emotion_log = EmotionLog.find(params[:id])
   end
+
+
+
+# emotion_logs_controller.rbに新しく追加
+def form
+  @emotion_log = EmotionLog.new(
+    music_url: params[:music_url],
+    track_name: params[:track_name]
+  )
+
+  respond_to do |format|
+    format.turbo_stream do
+      render turbo_stream: turbo_stream.replace(
+        "modal-content",
+        partial: "emotion_logs/form",
+        locals: { emotion_log: @emotion_log }
+      )
+    end
+    format.html { redirect_to emotion_logs_path }
+  end
+end
+
+# app/controllers/emotion_logs_controller.rb
+def form_switch
+  @emotion_log = EmotionLog.new(form_switch_params)
+
+  respond_to do |format|
+    format.turbo_stream { render "emotion_logs/form_switch" }  # ← ②で作ったテンプレート
+  end
+end
+
+private
+def form_switch_params
+  params.permit(:track_name, :music_url)  # 必要なパラメータだけ
+end
+
+
 
   # def chart_data
   #   emotions = ['めちゃくちゃ気分良い', '気分良い', 'いつも通り', 'イライラ', '限界']
