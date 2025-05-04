@@ -1,14 +1,20 @@
-<%= turbo_stream.replace "modal-container" do %>
-  <div
-    class="modal fade"
-    id="modal-container"
-    tabindex="-1"
-    data-controller="modal"
-  >
-    <div class="modal-dialog">
-      <div class="modal-content" id="modal-content">
-        <%= render "search_form", emotion_log: @emotion_log %>
+<%= turbo_frame_tag "modal-frame" do %>
+  <%= turbo_stream.replace "modal-container" do %>
+    <div class="modal fade show"
+         id="modal-container"
+         tabindex="-1"
+         style="display:block;"
+         data-controller="modal">
+
+      <div class="modal-dialog">
+        <div class="modal-content" id="modal-content">
+          <% if @emotion_log.track_name.present? %>
+            <%= render "form", emotion_log: @emotion_log %>
+          <% else %>
+            <%= render "search_form", emotion_log: @emotion_log %>
+          <% end %>
+        </div>
       </div>
     </div>
-  </div>
+  <% end %>
 <% end %>
