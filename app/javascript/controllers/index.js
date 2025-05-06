@@ -2,6 +2,8 @@ import { Application } from "@hotwired/stimulus";
 import ModalController from "./modal_controller";
 import SearchMusicController from "./search_music_controller";
 import SubmitHandlerController from "./submit_handler_controller";
+import RecordBtnController from "./record_btn_controller"  // ← 追加
+
 
 const application = Application.start(); // ← 最初に application を定義！
 
