@@ -10,6 +10,6 @@
       <%= render 'bookmark', emotion_log: emotion_log %>
     <% end %>
   <% else %>
-    <%= link_to 'ログインしてブックマークする', new_user_session_path, class: 'btn btn-primary' %>
+    <%= link_to 'ログインしてブックマークする', user_soundcloud_omniauth_authorize_path, class: 'btn btn-primary' %>
   <% end %>
 </div>
