@@ -1,49 +1,107 @@
-// app/javascript/packs/application.js
-console.log("JavaScript is loaded successfully!");
-
-/* --------------------------------------------------
- * 基本ライブラリのセットアップ
- * --------------------------------------------------*/
 import Rails from "@rails/ujs";
-Rails.start();
-
 import "@hotwired/turbo-rails";
-import "./controllers";
-
 import * as bootstrap from "bootstrap";
+
+Rails.start();
 window.bootstrap = bootstrap;
 
-/* --------------------------------------------------
- * カスタム JS（必要に応じてコメントアウト解除）
- * --------------------------------------------------*/
-import "./custom/comments";
-import "./custom/gages_test";
-import "./custom/flash_messages";
-// import "./custom/search_music";
-
-/* --------------------------------------------------
- * Turbo Stream: modal-content が差し替えられた直後にモーダルを再表示
- * --------------------------------------------------*/
-document.addEventListener("turbo:after-stream-render", (ev) => {
-  if (
-    ev.target instanceof Turbo.StreamElement &&
-    ev.target.target === "modal-content"
-  ) {
-    const modal = document.getElementById("modal-container");
-    if (modal) bootstrap.Modal.getOrCreateInstance(modal).show();
-  }
-});
-
-/* --------------------------------------------------
- * Turbo が完全にロードされた後の初期化
- * --------------------------------------------------*/
 document.addEventListener("turbo:load", () => {
-  console.log("✅ Turbo loaded OK");
+  console.log("✅ Avatar cropper JS is active");
 
-  // 例: 検索ボタンにクリックイベントを付与（重複登録防止）
-  const button = document.getElementById("search-button");
-  if (button && button.dataset.listenerAdded !== "true") {
-    button.addEventListener("click", searchMusicWithPagination);
-    button.dataset.listenerAdded = "true";
+  const fileInput     = document.getElementById("avatarInput");
+  const inlinePreview = document.getElementById("avatarPreviewInline");
+  const hiddenField   = document.getElementById("croppedAvatarData");
+  const modalEl       = document.getElementById("avatarCropModal");
+  const cropContainer = document.getElementById("cropContainer");
+  const cropImage     = document.getElementById("cropImage");
+  const confirmBtn    = document.getElementById("cropConfirmBtn");
+
+  if (![fileInput, inlinePreview, hiddenField, modalEl, cropContainer, cropImage, confirmBtn].every(Boolean)) {
+    console.error("❌ 必要な要素が見つかりません");
+    return;
   }
+
+  const modal = new bootstrap.Modal(modalEl);
+  let startX = 0, startY = 0;
+  let isDragging = false, dragStartX = 0, dragStartY = 0;
+
+  function updateTransform() {
+    const transform = `translate(${startX}px, ${startY}px)`;
+    cropImage.style.transform = transform;
+    console.log(`🎯 画像 transform 更新: ${transform}`);
+  }
+
+  // 初期スタイル設定
+  cropImage.style.position = "absolute";
+  cropImage.style.top = "0";
+  cropImage.style.left = "0";
+  cropImage.style.userSelect = "none";
+  cropImage.style.webkitUserSelect = "none"; // Safari用
+  cropImage.style.maxWidth = "none";
+  cropImage.style.maxHeight = "none";
+  cropImage.draggable = false;
+
+  cropContainer.style.cursor = "grab";
+  cropContainer.style.touchAction = "none"; // これが超重要！
+
+  // ファイルが選ばれた時の処理
+  fileInput.addEventListener("change", e => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      cropImage.src = reader.result;
+      console.log("🖼️ 画像読み込み成功");
+      startX = 0;
+      startY = 0;
+      updateTransform();
+      modal.show();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  cropContainer.addEventListener("pointerdown", e => {
+    console.log("👉 pointerdown", e.clientX, e.clientY);
+    e.preventDefault();
+    isDragging = true;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    cropContainer.setPointerCapture(e.pointerId);
+    cropContainer.style.cursor = "grabbing";
+  });
+
+  cropContainer.addEventListener("pointermove", e => {
+    if (!isDragging) return;
+    const dx = e.clientX - dragStartX;
+    const dy = e.clientY - dragStartY;
+    startX += dx;
+    startY += dy;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    console.log("✋ pointermove →", { dx, dy, startX, startY });
+    updateTransform();
+  });
+
+  cropContainer.addEventListener("pointerup", e => {
+    console.log("🖐 pointerup");
+    if (isDragging) {
+      isDragging = false;
+      cropContainer.releasePointerCapture(e.pointerId);
+      cropContainer.style.cursor = "grab";
+    }
+  });
+
+  confirmBtn.addEventListener("click", () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 80;
+    canvas.height = 80;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(cropImage, -startX, -startY);
+    const dataUrl = canvas.toDataURL("image/png");
+
+    console.log("✅ トリミング完了 → プレビューと hidden に反映");
+    inlinePreview.src = dataUrl;
+    hiddenField.value = dataUrl;
+    modal.hide();
+  });
 });
