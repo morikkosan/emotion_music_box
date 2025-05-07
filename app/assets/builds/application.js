@@ -11732,7 +11732,6 @@ defineJQueryPlugin(Toast);
 Rails.start();
 window.bootstrap = bootstrap_esm_exports;
 document.addEventListener("turbo:load", () => {
-  console.log("\u2705 Avatar cropper JS is active");
   const fileInput = document.getElementById("avatarInput");
   const inlinePreview = document.getElementById("avatarPreviewInline");
   const hiddenField = document.getElementById("croppedAvatarData");
@@ -11748,9 +11747,7 @@ document.addEventListener("turbo:load", () => {
   let startX = 0, startY = 0;
   let isDragging = false, dragStartX = 0, dragStartY = 0;
   function updateTransform() {
-    const transform = `translate(${startX}px, ${startY}px)`;
-    cropImage.style.transform = transform;
-    console.log(`\u{1F3AF} \u753B\u50CF transform \u66F4\u65B0: ${transform}`);
+    cropImage.style.transform = `translate(${startX}px, ${startY}px)`;
   }
   cropImage.style.position = "absolute";
   cropImage.style.top = "0";
@@ -11768,7 +11765,6 @@ document.addEventListener("turbo:load", () => {
     const reader = new FileReader();
     reader.onload = () => {
       cropImage.src = reader.result;
-      console.log("\u{1F5BC}\uFE0F \u753B\u50CF\u8AAD\u307F\u8FBC\u307F\u6210\u529F");
       startX = 0;
       startY = 0;
       updateTransform();
@@ -11777,7 +11773,6 @@ document.addEventListener("turbo:load", () => {
     reader.readAsDataURL(file);
   });
   cropContainer.addEventListener("pointerdown", (e) => {
-    console.log("\u{1F449} pointerdown", e.clientX, e.clientY);
     e.preventDefault();
     isDragging = true;
     dragStartX = e.clientX;
@@ -11793,11 +11788,9 @@ document.addEventListener("turbo:load", () => {
     startY += dy;
     dragStartX = e.clientX;
     dragStartY = e.clientY;
-    console.log("\u270B pointermove \u2192", { dx, dy, startX, startY });
     updateTransform();
   });
   cropContainer.addEventListener("pointerup", (e) => {
-    console.log("\u{1F590} pointerup");
     if (isDragging) {
       isDragging = false;
       cropContainer.releasePointerCapture(e.pointerId);
@@ -11806,12 +11799,27 @@ document.addEventListener("turbo:load", () => {
   });
   confirmBtn.addEventListener("click", () => {
     const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
     canvas.width = 80;
     canvas.height = 80;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(cropImage, -startX, -startY);
+    const viewWidth = cropContainer.clientWidth;
+    const viewHeight = cropContainer.clientHeight;
+    const scaleX = cropImage.naturalWidth / cropImage.clientWidth;
+    const scaleY = cropImage.naturalHeight / cropImage.clientHeight;
+    const sx = startX * -1 * scaleX;
+    const sy = startY * -1 * scaleY;
+    ctx.drawImage(
+      cropImage,
+      sx,
+      sy,
+      viewWidth * scaleX,
+      viewHeight * scaleY,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
     const dataUrl = canvas.toDataURL("image/png");
-    console.log("\u2705 \u30C8\u30EA\u30DF\u30F3\u30B0\u5B8C\u4E86 \u2192 \u30D7\u30EC\u30D3\u30E5\u30FC\u3068 hidden \u306B\u53CD\u6620");
     inlinePreview.src = dataUrl;
     hiddenField.value = dataUrl;
     modal.hide();
