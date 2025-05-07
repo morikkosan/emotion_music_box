@@ -12,6 +12,8 @@ Rails.application.routes.draw do
     collection do
       get :chart_data
       get :bookmarks
+      get :form
+      get  :form_switch
     end
   end
 
@@ -19,7 +21,7 @@ Rails.application.routes.draw do
   get 'jamendo/search', to: 'jamendo#search'
   resources :bookmarks, only: %i[create destroy]
   get "/soundcloud_client_id", to: "sound_cloud#client_id"
-
+  get "/soundcloud/search",    to: "sound_cloud#search"
   get "up" => "rails/health#show", as: :rails_health_check
   get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest

@@ -23,6 +23,7 @@
     "autoprefixer": "^10.4.20",
     "bootstrap": "^5.3.5",
     "bootstrap-icons": "^1.11.3",
+    "bootswatch": "^5.3.5",
     "chart.js": "^4.4.7",
     "chartkick": "^5.0.1",
     "nodemon": "^3.1.9",

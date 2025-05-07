@@ -1,21 +1,20 @@
-<%= turbo_stream.update "modal" do %>
-  <div class="modal fade" id="modal-container" tabindex="-1" role="dialog">
-    <div class="modal-dialog">
-      <div class="modal-content p-4">
-        <%= render partial: "form", locals: { emotion_log: @emotion_log } %>
+<%= turbo_frame_tag "modal-frame" do %>
+  <%= turbo_stream.replace "modal-container" do %>
+    <div class="modal fade show"
+         id="modal-container"
+         tabindex="-1"
+         style="display:block;"
+         data-controller="modal">
+
+      <div class="modal-dialog">
+        <div class="modal-content" id="modal-content">
+          <% if @emotion_log.track_name.present? %>
+            <%= render "form", emotion_log: @emotion_log %>
+          <% else %>
+            <%= render "search_form", emotion_log: @emotion_log %>
+          <% end %>
+        </div>
       </div>
     </div>
-  </div>
-  <script>
-    setTimeout(() => {
-      const modalEl = document.getElementById("modal-container");
-      if (modalEl) {
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
-        console.log("✅ モーダル表示成功");
-      } else {
-        console.warn("❌ modal-container が見つかりませんでした");
-      }
-    }, 0);
-  </script>
+  <% end %>
 <% end %>
