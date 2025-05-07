@@ -1,3 +1,4 @@
+// app/javascript/avatar_cropper.js
 import Rails from "@rails/ujs";
 import "@hotwired/turbo-rails";
 import * as bootstrap from "bootstrap";
@@ -23,21 +24,23 @@ document.addEventListener("turbo:load", () => {
   let startX = 0, startY = 0;
   let isDragging = false, dragStartX = 0, dragStartY = 0;
 
-  function updateTransform() {
+  function updateTransform () {
     cropImage.style.transform = `translate(${startX}px, ${startY}px)`;
   }
 
-  cropImage.style.position = "absolute";
-  cropImage.style.top = "0";
-  cropImage.style.left = "0";
-  cropImage.style.userSelect = "none";
+  // --- 初期スタイル ---
+  cropImage.style.position      = "absolute";
+  cropImage.style.top           = "0";
+  cropImage.style.left          = "0";
+  cropImage.style.userSelect    = "none";
   cropImage.style.webkitUserSelect = "none";
-  cropImage.style.maxWidth = "none";
-  cropImage.style.maxHeight = "none";
-  cropImage.draggable = false;
-  cropContainer.style.cursor = "grab";
+  cropImage.style.maxWidth      = "none";
+  cropImage.style.maxHeight     = "none";
+  cropImage.draggable           = false;
+  cropContainer.style.cursor    = "grab";
   cropContainer.style.touchAction = "none";
 
+  // --- ファイル選択 ---
   fileInput.addEventListener("change", e => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -52,11 +55,12 @@ document.addEventListener("turbo:load", () => {
     reader.readAsDataURL(file);
   });
 
+  // --- ドラッグ移動 ---
   cropContainer.addEventListener("pointerdown", e => {
     e.preventDefault();
-    isDragging = true;
-    dragStartX = e.clientX;
-    dragStartY = e.clientY;
+    isDragging  = true;
+    dragStartX  = e.clientX;
+    dragStartY  = e.clientY;
     cropContainer.setPointerCapture(e.pointerId);
     cropContainer.style.cursor = "grabbing";
   });
@@ -65,8 +69,8 @@ document.addEventListener("turbo:load", () => {
     if (!isDragging) return;
     const dx = e.clientX - dragStartX;
     const dy = e.clientY - dragStartY;
-    startX += dx;
-    startY += dy;
+    startX  += dx;
+    startY  += dy;
     dragStartX = e.clientX;
     dragStartY = e.clientY;
     updateTransform();
@@ -80,17 +84,17 @@ document.addEventListener("turbo:load", () => {
     }
   });
 
-  confirmBtn.addEventListener("click", () => {
+  // --- クロップ確定 ---
+  confirmBtn.addEventListener("click", async () => {
     const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    canvas.width = 80;
+    const ctx    = canvas.getContext("2d");
+    canvas.width  = 80;
     canvas.height = 80;
 
-    // cropContainer と cropImage のサイズ情報
-    const viewWidth = cropContainer.clientWidth;
+    // 表示領域と画像のスケール
+    const viewWidth  = cropContainer.clientWidth;
     const viewHeight = cropContainer.clientHeight;
-
-    const scaleX = cropImage.naturalWidth / cropImage.clientWidth;
+    const scaleX = cropImage.naturalWidth  / cropImage.clientWidth;
     const scaleY = cropImage.naturalHeight / cropImage.clientHeight;
 
     const sx = startX * -1 * scaleX;
@@ -107,6 +111,28 @@ document.addEventListener("turbo:load", () => {
     const dataUrl = canvas.toDataURL("image/png");
     inlinePreview.src = dataUrl;
     hiddenField.value = dataUrl;
-    modal.hide();
+
+    // ===== Cloudinary へアップロード（既存処理は変更せず追加のみ） =====
+    try {
+      const blob = await (await fetch(dataUrl)).blob();
+      const fd   = new FormData();
+      fd.append("file", blob, "avatar.png");
+      fd.append("upload_preset", window.CLOUDINARY_UPLOAD_PRESET);
+
+      const res = await axios.post(
+        `https://api.cloudinary.com/v1_1/${window.CLOUDINARY_CLOUD_NAME}/upload`,
+        fd // ← FormData
+        // 👇この headers 行は削除！
+        // { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      inlinePreview.src = res.data.secure_url;
+      hiddenField.value = res.data.secure_url;
+    } catch (err) {
+      console.error("Cloudinary upload failed", err);
+    } finally {
+      modal.hide();
+    }
+    // ======================================================================
   });
 });

@@ -11797,7 +11797,7 @@ document.addEventListener("turbo:load", () => {
       cropContainer.style.cursor = "grab";
     }
   });
-  confirmBtn.addEventListener("click", () => {
+  confirmBtn.addEventListener("click", async () => {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     canvas.width = 80;
@@ -11822,7 +11822,23 @@ document.addEventListener("turbo:load", () => {
     const dataUrl = canvas.toDataURL("image/png");
     inlinePreview.src = dataUrl;
     hiddenField.value = dataUrl;
-    modal.hide();
+    try {
+      const blob = await (await fetch(dataUrl)).blob();
+      const fd = new FormData();
+      fd.append("file", blob, "avatar.png");
+      fd.append("upload_preset", window.CLOUDINARY_UPLOAD_PRESET);
+      const res = await axios.post(
+        `https://api.cloudinary.com/v1_1/${window.CLOUDINARY_CLOUD_NAME}/upload`,
+        fd,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      inlinePreview.src = res.data.secure_url;
+      hiddenField.value = res.data.secure_url;
+    } catch (err) {
+      console.error("Cloudinary upload failed", err);
+    } finally {
+      modal.hide();
+    }
   });
 });
 /*! Bundled license information:
