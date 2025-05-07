@@ -1,75 +1,136 @@
+<%# app/views/devise/registrations/edit.html.erb %>
+<%# Cropper.js 用 CSS はレイアウトで読み込まれている想定です %>
+<% content_for :head do %>
+  <%= stylesheet_link_tag "application", media: "all", "data-turbo-track": "reload" %>
+<% end %>
+
 <div class="container d-flex justify-content-center align-items-center min-vh-100">
   <div class="card p-4" style="width: 100%; max-width: 500px;">
     <% if resource.soundcloud_uid.blank? %>
-  <div class="alert alert-warning">
-    SoundCloudアカウントが連携されていません。連携するには以下のボタンをクリックしてください。
-  </div>
-  <div class="text-center">
-    <%= link_to "SoundCloud連携を行う", user_soundcloud_omniauth_authorize_path, class: "btn btn-info" %>
-  </div>
-<% end %>  <!-- 🔹 SoundCloud 連携がされていない場合のみ表示 -->
+      <div class="alert alert-warning">
+        SoundCloudアカウントが連携されていません。連携するには以下のボタンをクリックしてください。
+      </div>
+      <div class="text-center mb-3">
+        <%= link_to "SoundCloud連携を行う",
+                    user_soundcloud_omniauth_authorize_path,
+                    class: "btn btn-info" %>
+      </div>
+    <% end %>
+
     <h2 class="text-center mb-4">プロフィール編集</h2>
 
-    <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :patch }) do |f| %>
-      <!-- <%= hidden_field_tag :authenticity_token, form_authenticity_token %> -->
+    <%= form_for(resource, as: resource_name,
+                 url: registration_path(resource_name),
+                 html: { method: :patch, multipart: true }) do |f| %>
+
       <%= render "devise/shared/error_messages", resource: resource %>
 
+      <!-- 名前 -->
       <div class="form-group">
         <%= f.label :name %> <span class="text-danger">*</span><br />
-        <%= f.text_field :name, class: "form-control", placeholder: "Enter your name" %>
+        <%= f.text_field :name,
+                         class: "form-control",
+                         placeholder: "Enter your name" %>
       </div>
 
+      <!-- 性別 -->
       <div class="form-group">
         <%= f.label :gender %><br />
-        <%= f.select :gender, [["未選択", ""], ["男性", "male"], ["女性", "female"], ["その他", "other"]],
-                      {}, class: "form-control" %>
+        <%= f.select :gender,
+                     [["未選択", ""], ["男性", "male"], ["女性", "female"], ["その他", "other"]],
+                     {}, class: "form-control" %>
       </div>
 
+      <!-- 年齢 -->
       <div class="form-group">
         <%= f.label :age %><br />
-        <%= f.number_field :age, class: "form-control", min: 0, max: 120, placeholder: "年齢を入力（任意）" %>
+        <%= f.number_field :age,
+                           class: "form-control",
+                           min: 0, max: 120,
+                           placeholder: "年齢を入力（任意）" %>
       </div>
 
-      <div class="form-group">
-        <%= f.label :email %> <span class="text-danger">*</span><br />
-        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control" %>
+      <!-- アバターまわり -->
+      <div class="form-group text-center mt-3">
+        <%# インライン表示用のプレビューに avatarPreviewInline の ID を付与 %>
+        <% if resource.avatar.attached? %>
+          <%= image_tag resource.avatar.variant(resize_to_fill: [80, 80]).processed,
+                        id:    "avatarPreviewInline",
+                        class: "rounded-circle mb-2",
+                        alt:   "現在のアイコン" %><br>
+        <% else %>
+          <%= image_tag "default_stick_figure.png",
+                        id:    "avatarPreviewInline",
+                        size:  "80x80",
+                        class: "rounded-circle mb-2",
+                        alt:   "デフォルトアイコン" %><br>
+        <% end %>
+
+        <%= f.file_field :avatar,
+                         id:    "avatarInput",
+                         class: "form-control-file" %>
+
+        <%= f.hidden_field :cropped_avatar_data,
+                           id: "croppedAvatarData" %>
       </div>
 
-      <% if resource.provider.blank? %>  <%# 🔹 OAuth ユーザーでない場合のみパスワードを表示 %>
-        <div class="form-group">
-          <%= f.label :password %> <span class="text-danger">*</span> <i>(変更しない場合は空のまま)</i>
-          <% if @minimum_password_length %>
-            <em>(<%= @minimum_password_length %> characters minimum)</em>
-          <% end %><br />
-          <%= f.password_field :password, autocomplete: "new-password", class: "form-control" %>
-        </div>
-
-        <div class="form-group">
-          <%= f.label :password_confirmation %> <span class="text-danger">*</span><br />
-          <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "form-control" %>
-        </div>
-
-        <div class="form-group">
-          <%= f.label :current_password %> <span class="text-danger">*</span> <i>(変更を保存するには現在のパスワードが必要です)</i><br />
-          <%= f.password_field :current_password, autocomplete: "current-password", class: "form-control" %>
+      <!-- 画像削除 -->
+      <% if resource.avatar.attached? %>
+        <div class="form-group text-center">
+          <%= f.check_box :remove_avatar %>
+          <%= f.label :remove_avatar, "画像を削除する" %>
         </div>
       <% end %>
 
+      <!-- 更新ボタン -->
       <div class="form-group text-center">
         <%= f.submit "更新", class: "btn btn-primary" %>
       </div>
     <% end %>
 
+    <hr>
+
+    <!-- アカウント削除 -->
     <h3 class="text-center mt-3">アカウント削除</h3>
-    <p class="text-center text-muted">アカウントを削除すると、すべてのデータが失われます。</p>
-    <div class="text-center">
-      <%= button_to "アカウント削除", registration_path(resource_name),
-                    data: { confirm: "本当に削除しますか？", turbo_confirm: "本当に削除しますか？" },
-                    method: :delete, class: "btn btn-danger" %>
+    <p class="text-center text-muted">
+      アカウントを削除すると、すべてのデータが失われます。
+    </p>
+    <div class="text-center mb-3">
+      <%= button_to "アカウント削除",
+                    registration_path(resource_name),
+                    method: :delete,
+                    data: { confirm: "本当に削除しますか？" },
+                    class: "btn btn-danger" %>
     </div>
 
-    <p class="card-text mt-3 text-center">
-      <%= link_to 'トップに戻る', emotion_logs_path, class: 'btn btn-secondary btn-sm' %>
+    <p class="text-center">
+      <%= link_to 'トップに戻る',
+                  emotion_logs_path,
+                  class: 'btn btn-secondary btn-sm' %>
     </p>
+  </div>
+</div>
+
+<!-- Cropper 用モーダルを追加 -->
+<div class="modal fade" id="avatarCropModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">アイコンをトリミング</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body d-flex justify-content-center">
+        <!-- 正方形ビューポート -->
+        <div id="cropContainer"
+             style="width:300px;height:300px;overflow:hidden;position:relative;background:#eee;">
+             <img id="cropImage"
+             src=""
+             style="position:absolute; top:0; left:0; cursor:grab; max-width:none; max-height:none; user-select:none;" />
+        
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="cropConfirmBtn" class="btn btn-primary">確定</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+      </div>
+    </div>
   </div>
 </div>
