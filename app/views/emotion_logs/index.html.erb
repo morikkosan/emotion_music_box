@@ -1,9 +1,20 @@
 <div class="container mt-5 position-relative">
   <div class="text-center mt-4 d-flex align-items-center justify-content-center w-90">
     <%= link_to emotion_logs_path do %>
-      <%= image_tag "logo1.png", alt: "Emotion List Logo", class: "img-fluid", style: "max-width: 700px; width: 100%;" %>
+      <%= image_tag "logo1.png",
+      alt: "Emotion List Logo",
+      class: "img-fluid neon-icon",
+      style: "max-width: 700px; width: 100%;" %>
     <% end %>
   </div>
+
+<% unless user_signed_in? %>
+  <div class="text-center mt-5 mb-4">
+    <h1 style="font-size: 3rem; font-weight: bold; color:rgb(215, 205, 216); text-shadow: 0 0 10px, rgb(30, 228, 218);">
+      音楽とストレスを支配する
+    </h1>
+  </div>
+<% end %>
 
   <!-- DJロボットの画像 -->
   <div class="dj-icon" style="position: absolute; top: 20px; right: 20px;">
@@ -76,27 +87,47 @@
 
 
 <% unless user_signed_in? %>
-<%= link_to "SoundCloudでログイン", user_soundcloud_omniauth_authorize_path, class: "btn btn-primary" %>
+  <div class="neon-btn-panel">
+    <%= link_to "https://soundcloud.com/signup", target: "_blank", rel: "noopener", class: "neon-btn btn-neon-xl" do %>
+      <div class="neon-btn-title">新規作成</div>
+      <div class="neon-btn-sub">(SoundCloudアカウントも簡単作成)</div>
+    <% end %>
+
+    <%= link_to user_soundcloud_omniauth_authorize_path, class: "neon-btn btn-neon-xl" do %>
+      <div class="neon-btn-title">ログインして始める</div>
+    <% end %>
+  </div>
+
+ <div class="neon-btn-footer large-text">
+  <strong>※ はじめての方は新規作成で登録後、<br>
+  この画面に戻って「ログインして始める」をクリックしてください。</strong>
+</div>
 <% end %>
 
-<% unless user_signed_in? %>
-<%= link_to "SoundCloudでログイン", user_soundcloud_omniauth_authorize_path, class: "btn btn-primary" %>
-<% end %>
-  
+
+
+
+
+
+<% if user_signed_in? %>
 
 &nbsp;&nbsp;
 
 <br>
 <br>
-<div id="hp-bar-container">
-  <span class="today_mental_text">👆Today's stress level<span id="bar-width-display"></span>)👆</span>
-  <p id="hp-status-text">メンタル正常</p>  <!-- ここにメッセージを表示 -->
-  <div id="hp-bar"></div>
-</div>
+  <div id="hp-bar-container">
+    <span class="today_mental_text">
+      👆Today's stress level <span id="bar-width-display"></span>)👆
+    </span>
+    <p id="hp-status-text">メンタル正常</p>
+    <div id="hp-bar"></div>
+  </div>
 <br>
 <br>
 <br>
 <br>
+<% end %>
+
 
 
 
@@ -135,12 +166,21 @@
 </div> <!-- row -->
 
   <!-- ページネーション -->
+  <% if user_signed_in? %>
+
 <div class="mt-3 text-center">
   <%= paginate @emotion_logs %>
 </div>
-<%= link_to '今日の気持ちを記録する',
+<%= link_to "今日の気持ちを記録する",
             new_emotion_log_path(format: :turbo_stream),
-            data: { turbo_frame: "modal" },
-            class: 'btn btn-primary' %>
+            id: "record-button",
+            data: {
+              controller:    "record-btn",
+              action:        "click->record-btn#hide",
+              turbo_prefetch: false    # ← ここ！
+            },
+            class: "btn btn-primary floating-btn" %>
+
   </div>
+  <% end %>
 

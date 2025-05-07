@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <title><%= content_for(:title) || "EMOTION MUSIC BOX" %></title>
   <meta charset="utf-8">
@@ -16,65 +15,68 @@
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icon.png">
 
-  <!-- ▼ アプリケーションCSS -->
   <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
-
-  <!-- ▼ アプリケーションJS。module + defer でHTMLパースをブロックしない -->
   <%= javascript_include_tag "application",
-  "data-turbo-track": "reload",
-  type: "module",
-  defer: true %>
+        "data-turbo-track": "reload",
+        type: "module",
+        defer: true %>
 
-
-
-  <!-- ▼ Font Awesome（アイコン）-->
+  <!-- 追加ライブラリ -->
   <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-  <!-- ▼ Google Fonts（フォント） -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap"
         rel="stylesheet">
-
-  <!-- ▼ GSAP（アニメーション用） -->
-  <script defer
-          src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
-
-  <!-- ▼ SweetAlert2（ポップアップライブラリ） -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
-
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script defer src="https://w.soundcloud.com/player/api.js"></script>
 </head>
 
-<!-- ✅ ここが修正ポイント！ -->
-<body data-flash-notice="<%= j flash.now[:notice] %>" data-flash-alert="<%= j flash.now[:alert] %>">
-  <turbo-frame id="modal"></turbo-frame>
+<body data-flash-notice="<%= j flash.now[:notice] %>"
+      data-flash-alert="<%= j flash.now[:alert] %>">
+
+  <turbo-frame id="modal-container"></turbo-frame>
   <p>🔍 Debug: <%= current_user.inspect %></p>
 
   <div id="comment-container"></div>
 
   <%= yield %>
 
-  <!-- ✅ BGM再生スクリプト -->
+  <!-- ✅ BGM 再生ボタン用関数 -->
   <script>
-    function toggleAudio() {
-      var audio = document.getElementById('audioPlayer');
-      var icon = document.getElementById('audioButtonIcon');
+    function toggleAudio () {
+      const audio = document.getElementById('audioPlayer');
+      const icon  = document.getElementById('audioButtonIcon');
+      if (!audio) return;
       if (audio.paused) {
-        audio.play();
-        icon.innerHTML = '❚❚';  // 再生中は停止ボタンアイコン
+        audio.play();   icon.textContent = '❚❚';
       } else {
-        audio.pause();
-        icon.innerHTML = '♪';   // 停止中は再生ボタンアイコン
+        audio.pause();  icon.textContent = '♪';
       }
     }
   </script>
 
-<script>
-  window.SOUNDCLOUD_CLIENT_ID = "<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>";
-</script>
+  <!-- ✅ 保存完了トースト -->
+  <div aria-live="polite" aria-atomic="true"
+       class="position-fixed top-0 end-0 p-3" style="z-index:1080;">
+    <div id="save-toast"
+         class="toast align-items-center text-white bg-success border-0"
+         role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">今日の mu emo を保存しました！</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+  </div>
 
-<p style="color: rgb(241, 239, 239);">音楽は <a href="https://soundcloud.com" target="_blank" rel="noopener noreferrer" >SOUND CLOUD</a> より提供されています。</p>
+  <!-- ✅ グローバル変数 -->
+  <script>
+    window.SOUNDCLOUD_CLIENT_ID = "<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>";
+    window.soundcloudToken      = "<%= ENV['SOUNDCLOUD_OAUTH_TOKEN'] %>";
+  </script>
 
-
+  <p style="color:#f1efef;">
+    音楽は <a href="https://soundcloud.com" target="_blank" rel="noopener noreferrer">SOUND&nbsp;CLOUD</a> より提供されています。
+  </p>
 </body>
-
 </html>

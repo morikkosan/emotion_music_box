@@ -1,0 +1,7 @@
+<%= turbo_stream.update "modal-content" do %>
+  <% if @emotion_log.track_name.present? %>
+    <%= render "form",        emotion_log: @emotion_log %>
+  <% else %>
+    <%= render "search_form", emotion_log: @emotion_log %>
+  <% end %>
+<% end %>
