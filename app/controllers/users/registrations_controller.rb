@@ -4,37 +4,50 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   protected
 
-  # Deviseのupdate_resourceをオーバーライド
+  # Devise の update_resource をオーバーライド
   def update_resource(resource, params)
     Rails.logger.info "Update Params: #{params.inspect}"
 
-    # Base64画像がある場合はActiveStorageに保存
+    # ----- アバター処理 -----
     if params[:cropped_avatar_data].present?
-      require "base64"
       image_data = params.delete(:cropped_avatar_data)
-      decoded_image = Base64.decode64(image_data.sub(/^data:image\/\w+;base64,/, ""))
-      io = StringIO.new(decoded_image)
-      resource.avatar.attach(io: io, filename: "cropped_avatar.png", content_type: "image/png")
+
+      if image_data.start_with?("data:image")                   # Base64 形式
+        require "base64"
+        decoded = Base64.decode64(image_data.sub(/^data:image\/\w+;base64,/, ""))
+        io = StringIO.new(decoded)
+        resource.avatar.attach(io: io,
+                               filename: "cropped_avatar.png",
+                               content_type: "image/png")
+      elsif image_data =~ %r{\Ahttps?://}                       # Cloudinary secure_url
+        require "open-uri"
+        begin
+          io       = URI.open(image_data)
+          filename = File.basename(URI.parse(image_data).path.presence || "avatar.png")
+          resource.avatar.attach(io: io, filename: filename)
+        rescue => e
+          Rails.logger.error "Cloudinary fetch failed: #{e.message}"
+        end
+      end
     end
 
-    # 画像削除チェックがあればpurge
+    # 画像削除チェック
     if params.delete(:remove_avatar) == "1"
       resource.avatar.purge if resource.avatar.attached?
     end
 
-    # 他の属性を更新
+    # ----- 他の属性を更新 -----
     if resource.update(params)
       Rails.logger.info "User successfully updated"
     else
       Rails.logger.info "Update failed: #{resource.errors.full_messages.join(', ')}"
-      # エラー時はDevise標準の動作に戻す
       clean_up_passwords resource
       set_minimum_password_length
       respond_with resource
     end
   end
 
-  # OAuthユーザーはcurrent_passwordをスキップ
+  # OAuth ユーザーは current_password をスキップ
   def skip_current_password_validation
     if params[:user] && (params[:user][:provider].present? || params[:user][:uid].present?)
       params[:user].delete(:current_password)
