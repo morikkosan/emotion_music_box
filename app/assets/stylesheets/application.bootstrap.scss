@@ -1,7 +1,14 @@
-@use "bootstrap/scss/bootstrap";
-@use "bootstrap-icons/font/bootstrap-icons";
-@use "custom_styles"; // 他のルールの前に配置
-
-@import url("https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/cyborg/bootstrap.min.css");
-
-
+/* =============================================
+   ① モジュールの読み込みは先頭にまとめる
+   ============================================= */
+   @use "bootstrap/scss/bootstrap";
+   @use "bootstrap-icons/font/bootstrap-icons";
+   @use "components/floating_button";
+   @use "custom_styles";
+   @use "components/neon_buttons";
+  
+   /* =============================================
+      ② Bootswatch テーマはそのあとに
+      ============================================= */
+   @import url("https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/cyborg/bootstrap.min.css");
+   

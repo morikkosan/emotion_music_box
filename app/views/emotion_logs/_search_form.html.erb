@@ -1,0 +1,44 @@
+<!-- app/views/emotion_logs/_search_form.html.erb -->
+<div data-controller="search-music"
+     data-search-music-target="section"
+     class="p-4">
+  <!-- ① ローディング -->
+  <div data-search-music-target="loading"
+       class="text-center mb-3"
+       style="display:none">
+    <span class="spinner-border" role="status"></span>
+  </div>
+
+  <!-- ② 検索フォーム -->
+  <div class="input-group mb-3">
+    <input type="text"
+           class="form-control"
+           placeholder="曲名やアーティスト名を入力"
+           data-search-music-target="query">
+    <button type="button"
+            class="btn btn-primary"
+            data-action="search-music#search">
+      検索
+    </button>
+  </div>
+
+  <!-- ③ 結果リスト -->
+  <div data-search-music-target="results" class="list-group mb-3"></div>
+
+  <!-- ④ 埋め込みプレイヤー領域 -->
+  <div data-search-music-target="player" class="mb-3"></div>
+
+  <!-- ⑤ 隠しフィールド・選択曲名 -->
+  <%= form_with(model: emotion_log, local: true) do |f| %>
+    <%= f.hidden_field :music_url, data: { search_music_target: "audio" } %>
+    <div class="mb-3">
+      <%= f.label :track_name, "選択した曲名" %>
+      <%= f.text_field :track_name,
+            class: "form-control",
+            data: { search_music_target: "track" } %>
+    </div>
+    <div class="d-grid">
+      <%= f.submit "記録する", class: "btn btn-success" %>
+    </div>
+  <% end %>
+</div>

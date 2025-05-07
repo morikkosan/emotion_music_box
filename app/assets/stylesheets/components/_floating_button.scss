@@ -1,0 +1,8 @@
+.floating-btn {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1030;    // .modal-backdrop(1040) より下、.modal(1050) より上に調整
+  white-space: nowrap;
+}

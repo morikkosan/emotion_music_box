@@ -1,0 +1,117 @@
+/* ==================================
+   ネオンボタンパネル＋ボタン共通設定
+   ================================== */
+
+/* ボタンを並べるパネル（背景グラデ＋ブラー＋角丸） */
+.neon-btn-panel {
+  display: flex;
+  justify-content: center;
+  gap: 3rem;
+  padding: 2rem 0;
+
+  background: linear-gradient(
+    135deg,
+    rgba(147, 135, 153, 0.8) 0%,
+    rgba(40, 0, 80, 0.6) 100%
+  );
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 16px;
+  margin: 0 auto;
+  max-width: 900px;
+}
+
+/* ネオン風ボタン共通 */
+.neon-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.2rem 2.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 3px solid #eb2df8;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #fff;
+  box-shadow:
+    0 0 12px rgba(230,0,255,0.6),
+    0 0 24px rgba(230,0,255,0.4);
+  transition: box-shadow .3s ease, transform .2s ease;
+
+  /* ネオン脈動アニメ */
+  animation: neon-pulse 2s infinite alternate;
+}
+.neon-btn:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 20px rgba(230,0,255,0.8),
+    0 0 40px rgba(230,0,255,0.6);
+}
+
+/* 大きいフォント＆余白 */
+.btn-neon-xl {
+  font-size: 1.8rem;
+  padding: 1rem 2.5rem;
+}
+
+/* メインタイトル部分 */
+.neon-btn-title {
+  font-weight: bold;
+  text-shadow: 0 0 8px #e600ff;
+}
+
+/* サブテキスト（新規作成のみ） */
+.neon-btn-sub {
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+  color: #ddd;
+  text-shadow: 0 0 4px #e600ff;
+}
+
+/* 下部フッター文言 */
+.neon-btn-footer {
+  text-align: center;
+  color: #eee;
+  font-size: 0.9rem;
+  text-shadow: 0 0 4px #e600ff;
+  margin-top: 1rem;
+}
+
+/* キーフレーム：ネオンの脈動 */
+@keyframes neon-pulse {
+  from {
+    box-shadow:
+      0 0 12px rgba(230,0,255,0.6),
+      0 0 24px rgba(230,0,255,0.4);
+  }
+  to {
+    box-shadow:
+      0 0 20px rgba(230,0,255,0.8),
+      0 0 40px rgba(230,0,255,0.6);
+  }
+}
+
+
+
+/* 画像の比率を保つ既存スタイル */
+.img-fluid {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 角を丸くしてネオン枠を付与 */
+.neon-icon {
+  /* 角を完全に丸めたい場合は 50%、控えめにしたいなら px 指定に */
+  border-radius: 40%;
+  /* マゼンタ系の外枠 */
+  border: 4px solid #FF00FF;
+  /* ネオンっぽい光のシャドウ */
+  box-shadow:
+    0 0 8px rgba(255, 0, 255, 0.8),
+    0 0 20px rgba(255, 0, 255, 0.5);
+}
+
+.neon-btn-footer.large-text {
+  font-size: 1.2rem;
+  line-height: 1.6;
+}

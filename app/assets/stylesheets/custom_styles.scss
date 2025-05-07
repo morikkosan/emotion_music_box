@@ -3,7 +3,7 @@ body {
   font-family: 'Poppins', sans-serif;
   color: #585656;
   background-color: rgba(0, 0, 0, 0.5); /* 半透明の黒を背景色として設定 */
-  background-image: url('/assets/daishizen.jpg'); /* 背景画像を設定 */
+  background-image: url('/assets/daishizen.png'); /* 背景画像を設定 */
   background-size: 80% auto; /* 横幅を80%に縮小 */
   background-repeat: no-repeat;
   background-position: top center;
@@ -542,4 +542,10 @@ h1 i.bi bi-heart-pulse {
   100% {
     box-shadow: 0 0 5px #00f2ff, 0 0 10px #00f2ff, 0 0 20px #00f2ff;
   }
+}
+
+
+.modal-body {
+  max-height: 80vh;
+  overflow-y: auto;
 }
