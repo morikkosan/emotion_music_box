@@ -6,8 +6,6 @@ Rails.start();
 window.bootstrap = bootstrap;
 
 document.addEventListener("turbo:load", () => {
-  console.log("✅ Avatar cropper JS is active");
-
   const fileInput     = document.getElementById("avatarInput");
   const inlinePreview = document.getElementById("avatarPreviewInline");
   const hiddenField   = document.getElementById("croppedAvatarData");
@@ -26,32 +24,26 @@ document.addEventListener("turbo:load", () => {
   let isDragging = false, dragStartX = 0, dragStartY = 0;
 
   function updateTransform() {
-    const transform = `translate(${startX}px, ${startY}px)`;
-    cropImage.style.transform = transform;
-    console.log(`🎯 画像 transform 更新: ${transform}`);
+    cropImage.style.transform = `translate(${startX}px, ${startY}px)`;
   }
 
-  // 初期スタイル設定
   cropImage.style.position = "absolute";
   cropImage.style.top = "0";
   cropImage.style.left = "0";
   cropImage.style.userSelect = "none";
-  cropImage.style.webkitUserSelect = "none"; // Safari用
+  cropImage.style.webkitUserSelect = "none";
   cropImage.style.maxWidth = "none";
   cropImage.style.maxHeight = "none";
   cropImage.draggable = false;
-
   cropContainer.style.cursor = "grab";
-  cropContainer.style.touchAction = "none"; // これが超重要！
+  cropContainer.style.touchAction = "none";
 
-  // ファイルが選ばれた時の処理
   fileInput.addEventListener("change", e => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
       cropImage.src = reader.result;
-      console.log("🖼️ 画像読み込み成功");
       startX = 0;
       startY = 0;
       updateTransform();
@@ -61,7 +53,6 @@ document.addEventListener("turbo:load", () => {
   });
 
   cropContainer.addEventListener("pointerdown", e => {
-    console.log("👉 pointerdown", e.clientX, e.clientY);
     e.preventDefault();
     isDragging = true;
     dragStartX = e.clientX;
@@ -78,12 +69,10 @@ document.addEventListener("turbo:load", () => {
     startY += dy;
     dragStartX = e.clientX;
     dragStartY = e.clientY;
-    console.log("✋ pointermove →", { dx, dy, startX, startY });
     updateTransform();
   });
 
   cropContainer.addEventListener("pointerup", e => {
-    console.log("🖐 pointerup");
     if (isDragging) {
       isDragging = false;
       cropContainer.releasePointerCapture(e.pointerId);
@@ -93,13 +82,29 @@ document.addEventListener("turbo:load", () => {
 
   confirmBtn.addEventListener("click", () => {
     const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
     canvas.width = 80;
     canvas.height = 80;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(cropImage, -startX, -startY);
-    const dataUrl = canvas.toDataURL("image/png");
 
-    console.log("✅ トリミング完了 → プレビューと hidden に反映");
+    // cropContainer と cropImage のサイズ情報
+    const viewWidth = cropContainer.clientWidth;
+    const viewHeight = cropContainer.clientHeight;
+
+    const scaleX = cropImage.naturalWidth / cropImage.clientWidth;
+    const scaleY = cropImage.naturalHeight / cropImage.clientHeight;
+
+    const sx = startX * -1 * scaleX;
+    const sy = startY * -1 * scaleY;
+
+    ctx.drawImage(
+      cropImage,
+      sx, sy,
+      viewWidth * scaleX, viewHeight * scaleY,
+      0, 0,
+      canvas.width, canvas.height
+    );
+
+    const dataUrl = canvas.toDataURL("image/png");
     inlinePreview.src = dataUrl;
     hiddenField.value = dataUrl;
     modal.hide();
