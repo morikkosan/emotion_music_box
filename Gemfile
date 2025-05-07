@@ -50,7 +50,14 @@ gem 'omniauth-oauth2-generic'
 gem 'oauth2', '~> 2.0'
 gem 'omniauth-oauth2'
 
+gem "image_processing", "~> 1.2"
+
+
+
 gem 'brakeman', require: false
+# ローカルcloudinary確認用
+gem "cloudinary", "~> 2.3"
+gem "activestorage-cloudinary-service", "~> 0.2.3"
 
 
 

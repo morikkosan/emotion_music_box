@@ -26,6 +26,7 @@
     "bootswatch": "^5.3.5",
     "chart.js": "^4.4.7",
     "chartkick": "^5.0.1",
+    "cropperjs": "^2.0.0",
     "nodemon": "^3.1.9",
     "postcss": "^8.4.47",
     "postcss-cli": "^11.0.0",
