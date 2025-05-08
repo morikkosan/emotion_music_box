@@ -4,11 +4,16 @@ class EmotionLogsController < ApplicationController
   # before_action :ensure_soundcloud_connected, only: [:index]
 
   def index
-    @emotion_logs = EmotionLog.order(date: :desc)
-                              .page(params[:page])
-                              .per(7)
-    # 感情ごとのデータを取得
-    # @emotion_chart_data = EmotionLog.group(:emotion).count
+    @emotion_logs = EmotionLog
+                  .includes(:user, :bookmarks) # ← bookmarks を preload
+                  .order(date: :desc)
+                  .page(params[:page])
+                  .per(7)
+
+    if user_signed_in?
+      @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
+    end
+
   end
 
   def  my_emotion_logs
