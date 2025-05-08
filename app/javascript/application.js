@@ -1,7 +1,8 @@
-// app/javascript/avatar_cropper.js
+// app/javascript/application.js
 import Rails from "@rails/ujs";
 import "@hotwired/turbo-rails";
 import * as bootstrap from "bootstrap";
+import "./controllers";
 
 Rails.start();
 window.bootstrap = bootstrap;
