@@ -2,6 +2,7 @@ class EmotionLog < ApplicationRecord
   belongs_to :user
   has_many :bookmarks, dependent: :destroy
   has_many :bookmark_users, through: :bookmarks, source: :user  # EmotionLogをブックマークしたユーザーを取得
+  has_many :comments,  dependent: :destroy
 
   validates :date, presence: true
   # 値が決まったときに修正

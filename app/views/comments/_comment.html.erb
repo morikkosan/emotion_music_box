@@ -1,0 +1,25 @@
+<turbo-frame id="comment_<%= comment.id %>">
+  <div class="d-flex justify-content-between align-items-start my-2 p-2 border rounded">
+
+    <div>
+      <strong><%= comment.user.name %></strong>
+      <p class="mb-1"><%= comment.body %></p>
+      <!-- ここにリアクション or 何も無し -->
+    </div>
+
+    <% if comment.user == current_user %>
+  <div class="text-end">
+    <%= button_to comment_path(comment),
+          method:  :delete,
+          class:   "btn btn-link btn-sm text-danger",
+          form:    { data: { turbo_stream: true, turbo_confirm: "削除しますか？" } },
+          # ↓ クリック直後にボタンを無効化して「削除中…」と表示
+          data:    { disable_with: "削除中…" } do %>
+      削除
+    <% end %>
+  </div>
+<% end %>
+
+
+  </div>
+</turbo-frame>
