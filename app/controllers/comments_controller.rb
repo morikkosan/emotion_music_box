@@ -47,13 +47,15 @@ end
 
   # DELETE /comments/:id
   def destroy
-    return head(:forbidden) unless @comment.user == current_user
+    # 自分のコメントだけを探す → 存在しなければ 404
+    @comment = current_user.comments.find_by(id: params[:id])
+    return head(:not_found) unless @comment
 
     @emotion_log = @comment.emotion_log
     @comment.destroy
 
     respond_to do |format|
-      format.turbo_stream   # destroy.turbo_stream.erb でリムーブ
+      format.turbo_stream   # destroy.turbo_stream.erb
       format.html { redirect_to emotion_log_path(@emotion_log), notice: 'コメントを削除しました' }
     end
   end
@@ -79,7 +81,8 @@ end
   end
 
   def set_comment
-    @comment = Comment.includes(:user, :comment_reactions).find(params[:id])
+    # 他アクション（edit/update/toggle_reaction）用に一般ロード
+    @comment = Comment.includes(:user, :comment_reactions).find_by(id: params[:id])
   end
 
 end
