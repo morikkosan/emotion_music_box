@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_05_08_102002) do
+ActiveRecord::Schema[7.2].define(version: 2025_05_09_064308) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -50,6 +50,26 @@ ActiveRecord::Schema[7.2].define(version: 2025_05_08_102002) do
     t.index ["emotion_log_id"], name: "index_bookmarks_on_emotion_log_id"
     t.index ["user_id", "emotion_log_id"], name: "index_bookmarks_on_user_id_and_emotion_log_id", unique: true
     t.index ["user_id"], name: "index_bookmarks_on_user_id"
+  end
+
+  create_table "comment_reactions", force: :cascade do |t|
+    t.integer "kind"
+    t.bigint "user_id", null: false
+    t.bigint "comment_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["comment_id"], name: "index_comment_reactions_on_comment_id"
+    t.index ["user_id"], name: "index_comment_reactions_on_user_id"
+  end
+
+  create_table "comments", force: :cascade do |t|
+    t.text "body"
+    t.bigint "user_id", null: false
+    t.bigint "emotion_log_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["emotion_log_id"], name: "index_comments_on_emotion_log_id"
+    t.index ["user_id"], name: "index_comments_on_user_id"
   end
 
   create_table "emotion_logs", force: :cascade do |t|
@@ -108,6 +128,10 @@ ActiveRecord::Schema[7.2].define(version: 2025_05_08_102002) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "bookmarks", "emotion_logs"
   add_foreign_key "bookmarks", "users"
+  add_foreign_key "comment_reactions", "comments"
+  add_foreign_key "comment_reactions", "users"
+  add_foreign_key "comments", "emotion_logs"
+  add_foreign_key "comments", "users"
   add_foreign_key "emotion_logs", "users"
   add_foreign_key "identities", "users"
 end
