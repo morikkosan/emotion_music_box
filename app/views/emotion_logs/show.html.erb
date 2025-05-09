@@ -56,21 +56,30 @@
  <!-- ==== コメントセクション ==== -->
 <div class="card mb-4">
   <div class="card-header">
-    <strong>コメント (<%= @emotion_log.comments_count %>)</strong>
+    <strong id="comment-count">コメント (<%= @emotion_log.comments_count %>)</strong>
   </div>
-
   <div class="card-body">
 
     <!-- ① コメント入力フォーム -->
     <%= form_with url: emotion_log_comments_path(@emotion_log),
-                  data: { turbo_stream: true },
+                  data: {
+                    controller: "comment-form",
+                    action: "turbo:submit-start->comment-form#sending turbo:submit-end->comment-form#sent",
+                    turbo_stream: true
+                  },
                   class: "mb-3" do |f| %>
-      <%= f.text_area :body, rows: 2, class: "form-control", placeholder: "コメントを入力…" %>
-      <%= f.submit "送信", class: "btn btn-primary mt-2" %>
+      <%= f.text_area :body,
+            rows: 2,
+            class: "form-control",
+            placeholder: "コメントを入力…",
+            data: { comment_form_target: "textarea" } %>
+      <%= f.submit "送信",
+            class: "btn btn-primary mt-2",
+            data: { comment_form_target: "submit" } %>
     <% end %>
 
-    <!-- ② コメント一覧 -->
-    <div id="comments">
+    <!-- ② コメント一覧コンテナ（これが１つだけ） -->
+    <div id="comments" data-comment-form-target="comments">
       <%= render @emotion_log.comments.order(created_at: :desc) %>
     </div>
 
