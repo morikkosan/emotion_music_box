@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", function () {
     comment.className = "comment";
     comment.textContent = text;
 
-    // ランダムな高さに配置
+    // 流れる適当コメント
     const containerHeight = commentContainer.clientHeight;
     const topPosition = Math.random() * (containerHeight - 20); // 30pxは文字の高さ
     comment.style.top = `${topPosition}px`;
@@ -30,3 +30,4 @@ document.addEventListener("DOMContentLoaded", function () {
     createComment("いらいら");
   }, 10000);
 });
+

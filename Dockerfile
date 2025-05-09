@@ -25,7 +25,8 @@ ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development test" \
-    SSL_CERT_FILE="/etc/ssl/certs/ca-certificates.crt"
+    SSL_CERT_FILE="/etc/ssl/certs/ca-certificates.crt"\
+    RAILS_SERVE_STATIC_FILES="true"
 
 FROM base AS build
 
