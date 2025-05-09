@@ -30,7 +30,7 @@ Rails.application.configure do
   config.active_support.deprecation = :log
   config.active_support.disallowed_deprecation = :raise
   config.active_support.disallowed_deprecation_warnings = []
-  config.assets.debug = true
+  config.assets.debug = false
   config.assets.quiet = true
   config.action_view.annotate_rendered_view_with_filenames = true
   config.action_controller.raise_on_missing_callback_actions = true

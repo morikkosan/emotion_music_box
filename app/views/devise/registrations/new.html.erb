@@ -37,30 +37,30 @@
                            placeholder: "年齢を入力（任意）" %>
       </div>
 
-      <!-- メール -->
+      <!-- メール
       <div class="form-group">
         <%= f.label :email %><span class="text-danger">*</span><br />
         <%= f.email_field :email,
                           autofocus: true,
                           autocomplete: "email",
                           class: "form-control" %>
-      </div>
+      </div> -->
 
       <!-- パスワード -->
-      <div class="form-group">
+      <!-- <div class="form-group">
         <%= f.label :password %><span class="text-danger">*</span><br />
         <%= f.password_field :password,
                              autocomplete: "new-password",
                              class: "form-control" %>
-      </div>
+      </div> -->
 
       <!-- パスワード確認 -->
-      <div class="form-group">
+      <!-- <div class="form-group">
         <%= f.label :password_confirmation %><br />
         <%= f.password_field :password_confirmation,
                              autocomplete: "new-password",
                              class: "form-control" %>
-      </div>
+      </div> -->
 
       <!-- アバターアップロード -->
       <div class="form-group text-center mt-3">
@@ -91,12 +91,12 @@
       </div>
     <% end %>
 
-    <p class="text-center mt-3">
+    <!-- <p class="text-center mt-3">
       <%= link_to 'ログインはこちら', new_session_path(resource_name),
                   class: 'btn btn-secondary btn-sm' %>
     </p>
   </div>
-</div>
+</div> -->
 
 <!-- Cropper 用モーダル -->
 <div class="modal fade" id="avatarCropModal" tabindex="-1" aria-hidden="true">
