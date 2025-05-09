@@ -14452,7 +14452,7 @@ var comment_form_controller_default = class extends Controller {
     if (!toast) {
       toast = document.createElement("div");
       toast.id = "comment-toast";
-      toast.style.cssText = "position:fixed;bottom:80px;right:20px;z-index:1055;background:#333;color:#fff;padding:8px 16px;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,.3);transition:opacity .4s";
+      toast.style.cssText = "position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#333;color:#fff;padding:8px 16px;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,.3);transition:opacity .4s;text-align:center";
       document.body.appendChild(toast);
     }
     toast.textContent = message;

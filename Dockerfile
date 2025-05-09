@@ -56,7 +56,7 @@ RUN bundle config set --local without 'development test' && bundle install
 
 # Copy application code and precompile assets
 COPY . .
-RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
+RUN rm -rf tmp/cache && SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
 FROM base
 

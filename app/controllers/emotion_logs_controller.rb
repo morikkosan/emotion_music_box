@@ -56,19 +56,24 @@ class EmotionLogsController < ApplicationController
     if @emotion_log.update(emotion_log_params)
       hp_percentage = calculate_hp(@emotion_log.emotion)
       render json: { success: true,
-                     message: '記録が更新されました',
-                     redirect_url: emotion_logs_path,
-                     hpPercentage: hp_percentage }
+                    message: '記録が更新されました',
+                    redirect_url: emotion_logs_path,
+                    hpPercentage: hp_percentage }
     else
       render json: { success: false,
-                     errors:  @emotion_log.errors.full_messages },
-             status: :unprocessable_entity
+                    errors:  @emotion_log.errors.full_messages },
+            status: :unprocessable_entity
     end
   end
 
+  # emotion_logs_controller.rb
   def show
     @emotion_log = EmotionLog.find(params[:id])
+    @comments = Comment.includes(:user, :comment_reactions)
+                       .where(emotion_log_id: @emotion_log.id)
+                       .order(created_at: :desc)
   end
+
 
   # ---------- Turbo modal 用 ----------
   def form
