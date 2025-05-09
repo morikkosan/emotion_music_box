@@ -5,11 +5,11 @@ class User < ApplicationRecord
   has_many :emotion_logs, dependent: :destroy        
   has_many :identities, dependent: :destroy
   has_many :bookmarks, dependent: :destroy
-
   has_many :bookmarked_emotion_logs, through: :bookmarks, source: :emotion_log
-  has_many :comment_reactions, dependent: :destroy
+  has_many :comment_reactions, dependent: :destroy  # ← カンマを削除
+  has_many :comments, dependent: :destroy
 
-  has_one_attached :avatar  # ✅ これを追加
+  has_one_attached :avatar # ✅ これを追加
 
 
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
