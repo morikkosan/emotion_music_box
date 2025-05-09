@@ -14475,6 +14475,38 @@ var comment_form_controller_default = class extends Controller {
   }
 };
 
+// app/javascript/controllers/reaction_controller.js
+var reaction_controller_default = class extends Controller {
+  static values = {
+    commentId: Number,
+    kind: String
+  };
+  static targets = ["button", "count"];
+  toggle(event) {
+    event.preventDefault();
+    const btn = this.buttonTarget;
+    const cntEl = this.countTarget;
+    let cnt = parseInt(cntEl.textContent, 10);
+    const isActive = btn.classList.contains("btn-primary");
+    if (isActive) {
+      cnt -= 1;
+      btn.classList.replace("btn-primary", "btn-outline-secondary");
+    } else {
+      cnt += 1;
+      btn.classList.replace("btn-outline-secondary", "btn-primary");
+    }
+    cntEl.textContent = cnt;
+    fetch(`/comments/${this.commentIdValue}/toggle_reaction?kind=${this.kindValue}`, {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "X-CSRF-Token": document.querySelector("meta[name=csrf-token]").content
+      },
+      credentials: "same-origin"
+    });
+  }
+};
+
 // app/javascript/controllers/index.js
 var application = Application.start();
 application.register("modal", modal_controller_default);
@@ -14482,6 +14514,7 @@ application.register("search-music", search_music_controller_default);
 application.register("submit-handler", submit_handler_controller_default);
 application.register("bookmark-toggle", bookmark_toggle_controller_default);
 application.register("comment-form", comment_form_controller_default);
+application.register("reaction", reaction_controller_default);
 
 // app/javascript/application.js
 Rails.start();

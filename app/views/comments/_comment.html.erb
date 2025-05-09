@@ -1,35 +1,31 @@
+<!-- app/views/comments/_comment.html.erb -->
 <turbo-frame id="comment_<%= comment.id %>">
   <div class="d-flex justify-content-between align-items-start my-2 p-2 border rounded">
 
-    <!-- 左側：ユーザー名と本文 -->
+    <!-- 左側：ユーザー名＋本文 -->
     <div>
       <strong><%= comment.user.name %></strong>
       <p class="mb-1"><%= comment.body %></p>
     </div>
 
-    <!-- 右側：自分なら編集・削除、それ以外はリアクション -->
-    <div class="text-end d-flex flex-column align-items-end ms-3">
-      <% if comment.user == current_user %>
-        <!-- 編集ボタン -->
-        <%= link_to "編集", edit_comment_path(comment),
-              class: "btn btn-link btn-sm text-primary mb-1" %>
+    <!-- 右側：リアクションボタンだけ Stimulus で制御 -->
+    <div class="d-flex flex-column align-items-end ms-3">
+      <% unless comment.user == current_user %>
+        <% [:sorena, :yonda].each do |kind| %>
+          <% count   = comment.comment_reactions.count { |r| r.kind == kind.to_s } %>
+          <% reacted = comment.comment_reactions.any? { |r| r.user_id == current_user.id && r.kind == kind.to_s } %>
 
-        <!-- 削除ボタン -->
-        <%= button_to comment_path(comment),
-              method:  :delete,
-              class:   "btn btn-link btn-sm text-danger",
-              form:    { data: { turbo_stream: true, turbo_confirm: "削除しますか？" } },
-              data:    { disable_with: "削除中…" } do %>
-          削除
-        <% end %>
-      <% else %>
-        <% [:sore_na, :yonda].each do |kind| %>
-          <%= button_to toggle_reaction_comment_path(comment, kind: kind),
-                method: :post,
-                class: "btn btn-sm mb-1 #{comment.reacted_by?(current_user, kind) ? 'btn-primary' : 'btn-outline-secondary'}",
-                data: { turbo_stream: true } do %>
-            <%= kind == :sore_na ? "👍" : "🎉" %> <%= comment.reaction_count(kind) %>
-          <% end %>
+          <button 
+            type="button"
+            data-controller="reaction"
+            data-action="click->reaction#toggle"
+            data-reaction-comment-id-value="<%= comment.id %>"
+            data-reaction-kind-value="<%= kind %>"
+            data-reaction-target="button"
+            class="btn btn-sm mb-1 <%= reacted ? 'btn-primary' : 'btn-outline-secondary' %>">
+            <%= kind == :sorena ? "👍 それな" : "🎉 よんだ" %>
+            <span data-reaction-target="count"><%= count %></span>
+          </button>
         <% end %>
       <% end %>
     </div>

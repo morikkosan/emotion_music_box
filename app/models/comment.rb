@@ -5,8 +5,11 @@ class Comment < ApplicationRecord
   validates :body, presence: true
 
 # app/models/comment.rb
+  # ✅ N+1対策済みの形（includesで先読みしていれば有効）
   def preloaded_reactions
-    @preloaded_reactions ||= comment_reactions.to_a
+    @preloaded_reactions ||= (
+      association(:comment_reactions).loaded? ? comment_reactions : comment_reactions.to_a
+    )
   end
 
   def reaction_count(kind)
