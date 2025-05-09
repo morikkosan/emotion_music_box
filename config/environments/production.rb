@@ -1,6 +1,14 @@
+# config/environments/production.rb
 require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
+  # --- 本番環境でもコード／ビューを自動リロードする設定 ---
+  config.cache_classes = false
+  config.eager_load    = false
+  config.reload_classes_only_on_change = true
+  config.file_watcher = ActiveSupport::EventedFileUpdateChecker
+  # ----------------------------------------
+
   # メールURLやルーティングのホストを変更
   config.action_mailer.default_url_options = { host: "moriappli-emotion.com", protocol: "https" }
   Rails.application.routes.default_url_options = { host: "moriappli-emotion.com", protocol: "https" }
@@ -17,7 +25,7 @@ Rails.application.configure do
   config.hosts << "moriappli-emotion.com"
 
   config.enable_reloading = true
-  config.eager_load = false
+  config.eager_load = false                     # ← 既存設定と合わせてリロード機能を有効化
   config.consider_all_requests_local = true
   config.server_timing = true
   config.action_controller.perform_caching = true

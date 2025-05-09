@@ -7,6 +7,7 @@ class User < ApplicationRecord
   has_many :bookmarks, dependent: :destroy
 
   has_many :bookmarked_emotion_logs, through: :bookmarks, source: :emotion_log
+  has_many :comment_reactions, dependent: :destroy
 
   has_one_attached :avatar  # ✅ これを追加
 
