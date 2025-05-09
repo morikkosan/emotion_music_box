@@ -30,13 +30,31 @@ end
     end
   end
 
-  def toggle_reaction
-    kind = params[:kind].to_sym
-    react = @comment.comment_reactions.find_by(user: current_user, kind:)
-    react ? react.destroy : @comment.comment_reactions.create!(user: current_user, kind:)
-    @kind = kind                                    # turbo_stream で使う
-  end
+  # app/controllers/comments_controller.rb
+ # app/controllers/comments_controller.rb
+class CommentsController < ApplicationController
+  before_action :authenticate_user!, only: [:toggle_reaction]
+  before_action :set_comment,         only: [:toggle_reaction]
+
+  # app/controllers/comments_controller.rb
+def toggle_reaction
+  @comment = Comment.find(params[:id])
+  kind     = params[:kind].to_sym
+
+  react = @comment.comment_reactions.find_by(user: current_user, kind: kind)
+  react ? react.destroy : @comment.comment_reactions.create!(user: current_user, kind: kind)
+
+  head :no_content
+end
+
 
   private
-  def set_comment; @comment = Comment.find(params[:id]); end
+
+  def set_comment
+    # 必要な user と comment_reactions を同時に読み込む
+    @comment = Comment
+                 .includes(:user, :comment_reactions)
+                 .find(params[:id])
+  end
+end
 end

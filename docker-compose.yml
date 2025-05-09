@@ -35,9 +35,11 @@ services:
     tty: true
     stdin_open: true
     volumes:
-      - .:/rails
+      # キャッシュ用ボリュームはそのまま
       - bundle_data:/usr/local/bundle:cached
       - node_modules:/rails/node_modules
+
+      # SSL 証明書もマウント
       - ./docker/certs/moriappli-emotion.com.pem:/etc/ssl/certs/moriappli-emotion.com.pem:ro
       - ./docker/certs/moriappli-emotion.com-key.pem:/etc/ssl/private/moriappli-emotion.com-key.pem:ro
 
@@ -51,7 +53,7 @@ services:
       - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
       - APP_DATABASE_PASSWORD=password
       - SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
-      - RAILS_ENV=production  # 👈ここ！！！
+      - RAILS_ENV=production
     env_file:
       - .env.production
     ports:

@@ -66,13 +66,31 @@ class EmotionLogsController < ApplicationController
     end
   end
 
-  # emotion_logs_controller.rb
-  def show
-    @emotion_log = EmotionLog.find(params[:id])
-    @comments = Comment.includes(:user, :comment_reactions)
-                       .where(emotion_log_id: @emotion_log.id)
-                       .order(created_at: :desc)
-  end
+
+def show
+  @emotion_log = EmotionLog.find(params[:id])
+
+  # コメント本体（ユーザーはincludesで先読み）
+  @comments = Comment
+                .where(emotion_log_id: @emotion_log.id)
+                .includes(:user)
+                .order(created_at: :desc)
+
+  # 各コメントのリアクション数をまとめて取得
+  # -> { [comment_id, kind] => count }
+  @reaction_counts = CommentReaction
+                       .where(comment_id: @comments.map(&:id))
+                       .group(:comment_id, :kind)
+                       .count
+
+  # ログインユーザーがどのコメントにどのkindでリアクション済みかマップ
+  # -> { comment_id => kind.to_s }
+  @user_reactions = current_user&.comment_reactions
+                              &.where(comment_id: @comments.map(&:id))
+                              &.pluck(:comment_id, :kind)
+                              &.to_h || {}
+end
+
 
 
   # ---------- Turbo modal 用 ----------

@@ -1,0 +1,22 @@
+# docker‐compose.override.yml
+version: "3.8"
+
+services:
+  web:
+    # 本番モードを維持しつつ…
+    environment:
+      RAILS_ENV: production
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+      SOUNDCLOUD_REDIRECT_URI: https://moriappli-emotion.com/auth/soundcloud/callback
+
+    # ホストのコードをマウントして即時反映
+    volumes:
+      - .:/rails
+      - bundle_data:/usr/local/bundle:cached
+      - node_modules:/rails/node_modules
+
+    # 折り畳み文字列で一発コマンド
+    command: >
+      bash -lc "bundle exec rails server \
+        -b 'ssl://0.0.0.0:443?key=/etc/ssl/private/moriappli-emotion.com-key.pem&cert=/etc/ssl/certs/moriappli-emotion.com.pem' \
+        -e production & yarn build --watch"
