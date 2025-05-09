@@ -15,6 +15,11 @@ Rails.application.routes.draw do
       get :form
       get :form_switch
     end
+
+    resources :comments, only: %i[create update destroy], shallow: true do
+      # POST /comments/:id/toggle_reaction?kind=sorena
+      post :toggle_reaction, on: :member
+    end
   end
 
 
