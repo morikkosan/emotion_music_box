@@ -1,14 +1,12 @@
-/* =============================================
-   ① モジュールの読み込みは先頭にまとめる
-   ============================================= */
-   @use "bootstrap/scss/bootstrap";
-   @use "bootstrap-icons/font/bootstrap-icons";
-   @use "components/floating_button";
-   @use "custom_styles";
-   @use "components/neon_buttons";
-  
-   /* =============================================
-      ② Bootswatch テーマはそのあとに
-      ============================================= */
-   @import url("https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/cyborg/bootstrap.min.css");
-   @import "cropperjs/dist/cropper.css";
+/* ① モジュールの読み込みは先頭にまとめる */
+@use "bootstrap/scss/bootstrap";
+@use "bootstrap-icons/font/bootstrap-icons";
+@use "components/floating_button";
+@use "components/neon_buttons";
+
+/* ② Bootswatch テーマはそのあとに */
+@import url("https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/cyborg/bootstrap.min.css");
+@import "cropperjs/dist/cropper.css";
+
+/* ③ そして最後に自分の CSS を読み込んで上書き */
+@import "custom_styles";  // ← .css ファイルとして読み込む

@@ -1,0 +1,17 @@
+<%= turbo_stream.replace "comment_#{@comment.id}",
+      partial: "comments/comment",
+      locals: { comment: @comment } %>
+
+<%= turbo_stream.append "flash" do %>
+  <div class="cyber-popup text-center" role="alert">
+    コメントを更新しました
+  </div>
+<% end %>
+
+<%= turbo_stream.after "flash" do %>
+  <script>
+    setTimeout(() => {
+      document.getElementById("flash").innerHTML = ""
+    }, 2000)
+  </script>
+<% end %>
