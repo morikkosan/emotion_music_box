@@ -559,3 +559,29 @@ h1 i.bi bi-heart-pulse {
   max-height: 80vh;
   overflow-y: auto;
 }
+
+
+
+/* 今日の気持ちを記録するボタン */
+#record-button.btn.btn-primary.floating-btn {
+  background: linear-gradient(to right, #00c3ff, #a100ff, #ff00cc) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 50px !important;
+  font-weight: bold !important;
+  font-size: 1.3rem !important;
+  box-shadow:
+    0 0 10px #00c3ff,
+    0 0 20px #a100ff,
+    0 0 30px #ff00cc !important;
+  transition: all 0.3s ease;
+}
+
+#record-button.btn.btn-primary.floating-btn:hover {
+  transform: translate(-50%, -2px); /* ← Xは維持して、Yだけ上に */
+  box-shadow:
+    0 0 15px #00c3ff,
+    0 0 30px #a100ff,
+    0 0 45px #ff00cc !important;
+}
+
