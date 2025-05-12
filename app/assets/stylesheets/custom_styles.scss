@@ -529,7 +529,17 @@ h1 i.bi bi-heart-pulse {
   padding: 1.5rem;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+
 }
+#flash {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2147483647; /* ← 最大値に近い */
+  pointer-events: none;
+}
+
 
 
 @keyframes neonGlow {
