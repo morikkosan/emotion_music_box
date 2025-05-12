@@ -1,3 +1,6 @@
+@import "cropperjs/dist/cropper.css";
+
+
 /*ページネーション自体のデザイン*/
 .pagination>li>a {			
   border: none;		/*枠線をなくす*/
@@ -13,4 +16,42 @@
 /*ホバー時のデザイン*/
 .pagination>li>a:hover {		
   border-radius: 15px;	  /*角を丸くする*/
+}
+
+// アバター画像
+.rounded-circle {
+  border-radius: 50%;
+  border: 2px solid #e600ff;
+  box-shadow: 0 0 8px rgba(230, 0, 255, 0.6);
+}
+
+#cropContainer {
+  position: relative;
+  width: 80px;   /* トリミング枠のサイズ */
+  height: 80px;
+  overflow: hidden;
+  border: 2px solid #ccc; /* 任意で見えるように */
+}
+
+#cropImage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  max-width: none;
+  max-height: none;
+  cursor: grab;
+}
+
+#avatarPreviewInline {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+// リアクション0.2秒ほどふんわり色変化
+.transition-colors {
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease;
 }

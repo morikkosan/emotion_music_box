@@ -1,7 +1,19 @@
 <%= link_to(
-      bookmarks_path(emotion_log_id: emotion_log.id),
-      id: "bookmark-button-emotion-log-#{emotion_log.id}",
-      data: { turbo_method: :post, turbo: true }
-    ) do %>
-  <%= image_tag "3dunheart.png", alt: "bookmark", class: 'btn btn-danger btn-sm' %>
+  bookmarks_path(emotion_log_id: emotion_log.id),
+  id: "bookmark-button-emotion-log-#{emotion_log.id}",
+  data: {
+    action: "click->bookmark-toggle#toggle",
+    turbo_method: :post,
+    turbo: true
+  }
+) do %>
+  <%= image_tag "3dunheart.png",
+    alt: "bookmark",
+    class: 'btn btn-danger btn-sm',
+    data: {
+      bookmark_toggle_target: "icon",
+      toggled: "false",
+      bookmarked_url: asset_path("3dheart.png"),
+      unbookmarked_url: asset_path("3dunheart.png")
+    } %>
 <% end %>
