@@ -137,3 +137,29 @@ document.addEventListener("turbo:load", () => {
     // ======================================================================
   });
 });
+
+document.addEventListener("turbo:load", () => {
+  const removeAvatarBtn = document.getElementById("removeAvatarBtn");
+  const removeAvatarCheckbox = document.getElementById("removeAvatarCheckbox");
+
+  if (removeAvatarBtn && removeAvatarCheckbox) {
+    removeAvatarBtn.addEventListener("click", () => {
+      const isChecked = removeAvatarCheckbox.checked;
+      const confirmMsg = isChecked ? "削除をキャンセルしますか？" : "本当に画像を削除しますか？";
+
+      if (confirm(confirmMsg)) {
+        removeAvatarCheckbox.checked = !isChecked;
+
+        if (removeAvatarCheckbox.checked) {
+          removeAvatarBtn.textContent = "削除予定";
+          removeAvatarBtn.classList.remove("btn-warning");
+          removeAvatarBtn.classList.add("btn-danger");
+        } else {
+          removeAvatarBtn.textContent = "画像を削除する";
+          removeAvatarBtn.classList.remove("btn-danger");
+          removeAvatarBtn.classList.add("btn-warning");
+        }
+      }
+    });
+  }
+});
