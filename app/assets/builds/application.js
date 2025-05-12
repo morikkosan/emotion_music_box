@@ -14631,6 +14631,28 @@ document.addEventListener("turbo:load", () => {
     }
   });
 });
+document.addEventListener("turbo:load", () => {
+  const removeAvatarBtn = document.getElementById("removeAvatarBtn");
+  const removeAvatarCheckbox = document.getElementById("removeAvatarCheckbox");
+  if (removeAvatarBtn && removeAvatarCheckbox) {
+    removeAvatarBtn.addEventListener("click", () => {
+      const isChecked = removeAvatarCheckbox.checked;
+      const confirmMsg = isChecked ? "\u524A\u9664\u3092\u30AD\u30E3\u30F3\u30BB\u30EB\u3057\u307E\u3059\u304B\uFF1F" : "\u672C\u5F53\u306B\u753B\u50CF\u3092\u524A\u9664\u3057\u307E\u3059\u304B\uFF1F";
+      if (confirm(confirmMsg)) {
+        removeAvatarCheckbox.checked = !isChecked;
+        if (removeAvatarCheckbox.checked) {
+          removeAvatarBtn.textContent = "\u524A\u9664\u4E88\u5B9A";
+          removeAvatarBtn.classList.remove("btn-warning");
+          removeAvatarBtn.classList.add("btn-danger");
+        } else {
+          removeAvatarBtn.textContent = "\u753B\u50CF\u3092\u524A\u9664\u3059\u308B";
+          removeAvatarBtn.classList.remove("btn-danger");
+          removeAvatarBtn.classList.add("btn-warning");
+        }
+      }
+    });
+  }
+});
 /*! Bundled license information:
 
 @hotwired/turbo/dist/turbo.es2017-esm.js:
