@@ -37,6 +37,8 @@
   <p>🔍 Debug: <%= current_user.inspect %></p>
 
   <div id="comment-container"></div>
+  <!-- 更新／エラー等のメッセージを出す領域 -->
+  <div id="flash" class="position-fixed top-0 start-50 translate-middle-x mt-4 zindex-tooltip"></div>
 
   <%= yield %>
 
@@ -61,7 +63,7 @@
          class="toast align-items-center text-white bg-success border-0"
          role="alert" aria-live="assertive" aria-atomic="true">
       <div class="d-flex">
-        <div class="toast-body">今日の mu emo を保存しました！</div>
+        <div class="toast-body">今日の emomu を保存しました！</div>
         <button type="button" class="btn-close btn-close-white me-2 m-auto"
                 data-bs-dismiss="toast"></button>
       </div>
