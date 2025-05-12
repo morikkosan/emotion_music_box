@@ -1,89 +1,5 @@
-<div class="container mt-5 position-relative">
-  <div class="text-center mt-4 d-flex align-items-center justify-content-center w-90">
-    <%= link_to emotion_logs_path do %>
-      <%= image_tag "logo1.png", alt: "Emotion List Logo", class: "img-fluid neon-icon", style: "max-width: 700px; width: 100%;" %>
-    <% end %>
-  </div>
 
-  <% unless user_signed_in? %>
-    <div class="text-center mt-5 mb-4">
-      <h1 style="font-size: 3rem; font-weight: bold; color:rgb(215, 205, 216); text-shadow: 0 0 10px, rgb(30, 228, 218);">
-        音楽とストレスを支配する
-      </h1>
-    </div>
-  <% end %>
-
-  <div class="dj-icon" style="position: absolute; top: 20px; right: 20px;">
-    <%= image_tag "dj_robot_icon.png", alt: "DJ Robot", style: "width: 300px; height: auto; cursor: pointer;", onclick: "toggleAudio()" %>
-    <div id="audioButtonIcon" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 40px; color: rgb(255, 255, 255); pointer-events: none;">
-      ▶
-    </div>
-  </div>
-
-  <audio id="audioPlayer" loop>
-    <source src="/audios/index.mp3" type="audio/mpeg">
-    お使いのブラウザはオーディオ要素に対応していません。
-  </audio>
-
-  <div class="banner-container text-center mt-3">
-    <% if user_signed_in? %>
-      <div class="mypage-links">
-        <%= link_to "#", id: "logout-link", class: "mypage-icon-link", data: { logout_url: destroy_user_session_path } do %>
-          <div class="mypage-item">
-            <%= image_tag "log_out.png", alt: "Log Out", class: "mypage-fluid" %>
-            <div class="mypage-text">ログアウト</div>
-          </div>
-        <% end %>
-
-        <%= link_to edit_user_registration_path, class: "mypage-icon-link" do %>
-          <div class="mypage-item">
-            <%= image_tag "profile_edit.png", alt: "Profile Edit", class: "mypage-fluid" %>
-            <div class="mypage-text">プロフィール編集</div>
-          </div>
-        <% end %>
-
-        <%= link_to my_emotion_logs_path, class: "mypage-icon-link" do %>
-          <div class="mypage-item">
-            <%= image_tag "mypage_logo.png", alt: "MY PAGE Logo", class: "mypage-fluid" %>
-            <div class="mypage-text">マイページ</div>
-          </div>
-        <% end %>
-
-        <%= link_to bookmarks_emotion_logs_path, class: "mypage-icon-link" do %>
-          <div class="mypage-item">
-            <%= image_tag "favorite.png", alt: "Bookmark", class: "mypage-fluid" %>
-            <div class="mypage-text">お気に入りリスト</div>
-          </div>
-        <% end %>
-
-        <%= link_to "#", class: "mypage-icon-link" do %>
-          <div class="mypage-item">
-            <%= image_tag "form_contact.png", alt: "FORM CONTACT", class: "mypage-fluid" %>
-            <div class="mypage-text">お問い合わせ</div>
-          </div>
-        <% end %>
-      </div>
-    <% end %>
-  </div>
-
-  <% unless user_signed_in? %>
-    <div class="neon-btn-panel">
-      <%= link_to "https://soundcloud.com/signup", target: "_blank", rel: "noopener", class: "neon-btn btn-neon-xl" do %>
-        <div class="neon-btn-title">新規作成</div>
-        <div class="neon-btn-sub">(SoundCloudアカウントも簡単作成)</div>
-      <% end %>
-
-      <%= link_to user_soundcloud_omniauth_authorize_path, class: "neon-btn btn-neon-xl" do %>
-        <div class="neon-btn-title">ログインして始める</div>
-      <% end %>
-    </div>
-
-    <div class="neon-btn-footer large-text">
-      <strong>※ はじめての方は新規作成で登録後、<br>
-      この画面に戻って「ログインして始める」をクリックしてください。</strong>
-    </div>
-  <% end %>
-
+<%= render 'shared/header' %>
   <% if user_signed_in? %>
     <div id="hp-bar-container">
       <span class="today_mental_text">👆Today's stress level <span id="bar-width-display"></span>)👆</span>
@@ -91,12 +7,11 @@
       <div id="hp-bar"></div>
     </div>
   <% end %>
+  <br>
 <br>
 <br>
 <br>
 <br>
-<br>
-<!-- 感情ログ一覧 -->
 <div class="row justify-content-center">
   <% @emotion_logs.each do |log| %>
     <div id="<%= dom_id(log) %>" class="col-md-8 mb-4">

@@ -1,4 +1,5 @@
 <!-- app/views/emotion_logs/show.html.erb -->
+<%= render 'shared/header' %>
 
 <div class="container mt-5">
   <h1 class="text-center mt-4">
@@ -7,11 +8,11 @@
 
   <!-- レコードの情報を表示する部分 -->
   <div class="card mb-4">
-    <div class="card-header">
+    <div class="card-header text-center">
       <strong>記録日時:</strong>
       <%= @emotion_log.created_at.strftime('%Y-%m-%d %H:%M:%S') %>
     </div>
-    <div class="card-body">
+<div class="card-body text-center">
       <p><strong>感情:</strong> <%= @emotion_log.emotion %></p>
       <p><strong>日記:</strong> <%= @emotion_log.description %></p>
         <% if current_user == @emotion_log.user %>
@@ -19,11 +20,8 @@
         <% end %>
         <br>
  <% if @emotion_log.music_url.present? %>
-  <audio controls class="ms-3" preload="none">
-    <source src="<%= @emotion_log.music_url %>" type="audio/mpeg">
-    お使いのブラウザはオーディオ要素をサポートしていません。
-  </audio>
-<% end %>
+    <%= render 'mini_music_player', log: @emotion_log %>
+  <% end %>
       </div>
     </div>
   </div>
