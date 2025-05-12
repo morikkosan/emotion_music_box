@@ -92,7 +92,7 @@
     </div>
   <% end %>
 
-  <!-- 感情ログ一覧 -->
+<!-- 感情ログ一覧 -->
 <div class="row justify-content-center">
   <% @emotion_logs.each do |log| %>
     <div id="<%= dom_id(log) %>" class="col-md-8 mb-4">
@@ -100,19 +100,29 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <strong><%= log.created_at.strftime('%Y-%m-%d %H:%M:%S') %></strong>
 
-          <% if current_user == log.user %>
-            <!-- ★ ここを form_with＋submit に置き換える ★ -->
-            <%= form_with  url:   emotion_log_path(log),
-                          method: :delete,
-                          data:  { turbo_confirm: '本当に削除しますか？',
-                                    turbo_stream: true },     # ← Stream を選択
-                          class:  'd-inline' do %>
-
-              <%= submit_tag '削除', class: 'btn btn-danger btn-sm' %>
+          <div class="d-flex align-items-center gap-3">
+            <% if current_user == log.user %>
+              <%= form_with url: emotion_log_path(log),
+                            method: :delete,
+                            data: {
+                              turbo_confirm: '本当に削除しますか？',
+                              turbo_stream: true
+                            },
+                            class: 'd-inline' do %>
+                <%= submit_tag '削除', class: 'btn btn-danger btn-sm' %>
+              <% end %>
+            <% else %>
+              <%= render 'bookmark_buttons', emotion_log: log %>
             <% end %>
-          <% else %>
-            <%= render 'bookmark_buttons', emotion_log: log %>
-          <% end %>
+
+            <!-- 💬 コメント数（数字→アイコン順、ハートと合わせた） -->
+            <div class="d-flex align-items-center" style="gap: 4px;">
+              <span class="fw-bold" style="font-size: 1rem;"><%= log.comments.size %></span>
+              <%= image_tag 'comment_icon.png',
+                            alt: 'コメント数',
+                            style: 'width: 48px; height: 48px; display: inline-block;' %>
+            </div>
+          </div>
         </div>
 
         <div class="card-body">
@@ -125,11 +135,13 @@
             </p>
             <%= render 'mini_music_player', log: log %>
           </div>
-          </div>
         </div>
       </div>
-    <% end %>
-  </div>
+    </div>
+  <% end %>
+</div>
+
+
 
   <!-- ページネーション -->
   <% if user_signed_in? %>

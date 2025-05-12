@@ -86,7 +86,7 @@
       <!-- ② コメント一覧を comments フレームでラップ -->
       <turbo-frame id="comments">
         <div id="comments" data-comment-form-target="comments">
-          <%= render @emotion_log.comments.order(created_at: :desc) %>
+      <%= render @comments %>
         </div>
       </turbo-frame>
     </div>
