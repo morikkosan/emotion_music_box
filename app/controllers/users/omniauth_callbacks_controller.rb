@@ -42,7 +42,14 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
       flash[:notice] = "SoundCloudでログインしました！"
 
       # **認証成功時のリダイレクト**
-      redirect_to root_path
+      if @user.profile_completed?
+        redirect_to root_path
+      else
+        Rails.logger.info "➡️ 初回ログインのためプロフィール入力ページへ遷移"
+
+        redirect_to new_user_session_path
+      end
+
     else
       session["devise.soundcloud_data"] = oauth_data.except(:extra)
       Rails.logger.error "❌ SoundCloud OAuth login failed. Redirecting to registration."

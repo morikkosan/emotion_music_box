@@ -15,13 +15,10 @@
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icon.png">
 
-  <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
-  <%= javascript_include_tag "application",
-        "data-turbo-track": "reload",
-        type: "module",
-        defer: true %>
+  <%= stylesheet_link_tag "application", "data-turbo-track": "reload", media: "all" %>
+  <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module", defer: true %>
 
-  <!-- 追加ライブラリ -->
+  <!-- 外部ライブラリ -->
   <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap"
@@ -29,6 +26,8 @@
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script defer src="https://w.soundcloud.com/player/api.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.8/axios.min.js"></script>
+
 </head>
 
 <body data-flash-notice="<%= j flash.now[:notice] %>"
@@ -38,6 +37,8 @@
   <p>🔍 Debug: <%= current_user.inspect %></p>
 
   <div id="comment-container"></div>
+  <!-- 更新／エラー等のメッセージを出す領域 -->
+  <div id="flash" class="position-fixed top-0 start-50 translate-middle-x mt-4 zindex-tooltip"></div>
 
   <%= yield %>
 
@@ -62,7 +63,7 @@
          class="toast align-items-center text-white bg-success border-0"
          role="alert" aria-live="assertive" aria-atomic="true">
       <div class="d-flex">
-        <div class="toast-body">今日の mu emo を保存しました！</div>
+        <div class="toast-body">今日の emomu を保存しました！</div>
         <button type="button" class="btn-close btn-close-white me-2 m-auto"
                 data-bs-dismiss="toast"></button>
       </div>
@@ -73,6 +74,10 @@
   <script>
     window.SOUNDCLOUD_CLIENT_ID = "<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>";
     window.soundcloudToken      = "<%= ENV['SOUNDCLOUD_OAUTH_TOKEN'] %>";
+    window.CLOUDINARY_CLOUD_NAME   = "<%= ENV['CLOUDINARY_CLOUD_NAME'] %>";
+  window.CLOUDINARY_UPLOAD_PRESET = "<%= ENV['CLOUDINARY_UPLOAD_PRESET'] %>";
+    window.CLOUDINARY_UPLOAD_PRESET = "avatar_upload";
+
   </script>
 
   <p style="color:#f1efef;">

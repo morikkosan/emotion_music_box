@@ -1,3 +1,5 @@
-<%= turbo_frame_tag "bookmark_count_#{emotion_log.id}" do %>
-  <span class="bookmark-count"><%= emotion_log.bookmarks.count %></span>
+<%= turbo_stream.replace "bookmark_count_#{emotion_log.id}" do %>
+  <span class="bookmark-count" data-bookmark-toggle-target="count">
+    <%= emotion_log.bookmarks.count %>
+  </span>
 <% end %>
