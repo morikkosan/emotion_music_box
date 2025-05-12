@@ -1,49 +1,139 @@
-// app/javascript/packs/application.js
-console.log("JavaScript is loaded successfully!");
-
-/* --------------------------------------------------
- * 基本ライブラリのセットアップ
- * --------------------------------------------------*/
+// app/javascript/application.js
 import Rails from "@rails/ujs";
-Rails.start();
-
 import "@hotwired/turbo-rails";
+import * as bootstrap from "bootstrap";
 import "./controllers";
 
-import * as bootstrap from "bootstrap";
+Rails.start();
 window.bootstrap = bootstrap;
 
-/* --------------------------------------------------
- * カスタム JS（必要に応じてコメントアウト解除）
- * --------------------------------------------------*/
-import "./custom/comments";
-import "./custom/gages_test";
-import "./custom/flash_messages";
-// import "./custom/search_music";
-
-/* --------------------------------------------------
- * Turbo Stream: modal-content が差し替えられた直後にモーダルを再表示
- * --------------------------------------------------*/
-document.addEventListener("turbo:after-stream-render", (ev) => {
-  if (
-    ev.target instanceof Turbo.StreamElement &&
-    ev.target.target === "modal-content"
-  ) {
-    const modal = document.getElementById("modal-container");
-    if (modal) bootstrap.Modal.getOrCreateInstance(modal).show();
-  }
-});
-
-/* --------------------------------------------------
- * Turbo が完全にロードされた後の初期化
- * --------------------------------------------------*/
 document.addEventListener("turbo:load", () => {
-  console.log("✅ Turbo loaded OK");
+  const fileInput     = document.getElementById("avatarInput");
+  const inlinePreview = document.getElementById("avatarPreviewInline");
+  const hiddenField   = document.getElementById("croppedAvatarData");
+  const modalEl       = document.getElementById("avatarCropModal");
+  const cropContainer = document.getElementById("cropContainer");
+  const cropImage     = document.getElementById("cropImage");
+  const confirmBtn    = document.getElementById("cropConfirmBtn");
 
-  // 例: 検索ボタンにクリックイベントを付与（重複登録防止）
-  const button = document.getElementById("search-button");
-  if (button && button.dataset.listenerAdded !== "true") {
-    button.addEventListener("click", searchMusicWithPagination);
-    button.dataset.listenerAdded = "true";
+  if (![fileInput, inlinePreview, hiddenField, modalEl, cropContainer, cropImage, confirmBtn].every(Boolean)) {
+    console.error("❌ 必要な要素が見つかりません");
+    return;
   }
+
+  const modal = new bootstrap.Modal(modalEl);
+  let startX = 0, startY = 0;
+  let isDragging = false, dragStartX = 0, dragStartY = 0;
+
+  function updateTransform () {
+    cropImage.style.transform = `translate(${startX}px, ${startY}px)`;
+  }
+
+  // --- 初期スタイル ---
+  cropImage.style.position      = "absolute";
+  cropImage.style.top           = "0";
+  cropImage.style.left          = "0";
+  cropImage.style.userSelect    = "none";
+  cropImage.style.webkitUserSelect = "none";
+  cropImage.style.maxWidth      = "none";
+  cropImage.style.maxHeight     = "none";
+  cropImage.draggable           = false;
+  cropContainer.style.cursor    = "grab";
+  cropContainer.style.touchAction = "none";
+
+  // --- ファイル選択 ---
+  fileInput.addEventListener("change", e => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      cropImage.src = reader.result;
+      startX = 0;
+      startY = 0;
+      updateTransform();
+      modal.show();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // --- ドラッグ移動 ---
+  cropContainer.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    isDragging  = true;
+    dragStartX  = e.clientX;
+    dragStartY  = e.clientY;
+    cropContainer.setPointerCapture(e.pointerId);
+    cropContainer.style.cursor = "grabbing";
+  });
+
+  cropContainer.addEventListener("pointermove", e => {
+    if (!isDragging) return;
+    const dx = e.clientX - dragStartX;
+    const dy = e.clientY - dragStartY;
+    startX  += dx;
+    startY  += dy;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    updateTransform();
+  });
+
+  cropContainer.addEventListener("pointerup", e => {
+    if (isDragging) {
+      isDragging = false;
+      cropContainer.releasePointerCapture(e.pointerId);
+      cropContainer.style.cursor = "grab";
+    }
+  });
+
+  // --- クロップ確定 ---
+  confirmBtn.addEventListener("click", async () => {
+    const canvas = document.createElement("canvas");
+    const ctx    = canvas.getContext("2d");
+    canvas.width  = 80;
+    canvas.height = 80;
+
+    // 表示領域と画像のスケール
+    const viewWidth  = cropContainer.clientWidth;
+    const viewHeight = cropContainer.clientHeight;
+    const scaleX = cropImage.naturalWidth  / cropImage.clientWidth;
+    const scaleY = cropImage.naturalHeight / cropImage.clientHeight;
+
+    const sx = startX * -1 * scaleX;
+    const sy = startY * -1 * scaleY;
+
+    ctx.drawImage(
+      cropImage,
+      sx, sy,
+      viewWidth * scaleX, viewHeight * scaleY,
+      0, 0,
+      canvas.width, canvas.height
+    );
+
+    const dataUrl = canvas.toDataURL("image/png");
+    inlinePreview.src = dataUrl;
+    hiddenField.value = dataUrl;
+
+    // ===== Cloudinary へアップロード（既存処理は変更せず追加のみ） =====
+    try {
+      const blob = await (await fetch(dataUrl)).blob();
+      const fd   = new FormData();
+      fd.append("file", blob, "avatar.png");
+      fd.append("upload_preset", window.CLOUDINARY_UPLOAD_PRESET);
+
+      const res = await axios.post(
+        `https://api.cloudinary.com/v1_1/${window.CLOUDINARY_CLOUD_NAME}/upload`,
+        fd // ← FormData
+        // 👇この headers 行は削除！
+        // { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      inlinePreview.src = res.data.secure_url;
+      hiddenField.value = res.data.secure_url;
+    } catch (err) {
+      console.error("Cloudinary upload failed", err);
+    } finally {
+      modal.hide();
+    }
+    // ======================================================================
+  });
 });

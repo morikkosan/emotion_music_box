@@ -1,0 +1,4 @@
+<!-- app/views/comments/toggle_reaction.turbo_stream.erb -->
+<%= turbo_stream.replace dom_id(@comment) do %>
+  <%= render partial: "comments/comment", locals: { comment: @comment } %>
+<% end %>

@@ -1,10 +1,12 @@
-<div class="bookmark-icon-container">
+<div class="bookmark-icon-container" data-controller="bookmark-toggle">
   <%= turbo_frame_tag "bookmark_count_#{emotion_log.id}" do %>
-    <span class="bookmark-count"><%= emotion_log.bookmarks.count %></span>
+    <span class="bookmark-count" data-bookmark-toggle-target="count">
+      <%= emotion_log.bookmarks.size %>
+    </span>
   <% end %>
-  
+
   <% if user_signed_in? %>
-    <% if current_user.bookmark?(emotion_log) %>
+    <% if @user_bookmark_ids.include?(emotion_log.id) %>
       <%= render 'unbookmark', emotion_log: emotion_log %>
     <% else %>
       <%= render 'bookmark', emotion_log: emotion_log %>
