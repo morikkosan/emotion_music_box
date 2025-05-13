@@ -6,19 +6,21 @@ class EmotionLogsController < ApplicationController
 
   def index
     @emotion_logs = EmotionLog
-                      .includes(:user, :bookmarks)
+                      .includes(:user, :bookmarks, :tags)
                       .order(date: :desc)
                       .page(params[:page]).per(7)
 
     @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id) if user_signed_in?
   end
 
-  def my_emotion_logs
-    @emotion_logs = current_user.emotion_logs
-                                .order(date: :desc)
-                                .page(params[:page]).per(7)
-    render :index
-  end
+def my_emotion_logs
+  @emotion_logs = current_user.emotion_logs
+                              .includes(:user, :bookmarks, :tags)  # ← ここに :tags を追加
+                              .order(date: :desc)
+                              .page(params[:page]).per(7)
+  render :index
+end
+
 
   def new
     @emotion_log = EmotionLog.new(music_url: params[:music_url],

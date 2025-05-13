@@ -50,7 +50,6 @@
 
           <div class="mt-2" data-tag-input-target="tags"></div>
 
-          <!-- 空時は非表示、候補時に show を付与する -->
           <div
             class="dropdown-menu"
             data-tag-input-target="suggestions"
@@ -70,13 +69,15 @@
 
         <div class="d-flex justify-content-center">
           <%= form.submit '記録する',
-                          class: 'btn btn-primary me-2' %>
+                          class: 'btn btn-primary me-2',
+                          data: { "submit-handler-target": "submit" } %>
           <button type="button"
                   class="btn btn-warning"
                   data-action="search-music#backToSearch">
             曲を選び直す
           </button>
         </div>
+
       <% end %>
 
       <%= link_to '一覧に戻る',

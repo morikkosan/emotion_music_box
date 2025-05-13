@@ -14360,11 +14360,19 @@ var search_music_controller_default = class extends Controller {
 
 // app/javascript/controllers/submit_handler_controller.js
 var submit_handler_controller_default = class extends Controller {
+  // ① submit ボタンをターゲットにする
+  static targets = ["submit"];
   connect() {
     console.log("\u{1F4DD} submit-handler connected");
+    if (this.hasSubmitTarget) {
+      this.submitTarget.disabled = false;
+    }
   }
   submit(event) {
     event.preventDefault();
+    if (this.hasSubmitTarget) {
+      this.submitTarget.disabled = true;
+    }
     const form = this.element;
     const formData = new FormData(form);
     fetch(form.action, {
@@ -14383,9 +14391,15 @@ var submit_handler_controller_default = class extends Controller {
         }, 1500);
         return;
       }
-      alert("\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + (data.errors || []).join("\\n"));
+      if (this.hasSubmitTarget) {
+        this.submitTarget.disabled = false;
+      }
+      alert("\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + (data.errors || []).join("\n"));
     }).catch((error2) => {
       console.error("\u9001\u4FE1\u30A8\u30E9\u30FC:", error2);
+      if (this.hasSubmitTarget) {
+        this.submitTarget.disabled = false;
+      }
       alert("\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
     });
   }
