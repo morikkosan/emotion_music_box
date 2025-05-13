@@ -73,7 +73,7 @@ def show
   # コメント本体（ユーザーはincludesで先読み）
   @comments = Comment
                 .where(emotion_log_id: @emotion_log.id)
-                .includes(:user)
+                .includes(:user, :comment_reactions)
                 .order(created_at: :desc)
 
   # 各コメントのリアクション数をまとめて取得

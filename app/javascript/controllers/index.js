@@ -6,6 +6,8 @@ import RecordBtnController from "./record_btn_controller"  // ← 追加
 import BookmarkToggleController from "./bookmark_toggle_controller";
 import CommentFormController from "./comment_form_controller"
 import ReactionController    from "./reaction_controller"   // 追加
+import TagInputController from "./tag_input_controller";
+
 
 const application = Application.start(); // ← 最初に application を定義！
 
@@ -15,3 +17,4 @@ application.register("submit-handler", SubmitHandlerController); // ← これ�
 application.register("bookmark-toggle", BookmarkToggleController); // ✅ 名前一致
 application.register("comment-form", CommentFormController)
 application.register("reaction",    ReactionController)
+application.register("tag-input", TagInputController);

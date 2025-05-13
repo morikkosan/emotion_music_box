@@ -74,35 +74,32 @@
                            id: "croppedAvatarData" %>
       </div>
 
-      <!-- 画像削除 -->
-      <% if resource.avatar.attached? %>
-        <div class="form-group text-center">
-          <%= f.check_box :remove_avatar %>
-          <%= f.label :remove_avatar, "画像を削除する" %>
-        </div>
-      <% end %>
+   <!-- ✅ 更新ボタンを上に配置、id付き -->
+<div class="form-group text-center mb-3">
+<%= f.submit "更新", class: "btn neon-button" %>
+</div>
 
-      <!-- 更新ボタン -->
-      <div class="form-group text-center">
-        <%= f.submit "更新", class: "btn btn-primary" %>
-      </div>
-    <% end %>
+<!-- ✅ 削除ボタンを下に配置 -->
+<% if resource.avatar.attached? %>
+  <div class="form-group text-center">
+    <%= f.check_box :remove_avatar, id: "removeAvatarCheckbox", style: "display:none;" %>
+    <button type="button" id="removeAvatarBtn" class="btn btn-warning btn-sm">画像を削除する</button>
+  </div>
+<% end %>
+
+<% end %>
 
     <hr>
+<div class="text-end mt-5">
+  <%= button_to "アカウント削除",
+                registration_path(resource_name),
+                method: :delete,
+                data: { confirm: "本当に削除しますか？" },
+                class: "btn btn-link text-danger-emphasis small fw-semibold" %>
+</div>
 
-    <!-- アカウント削除 -->
-    <h3 class="text-center mt-3">アカウント削除</h3>
-    <p class="text-center text-muted">
-      アカウントを削除すると、すべてのデータが失われます。
-    </p>
-    <div class="text-center mb-3">
-      <%= button_to "アカウント削除",
-                    registration_path(resource_name),
-                    method: :delete,
-                    data: { confirm: "本当に削除しますか？" },
-                    class: "btn btn-danger" %>
-    </div>
 
+  
     <p class="text-center">
       <%= link_to 'トップに戻る',
                   emotion_logs_path,
