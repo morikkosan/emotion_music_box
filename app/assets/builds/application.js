@@ -14507,6 +14507,74 @@ var reaction_controller_default = class extends Controller {
   }
 };
 
+// app/javascript/controllers/tag_input_controller.js
+var tag_input_controller_default = class extends Controller {
+  static targets = ["input", "tags", "suggestions"];
+  connect() {
+    this.selectedTags = [];
+  }
+  handleKeydown(event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      const value = this.inputTarget.value.trim();
+      if (value && this.selectedTags.length < 3 && !this.selectedTags.includes(value)) {
+        this.addTag(value);
+      }
+      this.inputTarget.value = "";
+      this.clearSuggestions();
+    }
+  }
+  filterSuggestions() {
+    const query = this.inputTarget.value.trim();
+    if (!query) {
+      this.clearSuggestions();
+      return;
+    }
+    fetch(`/tags/search?q=${encodeURIComponent(query)}`).then((response) => response.json()).then((data) => {
+      this.suggestionsTarget.innerHTML = "";
+      data.forEach((tag) => {
+        const option = document.createElement("div");
+        option.classList.add("dropdown-item");
+        option.textContent = tag.name;
+        option.addEventListener("click", () => {
+          this.addTag(tag.name);
+          this.inputTarget.value = "";
+          this.clearSuggestions();
+        });
+        this.suggestionsTarget.appendChild(option);
+      });
+    });
+  }
+  addTag(tag) {
+    if (this.selectedTags.includes(tag) || this.selectedTags.length >= 3) return;
+    this.selectedTags.push(tag);
+    this.updateTagsView();
+    document.getElementById("hidden-tags").value = this.selectedTags.join(",");
+  }
+  updateTagsView() {
+    this.tagsTarget.innerHTML = "";
+    this.selectedTags.forEach((tag) => {
+      const badge = document.createElement("span");
+      badge.classList.add("badge", "bg-info", "text-dark", "me-1", "mb-1");
+      badge.textContent = tag;
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.classList.add("btn-close", "btn-close-white", "ms-2", "small");
+      removeBtn.setAttribute("aria-label", "Remove");
+      removeBtn.addEventListener("click", () => {
+        this.selectedTags = this.selectedTags.filter((t) => t !== tag);
+        this.updateTagsView();
+        document.getElementById("hidden-tags").value = this.selectedTags.join(",");
+      });
+      badge.appendChild(removeBtn);
+      this.tagsTarget.appendChild(badge);
+    });
+  }
+  clearSuggestions() {
+    this.suggestionsTarget.innerHTML = "";
+  }
+};
+
 // app/javascript/controllers/index.js
 var application = Application.start();
 application.register("modal", modal_controller_default);
@@ -14515,6 +14583,7 @@ application.register("submit-handler", submit_handler_controller_default);
 application.register("bookmark-toggle", bookmark_toggle_controller_default);
 application.register("comment-form", comment_form_controller_default);
 application.register("reaction", reaction_controller_default);
+application.register("tag-input", tag_input_controller_default);
 
 // app/javascript/application.js
 Rails.start();
@@ -14630,6 +14699,28 @@ document.addEventListener("turbo:load", () => {
       modal.hide();
     }
   });
+});
+document.addEventListener("turbo:load", () => {
+  const removeAvatarBtn = document.getElementById("removeAvatarBtn");
+  const removeAvatarCheckbox = document.getElementById("removeAvatarCheckbox");
+  if (removeAvatarBtn && removeAvatarCheckbox) {
+    removeAvatarBtn.addEventListener("click", () => {
+      const isChecked = removeAvatarCheckbox.checked;
+      const confirmMsg = isChecked ? "\u524A\u9664\u3092\u30AD\u30E3\u30F3\u30BB\u30EB\u3057\u307E\u3059\u304B\uFF1F" : "\u672C\u5F53\u306B\u753B\u50CF\u3092\u524A\u9664\u3057\u307E\u3059\u304B\uFF1F";
+      if (confirm(confirmMsg)) {
+        removeAvatarCheckbox.checked = !isChecked;
+        if (removeAvatarCheckbox.checked) {
+          removeAvatarBtn.textContent = "\u524A\u9664\u4E88\u5B9A";
+          removeAvatarBtn.classList.remove("btn-warning");
+          removeAvatarBtn.classList.add("btn-danger");
+        } else {
+          removeAvatarBtn.textContent = "\u753B\u50CF\u3092\u524A\u9664\u3059\u308B";
+          removeAvatarBtn.classList.remove("btn-danger");
+          removeAvatarBtn.classList.add("btn-warning");
+        }
+      }
+    });
+  }
 });
 /*! Bundled license information:
 
