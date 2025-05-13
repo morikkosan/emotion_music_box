@@ -8,10 +8,20 @@
 
   <!-- レコードの情報を表示する部分 -->
   <div class="card mb-4">
-    <div class="card-header text-center">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div>
       <strong>記録日時:</strong>
       <%= @emotion_log.created_at.strftime('%Y-%m-%d %H:%M:%S') %>
+
+      <% if @emotion_log.tags.any? %>
+        <span class="ms-3">
+          <% @emotion_log.tags.each do |tag| %>
+            <span class="badge bg-secondary me-1"><%= tag.name %></span>
+          <% end %>
+        </span>
+      <% end %>
     </div>
+  </div>
 <div class="card-body text-center">
       <p><strong>感情:</strong> <%= @emotion_log.emotion %></p>
       <p><strong>日記:</strong> <%= @emotion_log.description %></p>
