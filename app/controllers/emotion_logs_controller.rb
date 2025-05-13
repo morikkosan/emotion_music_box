@@ -138,7 +138,7 @@ end
   # strong‑parameters
   def emotion_log_params
     params.require(:emotion_log)
-          .permit(:date, :emotion, :description, :music_url, :track_name)
+          .permit(:date, :emotion, :description, :music_url, :track_name, :tag_names)
   end
 
   # HP 計算
