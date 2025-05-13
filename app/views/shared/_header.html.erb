@@ -1,8 +1,7 @@
 <style>
-  /* メインメニューアイテムをさらに大きく */
   .mypage-item {
-    width: 160px;                     /* ←160pxに拡大 */
-    height: 160px;                    /* ←160pxに拡大 */
+    width: 160px;
+    height: 160px;
     background: rgba(0, 0, 0, 0.6);
     border: none;
     border-radius: 8px;
@@ -13,64 +12,102 @@
     transition: transform 0.25s ease, box-shadow 0.25s ease;
     cursor: pointer;
   }
-
-  /* ホバー時 */
   .mypage-item:hover {
     transform: translateY(-4px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
   }
-
-  /* 検索欄だけ横長に */
   .mypage-item.search-item.wide {
-    width: 240px;   /* ←240pxに拡大 */
+    width: 240px;
   }
-
-  /* アイコンをコンテナいっぱいに近づける */
   .mypage-icon {
     display: block;
     margin: 0 auto;
-    max-width: 90%; /* ←90%まで大きく */
+    max-width: 90%;
   }
-
-  /* テキストを少し大きく */
   .mypage-text {
     margin-top: 0.5rem;
     color: #fff;
-    font-size: 1rem; /* ←1remに拡大 */
+    font-size: 1rem;
     text-align: center;
+  }
+  .user-dropdown-wrapper {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+  }
+  .user-dropdown {
+    display: inline-block;
+    position: relative;
+  }
+  .user-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: default;
+  }
+  .user-icon-placeholder {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .dropdown-menu {
+    display: none;
+    background-color: #222;
+    padding: 0.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    position: absolute;
+    top: 100%;
+    right: 0;
+    min-width: 160px;
+  }
+  .user-dropdown:hover .dropdown-menu,
+  .dropdown-menu:hover {
+    display: block;
+  }
+  .dropdown-item {
+    color: #fff;
+    padding: 0.5rem;
+    display: block;
+    text-decoration: none;
+  }
+  .dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
   }
 </style>
 
-
-
 <div class="container mt-5 position-relative">
-  <!-- DJアイコン -->
   <div class="dj-icon" style="position:absolute; top:20px; left:20px; z-index:1000;">
     <%= image_tag "dj_robot_icon.png", alt: "DJ Robot", style: "width:60px; cursor:pointer;", onclick: "toggleAudio()" %>
     <div id="audioButtonIcon" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:20px; color:#fff; pointer-events:none;">▶</div>
   </div>
 
-  <!-- ユーザードロップダウン -->
   <% if user_signed_in? %>
-    <div class="user-dropdown" style="position:absolute; top:20px; right:20px; z-index:1000;">
-      <div class="user-bar d-flex align-items-center" style="cursor:pointer;">
-        <% if current_user.avatar.attached? %>
-          <%= image_tag current_user.avatar.variant(resize_to_fill:[32,32]).processed, class: "rounded-circle", alt: current_user.name %>
-        <% else %>
-          <%= image_tag "default_stick_figure.png", size: "32x32", class: "rounded-circle", alt: current_user.name %>
-        <% end %>
-        <span class="ms-2 text-white"><%= current_user.name %></span>
-      </div>
-      <div class="dropdown-menu" style="display: none; position:absolute; top:100%; right:0; margin-top:0.5rem; min-width:160px;">
-        <%= link_to 'ログアウト', destroy_user_session_path, method: :delete, class: 'dropdown-item text-danger' %>
-        <div class="dropdown-divider"></div>
-        <%= link_to 'プロフィール編集', edit_user_registration_path, class: 'dropdown-item' %>
-        <%= link_to 'マイページ', my_emotion_logs_path, class: 'dropdown-item' %>
-        <%= link_to 'お気に入りリスト', bookmarks_emotion_logs_path, class: 'dropdown-item' %>
-        <%= link_to 'お問い合わせ', '#', class: 'dropdown-item' %>
+    <div class="user-dropdown-wrapper">
+      <div class="user-dropdown">
+        <div class="user-bar">
+          <% if current_user.avatar.attached? %>
+            <%= image_tag current_user.avatar.variant(resize_to_fill:[32,32]).processed, class: "rounded-circle", alt: current_user.name %>
+          <% else %>
+            <%= image_tag "default_stick_figure.png", size: "32x32", class: "rounded-circle", alt: current_user.name %>
+          <% end %>
+          <span class="ms-2 text-white"><%= current_user.name %></span>
+        </div>
+        <div class="dropdown-menu">
+          <%= link_to 'ログアウト', destroy_user_session_path, method: :delete, class: 'dropdown-item text-danger' %>
+          <div class="dropdown-divider"></div>
+          <%= link_to 'プロフィール編集', edit_user_registration_path, class: 'dropdown-item' %>
+          <%= link_to 'マイページ', my_emotion_logs_path, class: 'dropdown-item' %>
+          <%= link_to 'お気に入りリスト', bookmarks_emotion_logs_path, class: 'dropdown-item' %>
+          <%= link_to 'お問い合わせ', '#', class: 'dropdown-item' %>
+        </div>
       </div>
     </div>
   <% end %>
+</div>
+
 
   <!-- ロゴ -->
   <div class="text-center mt-4">
@@ -141,3 +178,5 @@
 
   <br><br>
 </div>
+
+
