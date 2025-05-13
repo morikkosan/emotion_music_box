@@ -1,88 +1,143 @@
+<style>
+  /* メインメニューアイテムをさらに大きく */
+  .mypage-item {
+    width: 160px;                     /* ←160pxに拡大 */
+    height: 160px;                    /* ←160pxに拡大 */
+    background: rgba(0, 0, 0, 0.6);
+    border: none;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    cursor: pointer;
+  }
+
+  /* ホバー時 */
+  .mypage-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  /* 検索欄だけ横長に */
+  .mypage-item.search-item.wide {
+    width: 240px;   /* ←240pxに拡大 */
+  }
+
+  /* アイコンをコンテナいっぱいに近づける */
+  .mypage-icon {
+    display: block;
+    margin: 0 auto;
+    max-width: 90%; /* ←90%まで大きく */
+  }
+
+  /* テキストを少し大きく */
+  .mypage-text {
+    margin-top: 0.5rem;
+    color: #fff;
+    font-size: 1rem; /* ←1remに拡大 */
+    text-align: center;
+  }
+</style>
+
+
+
 <div class="container mt-5 position-relative">
-  <div class="text-center mt-4 d-flex align-items-center justify-content-center w-90">
+  <!-- DJアイコン -->
+  <div class="dj-icon" style="position:absolute; top:20px; left:20px; z-index:1000;">
+    <%= image_tag "dj_robot_icon.png", alt: "DJ Robot", style: "width:60px; cursor:pointer;", onclick: "toggleAudio()" %>
+    <div id="audioButtonIcon" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:20px; color:#fff; pointer-events:none;">▶</div>
+  </div>
+
+  <!-- ユーザードロップダウン -->
+  <% if user_signed_in? %>
+    <div class="user-dropdown" style="position:absolute; top:20px; right:20px; z-index:1000;">
+      <div class="user-bar d-flex align-items-center" style="cursor:pointer;">
+        <% if current_user.avatar.attached? %>
+          <%= image_tag current_user.avatar.variant(resize_to_fill:[32,32]).processed, class: "rounded-circle", alt: current_user.name %>
+        <% else %>
+          <%= image_tag "default_stick_figure.png", size: "32x32", class: "rounded-circle", alt: current_user.name %>
+        <% end %>
+        <span class="ms-2 text-white"><%= current_user.name %></span>
+      </div>
+      <div class="dropdown-menu" style="display: none; position:absolute; top:100%; right:0; margin-top:0.5rem; min-width:160px;">
+        <%= link_to 'ログアウト', destroy_user_session_path, method: :delete, class: 'dropdown-item text-danger' %>
+        <div class="dropdown-divider"></div>
+        <%= link_to 'プロフィール編集', edit_user_registration_path, class: 'dropdown-item' %>
+        <%= link_to 'マイページ', my_emotion_logs_path, class: 'dropdown-item' %>
+        <%= link_to 'お気に入りリスト', bookmarks_emotion_logs_path, class: 'dropdown-item' %>
+        <%= link_to 'お問い合わせ', '#', class: 'dropdown-item' %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- ロゴ -->
+  <div class="text-center mt-4">
     <%= link_to emotion_logs_path do %>
-      <%= image_tag "logo1.png", alt: "Emotion List Logo", class: "img-fluid neon-icon", style: "max-width: 700px; width: 100%;" %>
+      <%= image_tag "logo1.png", alt: "Emotion List Logo", class: "img-fluid neon-icon", style: "max-width:700px; width:100%;" %>
     <% end %>
   </div>
 
+  <!-- キャッチコピー -->
   <% unless user_signed_in? %>
     <div class="text-center mt-5 mb-4">
-      <h1 style="font-size: 3rem; font-weight: bold; color:rgb(215, 205, 216); text-shadow: 0 0 10px, rgb(30, 228, 218);">
+      <h1 style="font-size:3rem; font-weight:bold; color:rgb(215,205,216); text-shadow:0 0 10px,#1ee4da;">
         音楽とストレスを支配する
       </h1>
     </div>
   <% end %>
 
-  <div class="dj-icon" style="position: absolute; top: 20px; right: 20px;">
-    <%= image_tag "dj_robot_icon.png", alt: "DJ Robot", style: "width: 300px; height: auto; cursor: pointer;", onclick: "toggleAudio()" %>
-    <div id="audioButtonIcon" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 40px; color: rgb(255, 255, 255); pointer-events: none;">
-      ▶
-    </div>
-  </div>
-
-  <audio id="audioPlayer" loop>
-    <source src="/audios/index.mp3" type="audio/mpeg">
-    お使いのブラウザはオーディオ要素に対応していません。
-  </audio>
-
-  <div class="banner-container text-center mt-3">
-    <% if user_signed_in? %>
-      <div class="mypage-links">
-        <%= link_to "#", id: "logout-link", class: "mypage-icon-link", data: { logout_url: destroy_user_session_path } do %>
-          <div class="mypage-item">
-            <%= image_tag "log_out.png", alt: "Log Out", class: "mypage-fluid" %>
-            <div class="mypage-text">ログアウト</div>
-          </div>
-        <% end %>
-
-        <%= link_to edit_user_registration_path, class: "mypage-icon-link" do %>
-          <div class="mypage-item">
-            <%= image_tag "profile_edit.png", alt: "Profile Edit", class: "mypage-fluid" %>
-            <div class="mypage-text">プロフィール編集</div>
-          </div>
-        <% end %>
-
-        <%= link_to my_emotion_logs_path, class: "mypage-icon-link" do %>
-          <div class="mypage-item">
-            <%= image_tag "mypage_logo.png", alt: "MY PAGE Logo", class: "mypage-fluid" %>
-            <div class="mypage-text">マイページ</div>
-          </div>
-        <% end %>
-
-        <%= link_to bookmarks_emotion_logs_path, class: "mypage-icon-link" do %>
-          <div class="mypage-item">
-            <%= image_tag "favorite.png", alt: "Bookmark", class: "mypage-fluid" %>
-            <div class="mypage-text">お気に入りリスト</div>
-          </div>
-        <% end %>
-
-        <%= link_to "#", class: "mypage-icon-link" do %>
-          <div class="mypage-item">
-            <%= image_tag "form_contact.png", alt: "FORM CONTACT", class: "mypage-fluid" %>
-            <div class="mypage-text">お問い合わせ</div>
-          </div>
+  <!-- メインメニュー -->
+  <% if user_signed_in? %>
+    <div class="d-flex justify-content-center align-items-stretch flex-wrap mt-4">
+      <!-- ログアウト -->
+      <div class="mypage-item">
+        <%= link_to '#', id: 'logout-link', class: 'mypage-icon-link' do %>
+          <%= image_tag 'log_out.png', alt: 'ログアウト', class: 'mypage-icon' %>
+          <div class='mypage-text'>ログアウト</div>
         <% end %>
       </div>
-    <% end %>
-  </div>
 
-  <% unless user_signed_in? %>
-    <div class="neon-btn-panel">
-      <%= link_to "https://soundcloud.com/signup", target: "_blank", rel: "noopener", class: "neon-btn btn-neon-xl" do %>
-        <div class="neon-btn-title">新規作成</div>
-        <div class="neon-btn-sub">(SoundCloudアカウントも簡単作成)</div>
-      <% end %>
+      <!-- プロフィール編集 -->
+      <div class="mypage-item">
+        <%= link_to edit_user_registration_path, class: 'mypage-icon-link' do %>
+          <%= image_tag 'profile_edit.png', alt: 'プロフィール編集', class: 'mypage-icon' %>
+          <div class='mypage-text'>プロフィール編集</div>
+        <% end %>
+      </div>
 
-      <%= link_to user_soundcloud_omniauth_authorize_path, class: "neon-btn btn-neon-xl" do %>
-        <div class="neon-btn-title">ログインして始める</div>
-      <% end %>
-    </div>
+      <!-- 検索Emotion -->
+      <div class="mypage-item search-item wide">
+        <%= form_with url: '#', method: :get, local: true do |f| %>
+          <%= f.text_field :emotion, placeholder: 'Search by emotion', class: 'form-control' %>
+        <% end %>
+      </div>
 
-    <div class="neon-btn-footer large-text">
-      <strong>※ はじめての方は新規作成で登録後、<br>
-      この画面に戻って「ログインして始める」をクリックしてください。</strong>
+      <!-- 検索Genre -->
+      <div class="mypage-item search-item wide">
+        <%= form_with url: '#', method: :get, local: true do |f| %>
+          <%= f.text_field :genre, placeholder: 'Search by genre', class: 'form-control' %>
+        <% end %>
+      </div>
+
+      <!-- マイページ -->
+      <div class="mypage-item">
+        <%= link_to my_emotion_logs_path, class: 'mypage-icon-link' do %>
+          <%= image_tag 'mypage_logo.png', alt: 'マイページ', class: 'mypage-icon' %>
+          <div class='mypage-text'>マイページ</div>
+        <% end %>
+      </div>
+
+      <!-- お気に入り -->
+      <div class="mypage-item">
+        <%= link_to bookmarks_emotion_logs_path, class: 'mypage-icon-link' do %>
+          <%= image_tag 'favorite.png', alt: 'お気に入りリスト', class: 'mypage-icon' %>
+          <div class='mypage-text'>お気に入りリスト</div>
+        <% end %>
+      </div>
     </div>
   <% end %>
 
-
+  <br><br>
 </div>
