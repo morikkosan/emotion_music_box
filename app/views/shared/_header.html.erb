@@ -103,14 +103,30 @@
     background-color: rgba(255, 255, 255, 0.1);
     
   }
+
+  .dj-icon-fixed {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 2000;
+  }
+
+  .dj-icon-fixed img {
+    width: 220px;     /* 好みに応じて調整可能 */
+    height: auto;
+    display: block;
+  }
+
+
 </style>
 
 
 <div class="container mt-5 position-relative">
-  <div class="dj-icon" style="position:absolute; top:20px; left:20px; z-index:1000;">
-    <%= image_tag "dj_robot_icon.png", alt: "DJ Robot", style: "width:60px; cursor:pointer;", onclick: "toggleAudio()" %>
-    <div id="audioButtonIcon" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:20px; color:#fff; pointer-events:none;">▶</div>
-  </div>
+<div class="dj-icon-fixed">
+  <%= image_tag "dj_robot_icon.png", alt: "DJ Robot" %>
+</div>
+
+
 
   <% if user_signed_in? %>
     <div class="user-dropdown-wrapper">
