@@ -31,6 +31,22 @@ data-controller="search-music">
 
         </div>
 
+        <div class="mb-4" data-controller="tag-input">
+          <%= form.label :tag_names, 'ジャンル（最大3つまで）' %>
+          <input type="text"
+                class="form-control"
+                data-tag-input-target="input"
+                data-action="keydown->tag-input#handleKeydown input->tag-input#filterSuggestions"
+                placeholder="ジャンルを入力し、Enterで確定" autocomplete="off" />
+
+          <div class="mt-2" data-tag-input-target="tags"></div>
+
+          <div class="mt-1 dropdown-menu show" style="max-height: 150px; overflow-y: auto;" data-tag-input-target="suggestions"></div>
+
+          <!-- Hidden field for submitting tag values -->
+          <%= hidden_field_tag "emotion_log[tag_names]", "", id: "hidden-tags" %>
+        </div>
+
         <div class="mb-4">
           <%= form.label :description, '一言 吐いてみて' %>
           <%= form.text_field :description, class: 'form-control' %>
