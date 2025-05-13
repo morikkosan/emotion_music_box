@@ -17,32 +17,39 @@
     <div id="<%= dom_id(log) %>" class="col-md-8 mb-4">
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <strong><%= log.created_at.strftime('%Y-%m-%d %H:%M:%S') %></strong>
+  <div>
+    <strong><%= log.created_at.strftime('%Y-%m-%d %H:%M:%S') %></strong>
 
-          <div class="d-flex align-items-center gap-3">
-            <% if current_user == log.user %>
-              <%= form_with url: emotion_log_path(log),
-                            method: :delete,
-                            data: {
-                              turbo_confirm: '本当に削除しますか？',
-                              turbo_stream: true
-                            },
-                            class: 'd-inline' do %>
-                <%= submit_tag '削除', class: 'btn btn-danger btn-sm' %>
-              <% end %>
-            <% else %>
-              <%= render 'bookmark_buttons', emotion_log: log %>
-            <% end %>
+    <% if log.tags.any? %>
+      <span class="ms-3">
+        <% log.tags.each do |tag| %>
+      <span class="badge bg-info text-dark me-1"><%= tag.name %></span>
+        <% end %>
+      </span>
+    <% end %>
+  </div>
 
-            <!-- 💬 コメント数（数字→アイコン順、ハートと合わせた） -->
-            <div class="d-flex align-items-center" style="gap: 4px;">
-              <span class="fw-bold" style="font-size: 1rem;"><%= log.comments.size %></span>
-              <%= image_tag 'comment_icon.png',
-                            alt: 'コメント数',
-                            style: 'width: 48px; height: 48px; display: inline-block;' %>
-            </div>
-          </div>
-        </div>
+  <div class="d-flex align-items-center gap-3">
+    <% if current_user == log.user %>
+      <%= form_with url: emotion_log_path(log),
+                    method: :delete,
+                    data: { turbo_confirm: '本当に削除しますか？', turbo_stream: true },
+                    class: 'd-inline' do %>
+        <%= submit_tag '削除', class: 'btn btn-danger btn-sm' %>
+      <% end %>
+    <% else %>
+      <%= render 'bookmark_buttons', emotion_log: log %>
+    <% end %>
+
+    <div class="d-flex align-items-center" style="gap: 4px;">
+      <span class="fw-bold" style="font-size: 1rem;"><%= log.comments.size %></span>
+      <%= image_tag 'comment_icon.png',
+                    alt: 'コメント数',
+                    style: 'width: 48px; height: 48px; display: inline-block;' %>
+    </div>
+  </div>
+</div>
+
 
         <div class="card-body">
           <div class="d-flex align-items-center">

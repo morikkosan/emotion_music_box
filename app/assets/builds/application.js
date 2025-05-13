@@ -14509,20 +14509,23 @@ var reaction_controller_default = class extends Controller {
 
 // app/javascript/controllers/tag_input_controller.js
 var tag_input_controller_default = class extends Controller {
-  static targets = ["input", "tags", "suggestions"];
+  static targets = ["input", "tags", "suggestions", "hidden"];
   connect() {
+    console.log("\u{1F7E2} tag-input controller connected");
     this.selectedTags = [];
+    this.hiddenTarget.value = "";
   }
-  handleKeydown(event) {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      const value = this.inputTarget.value.trim();
-      if (value && this.selectedTags.length < 3 && !this.selectedTags.includes(value)) {
-        this.addTag(value);
-      }
-      this.inputTarget.value = "";
-      this.clearSuggestions();
+  // Enterキーのみを処理
+  keydown(event) {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    const value = this.inputTarget.value.trim();
+    if (!value || this.selectedTags.includes(value) || this.selectedTags.length >= 3) {
+      this._clearInput();
+      return;
     }
+    this._addTag(value);
+    this._clearInput();
   }
   filterSuggestions() {
     const query = this.inputTarget.value.trim();
@@ -14530,28 +14533,26 @@ var tag_input_controller_default = class extends Controller {
       this.clearSuggestions();
       return;
     }
-    fetch(`/tags/search?q=${encodeURIComponent(query)}`).then((response) => response.json()).then((data) => {
+    fetch(`/tags/search?q=${encodeURIComponent(query)}`).then((r) => r.json()).then((data) => {
       this.suggestionsTarget.innerHTML = "";
       data.forEach((tag) => {
         const option = document.createElement("div");
         option.classList.add("dropdown-item");
         option.textContent = tag.name;
         option.addEventListener("click", () => {
-          this.addTag(tag.name);
-          this.inputTarget.value = "";
-          this.clearSuggestions();
+          this._addTag(tag.name);
+          this._clearInput();
         });
         this.suggestionsTarget.appendChild(option);
       });
     });
   }
-  addTag(tag) {
-    if (this.selectedTags.includes(tag) || this.selectedTags.length >= 3) return;
+  _addTag(tag) {
     this.selectedTags.push(tag);
-    this.updateTagsView();
-    document.getElementById("hidden-tags").value = this.selectedTags.join(",");
+    this._renderTags();
+    this.hiddenTarget.value = this.selectedTags.join(",");
   }
-  updateTagsView() {
+  _renderTags() {
     this.tagsTarget.innerHTML = "";
     this.selectedTags.forEach((tag) => {
       const badge = document.createElement("span");
@@ -14563,8 +14564,8 @@ var tag_input_controller_default = class extends Controller {
       removeBtn.setAttribute("aria-label", "Remove");
       removeBtn.addEventListener("click", () => {
         this.selectedTags = this.selectedTags.filter((t) => t !== tag);
-        this.updateTagsView();
-        document.getElementById("hidden-tags").value = this.selectedTags.join(",");
+        this._renderTags();
+        this.hiddenTarget.value = this.selectedTags.join(",");
       });
       badge.appendChild(removeBtn);
       this.tagsTarget.appendChild(badge);
@@ -14572,6 +14573,10 @@ var tag_input_controller_default = class extends Controller {
   }
   clearSuggestions() {
     this.suggestionsTarget.innerHTML = "";
+  }
+  _clearInput() {
+    this.inputTarget.value = "";
+    this.clearSuggestions();
   }
 };
 

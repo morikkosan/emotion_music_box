@@ -1,22 +1,33 @@
+// app/javascript/controllers/tag_input_controller.js
+
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["input", "tags", "suggestions"]
+  static targets = ["input", "tags", "suggestions", "hidden"]
 
   connect() {
+      console.log("🟢 tag-input controller connected");   // ← ここが出るかどうか
+
     this.selectedTags = []
+    // 最初は隠しフィールドを空に
+    this.hiddenTarget.value = ""
   }
 
-  handleKeydown(event) {
-    if (event.key === "Enter") {
-      event.preventDefault()
-      const value = this.inputTarget.value.trim()
-      if (value && this.selectedTags.length < 3 && !this.selectedTags.includes(value)) {
-        this.addTag(value)
-      }
-      this.inputTarget.value = ""
-      this.clearSuggestions()
+  // Enterキーのみを処理
+  keydown(event) {
+    if (event.key !== "Enter") return
+
+    event.preventDefault()  // ここでフォーム送信を止める
+
+    const value = this.inputTarget.value.trim()
+    // 空文字・重複・3つ以上はそのままクリアして戻る
+    if (!value || this.selectedTags.includes(value) || this.selectedTags.length >= 3) {
+      this._clearInput()
+      return
     }
+
+    this._addTag(value)
+    this._clearInput()
   }
 
   filterSuggestions() {
@@ -26,9 +37,8 @@ export default class extends Controller {
       return
     }
 
-    // ここで候補を取得（例：/tags/search?q=keyword）
     fetch(`/tags/search?q=${encodeURIComponent(query)}`)
-      .then(response => response.json())
+      .then(r => r.json())
       .then(data => {
         this.suggestionsTarget.innerHTML = ""
         data.forEach(tag => {
@@ -36,23 +46,22 @@ export default class extends Controller {
           option.classList.add("dropdown-item")
           option.textContent = tag.name
           option.addEventListener("click", () => {
-            this.addTag(tag.name)
-            this.inputTarget.value = ""
-            this.clearSuggestions()
+            this._addTag(tag.name)
+            this._clearInput()
           })
           this.suggestionsTarget.appendChild(option)
         })
       })
   }
 
-  addTag(tag) {
-    if (this.selectedTags.includes(tag) || this.selectedTags.length >= 3) return
+  _addTag(tag) {
     this.selectedTags.push(tag)
-    this.updateTagsView()
-    document.getElementById("hidden-tags").value = this.selectedTags.join(",")
+    this._renderTags()
+    // 隠しフィールドにセット
+    this.hiddenTarget.value = this.selectedTags.join(",")
   }
 
-  updateTagsView() {
+  _renderTags() {
     this.tagsTarget.innerHTML = ""
     this.selectedTags.forEach(tag => {
       const badge = document.createElement("span")
@@ -65,8 +74,8 @@ export default class extends Controller {
       removeBtn.setAttribute("aria-label", "Remove")
       removeBtn.addEventListener("click", () => {
         this.selectedTags = this.selectedTags.filter(t => t !== tag)
-        this.updateTagsView()
-        document.getElementById("hidden-tags").value = this.selectedTags.join(",")
+        this._renderTags()
+        this.hiddenTarget.value = this.selectedTags.join(",")
       })
 
       badge.appendChild(removeBtn)
@@ -76,5 +85,10 @@ export default class extends Controller {
 
   clearSuggestions() {
     this.suggestionsTarget.innerHTML = ""
+  }
+
+  _clearInput() {
+    this.inputTarget.value = ""
+    this.clearSuggestions()
   }
 }
