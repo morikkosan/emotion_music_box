@@ -12,71 +12,99 @@
     transition: transform 0.25s ease, box-shadow 0.25s ease;
     cursor: pointer;
   }
+
   .mypage-item:hover {
     transform: translateY(-4px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
   }
+
   .mypage-item.search-item.wide {
     width: 240px;
   }
+
   .mypage-icon {
     display: block;
     margin: 0 auto;
     max-width: 90%;
   }
+
   .mypage-text {
     margin-top: 0.5rem;
     color: #fff;
     font-size: 1rem;
     text-align: center;
   }
+
   .user-dropdown-wrapper {
     position: absolute;
     top: 20px;
     right: 20px;
     z-index: 1000;
   }
+
   .user-dropdown {
     display: inline-block;
     position: relative;
   }
+
   .user-bar {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
     cursor: default;
   }
-  .user-icon-placeholder {
-    width: 32px;
-    height: 32px;
+
+  .user-bar img {
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
   }
+
+  .user-bar span {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 500;
+     box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    0 0 12px rgba(230, 0, 255, 0.3),
+    0 0 24px rgba(230, 0, 255, 0.2);
+  }
+
   .dropdown-menu {
     display: none;
     background-color: #222;
-    padding: 0.5rem;
-    border-radius: 8px;
+    padding: 0.75rem;
+    border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     position: absolute;
     top: 100%;
     right: 0;
-    min-width: 160px;
+    min-width: 200px;
   }
+
   .user-dropdown:hover .dropdown-menu,
   .dropdown-menu:hover {
     display: block;
+     box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    0 0 12px rgba(230, 0, 255, 0.3),
+    0 0 24px rgba(230, 0, 255, 0.2);
   }
+
   .dropdown-item {
     color: #fff;
-    padding: 0.5rem;
+    padding: 0.6rem 0.9rem;
     display: block;
+    font-size: 1rem;
     text-decoration: none;
   }
+
   .dropdown-item:hover {
     background-color: rgba(255, 255, 255, 0.1);
+    
   }
 </style>
+
 
 <div class="container mt-5 position-relative">
   <div class="dj-icon" style="position:absolute; top:20px; left:20px; z-index:1000;">
