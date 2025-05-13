@@ -1,6 +1,17 @@
 @import "cropperjs/dist/cropper.css";
 
 
+.user-dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+/* app/assets/stylesheets/custom.css などに追加 */
+
+/* app/assets/stylesheets/custom.css */
+
+
+
+
 /*ページネーション自体のデザイン*/
 .pagination>li>a {			
   border: none;		/*枠線をなくす*/
