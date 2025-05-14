@@ -605,3 +605,55 @@ h1 i.bi bi-heart-pulse {
     0 0 45px #ff00cc !important;
 }
 
+// リアクション0.2秒ほどふんわり色変化
+.transition-colors {
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+}
+
+/* リアクションボタン */
+/* 🚨 上書き対策で !important を追加 */
+
+/* 共通の浮きエフェクト */
+.btn.active-reaction {
+  transform: translateY(-2px);
+  transition: all 0.2s ease-in-out;
+}
+
+/* グローバルなtransition効果を軽く */
+.btn {
+  transition: all 0.2s ease-in-out;
+}
+
+/* 🔵 青系ボタン（よんだ） */
+.btn-info,
+.btn-outline-info {
+  color: #0ff !important;
+  background-color: rgba(0, 255, 255, 0.05) !important;
+  border-color: #0ff !important;
+  text-shadow: 0 0 3px #0ff !important;
+  box-shadow: 0 0 4px #0ff inset !important;
+}
+
+.btn-info.active-reaction {
+  background-color: rgba(0, 255, 255, 0.2) !important;
+  box-shadow: 0 0 6px 2px #00e0ff inset !important;
+  color: #ccffff !important;
+  text-shadow: 0 0 6px #99ffff !important;
+}
+
+/* 🟢 緑系ボタン（それな） */
+.btn-success,
+.btn-outline-success {
+  color: #0f0 !important;
+  background-color: rgba(0, 255, 0, 0.05) !important;
+  border-color: #0f0 !important;
+  text-shadow: 0 0 3px #0f0 !important;
+  box-shadow: 0 0 4px #0f0 inset !important;
+}
+
+.btn-success.active-reaction {
+  background-color: rgba(0, 255, 0, 0.2) !important;
+  box-shadow: 0 0 6px 2px #0f0 inset !important;
+  color: #ccffcc !important;
+  text-shadow: 0 0 6px #99ff99 !important;
+}

@@ -14500,23 +14500,34 @@ var reaction_controller_default = class extends Controller {
     event.preventDefault();
     const btn = this.buttonTarget;
     const cntEl = this.countTarget;
-    let cnt = parseInt(cntEl.textContent, 10);
-    const isActive = btn.classList.contains("btn-primary");
+    const kind = this.kindValue;
+    let count = parseInt(cntEl.textContent, 10);
+    count = isNaN(count) ? 0 : count;
+    const outlineClass = kind === "sorena" ? "btn-outline-success" : "btn-outline-info";
+    const solidClass = kind === "sorena" ? "btn-success" : "btn-info";
+    const isActive = btn.classList.contains("active-reaction");
+    btn.classList.remove("btn-success", "btn-info", "btn-outline-success", "btn-outline-info", "active-reaction");
     if (isActive) {
-      cnt -= 1;
-      btn.classList.replace("btn-primary", "btn-outline-secondary");
+      count = Math.max(0, count - 1);
+      btn.classList.add(outlineClass);
     } else {
-      cnt += 1;
-      btn.classList.replace("btn-outline-secondary", "btn-primary");
+      count += 1;
+      btn.classList.add(solidClass, "active-reaction");
     }
-    cntEl.textContent = cnt;
-    fetch(`/comments/${this.commentIdValue}/toggle_reaction?kind=${this.kindValue}`, {
+    cntEl.textContent = count;
+    fetch(`/comments/${this.commentIdValue}/toggle_reaction?kind=${kind}`, {
       method: "POST",
       headers: {
         "Accept": "application/json",
         "X-CSRF-Token": document.querySelector("meta[name=csrf-token]").content
       },
       credentials: "same-origin"
+    }).then((response) => response.json()).then((data) => {
+      if (data.status !== "ok") {
+        console.error("\u30EA\u30A2\u30AF\u30B7\u30E7\u30F3\u5931\u6557\uFF08\u5FDC\u7B54\u30A8\u30E9\u30FC\uFF09");
+      }
+    }).catch((error2) => {
+      console.error("\u901A\u4FE1\u30A8\u30E9\u30FC:", error2);
     });
   }
 };
