@@ -1,17 +1,18 @@
-<div class="bookmark-icon-container" data-controller="bookmark-toggle">
-  <%= turbo_frame_tag "bookmark_count_#{emotion_log.id}" do %>
+<!-- ✅ Stimulus controller は Turbo frame の外 -->
+<%= turbo_frame_tag "bookmark_wrapper_#{emotion_log.id}" do %>
+  <div class="bookmark-icon-container" data-controller="bookmark-toggle">
     <span class="bookmark-count" data-bookmark-toggle-target="count">
       <%= emotion_log.bookmarks.size %>
     </span>
-  <% end %>
 
-  <% if user_signed_in? %>
-    <% if @user_bookmark_ids.include?(emotion_log.id) %>
-      <%= render 'unbookmark', emotion_log: emotion_log %>
+    <% if user_signed_in? %>
+      <% if @user_bookmark_ids.include?(emotion_log.id) %>
+        <%= render 'unbookmark', emotion_log: emotion_log %>
+      <% else %>
+        <%= render 'bookmark', emotion_log: emotion_log %>
+      <% end %>
     <% else %>
-      <%= render 'bookmark', emotion_log: emotion_log %>
+      <%= link_to 'ログインしてブックマークする', user_soundcloud_omniauth_authorize_path, class: 'btn btn-primary' %>
     <% end %>
-  <% else %>
-    <%= link_to 'ログインしてブックマークする', user_soundcloud_omniauth_authorize_path, class: 'btn btn-primary' %>
-  <% end %>
-</div>
+  </div>
+<% end %>
