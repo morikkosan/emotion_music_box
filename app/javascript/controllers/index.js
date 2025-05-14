@@ -7,7 +7,7 @@ import BookmarkToggleController from "./bookmark_toggle_controller";
 import CommentFormController from "./comment_form_controller"
 import ReactionController    from "./reaction_controller"   // 追加
 import TagInputController from "./tag_input_controller";
-
+import TagAutocompleteController from "./tag_autocomplete_controller";
 
 const application = Application.start(); // ← 最初に application を定義！
 
@@ -18,3 +18,4 @@ application.register("bookmark-toggle", BookmarkToggleController); // ✅ 名前
 application.register("comment-form", CommentFormController)
 application.register("reaction",    ReactionController)
 application.register("tag-input", TagInputController);
+application.register("tag-autocomplete", TagAutocompleteController);   // ← ✅ 統一
