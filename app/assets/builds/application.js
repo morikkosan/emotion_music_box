@@ -14594,6 +14594,59 @@ var tag_input_controller_default = class extends Controller {
   }
 };
 
+// app/javascript/controllers/tag_autocomplete_controller.js
+var tag_autocomplete_controller_default = class extends Controller {
+  static targets = ["input", "suggestions"];
+  connect() {
+    this.isComposing = false;
+    this.fetchSuggestionsBound = () => this.fetchSuggestions();
+    this.inputTarget.addEventListener("compositionstart", () => {
+      this.isComposing = true;
+    });
+    this.inputTarget.addEventListener("compositionend", () => {
+      this.isComposing = false;
+      this.fetchSuggestions();
+    });
+    this.inputTarget.addEventListener("input", this.fetchSuggestionsBound);
+    document.addEventListener("click", this.closeSuggestions.bind(this));
+  }
+  fetchSuggestions() {
+    if (this.isComposing) return;
+    const query = this.inputTarget.value.trim();
+    if (query === "") {
+      this.suggestionsTarget.innerHTML = "";
+      return;
+    }
+    fetch(`/tags/search?q=${encodeURIComponent(query)}`).then((res) => res.json()).then((tags) => {
+      this.suggestionsTarget.innerHTML = "";
+      tags.forEach((tag) => {
+        const li = document.createElement("li");
+        li.textContent = tag.name || tag;
+        li.className = "list-group-item list-group-item-action";
+        li.style.cursor = "pointer";
+        li.onclick = () => this.selectSuggestion(li.textContent);
+        this.suggestionsTarget.appendChild(li);
+      });
+    }).catch((err) => {
+      console.error("\u30BF\u30B0\u5019\u88DC\u53D6\u5F97\u5931\u6557:", err);
+      this.suggestionsTarget.innerHTML = "";
+    });
+  }
+  selectSuggestion(text) {
+    this.inputTarget.removeEventListener("input", this.fetchSuggestionsBound);
+    this.inputTarget.value = text;
+    this.suggestionsTarget.innerHTML = "";
+    setTimeout(() => {
+      this.inputTarget.addEventListener("input", this.fetchSuggestionsBound);
+    }, 0);
+  }
+  closeSuggestions(e) {
+    if (!this.element.contains(e.target)) {
+      this.suggestionsTarget.innerHTML = "";
+    }
+  }
+};
+
 // app/javascript/controllers/index.js
 var application = Application.start();
 application.register("modal", modal_controller_default);
@@ -14603,6 +14656,7 @@ application.register("bookmark-toggle", bookmark_toggle_controller_default);
 application.register("comment-form", comment_form_controller_default);
 application.register("reaction", reaction_controller_default);
 application.register("tag-input", tag_input_controller_default);
+application.register("tag-autocomplete", tag_autocomplete_controller_default);
 
 // app/javascript/application.js
 Rails.start();

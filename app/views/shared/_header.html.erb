@@ -117,6 +117,68 @@
     display: block;
   }
 
+.mypage-item select.form-control {
+  font-weight: bold;                     /* 文字を太く */
+  color: #fff;                           /* 白文字に統一（任意） */
+  background-color: #333;                /* ダーク背景 */
+  border: 1px solid #666;                /* 枠線調整 */
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.4); /* 内側の影で立体感 */
+
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.mypage-item select.form-control:hover {
+  box-shadow:
+    0 0 6px rgba(230, 0, 255, 0.5),
+    0 0 12px rgba(230, 0, 255, 0.3);     /* 紫がかったネオン風 */
+  border-color: rgba(230, 0, 255, 0.6);  /* 境界線も光るように */
+  cursor: pointer;
+}
+
+.mypage-item input.form-control[type="text"] {
+  font-weight: bold;
+  color: #fff;                              /* ← 文字を白に */
+  background-color: #333;                   /* ダーク背景 */
+  border: 1px solid #666;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.mypage-item input.form-control[type="text"]::placeholder {
+  color: #aaa;                              /* プレースホルダーは淡いグレーに */
+}
+
+.mypage-item input.form-control[type="text"]:hover,
+.mypage-item input.form-control[type="text"]:focus {
+  box-shadow:
+    0 0 6px rgba(0, 170, 255, 0.5),
+    0 0 12px rgba(0, 170, 255, 0.3);         /* 青く光るエフェクト */
+  border-color: rgba(0, 170, 255, 0.6);
+  outline: none;
+}
+
+/* 入力欄の下角を削る */
+.no-bottom-radius {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* 候補リストの上角を削る + デザイン */
+.tag-suggestions {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  background-color: #222;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.mypage-item.search-item.wide {
+  overflow: visible;
+  height: auto;
+  min-height: 160px;
+}
+
 
 </style>
 
@@ -161,13 +223,36 @@
   </div>
 
   <!-- キャッチコピー -->
-  <% unless user_signed_in? %>
-    <div class="text-center mt-5 mb-4">
-      <h1 style="font-size:3rem; font-weight:bold; color:rgb(215,205,216); text-shadow:0 0 10px,#1ee4da;">
-        音楽とストレスを支配する
-      </h1>
-    </div>
-  <% end %>
+ <% unless user_signed_in? %>
+  <!-- キャッチコピー -->
+  <div class="text-center mt-5 mb-4">
+    <h1 style="font-size:3rem; font-weight:bold; color:rgb(215,205,216); text-shadow:0 0 10px,#1ee4da;">
+      音楽とストレスを支配する
+    </h1>
+  </div>
+
+  <!-- Neon ボタン群（ログイン前） -->
+  <div class="neon-btn-panel text-center mt-4">
+    <%= link_to "https://soundcloud.com/signup",
+                target: "_blank",
+                rel: "noopener",
+                class: "neon-btn btn-neon-xl me-3" do %>
+      <div class="neon-btn-title">新規作成</div>
+      <div class="neon-btn-sub">(SoundCloudアカウントも簡単作成)</div>
+    <% end %>
+
+    <%= link_to user_soundcloud_omniauth_authorize_path,
+                class: "neon-btn btn-neon-xl" do %>
+      <div class="neon-btn-title">ログインして始める</div>
+    <% end %>
+  </div>
+
+  <div class="neon-btn-footer large-text text-center mt-2">
+    <strong>※ はじめての方は新規作成で登録後、<br>
+    この画面に戻って「ログインして始める」をクリックしてください。</strong>
+  </div>
+<% end %>
+
 
   <!-- メインメニュー -->
   <% if user_signed_in? %>
@@ -188,19 +273,86 @@
         <% end %>
       </div>
 
-      <!-- 検索Emotion -->
-      <div class="mypage-item search-item wide">
-        <%= form_with url: '#', method: :get, local: true do |f| %>
-          <%= f.text_field :emotion, placeholder: 'Search by emotion', class: 'form-control' %>
-        <% end %>
-      </div>
+<div class="d-flex justify-content-center align-items-start flex-wrap mt-4" style="gap: 1rem;">
+  <!-- EMOTION -->
+  <div class="mypage-item search-item wide">
+    <div style="color: magenta; font-weight: bold; font-size: 1rem; margin-bottom: 0.3rem; text-align: center;">
+      EMOTION
+    </div>
+    <%= form_with url: emotion_logs_path, method: :get, local: true do |f| %>
+      <%= select_tag :emotion,
+                     options_for_select(
+                       [['選択しない', ''], ['最高', '最高'], ['気分良い', '気分良い'],
+                        ['いつも通り', 'いつも通り'], ['イライラ', 'イライラ'], ['限界', '限界']],
+                     selected: params[:emotion]
+                     ),
+                     class: 'form-control',
+                     onchange: 'this.form.submit()' %>
+      <%= hidden_field_tag :genre, params[:genre] %>
+    <% end %>
+  </div>
 
-      <!-- 検索Genre -->
-      <div class="mypage-item search-item wide">
-        <%= form_with url: '#', method: :get, local: true do |f| %>
-          <%= f.text_field :genre, placeholder: 'Search by genre', class: 'form-control' %>
-        <% end %>
-      </div>
+<!-- 中央の「同士を探す」 -->
+<div class="mypage-item d-flex justify-content-center <div class="mypage-item d-flex flex-column justify-content-center align-items-center"
+     style="width: 160px; height: 160px; background: rgba(0, 0, 0, 0.6); border-radius: 8px; box-shadow: none; cursor: default;">
+  
+  <span style="color: #ff66cc; font-weight: bold; font-size: 1.1rem; text-shadow: 0 0 8px rgba(255, 102, 204, 0.5); text-align: center;">
+    ←同士を探す→
+  </span>
+
+  <%= link_to '検索リセット', emotion_logs_path,
+              class: 'btn btn-sm mt-2',
+              style: 'color: #fff; background-color: #555;
+                      border: none; border-radius: 20px;
+                      padding: 0.3rem 0.7rem;
+                      text-shadow: 0 0 6px #f0f;
+                      transition: all 0.2s ease;' %>
+<%# ↑ ボタン風リンクとして実装 %>
+</div>
+
+
+  <!-- TAG -->
+<div class="mypage-item search-item wide"
+     data-controller="tag-autocomplete"
+     style="position: relative;">
+  <div style="color: #00aaff; font-weight: bold; font-size: 1rem; margin-bottom: 0.3rem; text-align: center;">
+    TAG
+  </div>
+
+  <%= form_with url: emotion_logs_path, method: :get, local: true do |f| %>
+    <%= f.text_field :genre,
+                     placeholder: 'Search by genre',
+                     class: 'form-control no-bottom-radius',
+                     value: params[:genre],
+                     autocomplete: 'off',
+                     data: { tag_autocomplete_target: "input" } %>
+    <%= hidden_field_tag :emotion, params[:emotion] %>
+  <% end %>
+
+  <!-- 候補リスト -->
+<ul
+  data-tag-autocomplete-target="suggestions"
+  class="list-group tag-suggestions"
+  style="position: absolute;
+         bottom: calc(100% - 2px); /* ← ← ← 食い込ませる */
+         left: 0;
+         width: 100%;
+         z-index: 9999;
+         margin: 0;">
+</ul>
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+
 
       <!-- マイページ -->
       <div class="mypage-item">
