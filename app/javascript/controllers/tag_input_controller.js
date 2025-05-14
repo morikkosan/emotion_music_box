@@ -1,29 +1,41 @@
-// app/javascript/controllers/tag_input_controller.js
-
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["input", "tags", "suggestions", "hidden"]
 
   connect() {
-      console.log("🟢 tag-input controller connected");   // ← ここが出るかどうか
-
+    console.log("🟢 tag-input controller connected")
     this.selectedTags = []
-    // 最初は隠しフィールドを空に
     this.hiddenTarget.value = ""
   }
 
-  // Enterキーのみを処理
   keydown(event) {
     if (event.key !== "Enter") return
-
-    event.preventDefault()  // ここでフォーム送信を止める
+    event.preventDefault()
 
     const value = this.inputTarget.value.trim()
-    // 空文字・重複・3つ以上はそのままクリアして戻る
-    if (!value || this.selectedTags.includes(value) || this.selectedTags.length >= 3) {
-      this._clearInput()
-      return
+
+    // ✅ バリデーション
+    if (!value) return this._clearInput()
+
+    if (this.selectedTags.includes(value)) {
+      alert("同じタグは追加できません")
+      return this._clearInput()
+    }
+
+    if (this.selectedTags.length >= 3) {
+      alert("タグは最大3つまでです")
+      return this._clearInput()
+    }
+
+    if (value.length > 10) {
+      alert("タグは10文字以内で入力してください")
+      return this._clearInput()
+    }
+
+    if (/[^a-zA-Z0-9ぁ-んァ-ン一-龥ー]/.test(value)) {
+      alert("記号や特殊文字は使えません")
+      return this._clearInput()
     }
 
     this._addTag(value)
@@ -32,10 +44,7 @@ export default class extends Controller {
 
   filterSuggestions() {
     const query = this.inputTarget.value.trim()
-    if (!query) {
-      this.clearSuggestions()
-      return
-    }
+    if (!query) return this.clearSuggestions()
 
     fetch(`/tags/search?q=${encodeURIComponent(query)}`)
       .then(r => r.json())
@@ -57,7 +66,6 @@ export default class extends Controller {
   _addTag(tag) {
     this.selectedTags.push(tag)
     this._renderTags()
-    // 隠しフィールドにセット
     this.hiddenTarget.value = this.selectedTags.join(",")
   }
 

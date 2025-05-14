@@ -17,6 +17,8 @@ class EmotionLog < ApplicationRecord
   validates :description, presence: true
   validates :music_url, presence: true
   validate :date_cannot_be_in_the_future
+  validate :description_must_be_polite
+  validates :description, presence: true, length: { maximum: 50 }
 
   private
   def date_cannot_be_in_the_future
@@ -30,6 +32,21 @@ class EmotionLog < ApplicationRecord
 
     self.tags = tag_names.split(',').map do |tag_name|
       Tag.find_or_create_by(name: tag_name.strip)
+    end
+  end
+
+  def description_must_be_polite
+    return if description.blank?
+
+    # NGワード（例）
+    forbidden_words = %w[死ね 殺す ぶっ殺す バカ やばい キモ うざ ちんこ まんこ]
+
+    if forbidden_words.any? { |w| description.include?(w) }
+      errors.add(:description, "に過激な表現が含まれています。やさしい言葉でお願いします。")
+    end
+
+    if description =~ /[!@#$%^&*()_+={}\[\]:;"'<>,.?\/\\|-]/
+      errors.add(:description, "に記号や特殊文字は使用できません。")
     end
   end
 end
