@@ -1,4 +1,15 @@
 class TagsController < ApplicationController
+
+  def index
+    if params[:q].present?
+      tags = Tag.where("name ILIKE ?", "#{params[:q]}%").limit(10)
+    else
+      tags = Tag.none
+    end
+
+    render json: tags.pluck(:name)
+  end
+
   def search
     query = params[:q].to_s.strip
 

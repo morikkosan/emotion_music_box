@@ -5,13 +5,25 @@ class EmotionLogsController < ApplicationController
   ### ----  public アクション  ---- ###
 
   def index
-    @emotion_logs = EmotionLog
-                      .includes(:user, :bookmarks, :tags)
-                      .order(date: :desc)
-                      .page(params[:page]).per(7)
+  @emotion_logs = EmotionLog
+                    .includes(:user, :bookmarks, :tags)
+                    .order(date: :desc)
 
-    @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id) if user_signed_in?
+  # 感情検索
+  if params[:emotion].present?
+    @emotion_logs = @emotion_logs.where(emotion: params[:emotion])
   end
+
+  # タグ（ジャンル）検索
+  if params[:genre].present?
+    @emotion_logs = @emotion_logs.joins(:tags).where(tags: { name: params[:genre] })
+  end
+
+  @emotion_logs = @emotion_logs.page(params[:page]).per(7)
+
+  @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id) if user_signed_in?
+end
+
 
 def my_emotion_logs
   @emotion_logs = current_user.emotion_logs

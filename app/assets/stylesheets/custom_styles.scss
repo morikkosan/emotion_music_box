@@ -190,6 +190,8 @@ h1 i.bi bi-heart-pulse {
   text-align: center;
   margin-top: 10px;
   position: relative;
+    z-index: 0;
+
 }
 
 #hp-status-text {
@@ -206,6 +208,8 @@ h1 i.bi bi-heart-pulse {
   background-color: rgba(0, 0, 0, 0.9); /* 文字の背景を濃い黒にする */
   padding: 5px 10px; /* 余白を追加 */
   border-radius: 30px; /* 角を丸くする */
+    z-index: 0;
+
 }
 
 
