@@ -14415,18 +14415,18 @@ var bookmark_toggle_controller_default = class extends Controller {
   }
   toggle(event) {
     console.log("\u{1F4CC} toggle() \u767A\u706B");
-    const toggled = this.iconTarget.dataset.toggled === "true";
-    console.log("\u{1F504} \u73FE\u5728\u306E\u72B6\u614B:", toggled ? "bookmarked" : "unbookmarked");
-    const newIconSrc = toggled ? this.iconTarget.dataset.unbookmarkedUrl : this.iconTarget.dataset.bookmarkedUrl;
+    const isBookmarked = this.iconTarget.dataset.toggled === "true";
+    console.log("\u{1F504} \u73FE\u5728\u306E\u72B6\u614B:", isBookmarked ? "bookmarked" : "unbookmarked");
+    const newIconSrc = isBookmarked ? this.iconTarget.dataset.unbookmarkedUrl : this.iconTarget.dataset.bookmarkedUrl;
     console.log("\u{1F5BC}\uFE0F \u5207\u308A\u66FF\u3048\u308B\u753B\u50CF\u30D1\u30B9:", newIconSrc);
     this.iconTarget.src = "";
     this.iconTarget.src = newIconSrc;
-    this.iconTarget.dataset.toggled = toggled ? "false" : "true";
+    this.iconTarget.dataset.toggled = isBookmarked ? "false" : "true";
     console.log("\u2705 \u65B0\u3057\u3044\u72B6\u614B:", this.iconTarget.dataset.toggled);
-    const count = parseInt(this.countTarget.innerText);
-    const newCount = toggled ? count - 1 : count + 1;
-    this.countTarget.innerText = newCount;
-    console.log("\u{1F522} \u30AB\u30A6\u30F3\u30C8\u66F4\u65B0:", count, "\u2192", newCount);
+    const currentCount = parseInt(this.countTarget.innerText, 10);
+    const updatedCount = isBookmarked ? currentCount - 1 : currentCount + 1;
+    this.countTarget.innerText = updatedCount;
+    console.log("\u{1F522} \u30AB\u30A6\u30F3\u30C8\u66F4\u65B0:", currentCount, "\u2192", updatedCount);
   }
 };
 
