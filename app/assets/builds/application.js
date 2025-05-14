@@ -14540,24 +14540,33 @@ var tag_input_controller_default = class extends Controller {
     this.selectedTags = [];
     this.hiddenTarget.value = "";
   }
-  // Enterキーのみを処理
   keydown(event) {
     if (event.key !== "Enter") return;
     event.preventDefault();
     const value = this.inputTarget.value.trim();
-    if (!value || this.selectedTags.includes(value) || this.selectedTags.length >= 3) {
-      this._clearInput();
-      return;
+    if (!value) return this._clearInput();
+    if (this.selectedTags.includes(value)) {
+      alert("\u540C\u3058\u30BF\u30B0\u306F\u8FFD\u52A0\u3067\u304D\u307E\u305B\u3093");
+      return this._clearInput();
+    }
+    if (this.selectedTags.length >= 3) {
+      alert("\u30BF\u30B0\u306F\u6700\u59273\u3064\u307E\u3067\u3067\u3059");
+      return this._clearInput();
+    }
+    if (value.length > 10) {
+      alert("\u30BF\u30B0\u306F10\u6587\u5B57\u4EE5\u5185\u3067\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044");
+      return this._clearInput();
+    }
+    if (/[^a-zA-Z0-9ぁ-んァ-ン一-龥ー]/.test(value)) {
+      alert("\u8A18\u53F7\u3084\u7279\u6B8A\u6587\u5B57\u306F\u4F7F\u3048\u307E\u305B\u3093");
+      return this._clearInput();
     }
     this._addTag(value);
     this._clearInput();
   }
   filterSuggestions() {
     const query = this.inputTarget.value.trim();
-    if (!query) {
-      this.clearSuggestions();
-      return;
-    }
+    if (!query) return this.clearSuggestions();
     fetch(`/tags/search?q=${encodeURIComponent(query)}`).then((r) => r.json()).then((data) => {
       this.suggestionsTarget.innerHTML = "";
       data.forEach((tag) => {
