@@ -9,6 +9,12 @@ class ApplicationController < ActionController::Base
   # # Devise コントローラーには適用しない
   # before_action :ensure_soundcloud_authenticated, unless: :devise_controller?
 
+  # サウンドクラウド認証で失敗して戻ってきたとき
+def after_omniauth_failure_path_for(scope)
+  flash[:alert] = "SoundCloudログインがキャンセルされました。もう一度ログインをしてください"
+  root_path
+end
+
   def chart_data
     render json: EmotionLog.group(:emotion).count
   end
