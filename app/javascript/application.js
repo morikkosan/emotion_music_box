@@ -1,7 +1,13 @@
+console.log("🔥 application.js 読み込み開始", Date.now());
+
+
 import Rails from "@rails/ujs";
 import "@hotwired/turbo-rails";
 import * as bootstrap from "bootstrap";
 import "./controllers";
+import "./custom/comments";
+import "./custom/flash_messages";
+import "./custom/gages_test";
 
 Rails.start();
 window.bootstrap = bootstrap;
@@ -40,20 +46,39 @@ document.addEventListener("turbo:load", () => {
   cropContainer.style.cursor    = "grab";
   cropContainer.style.touchAction = "none";
 
-  // --- ファイル選択 ---
-  fileInput.addEventListener("change", e => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      cropImage.src = reader.result;
-      startX = 0;
-      startY = 0;
-      updateTransform();
-      modal.show();
-    };
-    reader.readAsDataURL(file);
-  });
+
+
+ fileInput.addEventListener("change", e => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  // ファイル容量チェック（2MBまで）
+  const maxSize = 2 * 1024 * 1024; // 2MB
+  if (file.size > maxSize) {
+    alert("ファイルサイズは2MB以内にしてください。");
+    fileInput.value = ""; // 選択をクリア
+    return;
+  }
+
+  // MIMEタイプチェック（jpg/jpeg/pngのみ許可）
+  const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+  if (!allowedTypes.includes(file.type)) {
+    alert("ファイル形式はJPEGまたはPNGのみ許可されています。");
+    fileInput.value = ""; // 選択をクリア
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    cropImage.src = reader.result;
+    startX = 0;
+    startY = 0;
+    updateTransform();
+    modal.show();
+  };
+  reader.readAsDataURL(file);
+});
+
 
   // --- ドラッグ移動 ---
   cropContainer.addEventListener("pointerdown", e => {

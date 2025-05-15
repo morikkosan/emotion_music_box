@@ -1,6 +1,22 @@
 class Users::RegistrationsController < Devise::RegistrationsController
   before_action :skip_current_password_validation, only: [:update]
 
+def update
+  self.resource = resource_class.to_adapter.get!(send(:"current_#{resource_name}").to_key)
+
+  resource_updated = update_resource(resource, account_update_params)
+  yield resource if block_given?
+  if resource_updated
+    bypass_sign_in resource, scope: resource_name
+    redirect_to emotion_logs_path, notice: "プロフィールを更新しました"  # ←ここを絶対にこの形に！
+  else
+    clean_up_passwords resource
+    set_minimum_password_length
+    respond_with resource
+  end
+end
+
+
   protected
 
   # Devise の update_resource をオーバーライド
@@ -17,18 +33,8 @@ class Users::RegistrationsController < Devise::RegistrationsController
       resource.avatar_url = nil
     end
 
-    # 他の属性を更新（avatar_urlは直接代入済みなので除外）
-    if resource.update(params)
-      # avatar_urlの保存を確実に
-      resource.save if resource.changed?
-
-      Rails.logger.info "User successfully updated"
-    else
-      Rails.logger.info "Update failed: #{resource.errors.full_messages.join(', ')}"
-      clean_up_passwords resource
-      set_minimum_password_length
-      respond_with resource
-    end
+    # avatar_url, remove_avatar以外の属性を更新
+    resource.update(params)
   end
 
   # OAuthユーザーは current_password をスキップ
@@ -51,7 +57,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
             :name, :email,
             :password, :password_confirmation, :current_password,
             :gender, :age,
-            :avatar_url,  # ←URLだけ
+            :avatar_url,
             :remove_avatar
           )
   end
