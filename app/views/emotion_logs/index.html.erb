@@ -28,13 +28,10 @@
   <div>
     <strong><%= log.created_at.strftime('%Y-%m-%d %H:%M:%S') %></strong>
 
-<% if log.tags.any? %>
-  <span class="ms-3">
-    <% log.tags.each do |tag| %>
-      <%= link_to tag.name, emotion_logs_path(genre: tag.name), class: "badge bg-primary text-light me-1" %>
-    <% end %>
-  </span>
+<% log.tags.each do |tag| %>
+  <%= link_to tag.name, emotion_logs_path(genre: tag.name), class: "badge bg-primary text-light me-1" %>
 <% end %>
+
 
 
   </div>
