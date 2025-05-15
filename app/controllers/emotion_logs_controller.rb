@@ -57,9 +57,11 @@ end
     end
   end
 
-  def edit
-    @emotion_log = EmotionLog.find(params[:id])
-  end
+ def edit
+  @emotion_log = EmotionLog.find(params[:id])
+  @emotion_log.tag_names = @emotion_log.tags.pluck(:name).join(",")
+end
+
 
   def update
     @emotion_log = EmotionLog.find(params[:id])
