@@ -184,6 +184,8 @@
 
 
 <div class="container mt-5 position-relative">
+
+
 <div class="dj-icon-fixed">
   <%= image_tag "dj_robot_icon.png", alt: "DJ Robot" %>
 </div>
@@ -194,11 +196,8 @@
     <div class="user-dropdown-wrapper">
       <div class="user-dropdown">
         <div class="user-bar">
-          <% if current_user.avatar.attached? %>
-            <%= image_tag current_user.avatar.variant(resize_to_fill:[32,32]).processed, class: "rounded-circle", alt: current_user.name %>
-          <% else %>
-            <%= image_tag "default_stick_figure.png", size: "32x32", class: "rounded-circle", alt: current_user.name %>
-          <% end %>
+          <%= image_tag current_user.profile_avatar_url, size: "32x32", class: "rounded-circle", alt: current_user.name %>
+
           <span class="ms-2 text-white"><%= current_user.name %></span>
         </div>
         <div class="dropdown-menu">

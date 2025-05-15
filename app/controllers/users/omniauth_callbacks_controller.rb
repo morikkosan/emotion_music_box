@@ -62,7 +62,7 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
   # ❗ OmniAuth失敗時のデフォルト（必要に応じて）
   def failure
     Rails.logger.info "🔴 Users::OmniauthCallbacksController#failure が呼び出されました"
-    flash[:alert] = "SoundCloudログインがキャンセルされました。"
+    flash[:alert] = "SoundCloudログインがキャンセルされました。もう一度ログインをするか、ログイン画面先でSign out!を押してください"
     redirect_to root_path
   end
 
