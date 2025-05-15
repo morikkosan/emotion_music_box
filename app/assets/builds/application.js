@@ -14684,12 +14684,12 @@ window.bootstrap = bootstrap_esm_exports;
 document.addEventListener("turbo:load", () => {
   const fileInput = document.getElementById("avatarInput");
   const inlinePreview = document.getElementById("avatarPreviewInline");
-  const hiddenField = document.getElementById("croppedAvatarData");
   const modalEl = document.getElementById("avatarCropModal");
   const cropContainer = document.getElementById("cropContainer");
   const cropImage = document.getElementById("cropImage");
   const confirmBtn = document.getElementById("cropConfirmBtn");
-  if (![fileInput, inlinePreview, hiddenField, modalEl, cropContainer, cropImage, confirmBtn].every(Boolean)) {
+  const avatarUrlField = document.getElementById("avatarUrlField");
+  if (![fileInput, inlinePreview, avatarUrlField, modalEl, cropContainer, cropImage, confirmBtn].every(Boolean)) {
     console.error("\u274C \u5FC5\u8981\u306A\u8981\u7D20\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093");
     return;
   }
@@ -14747,6 +14747,17 @@ document.addEventListener("turbo:load", () => {
       cropContainer.style.cursor = "grab";
     }
   });
+  async function resizeImage(sourceImage, maxSize = 300) {
+    return new Promise((resolve) => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const scale = Math.min(maxSize / sourceImage.width, maxSize / sourceImage.height);
+      canvas.width = sourceImage.width * scale;
+      canvas.height = sourceImage.height * scale;
+      ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.9);
+    });
+  }
   confirmBtn.addEventListener("click", async () => {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -14771,25 +14782,28 @@ document.addEventListener("turbo:load", () => {
     );
     const dataUrl = canvas.toDataURL("image/png");
     inlinePreview.src = dataUrl;
-    hiddenField.value = dataUrl;
+    avatarUrlField.value = "";
+    modal.hide();
     try {
-      const blob = await (await fetch(dataUrl)).blob();
-      const fd = new FormData();
-      fd.append("file", blob, "avatar.png");
-      fd.append("upload_preset", window.CLOUDINARY_UPLOAD_PRESET);
-      const res = await axios.post(
-        `https://api.cloudinary.com/v1_1/${window.CLOUDINARY_CLOUD_NAME}/upload`,
-        fd
-        // ← FormData
-        // 👇この headers 行は削除！
-        // { headers: { "Content-Type": "multipart/form-data" } }
-      );
-      inlinePreview.src = res.data.secure_url;
-      hiddenField.value = res.data.secure_url;
+      inlinePreview.classList.add("loading");
+      const tempImage = new window.Image();
+      tempImage.onload = async () => {
+        const resizedBlob = await resizeImage(tempImage, 300);
+        const fd = new FormData();
+        fd.append("file", resizedBlob, "avatar.jpg");
+        fd.append("upload_preset", window.CLOUDINARY_UPLOAD_PRESET);
+        const res = await axios.post(
+          `https://api.cloudinary.com/v1_1/${window.CLOUDINARY_CLOUD_NAME}/upload`,
+          fd
+        );
+        inlinePreview.src = res.data.secure_url;
+        avatarUrlField.value = res.data.secure_url;
+        inlinePreview.classList.remove("loading");
+      };
+      tempImage.src = dataUrl;
     } catch (err) {
       console.error("Cloudinary upload failed", err);
-    } finally {
-      modal.hide();
+      inlinePreview.classList.remove("loading");
     }
   });
 });
