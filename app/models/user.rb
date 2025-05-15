@@ -16,6 +16,7 @@ class User < ApplicationRecord
   validates :password, length: { minimum: 6 }, allow_nil: true
 
     attr_accessor :cropped_avatar_data
+    attr_accessor :remove_avatar
 
 
   # プロフィール画像URLを返す（Cloudinary無ければデフォルト画像）

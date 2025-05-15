@@ -5,6 +5,8 @@ class EmotionLogsController < ApplicationController
   ### ----  public アクション  ---- ###
 
 def index
+   Rails.logger.error "★ index: FLASH notice = #{flash[:notice].inspect}, session = #{session.id}"
+  sleep 2  # わざと遅延させて、F12の「Network」でアクセス回数を確認
   @emotion_logs = EmotionLog
     .includes(:user, :bookmarks, :tags)  # ここを修正
     .order(date: :desc)
