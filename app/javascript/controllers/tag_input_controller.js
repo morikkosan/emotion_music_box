@@ -6,7 +6,15 @@ export default class extends Controller {
   connect() {
     console.log("🟢 tag-input controller connected")
     this.selectedTags = []
-    this.hiddenTarget.value = ""
+
+    // 既存タグがあれば初期セットしてバッジ表示
+    const initialTagsString = this.hiddenTarget.value
+    if (initialTagsString) {
+      this.selectedTags = initialTagsString.split(",").map(t => t.trim()).filter(Boolean)
+    }
+
+    this._renderTags()
+    this.hiddenTarget.value = this.selectedTags.join(",")
   }
 
   keydown(event) {

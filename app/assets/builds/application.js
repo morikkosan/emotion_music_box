@@ -14538,7 +14538,12 @@ var tag_input_controller_default = class extends Controller {
   connect() {
     console.log("\u{1F7E2} tag-input controller connected");
     this.selectedTags = [];
-    this.hiddenTarget.value = "";
+    const initialTagsString = this.hiddenTarget.value;
+    if (initialTagsString) {
+      this.selectedTags = initialTagsString.split(",").map((t) => t.trim()).filter(Boolean);
+    }
+    this._renderTags();
+    this.hiddenTarget.value = this.selectedTags.join(",");
   }
   keydown(event) {
     if (event.key !== "Enter") return;
