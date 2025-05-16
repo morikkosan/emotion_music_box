@@ -30,14 +30,6 @@ body {
   position: relative;
 }
 
-.dj-icon {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.dj-icon:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-}
 
 
 
@@ -198,6 +190,8 @@ h1 i.bi bi-heart-pulse {
   text-align: center;
   margin-top: 10px;
   position: relative;
+    z-index: 0;
+
 }
 
 #hp-status-text {
@@ -214,6 +208,8 @@ h1 i.bi bi-heart-pulse {
   background-color: rgba(0, 0, 0, 0.9); /* 文字の背景を濃い黒にする */
   padding: 5px 10px; /* 余白を追加 */
   border-radius: 30px; /* 角を丸くする */
+    z-index: 0;
+
 }
 
 
@@ -609,3 +605,55 @@ h1 i.bi bi-heart-pulse {
     0 0 45px #ff00cc !important;
 }
 
+// リアクション0.2秒ほどふんわり色変化
+.transition-colors {
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+}
+
+/* リアクションボタン */
+/* 🚨 上書き対策で !important を追加 */
+
+/* 共通の浮きエフェクト */
+.btn.active-reaction {
+  transform: translateY(-2px);
+  transition: all 0.2s ease-in-out;
+}
+
+/* グローバルなtransition効果を軽く */
+.btn {
+  transition: all 0.2s ease-in-out;
+}
+
+/* 🔵 青系ボタン（よんだ） */
+.btn-info,
+.btn-outline-info {
+  color: #0ff !important;
+  background-color: rgba(0, 255, 255, 0.05) !important;
+  border-color: #0ff !important;
+  text-shadow: 0 0 3px #0ff !important;
+  box-shadow: 0 0 4px #0ff inset !important;
+}
+
+.btn-info.active-reaction {
+  background-color: rgba(0, 255, 255, 0.2) !important;
+  box-shadow: 0 0 6px 2px #00e0ff inset !important;
+  color: #ccffff !important;
+  text-shadow: 0 0 6px #99ffff !important;
+}
+
+/* 🟢 緑系ボタン（それな） */
+.btn-success,
+.btn-outline-success {
+  color: #0f0 !important;
+  background-color: rgba(0, 255, 0, 0.05) !important;
+  border-color: #0f0 !important;
+  text-shadow: 0 0 3px #0f0 !important;
+  box-shadow: 0 0 4px #0f0 inset !important;
+}
+
+.btn-success.active-reaction {
+  background-color: rgba(0, 255, 0, 0.2) !important;
+  box-shadow: 0 0 6px 2px #0f0 inset !important;
+  color: #ccffcc !important;
+  text-shadow: 0 0 6px #99ff99 !important;
+}

@@ -1,34 +1,61 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["input", "tags", "suggestions"]
+  static targets = ["input", "tags", "suggestions", "hidden"]
 
   connect() {
+    console.log("🟢 tag-input controller connected")
     this.selectedTags = []
+
+    // 既存タグがあれば初期セットしてバッジ表示
+    const initialTagsString = this.hiddenTarget.value
+    if (initialTagsString) {
+      this.selectedTags = initialTagsString.split(",").map(t => t.trim()).filter(Boolean)
+    }
+
+    this._renderTags()
+    this.hiddenTarget.value = this.selectedTags.join(",")
   }
 
-  handleKeydown(event) {
-    if (event.key === "Enter") {
-      event.preventDefault()
-      const value = this.inputTarget.value.trim()
-      if (value && this.selectedTags.length < 3 && !this.selectedTags.includes(value)) {
-        this.addTag(value)
-      }
-      this.inputTarget.value = ""
-      this.clearSuggestions()
+  keydown(event) {
+    if (event.key !== "Enter") return
+    event.preventDefault()
+
+    const value = this.inputTarget.value.trim()
+
+    // ✅ バリデーション
+    if (!value) return this._clearInput()
+
+    if (this.selectedTags.includes(value)) {
+      alert("同じタグは追加できません")
+      return this._clearInput()
     }
+
+    if (this.selectedTags.length >= 3) {
+      alert("タグは最大3つまでです")
+      return this._clearInput()
+    }
+
+    if (value.length > 10) {
+      alert("タグは10文字以内で入力してください")
+      return this._clearInput()
+    }
+
+    if (/[^a-zA-Z0-9ぁ-んァ-ン一-龥ー]/.test(value)) {
+      alert("記号や特殊文字は使えません")
+      return this._clearInput()
+    }
+
+    this._addTag(value)
+    this._clearInput()
   }
 
   filterSuggestions() {
     const query = this.inputTarget.value.trim()
-    if (!query) {
-      this.clearSuggestions()
-      return
-    }
+    if (!query) return this.clearSuggestions()
 
-    // ここで候補を取得（例：/tags/search?q=keyword）
     fetch(`/tags/search?q=${encodeURIComponent(query)}`)
-      .then(response => response.json())
+      .then(r => r.json())
       .then(data => {
         this.suggestionsTarget.innerHTML = ""
         data.forEach(tag => {
@@ -36,23 +63,21 @@ export default class extends Controller {
           option.classList.add("dropdown-item")
           option.textContent = tag.name
           option.addEventListener("click", () => {
-            this.addTag(tag.name)
-            this.inputTarget.value = ""
-            this.clearSuggestions()
+            this._addTag(tag.name)
+            this._clearInput()
           })
           this.suggestionsTarget.appendChild(option)
         })
       })
   }
 
-  addTag(tag) {
-    if (this.selectedTags.includes(tag) || this.selectedTags.length >= 3) return
+  _addTag(tag) {
     this.selectedTags.push(tag)
-    this.updateTagsView()
-    document.getElementById("hidden-tags").value = this.selectedTags.join(",")
+    this._renderTags()
+    this.hiddenTarget.value = this.selectedTags.join(",")
   }
 
-  updateTagsView() {
+  _renderTags() {
     this.tagsTarget.innerHTML = ""
     this.selectedTags.forEach(tag => {
       const badge = document.createElement("span")
@@ -65,8 +90,8 @@ export default class extends Controller {
       removeBtn.setAttribute("aria-label", "Remove")
       removeBtn.addEventListener("click", () => {
         this.selectedTags = this.selectedTags.filter(t => t !== tag)
-        this.updateTagsView()
-        document.getElementById("hidden-tags").value = this.selectedTags.join(",")
+        this._renderTags()
+        this.hiddenTarget.value = this.selectedTags.join(",")
       })
 
       badge.appendChild(removeBtn)
@@ -76,5 +101,10 @@ export default class extends Controller {
 
   clearSuggestions() {
     this.suggestionsTarget.innerHTML = ""
+  }
+
+  _clearInput() {
+    this.inputTarget.value = ""
+    this.clearSuggestions()
   }
 }

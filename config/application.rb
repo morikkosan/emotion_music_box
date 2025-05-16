@@ -15,6 +15,8 @@ module Myapp
     config.autoload_paths += Dir[Rails.root.join('app', 'strategies', '**', '*.rb')]
 config.eager_load_paths += %W(#{config.root}/app/strategies/omniauth/strategies)
 
+    config.autoload_paths += %W(#{config.root}/lib)  # ✅ これを追加
+
 
     
 
@@ -23,7 +25,7 @@ config.eager_load_paths += %W(#{config.root}/app/strategies/omniauth/strategies)
       key: '_myapp_session', 
       secure: true, 
       same_site: :lax, 
-      domain: 'localhost', 
+      domain: '.moriappli-emotion.com' ,
       path: '/'
 
     # SoundCloud の環境変数をロード

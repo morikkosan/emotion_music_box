@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_05_09_105906) do
+ActiveRecord::Schema[7.2].define(version: 2025_05_15_090457) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -73,6 +73,16 @@ ActiveRecord::Schema[7.2].define(version: 2025_05_09_105906) do
     t.index ["user_id"], name: "index_comments_on_user_id"
   end
 
+  create_table "emotion_log_tags", force: :cascade do |t|
+    t.bigint "emotion_log_id", null: false
+    t.bigint "tag_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["emotion_log_id", "tag_id"], name: "index_emotion_log_tags_on_emotion_log_id_and_tag_id", unique: true
+    t.index ["emotion_log_id"], name: "index_emotion_log_tags_on_emotion_log_id"
+    t.index ["tag_id"], name: "index_emotion_log_tags_on_tag_id"
+  end
+
   create_table "emotion_logs", force: :cascade do |t|
     t.string "emotion"
     t.text "description"
@@ -104,6 +114,13 @@ ActiveRecord::Schema[7.2].define(version: 2025_05_09_105906) do
     t.index ["updated_at"], name: "index_sessions_on_updated_at"
   end
 
+  create_table "tags", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_tags_on_name", unique: true
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -122,6 +139,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_05_09_105906) do
     t.string "soundcloud_refresh_token"
     t.datetime "soundcloud_token_expires_at"
     t.boolean "profile_completed", default: false, null: false
+    t.string "avatar_url"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
@@ -134,6 +152,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_05_09_105906) do
   add_foreign_key "comment_reactions", "users"
   add_foreign_key "comments", "emotion_logs"
   add_foreign_key "comments", "users"
+  add_foreign_key "emotion_log_tags", "emotion_logs"
+  add_foreign_key "emotion_log_tags", "tags"
   add_foreign_key "emotion_logs", "users"
   add_foreign_key "identities", "users"
 end

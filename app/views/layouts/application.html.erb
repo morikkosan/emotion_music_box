@@ -30,8 +30,10 @@
 
 </head>
 
-<body data-flash-notice="<%= j flash.now[:notice] %>"
-      data-flash-alert="<%= j flash.now[:alert] %>">
+<body data-flash-notice="<%= j flash[:notice] %>"
+      data-flash-alert="<%= j flash[:alert] %>">
+
+<div id="flash-message" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;padding:1em;background:#333;color:#fff;text-align:center;"></div>
 
   <turbo-frame id="modal-container"></turbo-frame>
   <p>🔍 Debug: <%= current_user.inspect %></p>
@@ -74,10 +76,8 @@
   <script>
     window.SOUNDCLOUD_CLIENT_ID = "<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>";
     window.soundcloudToken      = "<%= ENV['SOUNDCLOUD_OAUTH_TOKEN'] %>";
-    window.CLOUDINARY_CLOUD_NAME   = "<%= ENV['CLOUDINARY_CLOUD_NAME'] %>";
+      window.CLOUDINARY_CLOUD_NAME = "<%= ENV['CLOUDINARY_CLOUD_NAME'] %>";
   window.CLOUDINARY_UPLOAD_PRESET = "<%= ENV['CLOUDINARY_UPLOAD_PRESET'] %>";
-    window.CLOUDINARY_UPLOAD_PRESET = "avatar_upload";
-
   </script>
 
   <p style="color:#f1efef;">
