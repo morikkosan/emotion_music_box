@@ -6,19 +6,28 @@
 
 <%= render 'shared/header' %>
 
-
-  <% if user_signed_in? %>
+<% if @bookmark_page.present? %>
+  <span class="bookmark_title">
+    <%= @bookmark_page %>
+  </span>
+<% elsif @mypage_title.present? %>
+  <span class="bookmark_title">
+    <%= @mypage_title %>
+  </span>
+  <% else %>
+    <!-- 通常のストレスゲージ -->
     <div id="hp-bar-container">
-      <span class="today_mental_text">👆Today's stress level <span id="bar-width-display"></span>)👆</span>
+      <span class="today_mental_text">
+        👆Today's stress level <span id="bar-width-display"></span>)👆
+      </span>
       <p id="hp-status-text">メンタル正常</p>
       <div id="hp-bar"></div>
     </div>
     <br>
-<br>
-<br>
-<br>
   <% end %>
-  <br>
+
+
+<br><br><br><br>
 
 <div class="row justify-content-center">
   <% @emotion_logs.each do |log| %>

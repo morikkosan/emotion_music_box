@@ -256,19 +256,19 @@
   <!-- メインメニュー -->
   <% if user_signed_in? %>
     <div class="d-flex justify-content-center align-items-stretch flex-wrap mt-4">
-      <!-- ログアウト -->
+      <!-- ホーム -->
       <div class="mypage-item">
-        <%= link_to '#', id: 'logout-link', class: 'mypage-icon-link' do %>
-          <%= image_tag 'log_out.png', alt: 'ログアウト', class: 'mypage-icon' %>
-          <div class='mypage-text'>ログアウト</div>
-        <% end %>
+       <%= link_to emotion_logs_path, class: 'mypage-icon-link' do %>
+  <%= image_tag 'home.png', alt: 'ホーム', class: 'mypage-icon' %>
+  <div class='mypage-text'>ホーム</div>
+<% end %>
       </div>
 
       <!-- プロフィール編集 -->
       <div class="mypage-item">
         <%= link_to edit_user_registration_path, class: 'mypage-icon-link' do %>
-          <%= image_tag 'profile_edit.png', alt: 'プロフィール編集', class: 'mypage-icon' %>
-          <div class='mypage-text'>プロフィール編集</div>
+          <%= image_tag 'hot.png', alt: 'おすすめ', class: 'mypage-icon' %>
+          <div class='mypage-text'>おすすめ🔥</div>
         <% end %>
       </div>
 
