@@ -115,3 +115,14 @@
   font-size: 1.2rem;
   line-height: 1.6;
 }
+
+
+/* フォームタグ候補初期は非表示 */
+.dropdown-menu {
+  display: none;
+}
+
+/* 候補があるときだけ show を付与 */
+.dropdown-menu.show {
+  display: block;
+}

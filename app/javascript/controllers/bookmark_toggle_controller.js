@@ -4,7 +4,7 @@ export default class extends Controller {
   static targets = ["icon", "count"]
 
   connect() {
-    // turbo:frame-load イベントをリッスンしてターゲットが正しく読み込まれたことを確認
+    // Turbo Frame が読み込まれたら console に通知（開発用デバッグ）
     this.element.addEventListener("turbo:frame-load", () => {
       console.log("Turbo frame loaded, targets are available.");
     });
@@ -13,24 +13,29 @@ export default class extends Controller {
   toggle(event) {
     console.log("📌 toggle() 発火");
 
-    const toggled = this.iconTarget.dataset.toggled === "true";
-    console.log("🔄 現在の状態:", toggled ? "bookmarked" : "unbookmarked");
+    // 現在の状態を取得（"true" or "false"）
+    const isBookmarked = this.iconTarget.dataset.toggled === "true";
+    console.log("🔄 現在の状態:", isBookmarked ? "bookmarked" : "unbookmarked");
 
-    const newIconSrc = toggled
+    // 切り替える画像 URL を設定
+    const newIconSrc = isBookmarked
       ? this.iconTarget.dataset.unbookmarkedUrl
       : this.iconTarget.dataset.bookmarkedUrl;
     console.log("🖼️ 切り替える画像パス:", newIconSrc);
 
-    this.iconTarget.src = "";
+    // アイコン画像を更新
+    this.iconTarget.src = ""; // 一旦リセット（ブラウザキャッシュ回避）
     this.iconTarget.src = newIconSrc;
 
-    this.iconTarget.dataset.toggled = toggled ? "false" : "true";
+    // toggled 状態を切り替え
+    this.iconTarget.dataset.toggled = isBookmarked ? "false" : "true";
     console.log("✅ 新しい状態:", this.iconTarget.dataset.toggled);
 
-    const count = parseInt(this.countTarget.innerText);
-    const newCount = toggled ? count - 1 : count + 1;
-    this.countTarget.innerText = newCount;
+    // ブックマーク数を更新
+    const currentCount = parseInt(this.countTarget.innerText, 10);
+    const updatedCount = isBookmarked ? currentCount - 1 : currentCount + 1;
+    this.countTarget.innerText = updatedCount;
 
-    console.log("🔢 カウント更新:", count, "→", newCount);
+    console.log("🔢 カウント更新:", currentCount, "→", updatedCount);
   }
 }

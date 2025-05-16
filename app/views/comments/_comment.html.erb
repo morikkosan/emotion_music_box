@@ -21,33 +21,33 @@
         <% end %>
       <% else %>
         <!-- 他人のコメントならリアクション -->
-        <% [:sorena, :yonda].each do |kind| %>
-          <% count   = comment.comment_reactions.count { |r| r.kind == kind.to_s } %>
-          <% reacted = comment.comment_reactions.any? { |r| r.user_id == current_user.id && r.kind == kind.to_s } %>
-          <% 
-            # 色味を優しく、種別ごとにトーンを分ける
-            if kind == :sorena
-              outline = "btn-outline-success"
-              solid   = "btn-success"
-            else
-              outline = "btn-outline-info"
-              solid   = "btn-info"
-            end
-            btn_class = reacted ? solid : outline
-          %>
+       <% [:sorena, :yonda].each do |kind| %>
+  <% count   = comment.comment_reactions.count { |r| r.kind == kind.to_s } %>
+  <% reacted = comment.comment_reactions.any? { |r| r.user_id == current_user.id && r.kind == kind.to_s } %>
 
-          <button
-            type="button"
-            data-controller="reaction"
-            data-action="click->reaction#toggle"
-            data-reaction-comment-id-value="<%= comment.id %>"
-            data-reaction-kind-value="<%= kind %>"
-            data-reaction-target="button"
-            class="btn btn-sm mb-1 <%= btn_class %> transition-colors">
-            <%= kind == :sorena ? "👍 それな" : "🎉 よんだ" %>
-            <span data-reaction-target="count"><%= count %></span>
-          </button>
-        <% end %>
+  <% 
+    # 色だけ分ける（浮きのクラスは後で追加）
+    btn_color_class = case kind
+                      when :sorena then reacted ? "btn-success" : "btn-outline-success"
+                      when :yonda  then reacted ? "btn-info"    : "btn-outline-info"
+                      end
+
+    # 浮きエフェクトはactive-reactionクラスで
+    active_class = reacted ? "active-reaction" : ""
+  %>
+
+  <button
+    type="button"
+    data-controller="reaction"
+    data-action="click->reaction#toggle"
+    data-reaction-comment-id-value="<%= comment.id %>"
+    data-reaction-kind-value="<%= kind %>"
+    data-reaction-target="button"
+    class="btn btn-sm mb-1 transition-colors <%= btn_color_class %> <%= active_class %>">
+    <%= kind == :sorena ? "👍 それな" : "🎉 よんだ" %>
+    <span data-reaction-target="count"><%= count %></span>
+  </button>
+<% end %>
       <% end %>
     </div>
   </div>

@@ -1,6 +1,17 @@
 @import "cropperjs/dist/cropper.css";
 
 
+.user-dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+/* app/assets/stylesheets/custom.css などに追加 */
+
+/* app/assets/stylesheets/custom.css */
+
+
+
+
 /*ページネーション自体のデザイン*/
 .pagination>li>a {			
   border: none;		/*枠線をなくす*/
@@ -50,10 +61,4 @@
   border-radius: 50%;
   object-fit: cover;
 }
-
-// リアクション0.2秒ほどふんわり色変化
-.transition-colors {
-  transition: background-color .2s ease, border-color .2s ease, color .2s ease;
-}
-
 

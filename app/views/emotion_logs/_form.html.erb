@@ -1,69 +1,88 @@
-<div class="container mt-5"
-data-controller="search-music">
+<div class="container-fluid p-0" data-controller="search-music">
   <h1 class="text-center mt-4">
-    <i class="bi bi-heart-pulse"></i> Record emotions <i class="bi bi-heart-pulse"></i>
+    <i class="bi bi-heart-pulse"></i> Record emotions
   </h1>
 
   <div class="row justify-content-center">
     <div class="col-md-8">
-  <%= form_with model: emotion_log,
-              id: "emotion-form",
-              local: true,
-              data: {
-                controller: "submit-handler",
-                action: "submit->submit-handler#submit"
-              } do |form| %>
+      <%= form_with model: emotion_log,
+                    id: "emotion-form",
+                    local: true,
+                    data: {
+                      controller: "submit-handler",
+                      action: "submit->submit-handler#submit"
+                    } do |form| %>
 
         <div class="mb-4">
           <%= form.label :date, '日付' %>
-          <%= form.date_field :date, class: 'form-control', max: Date.today.to_s %>
+          <%= form.date_field :date,
+                              class: 'form-control',
+                              max: Date.today.to_s %>
         </div>
 
         <div class="mb-4">
           <%= form.label :emotion, '感情' %>
-          <%= form.select :emotion, ['最高', '気分良い', 'いつも通り', 'イライラ', '限界'], {}, class: 'form-control' %>
+          <%= form.select :emotion,
+                          ['最高', '気分良い', 'いつも通り', 'イライラ', '限界'],
+                          {},
+                          class: 'form-control' %>
         </div>
 
         <div class="mb-4">
-          <%= form.label :track_name, "選択した曲名" %>
-          <%= form.text_field :track_name, id: "selected-track", class: "form-control" %>
-          <%= form.hidden_field :music_url %> <!-- ← バリデーション回避 -->
-
+          <%= form.label :track_name, '選択した曲名' %>
+          <%= form.text_field :track_name,
+                              id: "selected-track",
+                              class: "form-control" %>
+          <%= form.hidden_field :music_url %>
         </div>
 
         <div class="mb-4" data-controller="tag-input">
-          <%= form.label :tag_names, 'ジャンル（最大3つまで）' %>
-          <input type="text"
-                class="form-control"
-                data-tag-input-target="input"
-                data-action="keydown->tag-input#handleKeydown input->tag-input#filterSuggestions"
-                placeholder="ジャンルを入力し、Enterで確定" autocomplete="off" />
+          <%= label_tag :tag_names, 'ジャンル（最大3つまで）' %>
+
+          <input
+            type="text"
+            class="form-control"
+            data-tag-input-target="input"
+            data-action="keydown->tag-input#keydown
+                         input->tag-input#filterSuggestions"
+            placeholder="タグを入力してEnter"
+            autocomplete="off" />
 
           <div class="mt-2" data-tag-input-target="tags"></div>
 
-          <div class="mt-1 dropdown-menu show" style="max-height: 150px; overflow-y: auto;" data-tag-input-target="suggestions"></div>
+          <div
+            class="dropdown-menu"
+            data-tag-input-target="suggestions"
+            style="max-height:150px;overflow-y:auto;">
+          </div>
 
-          <!-- Hidden field for submitting tag values -->
-          <%= hidden_field_tag "emotion_log[tag_names]", "", id: "hidden-tags" %>
+          <%= hidden_field_tag "emotion_log[tag_names]", "",
+                id: "hidden-tags",
+                data: { "tag-input-target": "hidden" } %>
         </div>
 
         <div class="mb-4">
           <%= form.label :description, '一言 吐いてみて' %>
-          <%= form.text_field :description, class: 'form-control' %>
+          <%= form.text_field :description,
+                              class: 'form-control' %>
         </div>
 
         <div class="d-flex justify-content-center">
-          <%= form.submit '記録する', class: 'btn btn-primary me-2' %>
-        <button type="button"
-                class="btn btn-warning"
-                data-action="search-music#backToSearch">
-          曲を選び直す
-        </button>
-
+          <%= form.submit '記録する',
+                          class: 'btn btn-primary me-2',
+                          data: { "submit-handler-target": "submit" } %>
+          <button type="button"
+                  class="btn btn-warning"
+                  data-action="search-music#backToSearch">
+            曲を選び直す
+          </button>
         </div>
+
       <% end %>
 
-      <%= link_to '一覧に戻る', root_path, class: 'btn btn-secondary mt-3' %>
+      <%= link_to '一覧に戻る',
+                  root_path,
+                  class: 'btn btn-secondary mt-3' %>
     </div>
   </div>
 </div>

@@ -5,6 +5,7 @@ ja:
       signed_out: "ログアウトに成功しました！"
     failure:
       invalid: "ログインに失敗しました・・"
+      already_authenticated: "すでにログイン済みです"
     omniauth_callbacks:
       success: "%{kind}アカウントでログインしました。"
       failure: "%{kind}アカウントでのログインに失敗しました。"

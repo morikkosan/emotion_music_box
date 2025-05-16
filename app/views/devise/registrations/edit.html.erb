@@ -1,11 +1,24 @@
 <%# app/views/devise/registrations/edit.html.erb %>
 <%# Cropper.js 用 CSS はレイアウトで読み込まれている想定です %>
+<%# app/views/devise/registrations/edit.html.erb %>
 <% content_for :head do %>
   <%= stylesheet_link_tag "application", media: "all", "data-turbo-track": "reload" %>
 <% end %>
 
 <div class="container d-flex justify-content-center align-items-center min-vh-100">
   <div class="card p-4" style="width: 100%; max-width: 500px;">
+
+      <% if flash[:notice] %>
+      <div id="flash" class="cyber-popup">
+        <%= flash[:notice] %>
+      </div>
+    <% end %>
+    <% if flash[:alert] %>
+      <div id="flash" class="cyber-popup">
+        <%= flash[:alert] %>
+      </div>
+    <% end %>
+
     <% if resource.soundcloud_uid.blank? %>
       <div class="alert alert-warning">
         SoundCloudアカウントが連携されていません。連携するには以下のボタンをクリックしてください。
@@ -20,8 +33,8 @@
     <h2 class="text-center mb-4">プロフィール編集</h2>
 
     <%= form_for(resource, as: resource_name,
-                 url: registration_path(resource_name),
-                 html: { method: :patch, multipart: true }) do |f| %>
+             url: registration_path(resource_name),
+             html: { method: :patch, multipart: true, data: { turbo: false } }) do |f| %>
 
       <%= render "devise/shared/error_messages", resource: resource %>
 
@@ -52,19 +65,12 @@
 
       <!-- アバターまわり -->
       <div class="form-group text-center mt-3">
-        <%# インライン表示用のプレビューに avatarPreviewInline の ID を付与 %>
-        <% if resource.avatar.attached? %>
-          <%= image_tag resource.avatar.variant(resize_to_fill: [80, 80]).processed,
-                        id:    "avatarPreviewInline",
-                        class: "rounded-circle mb-2",
-                        alt:   "現在のアイコン" %><br>
-        <% else %>
-          <%= image_tag "default_stick_figure.png",
-                        id:    "avatarPreviewInline",
-                        size:  "80x80",
-                        class: "rounded-circle mb-2",
-                        alt:   "デフォルトアイコン" %><br>
-        <% end %>
+        <%# Cloudinary URL or デフォルト画像 %>
+        <%= image_tag resource.profile_avatar_url,
+                      id: "avatarPreviewInline",
+                      size: "80x80",
+                      class: "rounded-circle mb-2",
+                      alt: "プロフィール画像" %><br>
 
         <%= f.file_field :avatar,
                          id:    "avatarInput",
@@ -72,34 +78,32 @@
 
         <%= f.hidden_field :cropped_avatar_data,
                            id: "croppedAvatarData" %>
+        <%= f.hidden_field :avatar_url, id: "avatarUrlField" %>
       </div>
 
-   <!-- ✅ 更新ボタンを上に配置、id付き -->
-<div class="form-group text-center mb-3">
-<%= f.submit "更新", class: "btn neon-button" %>
-</div>
+      <!-- ✅ 更新ボタン -->
+      <div class="form-group text-center mb-3">
+        <%= f.submit "更新", class: "btn neon-button" %>
+      </div>
 
-<!-- ✅ 削除ボタンを下に配置 -->
-<% if resource.avatar.attached? %>
-  <div class="form-group text-center">
-    <%= f.check_box :remove_avatar, id: "removeAvatarCheckbox", style: "display:none;" %>
-    <button type="button" id="removeAvatarBtn" class="btn btn-warning btn-sm">画像を削除する</button>
-  </div>
-<% end %>
-
-<% end %>
+      <!-- ✅ 削除ボタン -->
+      <% if resource.avatar_url.present? %>
+        <div class="form-group text-center">
+          <%= f.check_box :remove_avatar, id: "removeAvatarCheckbox", style: "display:none;" %>
+          <button type="button" id="removeAvatarBtn" class="btn btn-warning btn-sm">画像を削除する</button>
+        </div>
+      <% end %>
+    <% end %>
 
     <hr>
-<div class="text-end mt-5">
-  <%= button_to "アカウント削除",
-                registration_path(resource_name),
-                method: :delete,
-                data: { confirm: "本当に削除しますか？" },
-                class: "btn btn-link text-danger-emphasis small fw-semibold" %>
-</div>
+    <div class="text-end mt-5">
+      <%= button_to "アカウント削除",
+                    registration_path(resource_name),
+                    method: :delete,
+                    data: { confirm: "本当に削除しますか？" },
+                    class: "btn btn-link text-danger-emphasis small fw-semibold" %>
+    </div>
 
-
-  
     <p class="text-center">
       <%= link_to 'トップに戻る',
                   emotion_logs_path,
@@ -108,20 +112,18 @@
   </div>
 </div>
 
-<!-- Cropper 用モーダルを追加 -->
+<!-- Cropper 用モーダル -->
 <div class="modal fade" id="avatarCropModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header"><h5 class="modal-title">アイコンをトリミング</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
       <div class="modal-body d-flex justify-content-center">
-        <!-- 正方形ビューポート -->
         <div id="cropContainer"
              style="width:300px;height:300px;overflow:hidden;position:relative;background:#eee;">
              <img id="cropImage"
              src=""
              style="position:absolute; top:0; left:0; cursor:grab; max-width:none; max-height:none; user-select:none;" />
-        
         </div>
       </div>
       <div class="modal-footer">
