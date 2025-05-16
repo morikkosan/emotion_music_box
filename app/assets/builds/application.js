@@ -14360,6 +14360,9 @@ var search_music_controller_default = class extends Controller {
 };
 
 // app/javascript/controllers/submit_handler_controller.js
+function getTodayString() {
+  return (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+}
 var submit_handler_controller_default = class extends Controller {
   static targets = ["submit"];
   connect() {
@@ -14372,22 +14375,50 @@ var submit_handler_controller_default = class extends Controller {
     if (this.hasSubmitTarget) this.submitTarget.disabled = true;
     const form = this.element;
     const formData = new FormData(form);
+    const formDate = formData.get("emotion_log[date]");
+    const today = getTodayString();
+    if (formDate !== today) {
+      console.log("\u4ECA\u65E5\u4EE5\u5916\u306E\u65E5\u4ED8\u306E\u305F\u3081HP\u30B2\u30FC\u30B8\u66F4\u65B0\u3057\u307E\u305B\u3093");
+      if (this.hasSubmitTarget) this.submitTarget.disabled = false;
+      fetch(form.action, {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: formData
+      }).then((res) => res.json()).then((data) => {
+        if (data.success) {
+          alert("\u8A18\u9332\u306F\u4FDD\u5B58\u3055\u308C\u307E\u3057\u305F\u304C\u3001HP\u30B2\u30FC\u30B8\u306E\u53CD\u6620\u306F\u4ECA\u65E5\u306E\u8A18\u9332\u306E\u307F\u3067\u3059\u3002");
+          window.location.href = data.redirect_url;
+        } else {
+          alert("\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + (data.errors || []).join("\n"));
+        }
+      }).catch((error2) => {
+        console.error("\u9001\u4FE1\u30A8\u30E9\u30FC:", error2);
+        alert("\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
+      });
+      return;
+    }
     fetch(form.action, {
       method: "POST",
       headers: { Accept: "application/json" },
       body: formData
     }).then((res) => res.json()).then((data) => {
       if (data.success) {
-        let hpPercentage = 0;
+        const storedDate = localStorage.getItem("hpPercentageDate");
+        if (storedDate !== today) {
+          console.log("\u65E5\u4ED8\u304C\u5909\u308F\u3063\u305F\u305F\u3081HP\u30B2\u30FC\u30B8\u3092\u30EA\u30BB\u30C3\u30C8\uFF0850\u306B\u623B\u3059\uFF09");
+          localStorage.setItem("hpPercentage", "50");
+        }
+        let hpPercentage = 50;
         const storedHP = parseFloat(localStorage.getItem("hpPercentage"));
         if (!isNaN(storedHP)) hpPercentage = storedHP;
         if (typeof data.hpPercentage !== "undefined") {
           console.log("\u30B5\u30FC\u30D0\u30FC\u304B\u3089\u53D7\u3051\u53D6\u3063\u305FhpPercentage = ", data.hpPercentage);
           hpPercentage += parseFloat(data.hpPercentage);
           hpPercentage = Math.max(0, Math.min(100, hpPercentage));
-          localStorage.setItem("hpPercentage", hpPercentage.toString());
-          if (window.updateHPBar) window.updateHPBar();
         }
+        localStorage.setItem("hpPercentage", hpPercentage.toString());
+        localStorage.setItem("hpPercentageDate", today);
+        if (window.updateHPBar) window.updateHPBar();
         const toastEl = document.getElementById("save-toast");
         if (toastEl) {
           const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
