@@ -35,11 +35,8 @@ end
       # flash[:alert] = "他のユーザーの記録は編集できません"
       # redirect_to emotion_logs_path
       head :forbidden   # 403 Forbiddenを返すだけに変更
+    end
   end
-
-
-
-end
 
 
 
@@ -60,6 +57,9 @@ end
     @emotion_log   = current_user.emotion_logs.build(emotion_log_params)
     hp_percentage  = calculate_hp(@emotion_log.emotion)
 
+     Rails.logger.error "★ 受け取った emotion = #{@emotion_log.emotion}"
+  hp_percentage  = calculate_hp(@emotion_log.emotion)
+  Rails.logger.error "★ 計算した hp_percentage = #{hp_percentage}"
     if @emotion_log.save
       render json: { success: true,
                      message: '記録が保存されました',
@@ -172,7 +172,7 @@ end
   # HP 計算
   def calculate_hp(emotion)
     case emotion
-    when 'めちゃくちゃ気分良い' then 50
+    when '最高' then 50
     when '気分良い'              then 30
     when 'いつも通り'            then 0
     when 'イライラ'              then -30

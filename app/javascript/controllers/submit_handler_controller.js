@@ -1,28 +1,22 @@
-// app/javascript/controllers/submit_handler_controller.js
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  // ① submit ボタンをターゲットにする
   static targets = ["submit"]
 
-  connect () {
-    console.log("📝 submit-handler connected")
-    // フォーム表示時に必ず有効化
-    if (this.hasSubmitTarget) {
-      this.submitTarget.disabled = false
-    }
+  connect() {
+    console.log("📝 submit-handler connected");
+    if (this.hasSubmitTarget) this.submitTarget.disabled = false;
   }
 
-  submit (event) {
-    event.preventDefault()
+  submit(event) {
+    console.log("🟢 submit-handler: submitイベント発火");
 
-    // ② 送信時にボタンを無効化（二度押し防止）
-    if (this.hasSubmitTarget) {
-      this.submitTarget.disabled = true
-    }
+    event.preventDefault();
 
-    const form     = this.element
-    const formData = new FormData(form)
+    if (this.hasSubmitTarget) this.submitTarget.disabled = true;
+
+    const form = this.element;
+    const formData = new FormData(form);
 
     fetch(form.action, {
       method: "POST",
@@ -32,30 +26,38 @@ export default class extends Controller {
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          /* --- ① トースト表示 ----------------------- */
-          const toastEl = document.getElementById("save-toast")
+          // ←ここで送信前にlocalStorageから取得
+          let hpPercentage = 0;
+          const storedHP = parseFloat(localStorage.getItem("hpPercentage"));
+          if (!isNaN(storedHP)) hpPercentage = storedHP;
+
+          // サーバーから受け取ったhpPercentageを加算
+          if (typeof data.hpPercentage !== "undefined") {
+            console.log("サーバーから受け取ったhpPercentage = ", data.hpPercentage);
+            hpPercentage += parseFloat(data.hpPercentage);
+            hpPercentage = Math.max(0, Math.min(100, hpPercentage));
+            localStorage.setItem("hpPercentage", hpPercentage.toString());
+            if (window.updateHPBar) window.updateHPBar();
+          }
+
+          // トースト表示やリダイレクトは同じ
+          const toastEl = document.getElementById("save-toast");
           if (toastEl) {
             const toast = bootstrap.Toast.getOrCreateInstance(toastEl)
             toast.show()
           }
-          /* --- ② 1.5 秒後にリダイレクト -------------- */
           setTimeout(() => {
             window.location.href = data.redirect_url
           }, 1500)
-          return
+          return;
         }
-        // ③ エラー時はボタンを再有効化
-        if (this.hasSubmitTarget) {
-          this.submitTarget.disabled = false
-        }
-        alert("保存に失敗しました: " + (data.errors || []).join("\n"))
+        // エラー時
+        if (this.hasSubmitTarget) this.submitTarget.disabled = false;
+        alert("保存に失敗しました: " + (data.errors || []).join("\n"));
       })
       .catch(error => {
         console.error("送信エラー:", error)
-        // ④ 想定外エラーでも再有効化
-        if (this.hasSubmitTarget) {
-          this.submitTarget.disabled = false
-        }
+        if (this.hasSubmitTarget) this.submitTarget.disabled = false;
         alert("予期しないエラーが発生しました")
       })
   }
