@@ -1,24 +1,50 @@
 # app/controllers/emotion_logs_controller.rb
 class EmotionLogsController < ApplicationController
   before_action :authenticate_user!, except: %i[index show]
+  before_action :ensure_owner, only: [:edit, :update, :destroy]
+
 
   ### ----  public アクション  ---- ###
 
-  def index
-    @emotion_logs = EmotionLog
-                      .includes(:user, :bookmarks)
-                      .order(date: :desc)
-                      .page(params[:page]).per(7)
+def index
+   Rails.logger.error "★ index: FLASH notice = #{flash[:notice].inspect}, session = #{session.id}"
+  sleep 2  # わざと遅延させて、F12の「Network」でアクセス回数を確認
+  @emotion_logs = EmotionLog
+    .includes(:user, :bookmarks, :tags)  # ここを修正
+    .order(date: :desc)
 
-    @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id) if user_signed_in?
-  end
+  @emotion_logs = @emotion_logs.where(emotion: params[:emotion]) if params[:emotion].present?
+  @emotion_logs = @emotion_logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
+  @emotion_logs = @emotion_logs.page(params[:page]).per(7)
+
+  @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id) if user_signed_in?
+end
 
   def my_emotion_logs
     @emotion_logs = current_user.emotion_logs
-                                .order(date: :desc)
-                                .page(params[:page]).per(7)
+      .includes(:user, :bookmarks, :tags)  # ここも修正
+      .order(date: :desc)
+      .page(params[:page]).per(7)
     render :index
   end
+
+
+  def ensure_owner
+    @emotion_log = EmotionLog.find(params[:id])
+    unless @emotion_log.user == current_user
+      # flash[:alert] = "他のユーザーの記録は編集できません"
+      # redirect_to emotion_logs_path
+      head :forbidden   # 403 Forbiddenを返すだけに変更
+  end
+
+
+
+end
+
+
+
+
+
 
   def new
     @emotion_log = EmotionLog.new(music_url: params[:music_url],
@@ -46,9 +72,11 @@ class EmotionLogsController < ApplicationController
     end
   end
 
-  def edit
-    @emotion_log = EmotionLog.find(params[:id])
-  end
+ def edit
+  @emotion_log = EmotionLog.find(params[:id])
+  @emotion_log.tag_names = @emotion_log.tags.pluck(:name).join(",")
+end
+
 
   def update
     @emotion_log = EmotionLog.find(params[:id])
@@ -138,7 +166,7 @@ end
   # strong‑parameters
   def emotion_log_params
     params.require(:emotion_log)
-          .permit(:date, :emotion, :description, :music_url, :track_name)
+          .permit(:date, :emotion, :description, :music_url, :track_name, :tag_names)
   end
 
   # HP 計算

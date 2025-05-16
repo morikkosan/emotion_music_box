@@ -19,19 +19,14 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
     end
 
     Rails.logger.debug "🔍 OAuth data received: #{oauth_data.inspect}"
-
-    # 🔽 追加：トークンの情報を詳しく出力
     Rails.logger.debug "🔑 トークン: #{oauth_data.credentials.token}"
     Rails.logger.debug "🔁 リフレッシュトークン: #{oauth_data.credentials.refresh_token}"
     Rails.logger.debug "⏳ 有効期限(UNIX): #{oauth_data.credentials.expires_at}"
     Rails.logger.debug "⏰ 有効期限(Readable): #{Time.at(oauth_data.credentials.expires_at)}"
-    
 
-    # **SoundCloud情報からユーザーを検索 or 作成**
     @user = User.from_omniauth(oauth_data)
 
     if @user.persisted?
-      # アクセストークンを保存
       @user.update!(
         soundcloud_token: oauth_data.credentials.token,
         soundcloud_refresh_token: oauth_data.credentials.refresh_token,
@@ -41,15 +36,12 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
       sign_in @user
       flash[:notice] = "SoundCloudでログインしました！"
 
-      # **認証成功時のリダイレクト**
       if @user.profile_completed?
         redirect_to root_path
       else
         Rails.logger.info "➡️ 初回ログインのためプロフィール入力ページへ遷移"
-
         redirect_to new_user_session_path
       end
-
     else
       session["devise.soundcloud_data"] = oauth_data.except(:extra)
       Rails.logger.error "❌ SoundCloud OAuth login failed. Redirecting to registration."
@@ -57,7 +49,7 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
     end
   end
 
-  # **SoundCloud の GET リクエストを `POST` に変換**
+  # ❗ GETの誤リクエスト対策
   def passthru
     if request.get? && request.path.include?("soundcloud")
       Rails.logger.error "❌ SoundCloudのOAuthは GET をサポートしていません"
@@ -66,4 +58,12 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
       super
     end
   end
+
+  # ❗ OmniAuth失敗時のデフォルト（必要に応じて）
+  def failure
+    Rails.logger.info "🔴 Users::OmniauthCallbacksController#failure が呼び出されました"
+    flash[:alert] = "SoundCloudログインがキャンセルされました。もう一度ログインをするか、ログイン画面先でSign out!を押してください"
+    redirect_to root_path
+  end
+
 end

@@ -1,4 +1,3 @@
-// app/javascript/controllers/reaction_controller.js
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
@@ -6,35 +5,53 @@ export default class extends Controller {
     commentId: Number,
     kind: String
   }
-  static targets = [ "button", "count" ]
+
+  static targets = ["button", "count"]
 
   toggle(event) {
     event.preventDefault()
-    const btn   = this.buttonTarget
-    const cntEl = this.countTarget
-    let   cnt   = parseInt(cntEl.textContent, 10)
 
-    // トグル前の状態
-    const isActive = btn.classList.contains("btn-primary")
+    const btn    = this.buttonTarget
+    const cntEl  = this.countTarget
+    const kind   = this.kindValue
+    let count    = parseInt(cntEl.textContent, 10)
+    count = isNaN(count) ? 0 : count
 
-    // 見た目を即更新
+    const outlineClass = kind === "sorena" ? "btn-outline-success" : "btn-outline-info"
+    const solidClass   = kind === "sorena" ? "btn-success" : "btn-info"
+    const isActive     = btn.classList.contains("active-reaction")
+
+    // ✅ 1. クラス＆カウントを即時変更（ユーザー体感優先）
+    btn.classList.remove("btn-success", "btn-info", "btn-outline-success", "btn-outline-info", "active-reaction")
+
     if (isActive) {
-      cnt -= 1
-      btn.classList.replace("btn-primary", "btn-outline-secondary")
+      count = Math.max(0, count - 1)
+      btn.classList.add(outlineClass)
     } else {
-      cnt += 1
-      btn.classList.replace("btn-outline-secondary", "btn-primary")
+      count += 1
+      btn.classList.add(solidClass, "active-reaction")
     }
-    cntEl.textContent = cnt
 
-    // サーバー通知だけ（JSONレスポンス期待しない）
-    fetch(`/comments/${this.commentIdValue}/toggle_reaction?kind=${this.kindValue}`, {
+    // ✅ 2. カウントも即表示
+    cntEl.textContent = count
+
+    // ✅ 3. fetchは裏で処理（通信に遅延があっても見た目は変えない）
+    fetch(`/comments/${this.commentIdValue}/toggle_reaction?kind=${kind}`, {
       method: "POST",
       headers: {
-        "Accept":        "application/json",
-        "X-CSRF-Token":  document.querySelector("meta[name=csrf-token]").content
+        "Accept": "application/json",
+        "X-CSRF-Token": document.querySelector("meta[name=csrf-token]").content,
       },
       credentials: "same-origin"
     })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status !== "ok") {
+          console.error("リアクション失敗（応答エラー）")
+        }
+      })
+      .catch(error => {
+        console.error("通信エラー:", error)
+      })
   }
 }

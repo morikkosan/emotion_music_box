@@ -14186,6 +14186,7 @@ var modal_controller_default = class extends Controller {
         if (idx < modals.length - 1) el.remove();
       });
     }
+    document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
     const bsModal = Modal.getOrCreateInstance(this.element);
     bsModal.show();
     const desc = this.element.querySelector("#emotion_log_description");
@@ -14360,11 +14361,19 @@ var search_music_controller_default = class extends Controller {
 
 // app/javascript/controllers/submit_handler_controller.js
 var submit_handler_controller_default = class extends Controller {
+  // ① submit ボタンをターゲットにする
+  static targets = ["submit"];
   connect() {
     console.log("\u{1F4DD} submit-handler connected");
+    if (this.hasSubmitTarget) {
+      this.submitTarget.disabled = false;
+    }
   }
   submit(event) {
     event.preventDefault();
+    if (this.hasSubmitTarget) {
+      this.submitTarget.disabled = true;
+    }
     const form = this.element;
     const formData = new FormData(form);
     fetch(form.action, {
@@ -14383,9 +14392,15 @@ var submit_handler_controller_default = class extends Controller {
         }, 1500);
         return;
       }
-      alert("\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + (data.errors || []).join("\\n"));
+      if (this.hasSubmitTarget) {
+        this.submitTarget.disabled = false;
+      }
+      alert("\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + (data.errors || []).join("\n"));
     }).catch((error2) => {
       console.error("\u9001\u4FE1\u30A8\u30E9\u30FC:", error2);
+      if (this.hasSubmitTarget) {
+        this.submitTarget.disabled = false;
+      }
       alert("\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
     });
   }
@@ -14401,18 +14416,18 @@ var bookmark_toggle_controller_default = class extends Controller {
   }
   toggle(event) {
     console.log("\u{1F4CC} toggle() \u767A\u706B");
-    const toggled = this.iconTarget.dataset.toggled === "true";
-    console.log("\u{1F504} \u73FE\u5728\u306E\u72B6\u614B:", toggled ? "bookmarked" : "unbookmarked");
-    const newIconSrc = toggled ? this.iconTarget.dataset.unbookmarkedUrl : this.iconTarget.dataset.bookmarkedUrl;
+    const isBookmarked = this.iconTarget.dataset.toggled === "true";
+    console.log("\u{1F504} \u73FE\u5728\u306E\u72B6\u614B:", isBookmarked ? "bookmarked" : "unbookmarked");
+    const newIconSrc = isBookmarked ? this.iconTarget.dataset.unbookmarkedUrl : this.iconTarget.dataset.bookmarkedUrl;
     console.log("\u{1F5BC}\uFE0F \u5207\u308A\u66FF\u3048\u308B\u753B\u50CF\u30D1\u30B9:", newIconSrc);
     this.iconTarget.src = "";
     this.iconTarget.src = newIconSrc;
-    this.iconTarget.dataset.toggled = toggled ? "false" : "true";
+    this.iconTarget.dataset.toggled = isBookmarked ? "false" : "true";
     console.log("\u2705 \u65B0\u3057\u3044\u72B6\u614B:", this.iconTarget.dataset.toggled);
-    const count = parseInt(this.countTarget.innerText);
-    const newCount = toggled ? count - 1 : count + 1;
-    this.countTarget.innerText = newCount;
-    console.log("\u{1F522} \u30AB\u30A6\u30F3\u30C8\u66F4\u65B0:", count, "\u2192", newCount);
+    const currentCount = parseInt(this.countTarget.innerText, 10);
+    const updatedCount = isBookmarked ? currentCount - 1 : currentCount + 1;
+    this.countTarget.innerText = updatedCount;
+    console.log("\u{1F522} \u30AB\u30A6\u30F3\u30C8\u66F4\u65B0:", currentCount, "\u2192", updatedCount);
   }
 };
 
@@ -14486,72 +14501,98 @@ var reaction_controller_default = class extends Controller {
     event.preventDefault();
     const btn = this.buttonTarget;
     const cntEl = this.countTarget;
-    let cnt = parseInt(cntEl.textContent, 10);
-    const isActive = btn.classList.contains("btn-primary");
+    const kind = this.kindValue;
+    let count = parseInt(cntEl.textContent, 10);
+    count = isNaN(count) ? 0 : count;
+    const outlineClass = kind === "sorena" ? "btn-outline-success" : "btn-outline-info";
+    const solidClass = kind === "sorena" ? "btn-success" : "btn-info";
+    const isActive = btn.classList.contains("active-reaction");
+    btn.classList.remove("btn-success", "btn-info", "btn-outline-success", "btn-outline-info", "active-reaction");
     if (isActive) {
-      cnt -= 1;
-      btn.classList.replace("btn-primary", "btn-outline-secondary");
+      count = Math.max(0, count - 1);
+      btn.classList.add(outlineClass);
     } else {
-      cnt += 1;
-      btn.classList.replace("btn-outline-secondary", "btn-primary");
+      count += 1;
+      btn.classList.add(solidClass, "active-reaction");
     }
-    cntEl.textContent = cnt;
-    fetch(`/comments/${this.commentIdValue}/toggle_reaction?kind=${this.kindValue}`, {
+    cntEl.textContent = count;
+    fetch(`/comments/${this.commentIdValue}/toggle_reaction?kind=${kind}`, {
       method: "POST",
       headers: {
         "Accept": "application/json",
         "X-CSRF-Token": document.querySelector("meta[name=csrf-token]").content
       },
       credentials: "same-origin"
+    }).then((response) => response.json()).then((data) => {
+      if (data.status !== "ok") {
+        console.error("\u30EA\u30A2\u30AF\u30B7\u30E7\u30F3\u5931\u6557\uFF08\u5FDC\u7B54\u30A8\u30E9\u30FC\uFF09");
+      }
+    }).catch((error2) => {
+      console.error("\u901A\u4FE1\u30A8\u30E9\u30FC:", error2);
     });
   }
 };
 
 // app/javascript/controllers/tag_input_controller.js
 var tag_input_controller_default = class extends Controller {
-  static targets = ["input", "tags", "suggestions"];
+  static targets = ["input", "tags", "suggestions", "hidden"];
   connect() {
+    console.log("\u{1F7E2} tag-input controller connected");
     this.selectedTags = [];
-  }
-  handleKeydown(event) {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      const value = this.inputTarget.value.trim();
-      if (value && this.selectedTags.length < 3 && !this.selectedTags.includes(value)) {
-        this.addTag(value);
-      }
-      this.inputTarget.value = "";
-      this.clearSuggestions();
+    const initialTagsString = this.hiddenTarget.value;
+    if (initialTagsString) {
+      this.selectedTags = initialTagsString.split(",").map((t) => t.trim()).filter(Boolean);
     }
+    this._renderTags();
+    this.hiddenTarget.value = this.selectedTags.join(",");
+  }
+  keydown(event) {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    const value = this.inputTarget.value.trim();
+    if (!value) return this._clearInput();
+    if (this.selectedTags.includes(value)) {
+      alert("\u540C\u3058\u30BF\u30B0\u306F\u8FFD\u52A0\u3067\u304D\u307E\u305B\u3093");
+      return this._clearInput();
+    }
+    if (this.selectedTags.length >= 3) {
+      alert("\u30BF\u30B0\u306F\u6700\u59273\u3064\u307E\u3067\u3067\u3059");
+      return this._clearInput();
+    }
+    if (value.length > 10) {
+      alert("\u30BF\u30B0\u306F10\u6587\u5B57\u4EE5\u5185\u3067\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044");
+      return this._clearInput();
+    }
+    if (/[^a-zA-Z0-9ぁ-んァ-ン一-龥ー]/.test(value)) {
+      alert("\u8A18\u53F7\u3084\u7279\u6B8A\u6587\u5B57\u306F\u4F7F\u3048\u307E\u305B\u3093");
+      return this._clearInput();
+    }
+    this._addTag(value);
+    this._clearInput();
   }
   filterSuggestions() {
     const query = this.inputTarget.value.trim();
-    if (!query) {
-      this.clearSuggestions();
-      return;
-    }
-    fetch(`/tags/search?q=${encodeURIComponent(query)}`).then((response) => response.json()).then((data) => {
+    if (!query) return this.clearSuggestions();
+    fetch(`/tags/search?q=${encodeURIComponent(query)}`).then((r) => r.json()).then((data) => {
       this.suggestionsTarget.innerHTML = "";
       data.forEach((tag) => {
         const option = document.createElement("div");
         option.classList.add("dropdown-item");
         option.textContent = tag.name;
         option.addEventListener("click", () => {
-          this.addTag(tag.name);
-          this.inputTarget.value = "";
-          this.clearSuggestions();
+          this._addTag(tag.name);
+          this._clearInput();
         });
         this.suggestionsTarget.appendChild(option);
       });
     });
   }
-  addTag(tag) {
-    if (this.selectedTags.includes(tag) || this.selectedTags.length >= 3) return;
+  _addTag(tag) {
     this.selectedTags.push(tag);
-    this.updateTagsView();
-    document.getElementById("hidden-tags").value = this.selectedTags.join(",");
+    this._renderTags();
+    this.hiddenTarget.value = this.selectedTags.join(",");
   }
-  updateTagsView() {
+  _renderTags() {
     this.tagsTarget.innerHTML = "";
     this.selectedTags.forEach((tag) => {
       const badge = document.createElement("span");
@@ -14563,8 +14604,8 @@ var tag_input_controller_default = class extends Controller {
       removeBtn.setAttribute("aria-label", "Remove");
       removeBtn.addEventListener("click", () => {
         this.selectedTags = this.selectedTags.filter((t) => t !== tag);
-        this.updateTagsView();
-        document.getElementById("hidden-tags").value = this.selectedTags.join(",");
+        this._renderTags();
+        this.hiddenTarget.value = this.selectedTags.join(",");
       });
       badge.appendChild(removeBtn);
       this.tagsTarget.appendChild(badge);
@@ -14572,6 +14613,63 @@ var tag_input_controller_default = class extends Controller {
   }
   clearSuggestions() {
     this.suggestionsTarget.innerHTML = "";
+  }
+  _clearInput() {
+    this.inputTarget.value = "";
+    this.clearSuggestions();
+  }
+};
+
+// app/javascript/controllers/tag_autocomplete_controller.js
+var tag_autocomplete_controller_default = class extends Controller {
+  static targets = ["input", "suggestions"];
+  connect() {
+    this.isComposing = false;
+    this.fetchSuggestionsBound = () => this.fetchSuggestions();
+    this.inputTarget.addEventListener("compositionstart", () => {
+      this.isComposing = true;
+    });
+    this.inputTarget.addEventListener("compositionend", () => {
+      this.isComposing = false;
+      this.fetchSuggestions();
+    });
+    this.inputTarget.addEventListener("input", this.fetchSuggestionsBound);
+    document.addEventListener("click", this.closeSuggestions.bind(this));
+  }
+  fetchSuggestions() {
+    if (this.isComposing) return;
+    const query = this.inputTarget.value.trim();
+    if (query === "") {
+      this.suggestionsTarget.innerHTML = "";
+      return;
+    }
+    fetch(`/tags/search?q=${encodeURIComponent(query)}`).then((res) => res.json()).then((tags) => {
+      this.suggestionsTarget.innerHTML = "";
+      tags.forEach((tag) => {
+        const li = document.createElement("li");
+        li.textContent = tag.name || tag;
+        li.className = "list-group-item list-group-item-action";
+        li.style.cursor = "pointer";
+        li.onclick = () => this.selectSuggestion(li.textContent);
+        this.suggestionsTarget.appendChild(li);
+      });
+    }).catch((err) => {
+      console.error("\u30BF\u30B0\u5019\u88DC\u53D6\u5F97\u5931\u6557:", err);
+      this.suggestionsTarget.innerHTML = "";
+    });
+  }
+  selectSuggestion(text) {
+    this.inputTarget.removeEventListener("input", this.fetchSuggestionsBound);
+    this.inputTarget.value = text;
+    this.suggestionsTarget.innerHTML = "";
+    setTimeout(() => {
+      this.inputTarget.addEventListener("input", this.fetchSuggestionsBound);
+    }, 0);
+  }
+  closeSuggestions(e) {
+    if (!this.element.contains(e.target)) {
+      this.suggestionsTarget.innerHTML = "";
+    }
   }
 };
 
@@ -14584,19 +14682,252 @@ application.register("bookmark-toggle", bookmark_toggle_controller_default);
 application.register("comment-form", comment_form_controller_default);
 application.register("reaction", reaction_controller_default);
 application.register("tag-input", tag_input_controller_default);
+application.register("tag-autocomplete", tag_autocomplete_controller_default);
+
+// app/javascript/custom/comments.js
+document.addEventListener("DOMContentLoaded", function() {
+  function createComment(text) {
+    const commentContainer = document.getElementById("comment-container");
+    const comment = document.createElement("div");
+    comment.className = "comment";
+    comment.textContent = text;
+    const containerHeight = commentContainer.clientHeight;
+    const topPosition = Math.random() * (containerHeight - 20);
+    comment.style.top = `${topPosition}px`;
+    comment.style.left = "100%";
+    commentContainer.appendChild(comment);
+    gsap.to(comment, {
+      duration: 10,
+      x: -window.innerWidth - 200,
+      ease: "linear",
+      onComplete: () => {
+        commentContainer.removeChild(comment);
+      }
+    });
+  }
+  setInterval(() => {
+    createComment("\u3044\u3089\u3044\u3089");
+  }, 1e4);
+});
+
+// app/javascript/custom/flash_messages.js
+(function() {
+  function showFlashSwal() {
+    let flashNotice = document.body.dataset.flashNotice;
+    let flashAlert = document.body.dataset.flashAlert;
+    console.log("\u{1F4A1} showFlashSwal: notice =", flashNotice, ", alert =", flashAlert);
+    if (window.Swal) {
+      console.log("\u2705 Swal.fire \u4F7F\u3048\u307E\u3059", Swal);
+      if (flashNotice) {
+        Swal.fire({
+          title: "\u6210\u529F \u{1F389}",
+          text: flashNotice,
+          icon: "success",
+          confirmButtonText: "OK",
+          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+          color: "#fff",
+          timer: 3e3,
+          timerProgressBar: true,
+          customClass: { popup: "cyber-popup" }
+        });
+        console.log("\u2705 \u30D5\u30E9\u30C3\u30B7\u30E5notice\u8868\u793A");
+      }
+      if (flashAlert) {
+        Swal.fire({
+          title: "\u30A8\u30E9\u30FC \u274C",
+          text: flashAlert,
+          icon: "error",
+          confirmButtonText: "\u9589\u3058\u308B",
+          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+          color: "#fff",
+          customClass: { popup: "cyber-popup" }
+        });
+        console.log("\u2705 \u30D5\u30E9\u30C3\u30B7\u30E5alert\u8868\u793A");
+      }
+    } else {
+      console.warn("\u26A0\uFE0F SweetAlert2 (Swal) \u304C\u8AAD\u307F\u8FBC\u307E\u308C\u3066\u3044\u307E\u305B\u3093");
+    }
+  }
+  document.addEventListener("DOMContentLoaded", showFlashSwal);
+  document.addEventListener("turbo:load", showFlashSwal);
+  document.addEventListener("DOMContentLoaded", function() {
+    const logoutLink = document.getElementById("logout-link");
+    if (!logoutLink) {
+      console.log("\u2139\uFE0F logout-link \u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3067\u3057\u305F");
+      return;
+    }
+    logoutLink.addEventListener("click", function(event) {
+      event.preventDefault();
+      console.log("\u30ED\u30B0\u30A2\u30A6\u30C8\u30EA\u30F3\u30AF\u304C\u30AF\u30EA\u30C3\u30AF\u3055\u308C\u307E\u3057\u305F");
+      if (!window.Swal) {
+        alert("Swal\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\uFF01\u901A\u5E38\u306E\u30ED\u30B0\u30A2\u30A6\u30C8\u51E6\u7406\u306B\u3057\u307E\u3059\u3002");
+        location.href = logoutLink.href;
+        return;
+      }
+      Swal.fire({
+        title: "\u4ECA\u65E5\u306F\u3082\u3046\u5E30\u308A\u307E\u3059\u304B\uFF1F",
+        text: "\u3053\u306E\u5F8C\u3001\u30ED\u30B0\u30A2\u30A6\u30C8\u3057\u307E\u3059\u304B\uFF1F",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "\u306F\u3044\u3001\u5E30\u308A\u307E\u3059",
+        cancelButtonText: "\u30AD\u30E3\u30F3\u30BB\u30EB",
+        background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+        color: "#fff"
+      }).then((result) => {
+        console.log("\u30DD\u30C3\u30D7\u30A2\u30C3\u30D7\u306E\u7D50\u679C:", result);
+        if (result.isConfirmed) {
+          console.log("\u30ED\u30B0\u30A2\u30A6\u30C8\u51E6\u7406\u3092\u958B\u59CB\u3057\u307E\u3059");
+          const logoutUrl = logoutLink.dataset.logoutUrl || logoutLink.href;
+          const form = document.createElement("form");
+          form.method = "post";
+          form.action = logoutUrl;
+          const methodInput = document.createElement("input");
+          methodInput.type = "hidden";
+          methodInput.name = "_method";
+          methodInput.value = "delete";
+          form.appendChild(methodInput);
+          const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+          if (csrfTokenMeta) {
+            const csrfInput = document.createElement("input");
+            csrfInput.type = "hidden";
+            csrfInput.name = "authenticity_token";
+            csrfInput.value = csrfTokenMeta.content;
+            form.appendChild(csrfInput);
+          }
+          document.body.appendChild(form);
+          form.submit();
+        } else {
+          console.log("\u30ED\u30B0\u30A2\u30A6\u30C8\u304C\u30AD\u30E3\u30F3\u30BB\u30EB\u3055\u308C\u307E\u3057\u305F");
+        }
+      }).catch((err) => {
+        console.error("\u30DD\u30C3\u30D7\u30A2\u30C3\u30D7\u30A8\u30E9\u30FC:", err);
+      });
+    });
+  });
+  console.log("\u{1F525} custom_flash.js loaded:", Date.now());
+})();
+
+// app/javascript/custom/gages_test.js
+console.log("\u2705 gages_test.js is loaded!");
+var hpPercentage = 0;
+window.updateHPBar = function() {
+  console.log("\u2705 HP\u30D0\u30FC\u306E\u66F4\u65B0\u958B\u59CB");
+  console.time("HP\u30D0\u30FC\u66F4\u65B0");
+  const hpBar = document.getElementById("hp-bar");
+  const hpStatusText = document.getElementById("hp-status-text");
+  if (!hpBar || !hpStatusText) {
+    console.warn("\u26A0\uFE0F HP\u30D0\u30FC\u307E\u305F\u306F\u30B9\u30C6\u30FC\u30BF\u30B9\u30C6\u30AD\u30B9\u30C8\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002\uFF08\u30D5\u30A9\u30FC\u30E0\u30DA\u30FC\u30B8\u306A\u3089\u7121\u8996\uFF09");
+    console.timeEnd("HP\u30D0\u30FC\u66F4\u65B0");
+    return;
+  }
+  let storedHP = localStorage.getItem("hpPercentage");
+  hpPercentage = storedHP ? parseFloat(storedHP) : 0;
+  let normalizedHP = Math.max(-100, Math.min(100, hpPercentage));
+  let barWidth = (normalizedHP + 100) / 2 + "%";
+  console.log(`\u{1F3AF} \u66F4\u65B0\u5F8C\u306E HP\u5024: ${normalizedHP}, HP\u30D0\u30FC\u306E\u5E45: ${barWidth}`);
+  const barWidthDisplay = document.getElementById("bar-width-display");
+  if (barWidthDisplay) {
+    barWidthDisplay.innerText = barWidth;
+  }
+  hpBar.style.transition = "width 0.5s ease-in-out";
+  hpBar.style.width = barWidth;
+  if (normalizedHP <= -30) {
+    hpBar.style.backgroundColor = "red";
+    hpStatusText.innerText = "\u{1F198} \u30B9\u30C8\u30EC\u30B9\u5371\u967A \u{1F198}";
+    hpStatusText.style.color = "red";
+  } else if (normalizedHP <= 0) {
+    hpBar.style.backgroundColor = "yellow";
+    hpStatusText.innerText = "\u{1F3E5} \u3061\u3087\u3063\u3068\u4F11\u307F\u307E\u3057\u3087 \u{1F3E5}";
+    hpStatusText.style.color = "orange";
+  } else if (normalizedHP <= 70) {
+    hpBar.style.backgroundColor = "#9ACD32";
+    hpStatusText.innerText = "\u266A \u304A\u3064\u304B\u308C\u3055\u307E\u3067\u3059 \u266A";
+    hpStatusText.style.color = "orange";
+  } else {
+    hpBar.style.backgroundColor = "green";
+    hpStatusText.innerText = "\u{1FA7A} \u30E1\u30F3\u30BF\u30EB\u6B63\u5E38 \u{1F33F}";
+    hpStatusText.style.color = "green";
+  }
+  requestAnimationFrame(() => {
+    localStorage.setItem("hpPercentage", normalizedHP.toString());
+    console.log("\u{1F4BE} localStorage \u306B\u4FDD\u5B58:", localStorage.getItem("hpPercentage"));
+  });
+  console.timeEnd("HP\u30D0\u30FC\u66F4\u65B0");
+};
++document.addEventListener("DOMContentLoaded", function() {
+  console.log("\u2705 turbo:load \u304C\u767A\u706B\uFF01");
+  let savedHP = localStorage.getItem("hpPercentage");
+  if (savedHP === null) {
+    console.warn("\u26A0\uFE0F `turbo:load` \u3067 `hpPercentage` \u304C\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3002\u30C7\u30D5\u30A9\u30EB\u30C8\u5024\u3092\u4F7F\u7528\u3057\u307E\u3059\u3002");
+  }
+  hpPercentage = savedHP ? parseFloat(savedHP) : 0;
+  console.log("\u{1F504} `turbo:load` \u3067\u53D6\u5F97\u3057\u305F `hpPercentage`:", hpPercentage);
+  if (!isNaN(hpPercentage)) {
+    window.updateHPBar();
+  }
+});
+document.addEventListener("DOMContentLoaded", function() {
+  const form = document.getElementById("emotion-form");
+  if (form) {
+    console.log("\u2705 emotion-form \u304C\u898B\u3064\u304B\u308A\u307E\u3057\u305F\uFF01");
+    form.addEventListener("submit", async function(event) {
+      event.preventDefault();
+      console.log("\u2705 Form submit event triggered");
+      const formData = new FormData(form);
+      const submitButton = form.querySelector('input[type="submit"]');
+      submitButton.disabled = true;
+      try {
+        console.time("\u30D5\u30A9\u30FC\u30E0\u9001\u4FE1");
+        const response = await fetch(form.action, {
+          method: form.method,
+          body: formData,
+          headers: {
+            "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+          }
+        });
+        console.timeEnd("\u30D5\u30A9\u30FC\u30E0\u9001\u4FE1");
+        const data = await response.json();
+        console.log("\u{1F680} \u30B5\u30FC\u30D0\u30FC\u30EC\u30B9\u30DD\u30F3\u30B9:", data);
+        if (data.success) {
+          console.log("\u2705 HP\u5024\u3092\u66F4\u65B0:", data.hpPercentage);
+          hpPercentage += parseFloat(data.hpPercentage);
+          window.updateHPBar();
+          requestAnimationFrame(() => {
+            localStorage.setItem("hpPercentage", hpPercentage.toString());
+            console.log("\u{1F4BE} `localStorage` \u306B\u4FDD\u5B58\u3055\u308C\u305F `hpPercentage`:", localStorage.getItem("hpPercentage"));
+          });
+          setTimeout(() => alert(data.message), 100);
+          setTimeout(() => {
+            console.log("\u{1F504} `emotion_logs` \u306B\u30EA\u30C0\u30A4\u30EC\u30AF\u30C8");
+            window.location.href = data.redirect_url;
+          }, 500);
+        } else {
+          console.error("\u274C \u611F\u60C5\u8A18\u9332\u306E\u4FDD\u5B58\u306B\u5931\u6557:", data.errors.join(", "));
+          setTimeout(() => alert("\u611F\u60C5\u8A18\u9332\u306E\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + data.errors.join(", ")), 100);
+        }
+      } catch (error2) {
+        console.error("\u274C \u30D5\u30A9\u30FC\u30E0\u9001\u4FE1\u4E2D\u306E\u30A8\u30E9\u30FC:", error2);
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+  }
+});
+console.log("\u2705 updateHPBar is now available globally:", typeof window.updateHPBar);
 
 // app/javascript/application.js
+console.log("\u{1F525} application.js \u8AAD\u307F\u8FBC\u307F\u958B\u59CB", Date.now());
 Rails.start();
 window.bootstrap = bootstrap_esm_exports;
 document.addEventListener("turbo:load", () => {
   const fileInput = document.getElementById("avatarInput");
   const inlinePreview = document.getElementById("avatarPreviewInline");
-  const hiddenField = document.getElementById("croppedAvatarData");
   const modalEl = document.getElementById("avatarCropModal");
   const cropContainer = document.getElementById("cropContainer");
   const cropImage = document.getElementById("cropImage");
   const confirmBtn = document.getElementById("cropConfirmBtn");
-  if (![fileInput, inlinePreview, hiddenField, modalEl, cropContainer, cropImage, confirmBtn].every(Boolean)) {
+  const avatarUrlField = document.getElementById("avatarUrlField");
+  if (![fileInput, inlinePreview, avatarUrlField, modalEl, cropContainer, cropImage, confirmBtn].every(Boolean)) {
     console.error("\u274C \u5FC5\u8981\u306A\u8981\u7D20\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093");
     return;
   }
@@ -14619,6 +14950,18 @@ document.addEventListener("turbo:load", () => {
   fileInput.addEventListener("change", (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert("\u30D5\u30A1\u30A4\u30EB\u30B5\u30A4\u30BA\u306F2MB\u4EE5\u5185\u306B\u3057\u3066\u304F\u3060\u3055\u3044\u3002");
+      fileInput.value = "";
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("\u30D5\u30A1\u30A4\u30EB\u5F62\u5F0F\u306FJPEG\u307E\u305F\u306FPNG\u306E\u307F\u8A31\u53EF\u3055\u308C\u3066\u3044\u307E\u3059\u3002");
+      fileInput.value = "";
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       cropImage.src = reader.result;
@@ -14654,6 +14997,17 @@ document.addEventListener("turbo:load", () => {
       cropContainer.style.cursor = "grab";
     }
   });
+  async function resizeImage(sourceImage, maxSize = 300) {
+    return new Promise((resolve) => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const scale = Math.min(maxSize / sourceImage.width, maxSize / sourceImage.height);
+      canvas.width = sourceImage.width * scale;
+      canvas.height = sourceImage.height * scale;
+      ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.9);
+    });
+  }
   confirmBtn.addEventListener("click", async () => {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -14678,25 +15032,28 @@ document.addEventListener("turbo:load", () => {
     );
     const dataUrl = canvas.toDataURL("image/png");
     inlinePreview.src = dataUrl;
-    hiddenField.value = dataUrl;
+    avatarUrlField.value = "";
+    modal.hide();
     try {
-      const blob = await (await fetch(dataUrl)).blob();
-      const fd = new FormData();
-      fd.append("file", blob, "avatar.png");
-      fd.append("upload_preset", window.CLOUDINARY_UPLOAD_PRESET);
-      const res = await axios.post(
-        `https://api.cloudinary.com/v1_1/${window.CLOUDINARY_CLOUD_NAME}/upload`,
-        fd
-        // ← FormData
-        // 👇この headers 行は削除！
-        // { headers: { "Content-Type": "multipart/form-data" } }
-      );
-      inlinePreview.src = res.data.secure_url;
-      hiddenField.value = res.data.secure_url;
+      inlinePreview.classList.add("loading");
+      const tempImage = new window.Image();
+      tempImage.onload = async () => {
+        const resizedBlob = await resizeImage(tempImage, 300);
+        const fd = new FormData();
+        fd.append("file", resizedBlob, "avatar.jpg");
+        fd.append("upload_preset", window.CLOUDINARY_UPLOAD_PRESET);
+        const res = await axios.post(
+          `https://api.cloudinary.com/v1_1/${window.CLOUDINARY_CLOUD_NAME}/upload`,
+          fd
+        );
+        inlinePreview.src = res.data.secure_url;
+        avatarUrlField.value = res.data.secure_url;
+        inlinePreview.classList.remove("loading");
+      };
+      tempImage.src = dataUrl;
     } catch (err) {
       console.error("Cloudinary upload failed", err);
-    } finally {
-      modal.hide();
+      inlinePreview.classList.remove("loading");
     }
   });
 });

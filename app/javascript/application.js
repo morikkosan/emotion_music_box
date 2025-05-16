@@ -1,8 +1,13 @@
-// app/javascript/application.js
+console.log("🔥 application.js 読み込み開始", Date.now());
+
+
 import Rails from "@rails/ujs";
 import "@hotwired/turbo-rails";
 import * as bootstrap from "bootstrap";
 import "./controllers";
+import "./custom/comments";
+import "./custom/flash_messages";
+import "./custom/gages_test";
 
 Rails.start();
 window.bootstrap = bootstrap;
@@ -10,13 +15,13 @@ window.bootstrap = bootstrap;
 document.addEventListener("turbo:load", () => {
   const fileInput     = document.getElementById("avatarInput");
   const inlinePreview = document.getElementById("avatarPreviewInline");
-  const hiddenField   = document.getElementById("croppedAvatarData");
   const modalEl       = document.getElementById("avatarCropModal");
   const cropContainer = document.getElementById("cropContainer");
   const cropImage     = document.getElementById("cropImage");
   const confirmBtn    = document.getElementById("cropConfirmBtn");
+  const avatarUrlField = document.getElementById("avatarUrlField");
 
-  if (![fileInput, inlinePreview, hiddenField, modalEl, cropContainer, cropImage, confirmBtn].every(Boolean)) {
+  if (![fileInput, inlinePreview, avatarUrlField, modalEl, cropContainer, cropImage, confirmBtn].every(Boolean)) {
     console.error("❌ 必要な要素が見つかりません");
     return;
   }
@@ -41,20 +46,39 @@ document.addEventListener("turbo:load", () => {
   cropContainer.style.cursor    = "grab";
   cropContainer.style.touchAction = "none";
 
-  // --- ファイル選択 ---
-  fileInput.addEventListener("change", e => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      cropImage.src = reader.result;
-      startX = 0;
-      startY = 0;
-      updateTransform();
-      modal.show();
-    };
-    reader.readAsDataURL(file);
-  });
+
+
+ fileInput.addEventListener("change", e => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  // ファイル容量チェック（2MBまで）
+  const maxSize = 2 * 1024 * 1024; // 2MB
+  if (file.size > maxSize) {
+    alert("ファイルサイズは2MB以内にしてください。");
+    fileInput.value = ""; // 選択をクリア
+    return;
+  }
+
+  // MIMEタイプチェック（jpg/jpeg/pngのみ許可）
+  const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+  if (!allowedTypes.includes(file.type)) {
+    alert("ファイル形式はJPEGまたはPNGのみ許可されています。");
+    fileInput.value = ""; // 選択をクリア
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    cropImage.src = reader.result;
+    startX = 0;
+    startY = 0;
+    updateTransform();
+    modal.show();
+  };
+  reader.readAsDataURL(file);
+});
+
 
   // --- ドラッグ移動 ---
   cropContainer.addEventListener("pointerdown", e => {
@@ -85,19 +109,30 @@ document.addEventListener("turbo:load", () => {
     }
   });
 
+  async function resizeImage(sourceImage, maxSize = 300) {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const scale = Math.min(maxSize / sourceImage.width, maxSize / sourceImage.height);
+      canvas.width = sourceImage.width * scale;
+      canvas.height = sourceImage.height * scale;
+      ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.9);
+    });
+  }
+
   // --- クロップ確定 ---
   confirmBtn.addEventListener("click", async () => {
+    // 1. 80x80プレビュー
     const canvas = document.createElement("canvas");
     const ctx    = canvas.getContext("2d");
     canvas.width  = 80;
     canvas.height = 80;
 
-    // 表示領域と画像のスケール
     const viewWidth  = cropContainer.clientWidth;
     const viewHeight = cropContainer.clientHeight;
     const scaleX = cropImage.naturalWidth  / cropImage.clientWidth;
     const scaleY = cropImage.naturalHeight / cropImage.clientHeight;
-
     const sx = startX * -1 * scaleX;
     const sy = startY * -1 * scaleY;
 
@@ -110,34 +145,42 @@ document.addEventListener("turbo:load", () => {
     );
 
     const dataUrl = canvas.toDataURL("image/png");
-    inlinePreview.src = dataUrl;
-    hiddenField.value = dataUrl;
+    inlinePreview.src = dataUrl;  // すぐ反映
+    avatarUrlField.value = "";    // 一旦クリア
 
-    // ===== Cloudinary へアップロード（既存処理は変更せず追加のみ） =====
+    modal.hide();
+
+    // --- Cloudinaryへ裏でアップロード ---
     try {
-      const blob = await (await fetch(dataUrl)).blob();
-      const fd   = new FormData();
-      fd.append("file", blob, "avatar.png");
-      fd.append("upload_preset", window.CLOUDINARY_UPLOAD_PRESET);
+      inlinePreview.classList.add("loading");
 
-      const res = await axios.post(
-        `https://api.cloudinary.com/v1_1/${window.CLOUDINARY_CLOUD_NAME}/upload`,
-        fd // ← FormData
-        // 👇この headers 行は削除！
-        // { headers: { "Content-Type": "multipart/form-data" } }
-      );
+      const tempImage = new window.Image();
+      tempImage.onload = async () => {
+        const resizedBlob = await resizeImage(tempImage, 300);
+        const fd = new FormData();
+        fd.append("file", resizedBlob, "avatar.jpg");
+        fd.append("upload_preset", window.CLOUDINARY_UPLOAD_PRESET);
 
-      inlinePreview.src = res.data.secure_url;
-      hiddenField.value = res.data.secure_url;
+        const res = await axios.post(
+          `https://api.cloudinary.com/v1_1/${window.CLOUDINARY_CLOUD_NAME}/upload`,
+          fd
+        );
+
+        // 完了後：プレビューもhiddenもURLセット
+        inlinePreview.src = res.data.secure_url;
+        avatarUrlField.value = res.data.secure_url;
+        inlinePreview.classList.remove("loading");
+      };
+      tempImage.src = dataUrl;
+
     } catch (err) {
       console.error("Cloudinary upload failed", err);
-    } finally {
-      modal.hide();
+      inlinePreview.classList.remove("loading");
     }
-    // ======================================================================
   });
 });
 
+// 削除ボタンは今まで通り
 document.addEventListener("turbo:load", () => {
   const removeAvatarBtn = document.getElementById("removeAvatarBtn");
   const removeAvatarCheckbox = document.getElementById("removeAvatarCheckbox");
@@ -149,7 +192,6 @@ document.addEventListener("turbo:load", () => {
 
       if (confirm(confirmMsg)) {
         removeAvatarCheckbox.checked = !isChecked;
-
         if (removeAvatarCheckbox.checked) {
           removeAvatarBtn.textContent = "削除予定";
           removeAvatarBtn.classList.remove("btn-warning");
