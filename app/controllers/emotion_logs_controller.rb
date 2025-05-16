@@ -30,12 +30,13 @@ end
 
 
   def ensure_owner
-  @emotion_log = EmotionLog.find(params[:id])
-  unless @emotion_log.user == current_user
-    flash[:alert] = "他のユーザーの記録は編集できません"
-    redirect_to emotion_logs_path
-    return
+    @emotion_log = EmotionLog.find(params[:id])
+    unless @emotion_log.user == current_user
+      # flash[:alert] = "他のユーザーの記録は編集できません"
+      # redirect_to emotion_logs_path
+      head :forbidden   # 403 Forbiddenを返すだけに変更
   end
+
 
 
 end
