@@ -14186,6 +14186,7 @@ var modal_controller_default = class extends Controller {
         if (idx < modals.length - 1) el.remove();
       });
     }
+    document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
     const bsModal = Modal.getOrCreateInstance(this.element);
     bsModal.show();
     const desc = this.element.querySelector("#emotion_log_description");

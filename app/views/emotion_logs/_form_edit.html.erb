@@ -1,0 +1,97 @@
+<div class="modal fade"
+    id="modal-container"
+    tabindex="-1"
+    aria-labelledby="emotionLogModalLabel"
+    aria-hidden="true"
+    data-controller="modal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="emotionLogModalLabel">
+          <i class="bi bi-heart-pulse"></i> RECORD EMOTIONS変更
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+      </div>
+      <div class="modal-body">
+
+        <!-- ここから下は今のフォーム部分をまるごと移動 -->
+        <div class="container" style="max-width: 600px;" data-controller="search-music">
+          <div class="row justify-content-center">
+            <div class="col-md-12">
+              <%= form_with model: @emotion_log,
+                            id: "emotion-form",
+                            local: true,
+                            data: {
+                              controller: "submit-handler",
+                              action: "submit->submit-handler#submit"
+                            } do |form| %>
+
+                <div class="mb-4">
+                  <%= form.label :date, '日付' %>
+                  <%= form.date_field :date,
+                                      class: 'form-control',
+                                      max: Date.today.to_s %>
+                </div>
+
+                <div class="mb-4">
+                  <%= form.label :emotion, '感情' %>
+                  <%= form.select :emotion,
+                                  ['最高', '気分良い', 'いつも通り', 'イライラ', '限界'],
+                                  {},
+                                  class: 'form-control' %>
+                </div>
+
+                <div class="mb-4">
+                  <%= form.label :track_name, '選択した曲名' %>
+                  <%= form.text_field :track_name,
+                                      id: "selected-track",
+                                      class: "form-control" %>
+                  <%= form.hidden_field :music_url %>
+                </div>
+
+                <div class="mb-4" data-controller="tag-input">
+                  <%= label_tag :tag_names, 'ジャンル（最大3つまでです。入力してEnterキーで追加できます）' %>
+                  <input
+                    type="text"
+                    class="form-control"
+                    data-tag-input-target="input"
+                    data-action="keydown->tag-input#keydown input->tag-input#filterSuggestions"
+                    placeholder="タグを入力してEnter"
+                    autocomplete="off"
+                    value="" />
+                  <div class="mt-2" data-tag-input-target="tags"></div>
+                  <div class="dropdown-menu"
+                       data-tag-input-target="suggestions"
+                       style="max-height:150px;overflow-y:auto;">
+                  </div>
+                  <%= hidden_field_tag "emotion_log[tag_names]", @emotion_log.tag_names || "",
+                        id: "hidden-tags",
+                        data: { "tag-input-target": "hidden" } %>
+                </div>
+
+                <div class="mb-4">
+                  <%= form.label :description, '一言 吐いてみて' %>
+                  <%= form.text_field :description,
+                                      class: 'form-control' %>
+                </div>
+
+                <div class="d-flex justify-content-center">
+                  <%= form.submit '記録を更新',
+                                  class: 'btn btn-primary me-2',
+                                  data: { "submit-handler-target": "submit" } %>
+                </div>
+              <% end %>
+              <%= link_to '一覧に戻る',
+            emotion_logs_path,
+            class: 'btn btn-secondary mt-3',
+            data: { turbo: "false" } %>
+
+            </div>
+          </div>
+        </div>
+        <!-- ここまでフォーム -->
+
+      </div>
+    </div>
+  </div>
+</div>
