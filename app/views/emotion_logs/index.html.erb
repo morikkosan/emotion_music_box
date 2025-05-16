@@ -6,11 +6,6 @@
 
 <%= render 'shared/header' %>
 
-<% if flash[:alert] %>
-  <div class="alert alert-warning text-center mt-3">
-    <%= flash[:alert] %>
-  </div>
-<% end %>
 
   <% if user_signed_in? %>
     <div id="hp-bar-container">
