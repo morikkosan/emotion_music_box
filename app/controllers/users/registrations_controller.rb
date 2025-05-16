@@ -1,4 +1,6 @@
 class Users::RegistrationsController < Devise::RegistrationsController
+    before_action :ensure_current_user, only: [:edit, :update]
+
   before_action :skip_current_password_validation, only: [:update]
 
 def update
@@ -8,7 +10,7 @@ def update
   yield resource if block_given?
   if resource_updated
     bypass_sign_in resource, scope: resource_name
-    redirect_to emotion_logs_path, notice: "プロフィールを更新しました"  # ←ここを絶対にこの形に！
+    redirect_to emotion_logs_path, notice: "プロフィールを更新しました"
   else
     clean_up_passwords resource
     set_minimum_password_length
@@ -60,5 +62,13 @@ end
             :avatar_url,
             :remove_avatar
           )
+  end
+
+  def ensure_current_user
+    # 万が一他のユーザーのプロフィールを編集しようとした場合
+    if resource != current_user
+      flash[:alert] = "他のユーザーのプロフィールは編集できません"
+      redirect_to emotion_logs_path
+    end
   end
 end
