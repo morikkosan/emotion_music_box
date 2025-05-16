@@ -1,6 +1,8 @@
 # app/controllers/emotion_logs_controller.rb
 class EmotionLogsController < ApplicationController
   before_action :authenticate_user!, except: %i[index show]
+  before_action :ensure_owner, only: [:edit, :update, :destroy]
+
 
   ### ----  public アクション  ---- ###
 
@@ -18,12 +20,24 @@ def index
   @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id) if user_signed_in?
 end
 
-def my_emotion_logs
-  @emotion_logs = current_user.emotion_logs
-    .includes(:user, :bookmarks, :tags)  # ここも修正
-    .order(date: :desc)
-    .page(params[:page]).per(7)
-  render :index
+  def my_emotion_logs
+    @emotion_logs = current_user.emotion_logs
+      .includes(:user, :bookmarks, :tags)  # ここも修正
+      .order(date: :desc)
+      .page(params[:page]).per(7)
+    render :index
+  end
+
+
+  def ensure_owner
+  @emotion_log = EmotionLog.find(params[:id])
+  unless @emotion_log.user == current_user
+    flash[:alert] = "他のユーザーの記録は編集できません"
+    redirect_to emotion_logs_path
+    return
+  end
+
+
 end
 
 
