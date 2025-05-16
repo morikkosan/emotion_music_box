@@ -25,6 +25,10 @@ end
       .includes(:user, :bookmarks, :tags)  # ここも修正
       .order(date: :desc)
       .page(params[:page]).per(7)
+      # エラー対策
+        @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
+
+        @mypage_title = "マイページ"
     render :index
   end
 
@@ -150,9 +154,18 @@ end
   # ------------------------------------
 
   def bookmarks
-    @emotion_logs = current_user.bookmark_emotion_logs
+    # current_user がブックマークした emotion_logs を取得（ページネーション対応）
+    @emotion_logs = current_user.bookmarked_emotion_logs
+                                .includes(:user, :tags)
                                 .order(date: :desc)
-                                .page(params[:page]).per(7)
+                                .page(params[:page])
+                                .per(7)
+
+  @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
+
+  @bookmark_page = "お気に入りリスト"  # ここを変更
+
+    render :index  # 既存の index ビューを使いまわす
   end
 
   ### ----  private 以下  ---- ###
