@@ -15,6 +15,10 @@ def after_omniauth_failure_path_for(scope)
   root_path
 end
 
+def after_sign_in_path_for(resource)
+  my_emotion_logs_path # または希望するトップページのパス
+end
+
   def chart_data
     render json: EmotionLog.group(:emotion).count
   end

@@ -14,37 +14,39 @@
       // テスト用（動作確認したい時だけ↓を有効に）
       // Swal.fire("Swal動作テスト", "これはテストです", "info");
 
-      if (flashNotice) {
-        Swal.fire({
-          title: "成功 🎉",
-          text: flashNotice,
-          icon: "success",
-          confirmButtonText: "OK",
-          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
-          color: "#fff",
-          timer: 3000,
-          timerProgressBar: true,
-          customClass: { popup: "cyber-popup" }
-        });
-        console.log("✅ フラッシュnotice表示");
-      }
+      if (flashAlert === "すでにログイン済みです") {
+  console.log("🟡 ログイン済み通知はモーダルを表示せずスキップ");
+} else if (flashAlert) {
+  Swal.fire({
+    title: "エラー ❌",
+    text: flashAlert,
+    icon: "error",
+    confirmButtonText: "閉じる",
+    background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+    color: "#fff",
+    customClass: { popup: "cyber-popup" }
+  });
+  console.log("✅ フラッシュalert表示");
+} else if (flashNotice) {
+  Swal.fire({
+    title: "成功 🎉",
+    text: flashNotice,
+    icon: "success",
+    confirmButtonText: "OK",
+    background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+    color: "#fff",
+    timer: 3000,
+    timerProgressBar: true,
+    customClass: { popup: "cyber-popup" }
+  });
+  console.log("✅ フラッシュnotice表示");
+}
 
-      if (flashAlert) {
-        Swal.fire({
-          title: "エラー ❌",
-          text: flashAlert,
-          icon: "error",
-          confirmButtonText: "閉じる",
-          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
-          color: "#fff",
-          customClass: { popup: "cyber-popup" }
-        });
-        console.log("✅ フラッシュalert表示");
-      }
     } else {
       console.warn("⚠️ SweetAlert2 (Swal) が読み込まれていません");
     }
-  }
+    }
+
 
   document.addEventListener("DOMContentLoaded", showFlashSwal);
   document.addEventListener("turbo:load", showFlashSwal);
