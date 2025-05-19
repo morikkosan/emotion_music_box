@@ -1,6 +1,5 @@
 console.log("🔥 application.js 読み込み開始", Date.now());
 
-
 import Rails from "@rails/ujs";
 import "@hotwired/turbo-rails";
 import * as bootstrap from "bootstrap";
@@ -12,7 +11,30 @@ import "./custom/gages_test";
 Rails.start();
 window.bootstrap = bootstrap;
 
+
+window.goToRecommended = function () {
+  const hp = localStorage.getItem("hp") || 50;
+  const url = `/emotion_logs/recommended?hp=${encodeURIComponent(hp)}`;
+  window.location.href = url;
+};
+
 document.addEventListener("turbo:load", () => {
+  // --- おすすめ表示ボタン（HPゲージを取得して遷移） ---
+  const recommendButton = document.getElementById("show-recommendations-btn");
+  const hpBar = document.getElementById("hp-bar");
+  if (recommendButton && hpBar) {
+    recommendButton.addEventListener("click", () => {
+      const widthStr = hpBar.style.width; // 例: "65%"
+      const hp = parseInt(widthStr);      // 数字だけ取り出す
+      if (!isNaN(hp)) {
+        window.location.href = `/emotion_logs?hp=${hp}`;
+      } else {
+        alert("HPゲージの値が取得できませんでした");
+      }
+    });
+  }
+
+  // --- アバター編集の処理 ---
   const fileInput     = document.getElementById("avatarInput");
   const inlinePreview = document.getElementById("avatarPreviewInline");
   const modalEl       = document.getElementById("avatarCropModal");
@@ -34,53 +56,46 @@ document.addEventListener("turbo:load", () => {
     cropImage.style.transform = `translate(${startX}px, ${startY}px)`;
   }
 
-  // --- 初期スタイル ---
-  cropImage.style.position      = "absolute";
-  cropImage.style.top           = "0";
-  cropImage.style.left          = "0";
-  cropImage.style.userSelect    = "none";
+  cropImage.style.position = "absolute";
+  cropImage.style.top = "0";
+  cropImage.style.left = "0";
+  cropImage.style.userSelect = "none";
   cropImage.style.webkitUserSelect = "none";
-  cropImage.style.maxWidth      = "none";
-  cropImage.style.maxHeight     = "none";
-  cropImage.draggable           = false;
-  cropContainer.style.cursor    = "grab";
+  cropImage.style.maxWidth = "none";
+  cropImage.style.maxHeight = "none";
+  cropImage.draggable = false;
+  cropContainer.style.cursor = "grab";
   cropContainer.style.touchAction = "none";
 
+  fileInput.addEventListener("change", e => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert("ファイルサイズは2MB以内にしてください。");
+      fileInput.value = "";
+      return;
+    }
 
- fileInput.addEventListener("change", e => {
-  const file = e.target.files?.[0];
-  if (!file) return;
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("ファイル形式はJPEGまたはPNGのみ許可されています。");
+      fileInput.value = "";
+      return;
+    }
 
-  // ファイル容量チェック（2MBまで）
-  const maxSize = 2 * 1024 * 1024; // 2MB
-  if (file.size > maxSize) {
-    alert("ファイルサイズは2MB以内にしてください。");
-    fileInput.value = ""; // 選択をクリア
-    return;
-  }
+    const reader = new FileReader();
+    reader.onload = () => {
+      cropImage.src = reader.result;
+      startX = 0;
+      startY = 0;
+      updateTransform();
+      modal.show();
+    };
+    reader.readAsDataURL(file);
+  });
 
-  // MIMEタイプチェック（jpg/jpeg/pngのみ許可）
-  const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
-  if (!allowedTypes.includes(file.type)) {
-    alert("ファイル形式はJPEGまたはPNGのみ許可されています。");
-    fileInput.value = ""; // 選択をクリア
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = () => {
-    cropImage.src = reader.result;
-    startX = 0;
-    startY = 0;
-    updateTransform();
-    modal.show();
-  };
-  reader.readAsDataURL(file);
-});
-
-
-  // --- ドラッグ移動 ---
   cropContainer.addEventListener("pointerdown", e => {
     e.preventDefault();
     isDragging  = true;
@@ -94,8 +109,8 @@ document.addEventListener("turbo:load", () => {
     if (!isDragging) return;
     const dx = e.clientX - dragStartX;
     const dy = e.clientY - dragStartY;
-    startX  += dx;
-    startY  += dy;
+    startX += dx;
+    startY += dy;
     dragStartX = e.clientX;
     dragStartY = e.clientY;
     updateTransform();
@@ -111,27 +126,25 @@ document.addEventListener("turbo:load", () => {
 
   async function resizeImage(sourceImage, maxSize = 300) {
     return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
       const scale = Math.min(maxSize / sourceImage.width, maxSize / sourceImage.height);
       canvas.width = sourceImage.width * scale;
       canvas.height = sourceImage.height * scale;
       ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.9);
+      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.9);
     });
   }
 
-  // --- クロップ確定 ---
   confirmBtn.addEventListener("click", async () => {
-    // 1. 80x80プレビュー
     const canvas = document.createElement("canvas");
-    const ctx    = canvas.getContext("2d");
-    canvas.width  = 80;
+    const ctx = canvas.getContext("2d");
+    canvas.width = 80;
     canvas.height = 80;
 
-    const viewWidth  = cropContainer.clientWidth;
+    const viewWidth = cropContainer.clientWidth;
     const viewHeight = cropContainer.clientHeight;
-    const scaleX = cropImage.naturalWidth  / cropImage.clientWidth;
+    const scaleX = cropImage.naturalWidth / cropImage.clientWidth;
     const scaleY = cropImage.naturalHeight / cropImage.clientHeight;
     const sx = startX * -1 * scaleX;
     const sy = startY * -1 * scaleY;
@@ -145,12 +158,10 @@ document.addEventListener("turbo:load", () => {
     );
 
     const dataUrl = canvas.toDataURL("image/png");
-    inlinePreview.src = dataUrl;  // すぐ反映
-    avatarUrlField.value = "";    // 一旦クリア
-
+    inlinePreview.src = dataUrl;
+    avatarUrlField.value = "";
     modal.hide();
 
-    // --- Cloudinaryへ裏でアップロード ---
     try {
       inlinePreview.classList.add("loading");
 
@@ -166,7 +177,6 @@ document.addEventListener("turbo:load", () => {
           fd
         );
 
-        // 完了後：プレビューもhiddenもURLセット
         inlinePreview.src = res.data.secure_url;
         avatarUrlField.value = res.data.secure_url;
         inlinePreview.classList.remove("loading");
@@ -178,10 +188,8 @@ document.addEventListener("turbo:load", () => {
       inlinePreview.classList.remove("loading");
     }
   });
-});
 
-// 削除ボタンは今まで通り
-document.addEventListener("turbo:load", () => {
+  // アバター削除トグル
   const removeAvatarBtn = document.getElementById("removeAvatarBtn");
   const removeAvatarCheckbox = document.getElementById("removeAvatarCheckbox");
 
@@ -192,15 +200,9 @@ document.addEventListener("turbo:load", () => {
 
       if (confirm(confirmMsg)) {
         removeAvatarCheckbox.checked = !isChecked;
-        if (removeAvatarCheckbox.checked) {
-          removeAvatarBtn.textContent = "削除予定";
-          removeAvatarBtn.classList.remove("btn-warning");
-          removeAvatarBtn.classList.add("btn-danger");
-        } else {
-          removeAvatarBtn.textContent = "画像を削除する";
-          removeAvatarBtn.classList.remove("btn-danger");
-          removeAvatarBtn.classList.add("btn-warning");
-        }
+        removeAvatarBtn.textContent = removeAvatarCheckbox.checked ? "削除予定" : "画像を削除する";
+        removeAvatarBtn.classList.toggle("btn-danger", removeAvatarCheckbox.checked);
+        removeAvatarBtn.classList.toggle("btn-warning", !removeAvatarCheckbox.checked);
       }
     });
   }

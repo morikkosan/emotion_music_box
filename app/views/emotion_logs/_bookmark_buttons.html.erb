@@ -1,4 +1,3 @@
-<!-- ✅ Stimulus controller は Turbo frame の外 -->
 <%= turbo_frame_tag "bookmark_wrapper_#{emotion_log.id}" do %>
   <div class="bookmark-icon-container" data-controller="bookmark-toggle">
     <span class="bookmark-count" data-bookmark-toggle-target="count">
@@ -12,7 +11,10 @@
         <%= render 'bookmark', emotion_log: emotion_log %>
       <% end %>
     <% else %>
-      <%= link_to 'ログインしてブックマークする', user_soundcloud_omniauth_authorize_path, class: 'btn btn-primary' %>
+      <%= link_to user_soundcloud_omniauth_authorize_path, class: 'btn btn-primary d-flex align-items-center gap-2' do %>
+        <%= image_tag '3dheart.png', alt: 'dheart', size: '24x24' %>
+        <span>ログインしてブックマークする</span>
+      <% end %>
     <% end %>
   </div>
 <% end %>
