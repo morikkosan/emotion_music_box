@@ -14751,7 +14751,20 @@ document.addEventListener("DOMContentLoaded", function() {
     console.log("\u{1F4A1} showFlashSwal: notice =", flashNotice, ", alert =", flashAlert);
     if (window.Swal) {
       console.log("\u2705 Swal.fire \u4F7F\u3048\u307E\u3059", Swal);
-      if (flashNotice) {
+      if (flashAlert === "\u3059\u3067\u306B\u30ED\u30B0\u30A4\u30F3\u6E08\u307F\u3067\u3059") {
+        console.log("\u{1F7E1} \u30ED\u30B0\u30A4\u30F3\u6E08\u307F\u901A\u77E5\u306F\u30E2\u30FC\u30C0\u30EB\u3092\u8868\u793A\u305B\u305A\u30B9\u30AD\u30C3\u30D7");
+      } else if (flashAlert) {
+        Swal.fire({
+          title: "\u30A8\u30E9\u30FC \u274C",
+          text: flashAlert,
+          icon: "error",
+          confirmButtonText: "\u9589\u3058\u308B",
+          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+          color: "#fff",
+          customClass: { popup: "cyber-popup" }
+        });
+        console.log("\u2705 \u30D5\u30E9\u30C3\u30B7\u30E5alert\u8868\u793A");
+      } else if (flashNotice) {
         Swal.fire({
           title: "\u6210\u529F \u{1F389}",
           text: flashNotice,
@@ -14764,18 +14777,6 @@ document.addEventListener("DOMContentLoaded", function() {
           customClass: { popup: "cyber-popup" }
         });
         console.log("\u2705 \u30D5\u30E9\u30C3\u30B7\u30E5notice\u8868\u793A");
-      }
-      if (flashAlert) {
-        Swal.fire({
-          title: "\u30A8\u30E9\u30FC \u274C",
-          text: flashAlert,
-          icon: "error",
-          confirmButtonText: "\u9589\u3058\u308B",
-          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
-          color: "#fff",
-          customClass: { popup: "cyber-popup" }
-        });
-        console.log("\u2705 \u30D5\u30E9\u30C3\u30B7\u30E5alert\u8868\u793A");
       }
     } else {
       console.warn("\u26A0\uFE0F SweetAlert2 (Swal) \u304C\u8AAD\u307F\u8FBC\u307E\u308C\u3066\u3044\u307E\u305B\u3093");
@@ -14885,7 +14886,25 @@ console.log("\u2705 HP\u30D0\u30FC\u66F4\u65B0\u30B9\u30AF\u30EA\u30D7\u30C8\u8A
 console.log("\u{1F525} application.js \u8AAD\u307F\u8FBC\u307F\u958B\u59CB", Date.now());
 Rails.start();
 window.bootstrap = bootstrap_esm_exports;
+window.goToRecommended = function() {
+  const hp = localStorage.getItem("hp") || 50;
+  const url = `/emotion_logs/recommended?hp=${encodeURIComponent(hp)}`;
+  window.location.href = url;
+};
 document.addEventListener("turbo:load", () => {
+  const recommendButton = document.getElementById("show-recommendations-btn");
+  const hpBar = document.getElementById("hp-bar");
+  if (recommendButton && hpBar) {
+    recommendButton.addEventListener("click", () => {
+      const widthStr = hpBar.style.width;
+      const hp = parseInt(widthStr);
+      if (!isNaN(hp)) {
+        window.location.href = `/emotion_logs?hp=${hp}`;
+      } else {
+        alert("HP\u30B2\u30FC\u30B8\u306E\u5024\u304C\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F");
+      }
+    });
+  }
   const fileInput = document.getElementById("avatarInput");
   const inlinePreview = document.getElementById("avatarPreviewInline");
   const modalEl = document.getElementById("avatarCropModal");
@@ -15022,8 +15041,6 @@ document.addEventListener("turbo:load", () => {
       inlinePreview.classList.remove("loading");
     }
   });
-});
-document.addEventListener("turbo:load", () => {
   const removeAvatarBtn = document.getElementById("removeAvatarBtn");
   const removeAvatarCheckbox = document.getElementById("removeAvatarCheckbox");
   if (removeAvatarBtn && removeAvatarCheckbox) {
@@ -15032,15 +15049,9 @@ document.addEventListener("turbo:load", () => {
       const confirmMsg = isChecked ? "\u524A\u9664\u3092\u30AD\u30E3\u30F3\u30BB\u30EB\u3057\u307E\u3059\u304B\uFF1F" : "\u672C\u5F53\u306B\u753B\u50CF\u3092\u524A\u9664\u3057\u307E\u3059\u304B\uFF1F";
       if (confirm(confirmMsg)) {
         removeAvatarCheckbox.checked = !isChecked;
-        if (removeAvatarCheckbox.checked) {
-          removeAvatarBtn.textContent = "\u524A\u9664\u4E88\u5B9A";
-          removeAvatarBtn.classList.remove("btn-warning");
-          removeAvatarBtn.classList.add("btn-danger");
-        } else {
-          removeAvatarBtn.textContent = "\u753B\u50CF\u3092\u524A\u9664\u3059\u308B";
-          removeAvatarBtn.classList.remove("btn-danger");
-          removeAvatarBtn.classList.add("btn-warning");
-        }
+        removeAvatarBtn.textContent = removeAvatarCheckbox.checked ? "\u524A\u9664\u4E88\u5B9A" : "\u753B\u50CF\u3092\u524A\u9664\u3059\u308B";
+        removeAvatarBtn.classList.toggle("btn-danger", removeAvatarCheckbox.checked);
+        removeAvatarBtn.classList.toggle("btn-warning", !removeAvatarCheckbox.checked);
       }
     });
   }
