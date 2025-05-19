@@ -15,7 +15,10 @@ module Myapp
     config.autoload_paths += Dir[Rails.root.join('app', 'strategies', '**', '*.rb')]
 config.eager_load_paths += %W(#{config.root}/app/strategies/omniauth/strategies)
 
-    config.autoload_paths += %W(#{config.root}/lib)  # ✅ これを追加
+    config.autoload_paths += %W(#{config.root}/lib)  # ✅
+
+    config.time_zone = 'Tokyo'
+    config.active_record.default_timezone = :local
 
 
     
