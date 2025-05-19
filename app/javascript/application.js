@@ -11,7 +11,6 @@ import "./custom/gages_test";
 Rails.start();
 window.bootstrap = bootstrap;
 
-
 window.goToRecommended = function () {
   const hp = localStorage.getItem("hp") || 50;
   const url = `/emotion_logs/recommended?hp=${encodeURIComponent(hp)}`;
@@ -19,13 +18,12 @@ window.goToRecommended = function () {
 };
 
 document.addEventListener("turbo:load", () => {
-  // --- おすすめ表示ボタン（HPゲージを取得して遷移） ---
   const recommendButton = document.getElementById("show-recommendations-btn");
   const hpBar = document.getElementById("hp-bar");
   if (recommendButton && hpBar) {
     recommendButton.addEventListener("click", () => {
-      const widthStr = hpBar.style.width; // 例: "65%"
-      const hp = parseInt(widthStr);      // 数字だけ取り出す
+      const widthStr = hpBar.style.width;
+      const hp = parseInt(widthStr);
       if (!isNaN(hp)) {
         window.location.href = `/emotion_logs?hp=${hp}`;
       } else {
@@ -34,14 +32,14 @@ document.addEventListener("turbo:load", () => {
     });
   }
 
-  // --- アバター編集の処理 ---
-  const fileInput     = document.getElementById("avatarInput");
+  const fileInput = document.getElementById("avatarInput");
   const inlinePreview = document.getElementById("avatarPreviewInline");
-  const modalEl       = document.getElementById("avatarCropModal");
+  const modalEl = document.getElementById("avatarCropModal");
   const cropContainer = document.getElementById("cropContainer");
-  const cropImage     = document.getElementById("cropImage");
-  const confirmBtn    = document.getElementById("cropConfirmBtn");
+  const cropImage = document.getElementById("cropImage");
+  const confirmBtn = document.getElementById("cropConfirmBtn");
   const avatarUrlField = document.getElementById("avatarUrlField");
+  const submitBtn = document.querySelector('form input[type="submit"]');
 
   if (![fileInput, inlinePreview, avatarUrlField, modalEl, cropContainer, cropImage, confirmBtn].every(Boolean)) {
     console.error("❌ 必要な要素が見つかりません");
@@ -52,7 +50,7 @@ document.addEventListener("turbo:load", () => {
   let startX = 0, startY = 0;
   let isDragging = false, dragStartX = 0, dragStartY = 0;
 
-  function updateTransform () {
+  function updateTransform() {
     cropImage.style.transform = `translate(${startX}px, ${startY}px)`;
   }
 
@@ -98,9 +96,9 @@ document.addEventListener("turbo:load", () => {
 
   cropContainer.addEventListener("pointerdown", e => {
     e.preventDefault();
-    isDragging  = true;
-    dragStartX  = e.clientX;
-    dragStartY  = e.clientY;
+    isDragging = true;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
     cropContainer.setPointerCapture(e.pointerId);
     cropContainer.style.cursor = "grabbing";
   });
@@ -137,6 +135,8 @@ document.addEventListener("turbo:load", () => {
   }
 
   confirmBtn.addEventListener("click", async () => {
+    if (submitBtn) submitBtn.disabled = true;
+
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     canvas.width = 80;
@@ -179,6 +179,7 @@ document.addEventListener("turbo:load", () => {
 
         inlinePreview.src = res.data.secure_url;
         avatarUrlField.value = res.data.secure_url;
+        if (submitBtn) submitBtn.disabled = false;
         inlinePreview.classList.remove("loading");
       };
       tempImage.src = dataUrl;
@@ -186,10 +187,10 @@ document.addEventListener("turbo:load", () => {
     } catch (err) {
       console.error("Cloudinary upload failed", err);
       inlinePreview.classList.remove("loading");
+      if (submitBtn) submitBtn.disabled = false;
     }
   });
 
-  // アバター削除トグル
   const removeAvatarBtn = document.getElementById("removeAvatarBtn");
   const removeAvatarCheckbox = document.getElementById("removeAvatarCheckbox");
 
@@ -203,6 +204,16 @@ document.addEventListener("turbo:load", () => {
         removeAvatarBtn.textContent = removeAvatarCheckbox.checked ? "削除予定" : "画像を削除する";
         removeAvatarBtn.classList.toggle("btn-danger", removeAvatarCheckbox.checked);
         removeAvatarBtn.classList.toggle("btn-warning", !removeAvatarCheckbox.checked);
+      }
+    });
+  }
+
+  const form = document.querySelector("form");
+  if (form) {
+    form.addEventListener("submit", (e) => {
+      if (!avatarUrlField.value && !removeAvatarCheckbox?.checked) {
+        e.preventDefault();
+        alert("画像のアップロードがまだ完了していません！");
       }
     });
   }

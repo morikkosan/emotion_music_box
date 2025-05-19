@@ -14912,6 +14912,7 @@ document.addEventListener("turbo:load", () => {
   const cropImage = document.getElementById("cropImage");
   const confirmBtn = document.getElementById("cropConfirmBtn");
   const avatarUrlField = document.getElementById("avatarUrlField");
+  const submitBtn = document.querySelector('form input[type="submit"]');
   if (![fileInput, inlinePreview, avatarUrlField, modalEl, cropContainer, cropImage, confirmBtn].every(Boolean)) {
     console.error("\u274C \u5FC5\u8981\u306A\u8981\u7D20\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093");
     return;
@@ -14994,6 +14995,7 @@ document.addEventListener("turbo:load", () => {
     });
   }
   confirmBtn.addEventListener("click", async () => {
+    if (submitBtn) submitBtn.disabled = true;
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     canvas.width = 80;
@@ -15033,12 +15035,14 @@ document.addEventListener("turbo:load", () => {
         );
         inlinePreview.src = res.data.secure_url;
         avatarUrlField.value = res.data.secure_url;
+        if (submitBtn) submitBtn.disabled = false;
         inlinePreview.classList.remove("loading");
       };
       tempImage.src = dataUrl;
     } catch (err) {
       console.error("Cloudinary upload failed", err);
       inlinePreview.classList.remove("loading");
+      if (submitBtn) submitBtn.disabled = false;
     }
   });
   const removeAvatarBtn = document.getElementById("removeAvatarBtn");
@@ -15052,6 +15056,15 @@ document.addEventListener("turbo:load", () => {
         removeAvatarBtn.textContent = removeAvatarCheckbox.checked ? "\u524A\u9664\u4E88\u5B9A" : "\u753B\u50CF\u3092\u524A\u9664\u3059\u308B";
         removeAvatarBtn.classList.toggle("btn-danger", removeAvatarCheckbox.checked);
         removeAvatarBtn.classList.toggle("btn-warning", !removeAvatarCheckbox.checked);
+      }
+    });
+  }
+  const form = document.querySelector("form");
+  if (form) {
+    form.addEventListener("submit", (e) => {
+      if (!avatarUrlField.value && !removeAvatarCheckbox?.checked) {
+        e.preventDefault();
+        alert("\u753B\u50CF\u306E\u30A2\u30C3\u30D7\u30ED\u30FC\u30C9\u304C\u307E\u3060\u5B8C\u4E86\u3057\u3066\u3044\u307E\u305B\u3093\uFF01");
       }
     });
   }
