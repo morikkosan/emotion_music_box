@@ -201,7 +201,12 @@
           <span class="ms-2 text-white"><%= current_user.name %></span>
         </div>
         <div class="dropdown-menu">
-          <%= link_to 'ログアウト', destroy_user_session_path, method: :delete, class: 'dropdown-item text-danger' %>
+          <%= link_to "ログアウト", destroy_user_session_path,
+            method: :delete,
+            data: { turbo: false },
+            id: "logout-link",
+            class: "dropdown-item text-danger" %>
+
           <div class="dropdown-divider"></div>
           <%= link_to 'プロフィール編集', edit_user_registration_path, class: 'dropdown-item' %>
           <%= link_to 'マイページ', my_emotion_logs_path, class: 'dropdown-item' %>
@@ -240,10 +245,12 @@
       <div class="neon-btn-sub">(SoundCloudアカウントも簡単作成)</div>
     <% end %>
 
-    <%= link_to user_soundcloud_omniauth_authorize_path,
-                class: "neon-btn btn-neon-xl" do %>
+      <%= link_to user_soundcloud_omniauth_authorize_path,
+                class: "neon-btn btn-neon-xl",
+                data: { turbo: false } do %>
       <div class="neon-btn-title">ログインして始める</div>
     <% end %>
+
   </div>
 
   <div class="neon-btn-footer large-text text-center mt-2">
@@ -256,21 +263,23 @@
   <!-- メインメニュー -->
   <% if user_signed_in? %>
     <div class="d-flex justify-content-center align-items-stretch flex-wrap mt-4">
-      <!-- ログアウト -->
+      <!-- ホーム -->
       <div class="mypage-item">
-        <%= link_to '#', id: 'logout-link', class: 'mypage-icon-link' do %>
-          <%= image_tag 'log_out.png', alt: 'ログアウト', class: 'mypage-icon' %>
-          <div class='mypage-text'>ログアウト</div>
-        <% end %>
+       <%= link_to emotion_logs_path, class: 'mypage-icon-link' do %>
+  <%= image_tag 'home.png', alt: 'ホーム', class: 'mypage-icon' %>
+  <div class='mypage-text'>ホーム</div>
+<% end %>
       </div>
 
-      <!-- プロフィール編集 -->
-      <div class="mypage-item">
-        <%= link_to edit_user_registration_path, class: 'mypage-icon-link' do %>
-          <%= image_tag 'profile_edit.png', alt: 'プロフィール編集', class: 'mypage-icon' %>
-          <div class='mypage-text'>プロフィール編集</div>
-        <% end %>
-      </div>
+ <!-- おすすめ🔥 -->
+<div class="mypage-item">
+  <%= link_to "#", class: "mypage-icon-link", onclick: "goToRecommended()" do %>
+    <%= image_tag 'hot.png', alt: 'おすすめ', class: 'mypage-icon' %>
+    <div class='mypage-text'>おすすめ🔥</div>
+  <% end %>
+</div>
+
+
 
 <div class="d-flex justify-content-center align-items-start flex-wrap mt-4" style="gap: 1rem;">
   <!-- EMOTION -->
