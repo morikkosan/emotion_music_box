@@ -14360,28 +14360,65 @@ var search_music_controller_default = class extends Controller {
 };
 
 // app/javascript/controllers/submit_handler_controller.js
+function getTodayString() {
+  return (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+}
 var submit_handler_controller_default = class extends Controller {
-  // ① submit ボタンをターゲットにする
   static targets = ["submit"];
   connect() {
     console.log("\u{1F4DD} submit-handler connected");
-    if (this.hasSubmitTarget) {
-      this.submitTarget.disabled = false;
-    }
+    if (this.hasSubmitTarget) this.submitTarget.disabled = false;
   }
   submit(event) {
+    console.log("\u{1F7E2} submit-handler: submit\u30A4\u30D9\u30F3\u30C8\u767A\u706B");
     event.preventDefault();
-    if (this.hasSubmitTarget) {
-      this.submitTarget.disabled = true;
-    }
+    if (this.hasSubmitTarget) this.submitTarget.disabled = true;
     const form = this.element;
     const formData = new FormData(form);
+    const formDate = formData.get("emotion_log[date]");
+    const today = getTodayString();
+    if (formDate !== today) {
+      console.log("\u4ECA\u65E5\u4EE5\u5916\u306E\u65E5\u4ED8\u306E\u305F\u3081HP\u30B2\u30FC\u30B8\u66F4\u65B0\u3057\u307E\u305B\u3093");
+      if (this.hasSubmitTarget) this.submitTarget.disabled = false;
+      fetch(form.action, {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: formData
+      }).then((res) => res.json()).then((data) => {
+        if (data.success) {
+          alert("\u8A18\u9332\u306F\u4FDD\u5B58\u3055\u308C\u307E\u3057\u305F\u304C\u3001HP\u30B2\u30FC\u30B8\u306E\u53CD\u6620\u306F\u4ECA\u65E5\u306E\u8A18\u9332\u306E\u307F\u3067\u3059\u3002");
+          window.location.href = data.redirect_url;
+        } else {
+          alert("\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + (data.errors || []).join("\n"));
+        }
+      }).catch((error2) => {
+        console.error("\u9001\u4FE1\u30A8\u30E9\u30FC:", error2);
+        alert("\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
+      });
+      return;
+    }
     fetch(form.action, {
       method: "POST",
       headers: { Accept: "application/json" },
       body: formData
     }).then((res) => res.json()).then((data) => {
       if (data.success) {
+        const storedDate = localStorage.getItem("hpPercentageDate");
+        if (storedDate !== today) {
+          console.log("\u65E5\u4ED8\u304C\u5909\u308F\u3063\u305F\u305F\u3081HP\u30B2\u30FC\u30B8\u3092\u30EA\u30BB\u30C3\u30C8\uFF0850\u306B\u623B\u3059\uFF09");
+          localStorage.setItem("hpPercentage", "50");
+        }
+        let hpPercentage = 50;
+        const storedHP = parseFloat(localStorage.getItem("hpPercentage"));
+        if (!isNaN(storedHP)) hpPercentage = storedHP;
+        if (typeof data.hpPercentage !== "undefined") {
+          console.log("\u30B5\u30FC\u30D0\u30FC\u304B\u3089\u53D7\u3051\u53D6\u3063\u305FhpPercentage = ", data.hpPercentage);
+          hpPercentage += parseFloat(data.hpPercentage);
+          hpPercentage = Math.max(0, Math.min(100, hpPercentage));
+        }
+        localStorage.setItem("hpPercentage", hpPercentage.toString());
+        localStorage.setItem("hpPercentageDate", today);
+        if (window.updateHPBar) window.updateHPBar();
         const toastEl = document.getElementById("save-toast");
         if (toastEl) {
           const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
@@ -14392,15 +14429,11 @@ var submit_handler_controller_default = class extends Controller {
         }, 1500);
         return;
       }
-      if (this.hasSubmitTarget) {
-        this.submitTarget.disabled = false;
-      }
+      if (this.hasSubmitTarget) this.submitTarget.disabled = false;
       alert("\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + (data.errors || []).join("\n"));
     }).catch((error2) => {
       console.error("\u9001\u4FE1\u30A8\u30E9\u30FC:", error2);
-      if (this.hasSubmitTarget) {
-        this.submitTarget.disabled = false;
-      }
+      if (this.hasSubmitTarget) this.submitTarget.disabled = false;
       alert("\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
     });
   }
@@ -14718,7 +14751,20 @@ document.addEventListener("DOMContentLoaded", function() {
     console.log("\u{1F4A1} showFlashSwal: notice =", flashNotice, ", alert =", flashAlert);
     if (window.Swal) {
       console.log("\u2705 Swal.fire \u4F7F\u3048\u307E\u3059", Swal);
-      if (flashNotice) {
+      if (flashAlert === "\u3059\u3067\u306B\u30ED\u30B0\u30A4\u30F3\u6E08\u307F\u3067\u3059") {
+        console.log("\u{1F7E1} \u30ED\u30B0\u30A4\u30F3\u6E08\u307F\u901A\u77E5\u306F\u30E2\u30FC\u30C0\u30EB\u3092\u8868\u793A\u305B\u305A\u30B9\u30AD\u30C3\u30D7");
+      } else if (flashAlert) {
+        Swal.fire({
+          title: "\u30A8\u30E9\u30FC \u274C",
+          text: flashAlert,
+          icon: "error",
+          confirmButtonText: "\u9589\u3058\u308B",
+          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+          color: "#fff",
+          customClass: { popup: "cyber-popup" }
+        });
+        console.log("\u2705 \u30D5\u30E9\u30C3\u30B7\u30E5alert\u8868\u793A");
+      } else if (flashNotice) {
         Swal.fire({
           title: "\u6210\u529F \u{1F389}",
           text: flashNotice,
@@ -14731,18 +14777,6 @@ document.addEventListener("DOMContentLoaded", function() {
           customClass: { popup: "cyber-popup" }
         });
         console.log("\u2705 \u30D5\u30E9\u30C3\u30B7\u30E5notice\u8868\u793A");
-      }
-      if (flashAlert) {
-        Swal.fire({
-          title: "\u30A8\u30E9\u30FC \u274C",
-          text: flashAlert,
-          icon: "error",
-          confirmButtonText: "\u9589\u3058\u308B",
-          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
-          color: "#fff",
-          customClass: { popup: "cyber-popup" }
-        });
-        console.log("\u2705 \u30D5\u30E9\u30C3\u30B7\u30E5alert\u8868\u793A");
       }
     } else {
       console.warn("\u26A0\uFE0F SweetAlert2 (Swal) \u304C\u8AAD\u307F\u8FBC\u307E\u308C\u3066\u3044\u307E\u305B\u3093");
@@ -14808,38 +14842,32 @@ document.addEventListener("DOMContentLoaded", function() {
 })();
 
 // app/javascript/custom/gages_test.js
-console.log("\u2705 gages_test.js is loaded!");
-var hpPercentage = 0;
 window.updateHPBar = function() {
-  console.log("\u2705 HP\u30D0\u30FC\u306E\u66F4\u65B0\u958B\u59CB");
-  console.time("HP\u30D0\u30FC\u66F4\u65B0");
+  console.log("\u2705 HP\u30D0\u30FC\u66F4\u65B0\u958B\u59CB");
   const hpBar = document.getElementById("hp-bar");
   const hpStatusText = document.getElementById("hp-status-text");
+  const barWidthDisplay = document.getElementById("bar-width-display");
   if (!hpBar || !hpStatusText) {
-    console.warn("\u26A0\uFE0F HP\u30D0\u30FC\u307E\u305F\u306F\u30B9\u30C6\u30FC\u30BF\u30B9\u30C6\u30AD\u30B9\u30C8\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002\uFF08\u30D5\u30A9\u30FC\u30E0\u30DA\u30FC\u30B8\u306A\u3089\u7121\u8996\uFF09");
-    console.timeEnd("HP\u30D0\u30FC\u66F4\u65B0");
+    console.warn("\u26A0\uFE0F HP\u30D0\u30FC\u304B\u30B9\u30C6\u30FC\u30BF\u30B9\u8868\u793A\u8981\u7D20\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093");
     return;
   }
   let storedHP = localStorage.getItem("hpPercentage");
-  hpPercentage = storedHP ? parseFloat(storedHP) : 0;
-  let normalizedHP = Math.max(-100, Math.min(100, hpPercentage));
-  let barWidth = (normalizedHP + 100) / 2 + "%";
-  console.log(`\u{1F3AF} \u66F4\u65B0\u5F8C\u306E HP\u5024: ${normalizedHP}, HP\u30D0\u30FC\u306E\u5E45: ${barWidth}`);
-  const barWidthDisplay = document.getElementById("bar-width-display");
+  let hpPercentage = storedHP !== null && storedHP !== "" && !isNaN(parseFloat(storedHP)) ? parseFloat(storedHP) : 50;
+  hpPercentage = Math.min(100, Math.max(0, hpPercentage));
+  const barWidth = hpPercentage + "%";
+  hpBar.style.width = barWidth;
   if (barWidthDisplay) {
     barWidthDisplay.innerText = barWidth;
   }
-  hpBar.style.transition = "width 0.5s ease-in-out";
-  hpBar.style.width = barWidth;
-  if (normalizedHP <= -30) {
+  if (hpPercentage <= 20) {
     hpBar.style.backgroundColor = "red";
     hpStatusText.innerText = "\u{1F198} \u30B9\u30C8\u30EC\u30B9\u5371\u967A \u{1F198}";
     hpStatusText.style.color = "red";
-  } else if (normalizedHP <= 0) {
+  } else if (hpPercentage <= 40) {
     hpBar.style.backgroundColor = "yellow";
     hpStatusText.innerText = "\u{1F3E5} \u3061\u3087\u3063\u3068\u4F11\u307F\u307E\u3057\u3087 \u{1F3E5}";
     hpStatusText.style.color = "orange";
-  } else if (normalizedHP <= 70) {
+  } else if (hpPercentage <= 70) {
     hpBar.style.backgroundColor = "#9ACD32";
     hpStatusText.innerText = "\u266A \u304A\u3064\u304B\u308C\u3055\u307E\u3067\u3059 \u266A";
     hpStatusText.style.color = "orange";
@@ -14848,78 +14876,35 @@ window.updateHPBar = function() {
     hpStatusText.innerText = "\u{1FA7A} \u30E1\u30F3\u30BF\u30EB\u6B63\u5E38 \u{1F33F}";
     hpStatusText.style.color = "green";
   }
-  requestAnimationFrame(() => {
-    localStorage.setItem("hpPercentage", normalizedHP.toString());
-    console.log("\u{1F4BE} localStorage \u306B\u4FDD\u5B58:", localStorage.getItem("hpPercentage"));
-  });
-  console.timeEnd("HP\u30D0\u30FC\u66F4\u65B0");
 };
-+document.addEventListener("DOMContentLoaded", function() {
-  console.log("\u2705 turbo:load \u304C\u767A\u706B\uFF01");
-  let savedHP = localStorage.getItem("hpPercentage");
-  if (savedHP === null) {
-    console.warn("\u26A0\uFE0F `turbo:load` \u3067 `hpPercentage` \u304C\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3002\u30C7\u30D5\u30A9\u30EB\u30C8\u5024\u3092\u4F7F\u7528\u3057\u307E\u3059\u3002");
-  }
-  hpPercentage = savedHP ? parseFloat(savedHP) : 0;
-  console.log("\u{1F504} `turbo:load` \u3067\u53D6\u5F97\u3057\u305F `hpPercentage`:", hpPercentage);
-  if (!isNaN(hpPercentage)) {
-    window.updateHPBar();
-  }
+document.addEventListener("DOMContentLoaded", () => {
+  window.updateHPBar();
 });
-document.addEventListener("DOMContentLoaded", function() {
-  const form = document.getElementById("emotion-form");
-  if (form) {
-    console.log("\u2705 emotion-form \u304C\u898B\u3064\u304B\u308A\u307E\u3057\u305F\uFF01");
-    form.addEventListener("submit", async function(event) {
-      event.preventDefault();
-      console.log("\u2705 Form submit event triggered");
-      const formData = new FormData(form);
-      const submitButton = form.querySelector('input[type="submit"]');
-      submitButton.disabled = true;
-      try {
-        console.time("\u30D5\u30A9\u30FC\u30E0\u9001\u4FE1");
-        const response = await fetch(form.action, {
-          method: form.method,
-          body: formData,
-          headers: {
-            "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
-          }
-        });
-        console.timeEnd("\u30D5\u30A9\u30FC\u30E0\u9001\u4FE1");
-        const data = await response.json();
-        console.log("\u{1F680} \u30B5\u30FC\u30D0\u30FC\u30EC\u30B9\u30DD\u30F3\u30B9:", data);
-        if (data.success) {
-          console.log("\u2705 HP\u5024\u3092\u66F4\u65B0:", data.hpPercentage);
-          hpPercentage += parseFloat(data.hpPercentage);
-          window.updateHPBar();
-          requestAnimationFrame(() => {
-            localStorage.setItem("hpPercentage", hpPercentage.toString());
-            console.log("\u{1F4BE} `localStorage` \u306B\u4FDD\u5B58\u3055\u308C\u305F `hpPercentage`:", localStorage.getItem("hpPercentage"));
-          });
-          setTimeout(() => alert(data.message), 100);
-          setTimeout(() => {
-            console.log("\u{1F504} `emotion_logs` \u306B\u30EA\u30C0\u30A4\u30EC\u30AF\u30C8");
-            window.location.href = data.redirect_url;
-          }, 500);
-        } else {
-          console.error("\u274C \u611F\u60C5\u8A18\u9332\u306E\u4FDD\u5B58\u306B\u5931\u6557:", data.errors.join(", "));
-          setTimeout(() => alert("\u611F\u60C5\u8A18\u9332\u306E\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + data.errors.join(", ")), 100);
-        }
-      } catch (error2) {
-        console.error("\u274C \u30D5\u30A9\u30FC\u30E0\u9001\u4FE1\u4E2D\u306E\u30A8\u30E9\u30FC:", error2);
-      } finally {
-        submitButton.disabled = false;
-      }
-    });
-  }
-});
-console.log("\u2705 updateHPBar is now available globally:", typeof window.updateHPBar);
+console.log("\u2705 HP\u30D0\u30FC\u66F4\u65B0\u30B9\u30AF\u30EA\u30D7\u30C8\u8AAD\u307F\u8FBC\u307F\u5B8C\u4E86");
 
 // app/javascript/application.js
 console.log("\u{1F525} application.js \u8AAD\u307F\u8FBC\u307F\u958B\u59CB", Date.now());
 Rails.start();
 window.bootstrap = bootstrap_esm_exports;
+window.goToRecommended = function() {
+  const hp = localStorage.getItem("hp") || 50;
+  const url = `/emotion_logs/recommended?hp=${encodeURIComponent(hp)}`;
+  window.location.href = url;
+};
 document.addEventListener("turbo:load", () => {
+  const recommendButton = document.getElementById("show-recommendations-btn");
+  const hpBar = document.getElementById("hp-bar");
+  if (recommendButton && hpBar) {
+    recommendButton.addEventListener("click", () => {
+      const widthStr = hpBar.style.width;
+      const hp = parseInt(widthStr);
+      if (!isNaN(hp)) {
+        window.location.href = `/emotion_logs?hp=${hp}`;
+      } else {
+        alert("HP\u30B2\u30FC\u30B8\u306E\u5024\u304C\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F");
+      }
+    });
+  }
   const fileInput = document.getElementById("avatarInput");
   const inlinePreview = document.getElementById("avatarPreviewInline");
   const modalEl = document.getElementById("avatarCropModal");
@@ -14927,6 +14912,7 @@ document.addEventListener("turbo:load", () => {
   const cropImage = document.getElementById("cropImage");
   const confirmBtn = document.getElementById("cropConfirmBtn");
   const avatarUrlField = document.getElementById("avatarUrlField");
+  const submitBtn = document.querySelector('form input[type="submit"]');
   if (![fileInput, inlinePreview, avatarUrlField, modalEl, cropContainer, cropImage, confirmBtn].every(Boolean)) {
     console.error("\u274C \u5FC5\u8981\u306A\u8981\u7D20\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093");
     return;
@@ -15009,6 +14995,7 @@ document.addEventListener("turbo:load", () => {
     });
   }
   confirmBtn.addEventListener("click", async () => {
+    if (submitBtn) submitBtn.disabled = true;
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     canvas.width = 80;
@@ -15048,16 +15035,16 @@ document.addEventListener("turbo:load", () => {
         );
         inlinePreview.src = res.data.secure_url;
         avatarUrlField.value = res.data.secure_url;
+        if (submitBtn) submitBtn.disabled = false;
         inlinePreview.classList.remove("loading");
       };
       tempImage.src = dataUrl;
     } catch (err) {
       console.error("Cloudinary upload failed", err);
       inlinePreview.classList.remove("loading");
+      if (submitBtn) submitBtn.disabled = false;
     }
   });
-});
-document.addEventListener("turbo:load", () => {
   const removeAvatarBtn = document.getElementById("removeAvatarBtn");
   const removeAvatarCheckbox = document.getElementById("removeAvatarCheckbox");
   if (removeAvatarBtn && removeAvatarCheckbox) {
@@ -15066,15 +15053,18 @@ document.addEventListener("turbo:load", () => {
       const confirmMsg = isChecked ? "\u524A\u9664\u3092\u30AD\u30E3\u30F3\u30BB\u30EB\u3057\u307E\u3059\u304B\uFF1F" : "\u672C\u5F53\u306B\u753B\u50CF\u3092\u524A\u9664\u3057\u307E\u3059\u304B\uFF1F";
       if (confirm(confirmMsg)) {
         removeAvatarCheckbox.checked = !isChecked;
-        if (removeAvatarCheckbox.checked) {
-          removeAvatarBtn.textContent = "\u524A\u9664\u4E88\u5B9A";
-          removeAvatarBtn.classList.remove("btn-warning");
-          removeAvatarBtn.classList.add("btn-danger");
-        } else {
-          removeAvatarBtn.textContent = "\u753B\u50CF\u3092\u524A\u9664\u3059\u308B";
-          removeAvatarBtn.classList.remove("btn-danger");
-          removeAvatarBtn.classList.add("btn-warning");
-        }
+        removeAvatarBtn.textContent = removeAvatarCheckbox.checked ? "\u524A\u9664\u4E88\u5B9A" : "\u753B\u50CF\u3092\u524A\u9664\u3059\u308B";
+        removeAvatarBtn.classList.toggle("btn-danger", removeAvatarCheckbox.checked);
+        removeAvatarBtn.classList.toggle("btn-warning", !removeAvatarCheckbox.checked);
+      }
+    });
+  }
+  const form = document.querySelector("form");
+  if (form) {
+    form.addEventListener("submit", (e) => {
+      if (!avatarUrlField.value && !removeAvatarCheckbox?.checked) {
+        e.preventDefault();
+        alert("\u753B\u50CF\u306E\u30A2\u30C3\u30D7\u30ED\u30FC\u30C9\u304C\u307E\u3060\u5B8C\u4E86\u3057\u3066\u3044\u307E\u305B\u3093\uFF01");
       }
     });
   }

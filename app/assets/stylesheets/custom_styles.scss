@@ -176,50 +176,38 @@ h1 i.bi bi-heart-pulse {
   text-shadow: 1px 1px 2px black; /* 文字の影 */
 }
 
-#hp-bar {
-  transition: width 1s ease-in-out;
-  height: 20px;
-  background-color: green; /* 初期のHPバーの色 */
-  position: relative;
-  display: block; /* 確実に表示 */
-  width: 50%; /* 初期値を 50% にする（0HP の状態） */
-}
-
 #hp-bar-container {
   width: 100%;
   text-align: center;
   margin-top: 10px;
   position: relative;
-    z-index: 0;
+  z-index: 0;
+}
 
+#hp-bar {
+  height: 20px; /* バーの高さ */
+  width: 100%; /* 親幅いっぱい */
+  max-width: 100%; /* 最大幅100% */
+  background-color: green; /* 初期色 */
+  transition: width 0.5s ease-in-out; /* アニメーション */
+  border-radius: 10px; /* 角丸 */
 }
 
 #hp-status-text {
-  font-size: 25px; /* 文字を大きくする */
-  font-family: "Audiowide", "Mochiy Pop One", "Poppins", "Arial", sans-serif; /* ギザギザしたフォントを追加 */
-  position: absolute; /* 絶対配置 */
-  width: 100%; /* 横幅いっぱいにする */
-  top: -40px; /* HPバーの上に配置 */
-  left: 50%; /* 左端基準で中央に寄せる */
-  transform: translateX(-50%); /* 水平方向の中央配置 */
-  text-align: center; /* テキストを中央揃え */
-  color: white !important; /* 文字色を白にする */
-  text-shadow: 2px 2px 5px black; /* 影をつけて見やすくする */
-  background-color: rgba(0, 0, 0, 0.9); /* 文字の背景を濃い黒にする */
-  padding: 5px 10px; /* 余白を追加 */
-  border-radius: 30px; /* 角を丸くする */
-    z-index: 0;
-
-}
-
-
-#hp-bar {
-  height: 20px; /* バーの高さを調整 */
-  max-width: 50%; /* 最大幅を80%に設定、これで少し短くなる */
-  width: 100%; /* 横幅いっぱいに表示される */
-  background-color: green; /* HPバーのデフォルトの色 */
-  transition: width 0.5s ease-in-out; /* アニメーションの効果 */
-  border-radius: 10px; /* バーの角を丸くする */
+  font-size: 25px;
+  font-family: "Audiowide", "Mochiy Pop One", "Poppins", "Arial", sans-serif;
+  position: absolute;
+  width: 100%;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  color: white !important;
+  text-shadow: 2px 2px 5px black;
+  background-color: rgba(0, 0, 0, 0.9);
+  padding: 5px 10px;
+  border-radius: 30px; /* ここだけ残す */
+  z-index: 0;
 }
 /* ページネーションのスタイル */
 /* ページネーション全体のデザイン */
@@ -657,3 +645,74 @@ h1 i.bi bi-heart-pulse {
   color: #ccffcc !important;
   text-shadow: 0 0 6px #99ff99 !important;
 }
+
+// ブックマークタイトルバナー
+.bookmark_title {
+  /* もし絶対配置が不要なら、position: static に */
+  position: static;  /* または absolute を外す */
+  font-size: 35px;
+  font-family: "Orbitron", "Rajdhani", "Bebas Neue", "Michroma", sans-serif;
+  font-weight: 900;
+  color: white !important;
+  text-align: center;
+  letter-spacing: 3px;
+  background: linear-gradient(135deg, rgba(50, 0, 50, 0.7), rgba(0, 0, 0, 0.9));
+  padding: 10px 25px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.8), 0 0 30px rgba(255, 0, 255, 0.6);
+  text-shadow: 0 0 20px rgb(255, 255, 255), 0 0 35px rgba(255, 0, 255, 0.8), 0 0 45px rgba(255, 0, 255, 0.6);
+  transition: all 0.3s ease;
+  display: block;
+  width: 100%;
+  margin-top: 40px;  /* 適宜調整 */
+}
+
+// index細かい検索ボタン群
+.filter-box {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 18px; /* ← もっと丸く */
+  padding: 1.5rem;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); /* ← 高級感UP */
+  font-weight: bold; /* ← フォント太く */
+  color: #333; /* 濃すぎず淡すぎず */
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.filter-box h5 {
+  font-size: 1rem;
+  margin-bottom: 0.8rem;
+  color: #000;
+  font-weight: 700;
+  text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
+}
+
+.filter-box .btn {
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  transition: all 0.2s ease-in-out;
+}
+
+.filter-box .btn.active {
+  background: #0d6efd;
+  color: #fff;
+  border: none;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.3);
+}
+
+@media (max-width: 768px) {
+  #super-search-panel {
+    display: none;
+  }
+}
+
+#super-search-panel {
+  position: fixed;
+  top: 270px;      /* 必要に応じて調整 */
+  left: 20px;      /* 左側に表示 */
+  width: 220px;    /* 横幅も指定すると安定します */
+  z-index: 200;    /* 前面に出す */
+}
+
