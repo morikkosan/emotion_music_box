@@ -1,0 +1,21 @@
+<!-- app/views/emotion_logs/_super_search.html.erb -->
+<div id="super-search-panel">
+  <div class="filter-box p-3 bg-light rounded shadow">
+    <h5>① 並び替え</h5>
+    <div class="d-grid gap-2">
+      <%= link_to "新しい順", emotion_logs_path(request.query_parameters.merge(sort: "new")), class: "btn btn-outline-dark btn-sm #{'active' if params[:sort] == 'new'}" %>
+      <%= link_to "お気に入りが多い順", emotion_logs_path(request.query_parameters.merge(sort: "likes")), class: "btn btn-outline-dark btn-sm #{'active' if params[:sort] == 'likes'}" %>
+      <%= link_to "古い順", emotion_logs_path(request.query_parameters.merge(sort: "old")), class: "btn btn-outline-dark btn-sm #{'active' if params[:sort] == 'old'}" %>
+      <%= link_to "コメントが多い順", emotion_logs_path(request.query_parameters.merge(sort: "comments")), class: "btn btn-outline-dark btn-sm #{'active' if params[:sort] == 'comments'}" %>
+    </div>
+
+    <h5 class="mt-4">② 期間フィルター</h5>
+    <div class="d-grid gap-2">
+      <%= link_to "今日", emotion_logs_path(request.query_parameters.merge(period: "today")), class: "btn btn-outline-secondary btn-sm #{'active' if params[:period] == 'today'}" %>
+      <%= link_to "今週", emotion_logs_path(request.query_parameters.merge(period: "week")), class: "btn btn-outline-secondary btn-sm #{'active' if params[:period] == 'week'}" %>
+      <%= link_to "今月", emotion_logs_path(request.query_parameters.merge(period: "month")), class: "btn btn-outline-secondary btn-sm #{'active' if params[:period] == 'month'}" %>
+      <%= link_to "半年", emotion_logs_path(request.query_parameters.merge(period: "halfyear")), class: "btn btn-outline-secondary btn-sm #{'active' if params[:period] == 'halfyear'}" %>
+      <%= link_to "年間", emotion_logs_path(request.query_parameters.merge(period: "year")), class: "btn btn-outline-secondary btn-sm #{'active' if params[:period] == 'year'}" %>
+    </div>
+  </div>
+</div>
