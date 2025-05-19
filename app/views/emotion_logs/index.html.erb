@@ -6,19 +6,34 @@
 
 <%= render 'shared/header' %>
 
-
-  <% if user_signed_in? %>
-    <div id="hp-bar-container">
-      <span class="today_mental_text">👆Today's stress level <span id="bar-width-display"></span>)👆</span>
-      <p id="hp-status-text">メンタル正常</p>
-      <div id="hp-bar"></div>
-    </div>
-    <br>
-<br>
-<br>
-<br>
-  <% end %>
+<% if @bookmark_page.present? %>
+  <span class="bookmark_title">
+    <%= @bookmark_page %>
+  </span>
+<% elsif @mypage_title.present? %>
+  <span class="bookmark_title">
+    <%= @mypage_title %>
+  </span>
+<% elsif @recommended_page.present? %>
+  <span class="bookmark_title">
+    <%= @recommended_page %> <!-- 例: 「おすすめ🔥」 -->
+  </span>
+<% else %>
+  <!-- 通常のストレスゲージ -->
+  <div id="hp-bar-container">
+    <span class="today_mental_text">
+      👆Today's stress level <span id="bar-width-display"></span>)👆
+    </span>
+    <p id="hp-status-text">メンタル正常</p>
+    <div id="hp-bar"></div>
+  </div>
   <br>
+<% end %>
+
+
+
+<br><br><br><br>
+<%= render 'super_search' %>
 
 <div class="row justify-content-center">
   <% @emotion_logs.each do |log| %>
@@ -26,11 +41,19 @@
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
   <div>
-    <strong><%= log.created_at.strftime('%Y-%m-%d %H:%M:%S') %></strong>
+    <strong><%= log.created_at.in_time_zone('Tokyo').strftime('%Y/%m/%d %H:%M') %></strong>
+
 
 <% log.tags.each do |tag| %>
-  <%= link_to tag.name, emotion_logs_path(genre: tag.name), class: "badge bg-primary text-light me-1" %>
+  <% if user_signed_in? %>
+    <%= link_to tag.name, emotion_logs_path(genre: tag.name), class: "badge bg-primary text-light me-1" %>
+  <% else %>
+    <span class="badge bg-primary text-light me-1" title="ログインすると使えます">
+      <%= tag.name %>
+    </span>
+  <% end %>
 <% end %>
+
 
 
 

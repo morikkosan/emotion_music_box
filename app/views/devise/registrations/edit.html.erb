@@ -64,22 +64,21 @@
       </div>
 
       <!-- アバターまわり -->
-      <div class="form-group text-center mt-3">
-        <%# Cloudinary URL or デフォルト画像 %>
-        <%= image_tag resource.profile_avatar_url,
-                      id: "avatarPreviewInline",
-                      size: "80x80",
-                      class: "rounded-circle mb-2",
-                      alt: "プロフィール画像" %><br>
+<div class="form-group text-center mt-3">
+  <%# Cloudinary URL or デフォルト画像 %>
+  <%= image_tag resource.profile_avatar_url,
+                id: "avatarPreviewInline",
+                size: "80x80",
+                class: "rounded-circle mb-2",
+                alt: "プロフィール画像" %><br>
 
-        <%= f.file_field :avatar,
-                         id:    "avatarInput",
-                         class: "form-control-file" %>
+  <!-- ✅ f.file_field は削除してプレーンinputだけにする -->
+  <input type="file" id="avatarInput" class="form-control-file" />
 
-        <%= f.hidden_field :cropped_avatar_data,
-                           id: "croppedAvatarData" %>
-        <%= f.hidden_field :avatar_url, id: "avatarUrlField" %>
-      </div>
+  <%= f.hidden_field :cropped_avatar_data, id: "croppedAvatarData" %>
+  <%= f.hidden_field :avatar_url, id: "avatarUrlField" %>
+</div>
+
 
       <!-- ✅ 更新ボタン -->
       <div class="form-group text-center mb-3">
