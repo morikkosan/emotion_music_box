@@ -28,31 +28,19 @@ class EmotionLogsController < ApplicationController
 
     @emotion_logs = @emotion_logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
 
-
-
-    # --- 並び順 ---
-    if params[:hp].present?
-      @emotion_logs = @emotion_logs
-                        .left_joins(:bookmarks)
-                        .group("emotion_logs.id")
-                        .order("COUNT(bookmarks.id) DESC")
-    else
-      @emotion_logs = @emotion_logs.order(date: :desc)
-    end
+    @emotion_logs = apply_sort_and_period_filters(@emotion_logs)
 
     @emotion_logs = @emotion_logs.page(params[:page]).per(7)
     @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id) if user_signed_in?
   end
 
-   def my_emotion_logs
-    @emotion_logs = current_user.emotion_logs
-      .includes(:user, :bookmarks, :tags)  # ここも修正
-      .order(date: :desc)
-      .page(params[:page]).per(7)
-      # エラー対策
-        @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
-
-        @mypage_title = "🙎マイページ🙎"
+  def my_emotion_logs
+    logs = current_user.emotion_logs.includes(:user, :bookmarks, :tags)
+    logs = logs.where(emotion: params[:emotion]) if params[:emotion].present?
+    logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
+    @emotion_logs = apply_sort_and_period_filters(logs).page(params[:page]).per(7)
+    @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
+    @mypage_title = "👮マイページ👮"
     render :index
   end
 
@@ -145,12 +133,10 @@ class EmotionLogsController < ApplicationController
   end
 
   def bookmarks
-    @emotion_logs = current_user.bookmarked_emotion_logs
-                                .includes(:user, :tags)
-                                .order(date: :desc)
-                                .page(params[:page])
-                                .per(7)
-
+    logs = current_user.bookmarked_emotion_logs.includes(:user, :tags)
+    logs = logs.where(emotion: params[:emotion]) if params[:emotion].present?
+    logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
+    @emotion_logs = apply_sort_and_period_filters(logs).page(params[:page]).per(7)
     @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
     @bookmark_page = "♡お気に入りリスト♡"
     render :index
@@ -167,14 +153,9 @@ class EmotionLogsController < ApplicationController
               else "いつも通り"
               end
 
-    @emotion_logs = EmotionLog
-                      .includes(:user, :bookmarks, :tags)
-                      .where(emotion: emotion)
-                      .left_joins(:bookmarks)
-                      .group("emotion_logs.id")
-                      .order("COUNT(bookmarks.id) DESC")
-                      .limit(10)
-                      .page(params[:page])
+    logs = EmotionLog.includes(:user, :bookmarks, :tags).where(emotion: emotion)
+    logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
+    @emotion_logs = apply_sort_and_period_filters(logs).page(params[:page])
 
     @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
     @mypage_title = "おすすめ🔥（#{emotion}）"
@@ -186,6 +167,29 @@ class EmotionLogsController < ApplicationController
   ### ----  private 以下 ---- ###
 
   private
+
+  def apply_sort_and_period_filters(logs)
+    # 並び順
+    logs = case params[:sort]
+           when "new"      then logs.order(created_at: :desc)
+           when "old"      then logs.order(created_at: :asc)
+           when "likes"    then logs.left_joins(:bookmarks).group("emotion_logs.id").order("COUNT(bookmarks.id) DESC")
+           when "comments" then logs.left_joins(:comments).group("emotion_logs.id").order("COUNT(comments.id) DESC")
+           else logs
+           end
+
+    # 期間フィルター
+    logs = case params[:period]
+           when "today"    then logs.where(date: Date.today)
+           when "week"     then logs.where(date: 1.week.ago.to_date..Date.today)
+           when "month"    then logs.where(date: 1.month.ago.to_date..Date.today)
+           when "halfyear" then logs.where(date: 6.months.ago.to_date..Date.today)
+           when "year"     then logs.where(date: 1.year.ago.to_date..Date.today)
+           else logs
+           end
+
+    logs
+  end
 
   def emotion_log_params
     params.require(:emotion_log).permit(:date, :emotion, :description, :music_url, :track_name, :tag_names)
