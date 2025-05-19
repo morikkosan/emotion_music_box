@@ -666,3 +666,53 @@ h1 i.bi bi-heart-pulse {
   width: 100%;
   margin-top: 40px;  /* 適宜調整 */
 }
+
+// index細かい検索ボタン群
+.filter-box {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 18px; /* ← もっと丸く */
+  padding: 1.5rem;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); /* ← 高級感UP */
+  font-weight: bold; /* ← フォント太く */
+  color: #333; /* 濃すぎず淡すぎず */
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.filter-box h5 {
+  font-size: 1rem;
+  margin-bottom: 0.8rem;
+  color: #000;
+  font-weight: 700;
+  text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
+}
+
+.filter-box .btn {
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  transition: all 0.2s ease-in-out;
+}
+
+.filter-box .btn.active {
+  background: #0d6efd;
+  color: #fff;
+  border: none;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.3);
+}
+
+@media (max-width: 768px) {
+  #super-search-panel {
+    display: none;
+  }
+}
+
+#super-search-panel {
+  position: fixed;
+  top: 270px;      /* 必要に応じて調整 */
+  left: 20px;      /* 左側に表示 */
+  width: 220px;    /* 横幅も指定すると安定します */
+  z-index: 200;    /* 前面に出す */
+}
+
