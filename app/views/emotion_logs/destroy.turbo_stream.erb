@@ -1,0 +1,10 @@
+<%= turbo_stream.remove dom_id(@emotion_log) %>
+
+<%= turbo_stream.append "modal-container", tag.div(
+  "",
+  id: "flash-container",
+  data: {
+    flash_notice: "投稿を削除しました",  # ← ここを直接文字列に
+    flash_alert:  nil
+  }
+) %>
