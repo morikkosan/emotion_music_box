@@ -669,39 +669,54 @@ h1 i.bi bi-heart-pulse {
 
 // index細かい検索ボタン群
 .filter-box {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 18px; /* ← もっと丸く */
+  background: linear-gradient(145deg, #111111, #1a1a1a);
+  border-radius: 20px;
   padding: 1.5rem;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); /* ← 高級感UP */
-  font-weight: bold; /* ← フォント太く */
-  color: #333; /* 濃すぎず淡すぎず */
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 0 12px rgba(143, 11, 83, 0.904),
+    0 0 24px rgba(199, 109, 154, 0.959);
+  font-weight: bold;
+  color: #f0f0f0;
+  border: 1px solid rgba(218, 39, 107, 0.945); /* ゴールド系 */
 }
 
 .filter-box h5 {
   font-size: 1rem;
   margin-bottom: 0.8rem;
-  color: #000;
+  color: #e20e83; 
   font-weight: 700;
-  text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
+  text-shadow: 0 0 6px rgba(189, 59, 171, 0.6);
 }
 
 .filter-box .btn {
   border-radius: 12px;
   font-size: 0.9rem;
   font-weight: 600;
-  letter-spacing: 0.03em;
+  background: transparent;
+  color: #f0f0f0;
+  border: 1px solid #444;
+  backdrop-filter: blur(4px);
   transition: all 0.2s ease-in-out;
 }
 
-.filter-box .btn.active {
-  background: #0d6efd;
-  color: #fff;
-  border: none;
-  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.3);
+.filter-box .btn:hover {
+  background: rgba(214, 125, 192, 0.678);
+  color: #cc358d;
+  border-color: #cf51ee;
+  box-shadow: 0 0 8px rgba(250, 34, 203, 0.4);
 }
 
+.filter-box .btn.active {
+  background: #f57dbf;
+  color: #000;
+  border: none;
+  box-shadow:
+    0 0 8px rgba(255, 137, 202, 0.8),
+    0 0 16px rgba(235, 12, 179, 0.5);
+}
+
+/* レスポンシブ */
 @media (max-width: 768px) {
   #super-search-panel {
     display: none;
@@ -710,11 +725,12 @@ h1 i.bi bi-heart-pulse {
 
 #super-search-panel {
   position: fixed;
-  top: 270px;      /* 必要に応じて調整 */
-  left: 20px;      /* 左側に表示 */
-  width: 220px;    /* 横幅も指定すると安定します */
-  z-index: 200;    /* 前面に出す */
+  top: 270px;
+  left: 20px;
+  width: 240px;
+  z-index: 200;
 }
+
 
 
 // 簡易ポップアップ、主要なポップアップはflash_js

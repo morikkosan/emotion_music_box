@@ -1,5 +1,6 @@
 class BookmarksController < ApplicationController
   before_action :set_emotion_log, only: %i[create toggle]
+  before_action :authenticate_user!
 
   # POST /bookmarks           （link_to … turbo_method: :post）
   def create
