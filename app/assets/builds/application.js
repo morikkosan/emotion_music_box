@@ -14746,53 +14746,70 @@ document.addEventListener("DOMContentLoaded", function() {
 // app/javascript/custom/flash_messages.js
 (function() {
   function showFlashSwal() {
-    let flashNotice = document.body.dataset.flashNotice;
-    let flashAlert = document.body.dataset.flashAlert;
+    const flashContainer = document.querySelector("#flash-container");
+    const flashNotice = flashContainer?.dataset.flashNotice || document.body.dataset.flashNotice;
+    const flashAlert = flashContainer?.dataset.flashAlert || document.body.dataset.flashAlert;
     console.log("\u{1F4A1} showFlashSwal: notice =", flashNotice, ", alert =", flashAlert);
-    if (window.Swal) {
-      console.log("\u2705 Swal.fire \u4F7F\u3048\u307E\u3059", Swal);
-      if (flashAlert === "\u3059\u3067\u306B\u30ED\u30B0\u30A4\u30F3\u6E08\u307F\u3067\u3059") {
-        console.log("\u{1F7E1} \u30ED\u30B0\u30A4\u30F3\u6E08\u307F\u901A\u77E5\u306F\u30E2\u30FC\u30C0\u30EB\u3092\u8868\u793A\u305B\u305A\u30B9\u30AD\u30C3\u30D7");
-      } else if (flashAlert) {
-        Swal.fire({
-          title: "\u30A8\u30E9\u30FC \u274C",
-          text: flashAlert,
-          icon: "error",
-          confirmButtonText: "\u9589\u3058\u308B",
-          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
-          color: "#fff",
-          customClass: { popup: "cyber-popup" }
-        });
-        console.log("\u2705 \u30D5\u30E9\u30C3\u30B7\u30E5alert\u8868\u793A");
-      } else if (flashNotice) {
-        Swal.fire({
-          title: "\u6210\u529F \u{1F389}",
-          text: flashNotice,
-          icon: "success",
-          confirmButtonText: "OK",
-          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
-          color: "#fff",
-          timer: 3e3,
-          timerProgressBar: true,
-          customClass: { popup: "cyber-popup" }
-        });
-        console.log("\u2705 \u30D5\u30E9\u30C3\u30B7\u30E5notice\u8868\u793A");
-      }
-    } else {
+    if (!window.Swal) {
       console.warn("\u26A0\uFE0F SweetAlert2 (Swal) \u304C\u8AAD\u307F\u8FBC\u307E\u308C\u3066\u3044\u307E\u305B\u3093");
+      return;
+    }
+    if (flashAlert === "\u3059\u3067\u306B\u30ED\u30B0\u30A4\u30F3\u6E08\u307F\u3067\u3059") {
+      console.log("\u{1F7E1} \u30ED\u30B0\u30A4\u30F3\u6E08\u307F\u901A\u77E5\u306F\u30E2\u30FC\u30C0\u30EB\u3092\u8868\u793A\u305B\u305A\u30B9\u30AD\u30C3\u30D7");
+      return;
+    }
+    if (flashAlert) {
+      Swal.fire({
+        title: "\u30A8\u30E9\u30FC \u274C",
+        text: flashAlert,
+        icon: "error",
+        confirmButtonText: "\u9589\u3058\u308B",
+        background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+        color: "#fff",
+        customClass: { popup: "cyber-popup" }
+      });
+      document.body.dataset.flashAlert = "";
+      flashContainer?.remove();
+      return;
+    }
+    if (flashNotice) {
+      Swal.fire({
+        title: "\u6210\u529F \u{1F389}",
+        text: flashNotice,
+        icon: "success",
+        confirmButtonText: "OK",
+        background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+        color: "#fff",
+        timer: 3e3,
+        timerProgressBar: true,
+        customClass: { popup: "cyber-popup" }
+      });
+      document.body.dataset.flashNotice = "";
+      flashContainer?.remove();
     }
   }
   document.addEventListener("DOMContentLoaded", showFlashSwal);
   document.addEventListener("turbo:load", showFlashSwal);
+  const observer = new MutationObserver((mutationsList) => {
+    for (const mutation of mutationsList) {
+      for (const node of mutation.addedNodes) {
+        if (node.id === "flash-container") {
+          console.log("\u{1F501} MutationObserver: flash-container \u304C\u8FFD\u52A0\u3055\u308C\u307E\u3057\u305F");
+          showFlashSwal();
+          return;
+        }
+      }
+    }
+  });
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
   document.addEventListener("DOMContentLoaded", function() {
     const logoutLink = document.getElementById("logout-link");
-    if (!logoutLink) {
-      console.log("\u2139\uFE0F logout-link \u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3067\u3057\u305F");
-      return;
-    }
+    if (!logoutLink) return;
     logoutLink.addEventListener("click", function(event) {
       event.preventDefault();
-      console.log("\u30ED\u30B0\u30A2\u30A6\u30C8\u30EA\u30F3\u30AF\u304C\u30AF\u30EA\u30C3\u30AF\u3055\u308C\u307E\u3057\u305F");
       if (!window.Swal) {
         alert("Swal\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\uFF01\u901A\u5E38\u306E\u30ED\u30B0\u30A2\u30A6\u30C8\u51E6\u7406\u306B\u3057\u307E\u3059\u3002");
         location.href = logoutLink.href;
@@ -14808,9 +14825,7 @@ document.addEventListener("DOMContentLoaded", function() {
         background: "linear-gradient(135deg, #00b3ff, #ff0088)",
         color: "#fff"
       }).then((result) => {
-        console.log("\u30DD\u30C3\u30D7\u30A2\u30C3\u30D7\u306E\u7D50\u679C:", result);
         if (result.isConfirmed) {
-          console.log("\u30ED\u30B0\u30A2\u30A6\u30C8\u51E6\u7406\u3092\u958B\u59CB\u3057\u307E\u3059");
           const logoutUrl = logoutLink.dataset.logoutUrl || logoutLink.href;
           const form = document.createElement("form");
           form.method = "post";
@@ -14830,15 +14845,11 @@ document.addEventListener("DOMContentLoaded", function() {
           }
           document.body.appendChild(form);
           form.submit();
-        } else {
-          console.log("\u30ED\u30B0\u30A2\u30A6\u30C8\u304C\u30AD\u30E3\u30F3\u30BB\u30EB\u3055\u308C\u307E\u3057\u305F");
         }
-      }).catch((err) => {
-        console.error("\u30DD\u30C3\u30D7\u30A2\u30C3\u30D7\u30A8\u30E9\u30FC:", err);
       });
     });
   });
-  console.log("\u{1F525} custom_flash.js loaded:", Date.now());
+  console.log("\u{1F525} custom_flash.js \u5B8C\u5168\u30ED\u30FC\u30C9:", Date.now());
 })();
 
 // app/javascript/custom/gages_test.js
