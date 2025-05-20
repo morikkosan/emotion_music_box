@@ -73,7 +73,8 @@
     <% end %>
 
     <div class="d-flex align-items-center" style="gap: 4px;">
-      <span class="fw-bold" style="font-size: 1rem;"><%= log.comments.size %></span>
+      <span class="fw-bold" style="font-size: 1rem;"><%= log.comments_count %></span>
+
       <%= image_tag 'comment_icon.png',
                     alt: 'コメント数',
                     style: 'width: 48px; height: 48px; display: inline-block;' %>

@@ -12,10 +12,18 @@ Rails.start();
 window.bootstrap = bootstrap;
 
 window.goToRecommended = function () {
-  const hp = localStorage.getItem("hp") || 50;
-  const url = `/emotion_logs/recommended?hp=${encodeURIComponent(hp)}`;
-  window.location.href = url;
+  const storedHP = localStorage.getItem("hpPercentage");
+  const hp = parseInt(storedHP);
+
+  console.log("🔥 localStorageから取得したHP値:", hp);
+
+  if (!isNaN(hp)) {
+    window.location.href = `/emotion_logs/recommended?hp=${hp}`;
+  } else {
+    alert("HPゲージの値が取得できませんでした");
+  }
 };
+
 
 document.addEventListener("turbo:load", () => {
   const recommendButton = document.getElementById("show-recommendations-btn");

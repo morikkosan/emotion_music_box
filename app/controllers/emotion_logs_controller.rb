@@ -131,7 +131,7 @@ class EmotionLogsController < ApplicationController
   end
 
   def recommended
-    hp = params[:hp].to_i
+  hp = params[:hp].to_i.clamp(0, 100)
     emotion = case hp
               when 0..1 then "限界"
               when 2..25 then "イライラ"
