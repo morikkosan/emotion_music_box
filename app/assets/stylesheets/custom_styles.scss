@@ -716,3 +716,22 @@ h1 i.bi bi-heart-pulse {
   z-index: 200;    /* 前面に出す */
 }
 
+
+// 簡易ポップアップ、主要なポップアップはflash_js
+#save-toast {
+  background: linear-gradient(135deg, #00c6ff, #0072ff) !important;
+  color: #fff !important;
+  border-radius: 12px;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.toast-body {
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+.btn-close {
+  filter: invert(1); /* 白ボタン向け */
+}
+
