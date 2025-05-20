@@ -14379,7 +14379,6 @@ var submit_handler_controller_default = class extends Controller {
     const today = getTodayString();
     if (formDate !== today) {
       console.log("\u4ECA\u65E5\u4EE5\u5916\u306E\u65E5\u4ED8\u306E\u305F\u3081HP\u30B2\u30FC\u30B8\u66F4\u65B0\u3057\u307E\u305B\u3093");
-      if (this.hasSubmitTarget) this.submitTarget.disabled = false;
       fetch(form.action, {
         method: "POST",
         headers: { Accept: "application/json" },
@@ -14394,6 +14393,8 @@ var submit_handler_controller_default = class extends Controller {
       }).catch((error2) => {
         console.error("\u9001\u4FE1\u30A8\u30E9\u30FC:", error2);
         alert("\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
+      }).finally(() => {
+        if (this.hasSubmitTarget) this.submitTarget.disabled = false;
       });
       return;
     }
@@ -14429,12 +14430,12 @@ var submit_handler_controller_default = class extends Controller {
         }, 1500);
         return;
       }
-      if (this.hasSubmitTarget) this.submitTarget.disabled = false;
       alert("\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + (data.errors || []).join("\n"));
     }).catch((error2) => {
       console.error("\u9001\u4FE1\u30A8\u30E9\u30FC:", error2);
-      if (this.hasSubmitTarget) this.submitTarget.disabled = false;
       alert("\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
+    }).finally(() => {
+      if (this.hasSubmitTarget) this.submitTarget.disabled = false;
     });
   }
 };
@@ -14854,38 +14855,43 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // app/javascript/custom/gages_test.js
 window.updateHPBar = function() {
-  console.log("\u2705 HP\u30D0\u30FC\u66F4\u65B0\u958B\u59CB");
   const hpBar = document.getElementById("hp-bar");
   const hpStatusText = document.getElementById("hp-status-text");
   const barWidthDisplay = document.getElementById("bar-width-display");
-  if (!hpBar || !hpStatusText) {
-    console.warn("\u26A0\uFE0F HP\u30D0\u30FC\u304B\u30B9\u30C6\u30FC\u30BF\u30B9\u8868\u793A\u8981\u7D20\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093");
-    return;
-  }
+  if (!hpBar || !hpStatusText) return;
   let storedHP = localStorage.getItem("hpPercentage");
-  let hpPercentage = storedHP !== null && storedHP !== "" && !isNaN(parseFloat(storedHP)) ? parseFloat(storedHP) : 50;
+  let hpPercentage = storedHP !== null && !isNaN(parseFloat(storedHP)) ? parseFloat(storedHP) : 50;
   hpPercentage = Math.min(100, Math.max(0, hpPercentage));
   const barWidth = hpPercentage + "%";
   hpBar.style.width = barWidth;
-  if (barWidthDisplay) {
-    barWidthDisplay.innerText = barWidth;
-  }
+  if (barWidthDisplay) barWidthDisplay.innerText = barWidth;
   if (hpPercentage <= 20) {
     hpBar.style.backgroundColor = "red";
     hpStatusText.innerText = "\u{1F198} \u30B9\u30C8\u30EC\u30B9\u5371\u967A \u{1F198}";
-    hpStatusText.style.color = "red";
   } else if (hpPercentage <= 40) {
     hpBar.style.backgroundColor = "yellow";
     hpStatusText.innerText = "\u{1F3E5} \u3061\u3087\u3063\u3068\u4F11\u307F\u307E\u3057\u3087 \u{1F3E5}";
-    hpStatusText.style.color = "orange";
   } else if (hpPercentage <= 70) {
     hpBar.style.backgroundColor = "#9ACD32";
     hpStatusText.innerText = "\u266A \u304A\u3064\u304B\u308C\u3055\u307E\u3067\u3059 \u266A";
-    hpStatusText.style.color = "orange";
   } else {
     hpBar.style.backgroundColor = "green";
     hpStatusText.innerText = "\u{1FA7A} \u30E1\u30F3\u30BF\u30EB\u6B63\u5E38 \u{1F33F}";
-    hpStatusText.style.color = "green";
+  }
+};
+window.goToRecommended = function() {
+  const hpBar = document.getElementById("hp-bar");
+  if (!hpBar) {
+    alert("HP\u30D0\u30FC\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093");
+    return;
+  }
+  const widthStr = hpBar.style.width;
+  const hp = parseInt(widthStr);
+  console.log("\u{1F525} \u8868\u793A\u4E2D\u306E\u30D0\u30FC\u304B\u3089\u53D6\u5F97\u3057\u305FHP\u5024:", hp);
+  if (!isNaN(hp)) {
+    window.location.href = `/emotion_logs/recommended?hp=${hp}`;
+  } else {
+    alert("HP\u30B2\u30FC\u30B8\u306E\u5024\u304C\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F");
   }
 };
 document.addEventListener("DOMContentLoaded", () => {
@@ -14898,9 +14904,14 @@ console.log("\u{1F525} application.js \u8AAD\u307F\u8FBC\u307F\u958B\u59CB", Dat
 Rails.start();
 window.bootstrap = bootstrap_esm_exports;
 window.goToRecommended = function() {
-  const hp = localStorage.getItem("hp") || 50;
-  const url = `/emotion_logs/recommended?hp=${encodeURIComponent(hp)}`;
-  window.location.href = url;
+  const storedHP = localStorage.getItem("hpPercentage");
+  const hp = parseInt(storedHP);
+  console.log("\u{1F525} localStorage\u304B\u3089\u53D6\u5F97\u3057\u305FHP\u5024:", hp);
+  if (!isNaN(hp)) {
+    window.location.href = `/emotion_logs/recommended?hp=${hp}`;
+  } else {
+    alert("HP\u30B2\u30FC\u30B8\u306E\u5024\u304C\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F");
+  }
 };
 document.addEventListener("turbo:load", () => {
   const recommendButton = document.getElementById("show-recommendations-btn");
