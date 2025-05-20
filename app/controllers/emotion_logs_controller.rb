@@ -4,7 +4,6 @@ class EmotionLogsController < ApplicationController
 
   def index
     Rails.logger.error "★ index: FLASH notice = #{flash[:notice].inspect}, session = #{session.id}"
-    sleep 2
 
     @emotion_logs = EmotionLog.includes(:user, :bookmarks, :tags)
 
@@ -42,14 +41,20 @@ class EmotionLogsController < ApplicationController
   end
 
   def show
-    @emotion_log = EmotionLog.find(params[:id])
-    @comments = Comment.where(emotion_log_id: @emotion_log.id)
-                       .includes(:user, :comment_reactions)
-                       .order(created_at: :desc)
+  @emotion_log = EmotionLog.find(params[:id])
+  @comments = Comment.where(emotion_log_id: @emotion_log.id)
+                    .includes(:user, :comment_reactions)
+                    .order(created_at: :desc)
 
-    @reaction_counts = CommentReaction.where(comment_id: @comments.map(&:id)).group(:comment_id, :kind).count
-    @user_reactions = current_user&.comment_reactions&.where(comment_id: @comments.map(&:id))&.pluck(:comment_id, :kind)&.to_h || {}
+  @reaction_counts = CommentReaction.where(comment_id: @comments.map(&:id)).group(:comment_id, :kind).count
+  @user_reactions = current_user&.comment_reactions&.where(comment_id: @comments.map(&:id))&.pluck(:comment_id, :kind)&.to_h || {}
+
+  respond_to do |format|
+    format.html
+    format.turbo_stream
   end
+end
+
 
   def new
     @emotion_log = EmotionLog.new(music_url: params[:music_url], track_name: params[:track_name])
