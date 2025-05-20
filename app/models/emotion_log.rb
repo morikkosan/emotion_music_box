@@ -20,6 +20,27 @@ class EmotionLog < ApplicationRecord
   validate :description_must_be_polite
   validates :description, presence: true, length: { maximum: 50 }
 
+  scope :for_today,     -> { where(date: Date.today) }
+scope :for_week,      -> { where(date: 1.week.ago.to_date..Date.today) }
+scope :for_month,     -> { where(date: 1.month.ago.to_date..Date.today) }
+scope :for_half_year, -> { where(date: 6.months.ago.to_date..Date.today) }
+scope :for_year,      -> { where(date: 1.year.ago.to_date..Date.today) }
+
+
+  scope :newest,      -> { order(created_at: :desc) }
+scope :oldest,      -> { order(created_at: :asc) }
+scope :by_bookmarks, -> {
+  left_joins(:bookmarks)
+    .group(:id)
+    .order('COUNT(bookmarks.id) DESC')
+}
+scope :by_comments, -> {
+  left_joins(:comments)
+    .group(:id)
+    .order('COUNT(comments.id) DESC')
+}
+
+
   private
   def date_cannot_be_in_the_future
     if date.present? && date > Date.today

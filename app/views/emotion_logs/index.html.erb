@@ -33,8 +33,9 @@
 
 
 <br><br><br><br>
+  <% if user_signed_in? %>
 <%= render 'super_search' %>
-
+<% end %>
 <div class="row justify-content-center">
   <% @emotion_logs.each do |log| %>
     <div id="<%= dom_id(log) %>" class="col-md-8 mb-4">
