@@ -1,12 +1,13 @@
-/* ① モジュールの読み込みは先頭にまとめる */
+// application.bootstrap.scss
+
+// すべての @use はファイルの本当の先頭に！コメントもOK
 @use "bootstrap/scss/bootstrap";
 @use "bootstrap-icons/font/bootstrap-icons";
 @use "components/floating_button";
 @use "components/neon_buttons";
+@use "custom_styles";
+@use "index_logs";
 
-/* ② Bootswatch テーマはそのあとに */
+// 外部CSSのみはそのあと
 @import url("https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/cyborg/bootstrap.min.css");
 @import "cropperjs/dist/cropper.css";
-
-/* ③ そして最後に自分の CSS を読み込んで上書き */
-@import "custom_styles";  // ← .css ファイルとして読み込む
