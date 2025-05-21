@@ -58,9 +58,15 @@ const widthStr = hpBar.dataset.width || hpBar.style.width;
   }
 };
 
-// 初期化（ページロード時にバー更新）
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("📦 DOMContentLoaded 発火 → HPバー更新");
   window.updateHPBar();
 });
+
+document.addEventListener("turbo:load", () => {
+  console.log("🚀 turbo:load 発火 → HPバー更新");
+  window.updateHPBar();
+});
+
 
 console.log("✅ HPバー更新スクリプト読み込み完了");
