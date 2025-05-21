@@ -1,0 +1,93 @@
+<footer class="footer-flex text-light small px-3 py-2">
+  <div class="footer-left">
+    音楽は <a href="https://soundcloud.com" target="_blank" rel="noopener noreferrer">SOUND&nbsp;CLOUD</a> より提供されています。
+  </div>
+  <div class="footer-right">
+    © 2025
+    <%= link_to (user_signed_in? ? emotion_logs_path : user_soundcloud_omniauth_authorize_path),
+                class: "text-light text-decoration-none",
+                data: { turbo: false } do %>
+      Emotion Music Box
+    <% end %>
+    | <a href="/terms" class="text-light text-decoration-none" data-turbo="false">利用規約</a>
+    | Created by moriz
+  </div>
+</footer>
+
+
+<style>
+.footer-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #111;
+  font-size: 0.85rem;
+  color: #ccc;
+
+  a {
+    color: #ddd;
+    text-decoration: none;
+
+    &:hover {
+      color: #fff;
+      text-shadow: 0 0 4px rgba(255, 255, 255, 0.4);
+    }
+  }
+}
+
+.footer-left,
+.footer-right {
+  padding: 0.3rem 1rem;
+}
+
+.terms {
+  background-color: #fff;         /* 白背景 */
+  color: #000;                    /* 黒文字 */
+  padding: 2rem;                  /* 内側の余白 */
+  border-radius: 10px;            /* 角を少し丸く */
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15); /* 影をつけて浮かせる */
+  line-height: 1.8;               /* 行間広めで読みやすく */
+  font-size: 1rem;                /* 基本文字サイズ */
+  font-family: "Helvetica Neue", Arial, sans-serif;
+}
+
+.terms h1 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #333;
+  padding-bottom: 0.5rem;
+}
+
+.terms h2 {
+  font-size: 1.2rem;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  color: #222;
+  border-left: 4px solid #007BFF;
+  padding-left: 0.5rem;
+}
+
+.terms p {
+  margin-bottom: 1rem;
+}
+
+.terms ul {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.terms ul li {
+  margin-bottom: 0.5rem;
+}
+
+.terms a {
+  color: #007BFF;
+  text-decoration: underline;
+}
+
+.terms a:hover {
+  color: #0056b3;
+}
+
+
+</style>

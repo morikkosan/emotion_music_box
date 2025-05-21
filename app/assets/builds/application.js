@@ -14368,10 +14368,22 @@ var submit_handler_controller_default = class extends Controller {
   connect() {
     console.log("\u{1F4DD} submit-handler connected");
     if (this.hasSubmitTarget) this.submitTarget.disabled = false;
+    setTimeout(() => {
+      const dateInput = this.element.querySelector('input[type="date"]');
+      if (dateInput) {
+        dateInput.addEventListener("change", (e) => {
+          const val = e.target.value;
+          console.log("\u{1F4CC} \u9045\u5EF6bind: \u30AB\u30EC\u30F3\u30C0\u30FCchange\u30A4\u30D9\u30F3\u30C8:", val);
+          e.target.value = val;
+        });
+      }
+    }, 100);
   }
   submit(event) {
     console.log("\u{1F7E2} submit-handler: submit\u30A4\u30D9\u30F3\u30C8\u767A\u706B");
     event.preventDefault();
+    const loader = document.getElementById("loading-overlay");
+    if (loader) loader.style.display = "flex";
     if (this.hasSubmitTarget) this.submitTarget.disabled = true;
     const form = this.element;
     const formData = new FormData(form);
@@ -14379,7 +14391,6 @@ var submit_handler_controller_default = class extends Controller {
     const today = getTodayString();
     if (formDate !== today) {
       console.log("\u4ECA\u65E5\u4EE5\u5916\u306E\u65E5\u4ED8\u306E\u305F\u3081HP\u30B2\u30FC\u30B8\u66F4\u65B0\u3057\u307E\u305B\u3093");
-      if (this.hasSubmitTarget) this.submitTarget.disabled = false;
       fetch(form.action, {
         method: "POST",
         headers: { Accept: "application/json" },
@@ -14394,6 +14405,10 @@ var submit_handler_controller_default = class extends Controller {
       }).catch((error2) => {
         console.error("\u9001\u4FE1\u30A8\u30E9\u30FC:", error2);
         alert("\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
+      }).finally(() => {
+        if (this.hasSubmitTarget) this.submitTarget.disabled = false;
+        const loader2 = document.getElementById("loading-overlay");
+        if (loader2) loader2.style.display = "none";
       });
       return;
     }
@@ -14427,14 +14442,16 @@ var submit_handler_controller_default = class extends Controller {
         setTimeout(() => {
           window.location.href = data.redirect_url;
         }, 1500);
-        return;
+      } else {
+        alert("\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + (data.errors || []).join("\n"));
       }
-      if (this.hasSubmitTarget) this.submitTarget.disabled = false;
-      alert("\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + (data.errors || []).join("\n"));
     }).catch((error2) => {
       console.error("\u9001\u4FE1\u30A8\u30E9\u30FC:", error2);
-      if (this.hasSubmitTarget) this.submitTarget.disabled = false;
       alert("\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
+    }).finally(() => {
+      if (this.hasSubmitTarget) this.submitTarget.disabled = false;
+      const loader2 = document.getElementById("loading-overlay");
+      if (loader2) loader2.style.display = "none";
     });
   }
 };
@@ -14746,53 +14763,70 @@ document.addEventListener("DOMContentLoaded", function() {
 // app/javascript/custom/flash_messages.js
 (function() {
   function showFlashSwal() {
-    let flashNotice = document.body.dataset.flashNotice;
-    let flashAlert = document.body.dataset.flashAlert;
+    const flashContainer = document.querySelector("#flash-container");
+    const flashNotice = flashContainer?.dataset.flashNotice || document.body.dataset.flashNotice;
+    const flashAlert = flashContainer?.dataset.flashAlert || document.body.dataset.flashAlert;
     console.log("\u{1F4A1} showFlashSwal: notice =", flashNotice, ", alert =", flashAlert);
-    if (window.Swal) {
-      console.log("\u2705 Swal.fire \u4F7F\u3048\u307E\u3059", Swal);
-      if (flashAlert === "\u3059\u3067\u306B\u30ED\u30B0\u30A4\u30F3\u6E08\u307F\u3067\u3059") {
-        console.log("\u{1F7E1} \u30ED\u30B0\u30A4\u30F3\u6E08\u307F\u901A\u77E5\u306F\u30E2\u30FC\u30C0\u30EB\u3092\u8868\u793A\u305B\u305A\u30B9\u30AD\u30C3\u30D7");
-      } else if (flashAlert) {
-        Swal.fire({
-          title: "\u30A8\u30E9\u30FC \u274C",
-          text: flashAlert,
-          icon: "error",
-          confirmButtonText: "\u9589\u3058\u308B",
-          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
-          color: "#fff",
-          customClass: { popup: "cyber-popup" }
-        });
-        console.log("\u2705 \u30D5\u30E9\u30C3\u30B7\u30E5alert\u8868\u793A");
-      } else if (flashNotice) {
-        Swal.fire({
-          title: "\u6210\u529F \u{1F389}",
-          text: flashNotice,
-          icon: "success",
-          confirmButtonText: "OK",
-          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
-          color: "#fff",
-          timer: 3e3,
-          timerProgressBar: true,
-          customClass: { popup: "cyber-popup" }
-        });
-        console.log("\u2705 \u30D5\u30E9\u30C3\u30B7\u30E5notice\u8868\u793A");
-      }
-    } else {
+    if (!window.Swal) {
       console.warn("\u26A0\uFE0F SweetAlert2 (Swal) \u304C\u8AAD\u307F\u8FBC\u307E\u308C\u3066\u3044\u307E\u305B\u3093");
+      return;
+    }
+    if (flashAlert === "\u3059\u3067\u306B\u30ED\u30B0\u30A4\u30F3\u6E08\u307F\u3067\u3059") {
+      console.log("\u{1F7E1} \u30ED\u30B0\u30A4\u30F3\u6E08\u307F\u901A\u77E5\u306F\u30E2\u30FC\u30C0\u30EB\u3092\u8868\u793A\u305B\u305A\u30B9\u30AD\u30C3\u30D7");
+      return;
+    }
+    if (flashAlert) {
+      Swal.fire({
+        title: "\u30A8\u30E9\u30FC \u274C",
+        text: flashAlert,
+        icon: "error",
+        confirmButtonText: "\u9589\u3058\u308B",
+        background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+        color: "#fff",
+        customClass: { popup: "cyber-popup" }
+      });
+      document.body.dataset.flashAlert = "";
+      flashContainer?.remove();
+      return;
+    }
+    if (flashNotice) {
+      Swal.fire({
+        title: "\u6210\u529F \u{1F389}",
+        text: flashNotice,
+        icon: "success",
+        confirmButtonText: "OK",
+        background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+        color: "#fff",
+        timer: 3e3,
+        timerProgressBar: true,
+        customClass: { popup: "cyber-popup" }
+      });
+      document.body.dataset.flashNotice = "";
+      flashContainer?.remove();
     }
   }
   document.addEventListener("DOMContentLoaded", showFlashSwal);
   document.addEventListener("turbo:load", showFlashSwal);
+  const observer = new MutationObserver((mutationsList) => {
+    for (const mutation of mutationsList) {
+      for (const node of mutation.addedNodes) {
+        if (node.id === "flash-container") {
+          console.log("\u{1F501} MutationObserver: flash-container \u304C\u8FFD\u52A0\u3055\u308C\u307E\u3057\u305F");
+          showFlashSwal();
+          return;
+        }
+      }
+    }
+  });
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
   document.addEventListener("DOMContentLoaded", function() {
     const logoutLink = document.getElementById("logout-link");
-    if (!logoutLink) {
-      console.log("\u2139\uFE0F logout-link \u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3067\u3057\u305F");
-      return;
-    }
+    if (!logoutLink) return;
     logoutLink.addEventListener("click", function(event) {
       event.preventDefault();
-      console.log("\u30ED\u30B0\u30A2\u30A6\u30C8\u30EA\u30F3\u30AF\u304C\u30AF\u30EA\u30C3\u30AF\u3055\u308C\u307E\u3057\u305F");
       if (!window.Swal) {
         alert("Swal\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\uFF01\u901A\u5E38\u306E\u30ED\u30B0\u30A2\u30A6\u30C8\u51E6\u7406\u306B\u3057\u307E\u3059\u3002");
         location.href = logoutLink.href;
@@ -14808,9 +14842,7 @@ document.addEventListener("DOMContentLoaded", function() {
         background: "linear-gradient(135deg, #00b3ff, #ff0088)",
         color: "#fff"
       }).then((result) => {
-        console.log("\u30DD\u30C3\u30D7\u30A2\u30C3\u30D7\u306E\u7D50\u679C:", result);
         if (result.isConfirmed) {
-          console.log("\u30ED\u30B0\u30A2\u30A6\u30C8\u51E6\u7406\u3092\u958B\u59CB\u3057\u307E\u3059");
           const logoutUrl = logoutLink.dataset.logoutUrl || logoutLink.href;
           const form = document.createElement("form");
           form.method = "post";
@@ -14830,54 +14862,61 @@ document.addEventListener("DOMContentLoaded", function() {
           }
           document.body.appendChild(form);
           form.submit();
-        } else {
-          console.log("\u30ED\u30B0\u30A2\u30A6\u30C8\u304C\u30AD\u30E3\u30F3\u30BB\u30EB\u3055\u308C\u307E\u3057\u305F");
         }
-      }).catch((err) => {
-        console.error("\u30DD\u30C3\u30D7\u30A2\u30C3\u30D7\u30A8\u30E9\u30FC:", err);
       });
     });
   });
-  console.log("\u{1F525} custom_flash.js loaded:", Date.now());
+  console.log("\u{1F525} custom_flash.js \u5B8C\u5168\u30ED\u30FC\u30C9:", Date.now());
 })();
 
 // app/javascript/custom/gages_test.js
 window.updateHPBar = function() {
-  console.log("\u2705 HP\u30D0\u30FC\u66F4\u65B0\u958B\u59CB");
   const hpBar = document.getElementById("hp-bar");
   const hpStatusText = document.getElementById("hp-status-text");
   const barWidthDisplay = document.getElementById("bar-width-display");
-  if (!hpBar || !hpStatusText) {
-    console.warn("\u26A0\uFE0F HP\u30D0\u30FC\u304B\u30B9\u30C6\u30FC\u30BF\u30B9\u8868\u793A\u8981\u7D20\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093");
-    return;
-  }
+  if (!hpBar || !hpStatusText) return;
   let storedHP = localStorage.getItem("hpPercentage");
-  let hpPercentage = storedHP !== null && storedHP !== "" && !isNaN(parseFloat(storedHP)) ? parseFloat(storedHP) : 50;
+  let hpPercentage = storedHP !== null && !isNaN(parseFloat(storedHP)) ? parseFloat(storedHP) : 50;
   hpPercentage = Math.min(100, Math.max(0, hpPercentage));
   const barWidth = hpPercentage + "%";
   hpBar.style.width = barWidth;
-  if (barWidthDisplay) {
-    barWidthDisplay.innerText = barWidth;
-  }
+  hpBar.dataset.width = barWidth;
+  if (barWidthDisplay) barWidthDisplay.innerText = barWidth;
   if (hpPercentage <= 20) {
     hpBar.style.backgroundColor = "red";
     hpStatusText.innerText = "\u{1F198} \u30B9\u30C8\u30EC\u30B9\u5371\u967A \u{1F198}";
-    hpStatusText.style.color = "red";
   } else if (hpPercentage <= 40) {
     hpBar.style.backgroundColor = "yellow";
     hpStatusText.innerText = "\u{1F3E5} \u3061\u3087\u3063\u3068\u4F11\u307F\u307E\u3057\u3087 \u{1F3E5}";
-    hpStatusText.style.color = "orange";
   } else if (hpPercentage <= 70) {
     hpBar.style.backgroundColor = "#9ACD32";
     hpStatusText.innerText = "\u266A \u304A\u3064\u304B\u308C\u3055\u307E\u3067\u3059 \u266A";
-    hpStatusText.style.color = "orange";
   } else {
     hpBar.style.backgroundColor = "green";
     hpStatusText.innerText = "\u{1FA7A} \u30E1\u30F3\u30BF\u30EB\u6B63\u5E38 \u{1F33F}";
-    hpStatusText.style.color = "green";
+  }
+};
+window.goToRecommended = function() {
+  const hpBar = document.getElementById("hp-bar");
+  if (!hpBar) {
+    alert("HP\u30D0\u30FC\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093");
+    return;
+  }
+  const widthStr = hpBar.dataset.width || hpBar.style.width;
+  const hp = parseInt(widthStr);
+  console.log("\u{1F525} \u8868\u793A\u4E2D\u306E\u30D0\u30FC\u304B\u3089\u53D6\u5F97\u3057\u305FHP\u5024:", hp);
+  if (!isNaN(hp)) {
+    window.location.href = `/emotion_logs/recommended?hp=${hp}`;
+  } else {
+    alert("HP\u30B2\u30FC\u30B8\u306E\u5024\u304C\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F");
   }
 };
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("\u{1F4E6} DOMContentLoaded \u767A\u706B \u2192 HP\u30D0\u30FC\u66F4\u65B0");
+  window.updateHPBar();
+});
+document.addEventListener("turbo:load", () => {
+  console.log("\u{1F680} turbo:load \u767A\u706B \u2192 HP\u30D0\u30FC\u66F4\u65B0");
   window.updateHPBar();
 });
 console.log("\u2705 HP\u30D0\u30FC\u66F4\u65B0\u30B9\u30AF\u30EA\u30D7\u30C8\u8AAD\u307F\u8FBC\u307F\u5B8C\u4E86");
@@ -14886,22 +14925,51 @@ console.log("\u2705 HP\u30D0\u30FC\u66F4\u65B0\u30B9\u30AF\u30EA\u30D7\u30C8\u8A
 console.log("\u{1F525} application.js \u8AAD\u307F\u8FBC\u307F\u958B\u59CB", Date.now());
 Rails.start();
 window.bootstrap = bootstrap_esm_exports;
-window.goToRecommended = function() {
-  const hp = localStorage.getItem("hp") || 50;
-  const url = `/emotion_logs/recommended?hp=${encodeURIComponent(hp)}`;
-  window.location.href = url;
-};
+document.addEventListener("turbo:visit", () => {
+  const loader = document.getElementById("loading-overlay");
+  if (loader) loader.style.display = "flex";
+});
 document.addEventListener("turbo:load", () => {
+  const loader = document.getElementById("loading-overlay");
+  if (loader) loader.style.display = "none";
+  const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+  const savedDate = localStorage.getItem("hpDate");
+  if (savedDate !== today) {
+    localStorage.setItem("hpPercentage", "50");
+    localStorage.setItem("hpDate", today);
+    console.log("\u2705 HP\u3068\u65E5\u4ED8\u3092\u521D\u671F\u5316\u3057\u307E\u3057\u305F:", today);
+  } else {
+    console.log("\u2705 \u65E2\u306B\u4FDD\u5B58\u3055\u308C\u305FHP\u3092\u4F7F\u7528\u4E2D:", localStorage.getItem("hpPercentage"));
+  }
+  document.addEventListener("turbo:frame-load", () => {
+    const loader2 = document.getElementById("loading-overlay");
+    if (loader2) {
+      console.log("\u{1F7E2} turbo:frame-load \u2192 \u30ED\u30FC\u30C7\u30A3\u30F3\u30B0\u975E\u8868\u793A");
+      loader2.style.display = "none";
+    }
+  });
+  const modalFixObserver = new MutationObserver(() => {
+    const modal2 = document.querySelector(".modal.show");
+    const modalContent = document.querySelector(".modal-content");
+    const loader2 = document.getElementById("loading-overlay");
+    if (modal2 && modalContent && loader2 && loader2.style.display !== "none") {
+      console.log("\u{1F6E0} turbo-frame + modal \u3092\u691C\u51FA \u2192 \u30ED\u30FC\u30C7\u30A3\u30F3\u30B0\u975E\u8868\u793A");
+      loader2.style.display = "none";
+    }
+  });
+  modalFixObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
   const recommendButton = document.getElementById("show-recommendations-btn");
-  const hpBar = document.getElementById("hp-bar");
-  if (recommendButton && hpBar) {
+  if (recommendButton) {
     recommendButton.addEventListener("click", () => {
-      const widthStr = hpBar.style.width;
-      const hp = parseInt(widthStr);
+      const storedHP = localStorage.getItem("hpPercentage");
+      const hp = parseInt(storedHP);
       if (!isNaN(hp)) {
         window.location.href = `/emotion_logs?hp=${hp}`;
       } else {
-        alert("HP\u30B2\u30FC\u30B8\u306E\u5024\u304C\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F");
+        alert("HP\u30B2\u30FC\u30B8\u306E\u5024\u304C\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\uFF08localStorage\u306B\u4FDD\u5B58\u3055\u308C\u3066\u3044\u307E\u305B\u3093\uFF09");
       }
     });
   }
@@ -14914,7 +14982,7 @@ document.addEventListener("turbo:load", () => {
   const avatarUrlField = document.getElementById("avatarUrlField");
   const submitBtn = document.querySelector('form input[type="submit"]');
   if (![fileInput, inlinePreview, avatarUrlField, modalEl, cropContainer, cropImage, confirmBtn].every(Boolean)) {
-    console.error("\u274C \u5FC5\u8981\u306A\u8981\u7D20\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093");
+    console.warn("\u26A0\uFE0F \u30A2\u30D0\u30BF\u30FC\u95A2\u9023\u306E\u8981\u7D20\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\uFF08\u3053\u306E\u30DA\u30FC\u30B8\u3067\u306F\u4E0D\u8981\u306E\u53EF\u80FD\u6027\u3042\u308A\uFF09");
     return;
   }
   const modal = new Modal(modalEl);
@@ -15069,6 +15137,30 @@ document.addEventListener("turbo:load", () => {
     });
   }
 });
+var modalContentObserver = new MutationObserver(() => {
+  const modal = document.querySelector(".modal.show");
+  const modalContent = document.querySelector(".modal-content");
+  const loader = document.getElementById("loading-overlay");
+  if (modal && modalContent && loader && loader.style.display !== "none") {
+    console.log("\u2705 \u30E2\u30FC\u30C0\u30EB\u3068\u4E2D\u8EAB\u3092\u691C\u51FA \u2192 \u30ED\u30FC\u30C7\u30A3\u30F3\u30B0\u3092\u975E\u8868\u793A\u306B\u3057\u307E\u3059");
+    loader.style.display = "none";
+    modalContentObserver.disconnect();
+  }
+});
+modalContentObserver.observe(document.body, {
+  childList: true,
+  subtree: true
+});
+window.goToRecommended = function() {
+  const storedHP = localStorage.getItem("hpPercentage");
+  const hp = parseInt(storedHP);
+  console.log("\u{1F525} goToRecommended \u5B9F\u884C: HP =", hp);
+  if (!isNaN(hp)) {
+    window.location.href = `/emotion_logs/recommended?hp=${hp}`;
+  } else {
+    alert("HP\u30B2\u30FC\u30B8\u306E\u5024\u304C\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\uFF08localStorage\u306B\u4FDD\u5B58\u3055\u308C\u3066\u3044\u307E\u305B\u3093\uFF09");
+  }
+};
 /*! Bundled license information:
 
 @hotwired/turbo/dist/turbo.es2017-esm.js:

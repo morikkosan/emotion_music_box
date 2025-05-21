@@ -44,28 +44,33 @@
 
   <%= yield %>
 
-  <!-- ✅ BGM 再生ボタン用関数 -->
-  <script>
-    function toggleAudio () {
-      const audio = document.getElementById('audioPlayer');
-      const icon  = document.getElementById('audioButtonIcon');
-      if (!audio) return;
-      if (audio.paused) {
-        audio.play();   icon.textContent = '❚❚';
-      } else {
-        audio.pause();  icon.textContent = '♪';
-      }
-    }
-  </script>
+<div id="loading-overlay" style="display: none;">
+  <div class="pacman-wrapper">
+    <div class="circle-packman-1"></div>
+    <div class="loading-text">Now Loading...</div>
+  </div>
+</div>
+<style>
+  #loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+</style>
 
-  <!-- ✅ 保存完了トースト -->
+
+  <!-- ✅ 保存完了トースト(簡易型ポップアップ) -->
   <div aria-live="polite" aria-atomic="true"
        class="position-fixed top-0 end-0 p-3" style="z-index:1080;">
     <div id="save-toast"
          class="toast align-items-center text-white bg-success border-0"
          role="alert" aria-live="assertive" aria-atomic="true">
       <div class="d-flex">
-        <div class="toast-body">今日の emomu を保存しました！</div>
+        <div class="toast-body">emomu を保存しました！</div>
         <button type="button" class="btn-close btn-close-white me-2 m-auto"
                 data-bs-dismiss="toast"></button>
       </div>
@@ -80,8 +85,6 @@
   window.CLOUDINARY_UPLOAD_PRESET = "<%= ENV['CLOUDINARY_UPLOAD_PRESET'] %>";
   </script>
 
-  <p style="color:#f1efef;">
-    音楽は <a href="https://soundcloud.com" target="_blank" rel="noopener noreferrer">SOUND&nbsp;CLOUD</a> より提供されています。
-  </p>
+<%= render 'shared/footer' %>
 </body>
 </html>
