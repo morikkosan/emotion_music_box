@@ -1,5 +1,3 @@
-console.log("🔥 application.js 読み込み開始", Date.now());
-
 import Rails from "@rails/ujs";
 import "@hotwired/turbo-rails";
 import * as bootstrap from "bootstrap";
@@ -8,24 +6,36 @@ import "./custom/comments";
 import "./custom/flash_messages";
 import "./custom/gages_test";
 
+console.log("🔥 application.js 読み込み開始", Date.now());
+
+// 🌱 初期HPと日付の保存処理
+const today = new Date().toISOString().slice(0, 10);
+const savedDate = localStorage.getItem("hpDate");
+
+if (savedDate !== today) {
+  localStorage.setItem("hpPercentage", "50");
+  localStorage.setItem("hpDate", today);
+  console.log("✅ HPと日付を初期化しました:", today);
+} else {
+  console.log("✅ 既に保存されたHPを使用中:", localStorage.getItem("hpPercentage"));
+}
+
 Rails.start();
 window.bootstrap = bootstrap;
 
-window.goToRecommended = function () {
-  const storedHP = localStorage.getItem("hpPercentage");
-  const hp = parseInt(storedHP);
+// 🔄 ページ遷移開始時にローディング表示
+document.addEventListener("turbo:visit", () => {
+  const loader = document.getElementById("loading-overlay");
+  if (loader) loader.style.display = "flex";
+});
 
-  console.log("🔥 localStorageから取得したHP値:", hp);
-
-  if (!isNaN(hp)) {
-    window.location.href = `/emotion_logs/recommended?hp=${hp}`;
-  } else {
-    alert("HPゲージの値が取得できませんでした");
-  }
-};
-
-
+// ✅ turbo:load 1か所にまとめて全部統合
 document.addEventListener("turbo:load", () => {
+  // 🔽 ローディング非表示
+  const loader = document.getElementById("loading-overlay");
+  if (loader) loader.style.display = "none";
+
+  // 🔽 「おすすめ」ボタン処理
   const recommendButton = document.getElementById("show-recommendations-btn");
   const hpBar = document.getElementById("hp-bar");
   if (recommendButton && hpBar) {
@@ -40,6 +50,7 @@ document.addEventListener("turbo:load", () => {
     });
   }
 
+  // 🔽 アバター画像のアップロード処理（Cropper）
   const fileInput = document.getElementById("avatarInput");
   const inlinePreview = document.getElementById("avatarPreviewInline");
   const modalEl = document.getElementById("avatarCropModal");

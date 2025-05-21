@@ -14368,6 +14368,16 @@ var submit_handler_controller_default = class extends Controller {
   connect() {
     console.log("\u{1F4DD} submit-handler connected");
     if (this.hasSubmitTarget) this.submitTarget.disabled = false;
+    setTimeout(() => {
+      const dateInput = this.element.querySelector('input[type="date"]');
+      if (dateInput) {
+        dateInput.addEventListener("change", (e) => {
+          const val = e.target.value;
+          console.log("\u{1F4CC} \u9045\u5EF6bind: \u30AB\u30EC\u30F3\u30C0\u30FCchange\u30A4\u30D9\u30F3\u30C8:", val);
+          e.target.value = val;
+        });
+      }
+    }, 100);
   }
   submit(event) {
     console.log("\u{1F7E2} submit-handler: submit\u30A4\u30D9\u30F3\u30C8\u767A\u706B");
@@ -14376,8 +14386,8 @@ var submit_handler_controller_default = class extends Controller {
     const form = this.element;
     const formData = new FormData(form);
     const formDate = formData.get("emotion_log[date]");
-    const today = getTodayString();
-    if (formDate !== today) {
+    const today2 = getTodayString();
+    if (formDate !== today2) {
       console.log("\u4ECA\u65E5\u4EE5\u5916\u306E\u65E5\u4ED8\u306E\u305F\u3081HP\u30B2\u30FC\u30B8\u66F4\u65B0\u3057\u307E\u305B\u3093");
       fetch(form.action, {
         method: "POST",
@@ -14405,7 +14415,7 @@ var submit_handler_controller_default = class extends Controller {
     }).then((res) => res.json()).then((data) => {
       if (data.success) {
         const storedDate = localStorage.getItem("hpPercentageDate");
-        if (storedDate !== today) {
+        if (storedDate !== today2) {
           console.log("\u65E5\u4ED8\u304C\u5909\u308F\u3063\u305F\u305F\u3081HP\u30B2\u30FC\u30B8\u3092\u30EA\u30BB\u30C3\u30C8\uFF0850\u306B\u623B\u3059\uFF09");
           localStorage.setItem("hpPercentage", "50");
         }
@@ -14418,7 +14428,7 @@ var submit_handler_controller_default = class extends Controller {
           hpPercentage = Math.max(0, Math.min(100, hpPercentage));
         }
         localStorage.setItem("hpPercentage", hpPercentage.toString());
-        localStorage.setItem("hpPercentageDate", today);
+        localStorage.setItem("hpPercentageDate", today2);
         if (window.updateHPBar) window.updateHPBar();
         const toastEl = document.getElementById("save-toast");
         if (toastEl) {
@@ -14428,9 +14438,9 @@ var submit_handler_controller_default = class extends Controller {
         setTimeout(() => {
           window.location.href = data.redirect_url;
         }, 1500);
-        return;
+      } else {
+        alert("\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + (data.errors || []).join("\n"));
       }
-      alert("\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + (data.errors || []).join("\n"));
     }).catch((error2) => {
       console.error("\u9001\u4FE1\u30A8\u30E9\u30FC:", error2);
       alert("\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
@@ -14864,6 +14874,7 @@ window.updateHPBar = function() {
   hpPercentage = Math.min(100, Math.max(0, hpPercentage));
   const barWidth = hpPercentage + "%";
   hpBar.style.width = barWidth;
+  hpBar.dataset.width = barWidth;
   if (barWidthDisplay) barWidthDisplay.innerText = barWidth;
   if (hpPercentage <= 20) {
     hpBar.style.backgroundColor = "red";
@@ -14885,7 +14896,7 @@ window.goToRecommended = function() {
     alert("HP\u30D0\u30FC\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093");
     return;
   }
-  const widthStr = hpBar.style.width;
+  const widthStr = hpBar.dataset.width || hpBar.style.width;
   const hp = parseInt(widthStr);
   console.log("\u{1F525} \u8868\u793A\u4E2D\u306E\u30D0\u30FC\u304B\u3089\u53D6\u5F97\u3057\u305FHP\u5024:", hp);
   if (!isNaN(hp)) {
@@ -14901,19 +14912,24 @@ console.log("\u2705 HP\u30D0\u30FC\u66F4\u65B0\u30B9\u30AF\u30EA\u30D7\u30C8\u8A
 
 // app/javascript/application.js
 console.log("\u{1F525} application.js \u8AAD\u307F\u8FBC\u307F\u958B\u59CB", Date.now());
+var today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+var savedDate = localStorage.getItem("hpDate");
+if (savedDate !== today) {
+  localStorage.setItem("hpPercentage", "50");
+  localStorage.setItem("hpDate", today);
+  console.log("\u2705 HP\u3068\u65E5\u4ED8\u3092\u521D\u671F\u5316\u3057\u307E\u3057\u305F:", today);
+} else {
+  console.log("\u2705 \u65E2\u306B\u4FDD\u5B58\u3055\u308C\u305FHP\u3092\u4F7F\u7528\u4E2D:", localStorage.getItem("hpPercentage"));
+}
 Rails.start();
 window.bootstrap = bootstrap_esm_exports;
-window.goToRecommended = function() {
-  const storedHP = localStorage.getItem("hpPercentage");
-  const hp = parseInt(storedHP);
-  console.log("\u{1F525} localStorage\u304B\u3089\u53D6\u5F97\u3057\u305FHP\u5024:", hp);
-  if (!isNaN(hp)) {
-    window.location.href = `/emotion_logs/recommended?hp=${hp}`;
-  } else {
-    alert("HP\u30B2\u30FC\u30B8\u306E\u5024\u304C\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F");
-  }
-};
+document.addEventListener("turbo:visit", () => {
+  const loader = document.getElementById("loading-overlay");
+  if (loader) loader.style.display = "flex";
+});
 document.addEventListener("turbo:load", () => {
+  const loader = document.getElementById("loading-overlay");
+  if (loader) loader.style.display = "none";
   const recommendButton = document.getElementById("show-recommendations-btn");
   const hpBar = document.getElementById("hp-bar");
   if (recommendButton && hpBar) {

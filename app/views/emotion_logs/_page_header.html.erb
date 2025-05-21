@@ -1,0 +1,17 @@
+<% if defined?(bookmark_page) && bookmark_page.present? %>
+  <span class="bookmark_title"><%= bookmark_page %></span>
+<% elsif defined?(mypage_title) && mypage_title.present? %>
+  <span class="bookmark_title"><%= mypage_title %></span>
+<% elsif defined?(recommended_page) && recommended_page.present? %>
+  <span class="bookmark_title"><%= recommended_page %></span>
+<% else %>
+  <!-- 通常のストレスゲージ（HPバー） -->
+  <div id="hp-bar-container">
+    <span class="today_mental_text">
+      👆Today's stress level <span id="bar-width-display"></span>)👆
+    </span>
+    <p id="hp-status-text">メンタル正常</p>
+    <div id="hp-bar"></div>
+  </div>
+  <br>
+<% end %>
