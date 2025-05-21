@@ -656,40 +656,6 @@ h1 i.bi bi-heart-pulse {
   text-shadow: 0 0 6px #99ff99 !important;
 }
 
-// ブックマークタイトルバナー
-.bookmark_title {
-  /* もし絶対配置が不要なら、position: static に */
-  position: static;  /* または absolute を外す */
-  font-size: 35px;
-  font-family: "Orbitron", "Rajdhani", "Bebas Neue", "Michroma", sans-serif;
-  font-weight: 900;
-  color: white !important;
-  text-align: center;
-  letter-spacing: 3px;
-  background: linear-gradient(135deg, rgba(50, 0, 50, 0.7), rgba(0, 0, 0, 0.9));
-  padding: 10px 25px;
-  border-radius: 10px;
-  box-shadow: 0 0 20px rgba(255, 0, 255, 0.8), 0 0 30px rgba(255, 0, 255, 0.6);
-  text-shadow: 0 0 20px rgb(255, 255, 255), 0 0 35px rgba(255, 0, 255, 0.8), 0 0 45px rgba(255, 0, 255, 0.6);
-  transition: all 0.3s ease;
-  display: block;
-  width: 100%;
-  margin-top: 40px;  /* 適宜調整 */
-}
-
-// index細かい検索ボタン群
-.filter-box {
-  background: linear-gradient(145deg, #111111, #1a1a1a);
-  border-radius: 20px;
-  padding: 1.5rem;
-  backdrop-filter: blur(10px);
-  box-shadow:
-    0 0 12px rgba(143, 11, 83, 0.904),
-    0 0 24px rgba(199, 109, 154, 0.959);
-  font-weight: bold;
-  color: #f0f0f0;
-  border: 1px solid rgba(218, 39, 107, 0.945); /* ゴールド系 */
-}
 
 .filter-box h5 {
   font-size: 1rem;
