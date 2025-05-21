@@ -235,3 +235,20 @@ document.addEventListener("turbo:load", () => {
     });
   }
 });
+// ✅ モーダルの中身が追加されたことを監視してローディングを強制的に非表示
+const modalContentObserver = new MutationObserver(() => {
+  const modal = document.querySelector(".modal.show");
+  const modalContent = document.querySelector(".modal-content");
+  const loader = document.getElementById("loading-overlay");
+
+  if (modal && modalContent && loader && loader.style.display !== "none") {
+    console.log("✅ モーダルと中身を検出 → ローディングを非表示にします");
+    loader.style.display = "none";
+    modalContentObserver.disconnect();
+  }
+});
+
+modalContentObserver.observe(document.body, {
+  childList: true,
+  subtree: true,
+});
