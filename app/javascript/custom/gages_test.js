@@ -5,6 +5,7 @@ window.updateHPBar = function () {
   const hpBar = document.getElementById("hp-bar");
   const hpStatusText = document.getElementById("hp-status-text");
   const barWidthDisplay = document.getElementById("bar-width-display");
+  
 
   if (!hpBar || !hpStatusText) return;
 
@@ -17,6 +18,8 @@ window.updateHPBar = function () {
   const barWidth = hpPercentage + "%";
 
   hpBar.style.width = barWidth;
+  hpBar.dataset.width = barWidth;
+
   if (barWidthDisplay) barWidthDisplay.innerText = barWidth;
 
   if (hpPercentage <= 20) {
@@ -42,7 +45,8 @@ window.goToRecommended = function () {
     return;
   }
 
-  const widthStr = hpBar.style.width; // 例: "85%"
+const widthStr = hpBar.dataset.width || hpBar.style.width;
+  
   const hp = parseInt(widthStr);      // → 85
 
   console.log("🔥 表示中のバーから取得したHP値:", hp);
