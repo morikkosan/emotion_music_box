@@ -1,5 +1,3 @@
-require 'omniauth/strategies/soundcloud'
-
 OmniAuth::Strategies::SoundCloud.class_eval do
   def authorize_params
     super.tap do |params|
