@@ -6,6 +6,8 @@
 
 <%= render 'shared/header' %>
 
+  <% if user_signed_in? %>
+
 <% if @bookmark_page.present? %>
   <span class="bookmark_title">
     <%= @bookmark_page %>
@@ -29,11 +31,14 @@
   </div>
   <br>
 <% end %>
+<% end %>
 
 
 
-<br><br><br><br>
+
   <% if user_signed_in? %>
+  <br><br><br><br>
+
 <%= render 'super_search' %>
 <% end %>
 

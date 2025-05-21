@@ -14912,6 +14912,11 @@ window.goToRecommended = function() {
   }
 };
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("\u{1F4E6} DOMContentLoaded \u767A\u706B \u2192 HP\u30D0\u30FC\u66F4\u65B0");
+  window.updateHPBar();
+});
+document.addEventListener("turbo:load", () => {
+  console.log("\u{1F680} turbo:load \u767A\u706B \u2192 HP\u30D0\u30FC\u66F4\u65B0");
   window.updateHPBar();
 });
 console.log("\u2705 HP\u30D0\u30FC\u66F4\u65B0\u30B9\u30AF\u30EA\u30D7\u30C8\u8AAD\u307F\u8FBC\u307F\u5B8C\u4E86");
