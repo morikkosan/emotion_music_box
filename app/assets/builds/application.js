@@ -15107,6 +15107,20 @@ document.addEventListener("turbo:load", () => {
     });
   }
 });
+var modalContentObserver = new MutationObserver(() => {
+  const modal = document.querySelector(".modal.show");
+  const modalContent = document.querySelector(".modal-content");
+  const loader = document.getElementById("loading-overlay");
+  if (modal && modalContent && loader && loader.style.display !== "none") {
+    console.log("\u2705 \u30E2\u30FC\u30C0\u30EB\u3068\u4E2D\u8EAB\u3092\u691C\u51FA \u2192 \u30ED\u30FC\u30C7\u30A3\u30F3\u30B0\u3092\u975E\u8868\u793A\u306B\u3057\u307E\u3059");
+    loader.style.display = "none";
+    modalContentObserver.disconnect();
+  }
+});
+modalContentObserver.observe(document.body, {
+  childList: true,
+  subtree: true
+});
 /*! Bundled license information:
 
 @hotwired/turbo/dist/turbo.es2017-esm.js:
