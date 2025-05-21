@@ -45,7 +45,10 @@
   <%= yield %>
 
 <div id="loading-overlay" style="display: none;">
-  <div class="circle-packman-1"></div>
+  <div class="pacman-wrapper">
+    <div class="circle-packman-1"></div>
+    <div class="loading-text">Now Loading...</div>
+  </div>
 </div>
 <style>
   #loading-overlay {
@@ -58,6 +61,7 @@
     z-index: 9999;
   }
 </style>
+
 
   <!-- ✅ 保存完了トースト(簡易型ポップアップ) -->
   <div aria-live="polite" aria-atomic="true"
