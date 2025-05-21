@@ -8,32 +8,30 @@ import "./custom/gages_test";
 
 console.log("🔥 application.js 読み込み開始", Date.now());
 
-// 🌱 初期HPと日付の保存処理
-const today = new Date().toISOString().slice(0, 10);
-const savedDate = localStorage.getItem("hpDate");
-
-if (savedDate !== today) {
-  localStorage.setItem("hpPercentage", "50");
-  localStorage.setItem("hpDate", today);
-  console.log("✅ HPと日付を初期化しました:", today);
-} else {
-  console.log("✅ 既に保存されたHPを使用中:", localStorage.getItem("hpPercentage"));
-}
-
 Rails.start();
 window.bootstrap = bootstrap;
 
-// 🔄 ページ遷移開始時にローディング表示
+// ✅ Turboローディング制御まとめ
 document.addEventListener("turbo:visit", () => {
   const loader = document.getElementById("loading-overlay");
   if (loader) loader.style.display = "flex";
 });
 
-// ✅ turbo:load 1か所にまとめて全部統合
 document.addEventListener("turbo:load", () => {
-  // 🔽 ローディング非表示
   const loader = document.getElementById("loading-overlay");
   if (loader) loader.style.display = "none";
+
+  // 🌱 初期HPと日付の保存処理（ここに移動して確実にDOM読み込み後に実行）
+  const today = new Date().toISOString().slice(0, 10);
+  const savedDate = localStorage.getItem("hpDate");
+
+  if (savedDate !== today) {
+    localStorage.setItem("hpPercentage", "50");
+    localStorage.setItem("hpDate", today);
+    console.log("✅ HPと日付を初期化しました:", today);
+  } else {
+    console.log("✅ 既に保存されたHPを使用中:", localStorage.getItem("hpPercentage"));
+  }
 
   // 🔽 「おすすめ」ボタン処理
   const recommendButton = document.getElementById("show-recommendations-btn");
@@ -61,7 +59,7 @@ document.addEventListener("turbo:load", () => {
   const submitBtn = document.querySelector('form input[type="submit"]');
 
   if (![fileInput, inlinePreview, avatarUrlField, modalEl, cropContainer, cropImage, confirmBtn].every(Boolean)) {
-    console.error("❌ 必要な要素が見つかりません");
+    console.warn("⚠️ アバター関連の要素が見つかりません（このページでは不要の可能性あり）");
     return;
   }
 
