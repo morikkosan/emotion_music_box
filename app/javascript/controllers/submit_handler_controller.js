@@ -29,6 +29,8 @@ export default class extends Controller {
     console.log("🟢 submit-handler: submitイベント発火");
 
     event.preventDefault();
+    const loader = document.getElementById("loading-overlay");
+  if (loader) loader.style.display = "flex";
 
     if (this.hasSubmitTarget) this.submitTarget.disabled = true;
 
@@ -61,6 +63,8 @@ export default class extends Controller {
         })
         .finally(() => {
           if (this.hasSubmitTarget) this.submitTarget.disabled = false;
+           const loader = document.getElementById("loading-overlay");
+  if (loader) loader.style.display = "none";
         });
 
       return;
@@ -114,6 +118,8 @@ export default class extends Controller {
       })
       .finally(() => {
         if (this.hasSubmitTarget) this.submitTarget.disabled = false;
+         const loader = document.getElementById("loading-overlay");
+  if (loader) loader.style.display = "none";
       });
   }
 }
