@@ -3,7 +3,8 @@ require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
   # --- 本番環境でもコード／ビューを自動リロードする設定 ---
-  config.cache_classes = false
+  # デプロイ本番の時は　falseに 開発ではtrue
+  config.cache_classes = true
   config.eager_load    = false
   config.reload_classes_only_on_change = true
   config.file_watcher = ActiveSupport::EventedFileUpdateChecker
@@ -24,9 +25,13 @@ Rails.application.configure do
   # 開発用ホストを許可（yourproductiondomain.com を WSLでhosts設定した場合）
   config.hosts << "moriappli-emotion.com"
 
-  config.enable_reloading = true
-  config.eager_load = false                     # ← 既存設定と合わせてリロード機能を有効化
-  config.consider_all_requests_local = true
+# デプロイ本番の時は　falseに 開発ではtrue
+  config.enable_reloading = false
+  # デプロイ本番の時は　teureに 開発ではfalse
+  config.eager_load = true
+  # デプロイ本番の時は　falseに 開発ではtrue
+                # ← 既存設定と合わせてリロード機能を有効化
+  config.consider_all_requests_local = false
   config.server_timing = true
   config.action_controller.perform_caching = true
   config.action_controller.enable_fragment_cache_logging = true
