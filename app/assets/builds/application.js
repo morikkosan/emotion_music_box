@@ -14386,8 +14386,8 @@ var submit_handler_controller_default = class extends Controller {
     const form = this.element;
     const formData = new FormData(form);
     const formDate = formData.get("emotion_log[date]");
-    const today2 = getTodayString();
-    if (formDate !== today2) {
+    const today = getTodayString();
+    if (formDate !== today) {
       console.log("\u4ECA\u65E5\u4EE5\u5916\u306E\u65E5\u4ED8\u306E\u305F\u3081HP\u30B2\u30FC\u30B8\u66F4\u65B0\u3057\u307E\u305B\u3093");
       fetch(form.action, {
         method: "POST",
@@ -14415,7 +14415,7 @@ var submit_handler_controller_default = class extends Controller {
     }).then((res) => res.json()).then((data) => {
       if (data.success) {
         const storedDate = localStorage.getItem("hpPercentageDate");
-        if (storedDate !== today2) {
+        if (storedDate !== today) {
           console.log("\u65E5\u4ED8\u304C\u5909\u308F\u3063\u305F\u305F\u3081HP\u30B2\u30FC\u30B8\u3092\u30EA\u30BB\u30C3\u30C8\uFF0850\u306B\u623B\u3059\uFF09");
           localStorage.setItem("hpPercentage", "50");
         }
@@ -14428,7 +14428,7 @@ var submit_handler_controller_default = class extends Controller {
           hpPercentage = Math.max(0, Math.min(100, hpPercentage));
         }
         localStorage.setItem("hpPercentage", hpPercentage.toString());
-        localStorage.setItem("hpPercentageDate", today2);
+        localStorage.setItem("hpPercentageDate", today);
         if (window.updateHPBar) window.updateHPBar();
         const toastEl = document.getElementById("save-toast");
         if (toastEl) {
@@ -14912,15 +14912,6 @@ console.log("\u2705 HP\u30D0\u30FC\u66F4\u65B0\u30B9\u30AF\u30EA\u30D7\u30C8\u8A
 
 // app/javascript/application.js
 console.log("\u{1F525} application.js \u8AAD\u307F\u8FBC\u307F\u958B\u59CB", Date.now());
-var today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-var savedDate = localStorage.getItem("hpDate");
-if (savedDate !== today) {
-  localStorage.setItem("hpPercentage", "50");
-  localStorage.setItem("hpDate", today);
-  console.log("\u2705 HP\u3068\u65E5\u4ED8\u3092\u521D\u671F\u5316\u3057\u307E\u3057\u305F:", today);
-} else {
-  console.log("\u2705 \u65E2\u306B\u4FDD\u5B58\u3055\u308C\u305FHP\u3092\u4F7F\u7528\u4E2D:", localStorage.getItem("hpPercentage"));
-}
 Rails.start();
 window.bootstrap = bootstrap_esm_exports;
 document.addEventListener("turbo:visit", () => {
@@ -14930,6 +14921,15 @@ document.addEventListener("turbo:visit", () => {
 document.addEventListener("turbo:load", () => {
   const loader = document.getElementById("loading-overlay");
   if (loader) loader.style.display = "none";
+  const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+  const savedDate = localStorage.getItem("hpDate");
+  if (savedDate !== today) {
+    localStorage.setItem("hpPercentage", "50");
+    localStorage.setItem("hpDate", today);
+    console.log("\u2705 HP\u3068\u65E5\u4ED8\u3092\u521D\u671F\u5316\u3057\u307E\u3057\u305F:", today);
+  } else {
+    console.log("\u2705 \u65E2\u306B\u4FDD\u5B58\u3055\u308C\u305FHP\u3092\u4F7F\u7528\u4E2D:", localStorage.getItem("hpPercentage"));
+  }
   const recommendButton = document.getElementById("show-recommendations-btn");
   const hpBar = document.getElementById("hp-bar");
   if (recommendButton && hpBar) {
@@ -14952,7 +14952,7 @@ document.addEventListener("turbo:load", () => {
   const avatarUrlField = document.getElementById("avatarUrlField");
   const submitBtn = document.querySelector('form input[type="submit"]');
   if (![fileInput, inlinePreview, avatarUrlField, modalEl, cropContainer, cropImage, confirmBtn].every(Boolean)) {
-    console.error("\u274C \u5FC5\u8981\u306A\u8981\u7D20\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093");
+    console.warn("\u26A0\uFE0F \u30A2\u30D0\u30BF\u30FC\u95A2\u9023\u306E\u8981\u7D20\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\uFF08\u3053\u306E\u30DA\u30FC\u30B8\u3067\u306F\u4E0D\u8981\u306E\u53EF\u80FD\u6027\u3042\u308A\uFF09");
     return;
   }
   const modal = new Modal(modalEl);
