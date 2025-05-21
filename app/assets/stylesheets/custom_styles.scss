@@ -486,22 +486,32 @@ h1 i.bi bi-heart-pulse {
 
 /* パックマンを包むラッパー要素（HTMLに追加してください） */
 .pacman-wrapper {
-  position: absolute; /* 画面上で自由に配置できるように */
-  top: 50%;         /* 垂直方向の位置調整 */
-  transform: translateY(-50%);
-  /* 左から右へ移動するアニメーションを追加 */
-  animation: movePacman 5s linear infinite;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  top: 0;
+  transform: none; /* ← 中央固定なので不要 */
+  animation: none; /* ← 横移動アニメーションを無効化 */
 }
 
-/* 左から右へ移動するアニメーション */
-@keyframes movePacman {
-  0% {
-    left: -150px;  /* 画面外から開始 */
-  }
-  100% {
-    left: 100vw;   /* 画面の右端まで移動 */
-  }
+
+
+.loading-text {
+  margin-top: 1rem;
+  font-size: 1.2rem;
+  color: #ff4fa7;
+  font-weight: bold;
+  text-shadow: 0 0 8px #ff4fa7;
+  animation: loading-blink 1.5s infinite;
+  text-align: center;
 }
+
+@keyframes loading-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 
 
 
