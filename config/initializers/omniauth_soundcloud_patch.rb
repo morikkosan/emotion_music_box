@@ -1,4 +1,4 @@
-require "#{Rails.root}/app/strategies/omniauth/strategies/sound_cloud"
+require 'omniauth/strategies/soundcloud'
 
 OmniAuth::Strategies::SoundCloud.class_eval do
   def authorize_params
