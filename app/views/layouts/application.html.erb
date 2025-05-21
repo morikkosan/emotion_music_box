@@ -44,19 +44,20 @@
 
   <%= yield %>
 
-  <!-- ✅ BGM 再生ボタン用関数 -->
-  <script>
-    function toggleAudio () {
-      const audio = document.getElementById('audioPlayer');
-      const icon  = document.getElementById('audioButtonIcon');
-      if (!audio) return;
-      if (audio.paused) {
-        audio.play();   icon.textContent = '❚❚';
-      } else {
-        audio.pause();  icon.textContent = '♪';
-      }
-    }
-  </script>
+<div id="loading-overlay" style="display: none;">
+  <div class="circle-packman-1"></div>
+</div>
+<style>
+  #loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+</style>
 
   <!-- ✅ 保存完了トースト(簡易型ポップアップ) -->
   <div aria-live="polite" aria-atomic="true"

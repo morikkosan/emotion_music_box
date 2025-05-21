@@ -9,7 +9,20 @@ export default class extends Controller {
 
   connect() {
     console.log("📝 submit-handler connected");
+
     if (this.hasSubmitTarget) this.submitTarget.disabled = false;
+
+    // 🩹 カレンダー日付のバグ対策：描画が完全に終わったあとにイベントを設定
+    setTimeout(() => {
+      const dateInput = this.element.querySelector('input[type="date"]');
+      if (dateInput) {
+        dateInput.addEventListener("change", (e) => {
+          const val = e.target.value;
+          console.log("📌 遅延bind: カレンダーchangeイベント:", val);
+          e.target.value = val; // 再代入で安定させる
+        });
+      }
+    }, 100); // ← 必要なら200msに増やしてもOK
   }
 
   submit(event) {
@@ -25,7 +38,6 @@ export default class extends Controller {
     const formDate = formData.get("emotion_log[date]");
     const today = getTodayString();
 
-    // 【日付の判定】
     if (formDate !== today) {
       console.log("今日以外の日付のためHPゲージ更新しません");
 
@@ -54,7 +66,6 @@ export default class extends Controller {
       return;
     }
 
-    // 今日の日付ならHPゲージ更新処理も含めて送信
     fetch(form.action, {
       method: "POST",
       headers: { Accept: "application/json" },
@@ -93,10 +104,9 @@ export default class extends Controller {
           setTimeout(() => {
             window.location.href = data.redirect_url;
           }, 1500);
-          return;
+        } else {
+          alert("保存に失敗しました: " + (data.errors || []).join("\n"));
         }
-
-        alert("保存に失敗しました: " + (data.errors || []).join("\n"));
       })
       .catch(error => {
         console.error("送信エラー:", error);
