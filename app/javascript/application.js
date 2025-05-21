@@ -1,5 +1,3 @@
-console.log("🔥 application.js 読み込み開始", Date.now());
-
 import Rails from "@rails/ujs";
 import "@hotwired/turbo-rails";
 import * as bootstrap from "bootstrap";
@@ -8,30 +6,74 @@ import "./custom/comments";
 import "./custom/flash_messages";
 import "./custom/gages_test";
 
+console.log("🔥 application.js 読み込み開始", Date.now());
+
 Rails.start();
 window.bootstrap = bootstrap;
 
-window.goToRecommended = function () {
-  const hp = localStorage.getItem("hp") || 50;
-  const url = `/emotion_logs/recommended?hp=${encodeURIComponent(hp)}`;
-  window.location.href = url;
-};
+// ✅ Turboローディング制御まとめ
+document.addEventListener("turbo:visit", () => {
+  const loader = document.getElementById("loading-overlay");
+  if (loader) loader.style.display = "flex";
+});
 
 document.addEventListener("turbo:load", () => {
-  const recommendButton = document.getElementById("show-recommendations-btn");
-  const hpBar = document.getElementById("hp-bar");
-  if (recommendButton && hpBar) {
+  const loader = document.getElementById("loading-overlay");
+  if (loader) loader.style.display = "none";
+
+  // 🌱 初期HPと日付の保存処理（ここに移動して確実にDOM読み込み後に実行）
+  const today = new Date().toISOString().slice(0, 10);
+  const savedDate = localStorage.getItem("hpDate");
+
+  if (savedDate !== today) {
+    localStorage.setItem("hpPercentage", "50");
+    localStorage.setItem("hpDate", today);
+    console.log("✅ HPと日付を初期化しました:", today);
+  } else {
+    console.log("✅ 既に保存されたHPを使用中:", localStorage.getItem("hpPercentage"));
+  }
+
+  //ローディングを非表示にする
+document.addEventListener("turbo:frame-load", () => {
+  const loader = document.getElementById("loading-overlay");
+  if (loader) {
+    console.log("🟢 turbo:frame-load → ローディング非表示");
+    loader.style.display = "none";
+  }
+});
+  // ✅ Turboフレーム内にモーダルが差し込まれた時にもローディングを確実に消す2回目
+const modalFixObserver = new MutationObserver(() => {
+  const modal = document.querySelector(".modal.show");
+  const modalContent = document.querySelector(".modal-content");
+  const loader = document.getElementById("loading-overlay");
+
+  if (modal && modalContent && loader && loader.style.display !== "none") {
+    console.log("🛠 turbo-frame + modal を検出 → ローディング非表示");
+    loader.style.display = "none";
+  }
+});
+
+modalFixObserver.observe(document.body, {
+  childList: true,
+  subtree: true,
+});
+
+
+  // 🔽 「おすすめ」ボタン処理
+    const recommendButton = document.getElementById("show-recommendations-btn");
+  if (recommendButton) {
     recommendButton.addEventListener("click", () => {
-      const widthStr = hpBar.style.width;
-      const hp = parseInt(widthStr);
+      const storedHP = localStorage.getItem("hpPercentage");
+      const hp = parseInt(storedHP);
       if (!isNaN(hp)) {
         window.location.href = `/emotion_logs?hp=${hp}`;
       } else {
-        alert("HPゲージの値が取得できませんでした");
+        alert("HPゲージの値が取得できませんでした（localStorageに保存されていません）");
       }
     });
   }
 
+  // 🔽 アバター画像のアップロード処理（Cropper）
   const fileInput = document.getElementById("avatarInput");
   const inlinePreview = document.getElementById("avatarPreviewInline");
   const modalEl = document.getElementById("avatarCropModal");
@@ -42,7 +84,7 @@ document.addEventListener("turbo:load", () => {
   const submitBtn = document.querySelector('form input[type="submit"]');
 
   if (![fileInput, inlinePreview, avatarUrlField, modalEl, cropContainer, cropImage, confirmBtn].every(Boolean)) {
-    console.error("❌ 必要な要素が見つかりません");
+    console.warn("⚠️ アバター関連の要素が見つかりません（このページでは不要の可能性あり）");
     return;
   }
 
@@ -218,3 +260,34 @@ document.addEventListener("turbo:load", () => {
     });
   }
 });
+// ✅ モーダルの中身が追加されたことを監視してローディングを強制的に非表示
+const modalContentObserver = new MutationObserver(() => {
+  const modal = document.querySelector(".modal.show");
+  const modalContent = document.querySelector(".modal-content");
+  const loader = document.getElementById("loading-overlay");
+
+  if (modal && modalContent && loader && loader.style.display !== "none") {
+    console.log("✅ モーダルと中身を検出 → ローディングを非表示にします");
+    loader.style.display = "none";
+    modalContentObserver.disconnect();
+  }
+});
+
+modalContentObserver.observe(document.body, {
+  childList: true,
+  subtree: true,
+});
+
+// ✅ グローバル関数として定義することで onclick="goToRecommended()" が動くようにする
+window.goToRecommended = function () {
+  const storedHP = localStorage.getItem("hpPercentage");
+  const hp = parseInt(storedHP);
+
+  console.log("🔥 goToRecommended 実行: HP =", hp);
+
+  if (!isNaN(hp)) {
+    window.location.href = `/emotion_logs/recommended?hp=${hp}`;
+  } else {
+    alert("HPゲージの値が取得できませんでした（localStorageに保存されていません）");
+  }
+};

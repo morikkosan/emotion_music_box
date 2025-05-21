@@ -1,0 +1,226 @@
+
+  .mypage-item {
+    width: 160px;
+    height: 160px;
+    background: rgba(0, 0, 0, 0.6);
+    border: none;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    cursor: pointer;
+  }
+
+  .mypage-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .mypage-item.search-item.wide {
+    width: 240px;
+  }
+
+  .mypage-icon {
+    display: block;
+    margin: 0 auto;
+    max-width: 90%;
+  }
+
+  .mypage-text {
+    margin-top: 0.5rem;
+    color: #fff;
+    font-size: 1rem;
+    text-align: center;
+  }
+
+  .user-dropdown-wrapper {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+  }
+
+  .user-dropdown {
+    display: inline-block;
+    position: relative;
+  }
+
+  .user-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: default;
+  }
+
+  .user-bar img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+  }
+
+  .user-bar span {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 500;
+     box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    0 0 12px rgba(230, 0, 255, 0.3),
+    0 0 24px rgba(230, 0, 255, 0.2);
+  }
+
+  .dropdown-menu {
+    display: none;
+    background-color: #222;
+    padding: 0.75rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    position: absolute;
+    top: 100%;
+    right: 0;
+    min-width: 200px;
+  }
+
+  .user-dropdown:hover .dropdown-menu,
+  .dropdown-menu:hover {
+    display: block;
+     box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    0 0 12px rgba(230, 0, 255, 0.3),
+    0 0 24px rgba(230, 0, 255, 0.2);
+  }
+
+  .dropdown-item {
+    color: #fff;
+    padding: 0.6rem 0.9rem;
+    display: block;
+    font-size: 1rem;
+    text-decoration: none;
+  }
+
+  .dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    
+  }
+
+  .dj-icon-fixed {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 2000;
+  }
+
+  .dj-icon-fixed img {
+    width: 220px;     /* 好みに応じて調整可能 */
+    height: auto;
+    display: block;
+  }
+
+.mypage-item select.form-control {
+  font-weight: bold;                     /* 文字を太く */
+  color: #fff;                           /* 白文字に統一（任意） */
+  background-color: #333;                /* ダーク背景 */
+  border: 1px solid #666;                /* 枠線調整 */
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.4); /* 内側の影で立体感 */
+
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.mypage-item select.form-control:hover {
+  box-shadow:
+    0 0 6px rgba(230, 0, 255, 0.5),
+    0 0 12px rgba(230, 0, 255, 0.3);     /* 紫がかったネオン風 */
+  border-color: rgba(230, 0, 255, 0.6);  /* 境界線も光るように */
+  cursor: pointer;
+}
+
+.mypage-item input.form-control[type="text"] {
+  font-weight: bold;
+  color: #fff;                              /* ← 文字を白に */
+  background-color: #333;                   /* ダーク背景 */
+  border: 1px solid #666;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.mypage-item input.form-control[type="text"]::placeholder {
+  color: #aaa;                              /* プレースホルダーは淡いグレーに */
+}
+
+.mypage-item input.form-control[type="text"]:hover,
+.mypage-item input.form-control[type="text"]:focus {
+  box-shadow:
+    0 0 6px rgba(0, 170, 255, 0.5),
+    0 0 12px rgba(0, 170, 255, 0.3);         /* 青く光るエフェクト */
+  border-color: rgba(0, 170, 255, 0.6);
+  outline: none;
+}
+
+/* 入力欄の下角を削る */
+.no-bottom-radius {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* 候補リストの上角を削る + デザイン */
+.tag-suggestions {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  background-color: #222;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.mypage-item.search-item.wide {
+  overflow: visible;
+  height: auto;
+  min-height: 160px;
+}
+
+
+// ブックマークタイトルバナー
+.bookmark_title {
+  /* もし絶対配置が不要なら、position: static に */
+  position: static;  /* または absolute を外す */
+  font-size: 35px;
+  font-family: "Orbitron", "Rajdhani", "Bebas Neue", "Michroma", sans-serif;
+  font-weight: 900;
+  color: white !important;
+  text-align: center;
+  letter-spacing: 3px;
+  background: linear-gradient(135deg, rgba(50, 0, 50, 0.7), rgba(0, 0, 0, 0.9));
+  padding: 10px 25px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.8), 0 0 30px rgba(255, 0, 255, 0.6);
+  text-shadow: 0 0 20px rgb(255, 255, 255), 0 0 35px rgba(255, 0, 255, 0.8), 0 0 45px rgba(255, 0, 255, 0.6);
+  transition: all 0.3s ease;
+  display: block;
+  width: 100%;
+  margin-top: 40px;  /* 適宜調整 */
+}
+
+// index細かい検索ボタン群
+.filter-box {
+  background: linear-gradient(145deg, #111111, #1a1a1a);
+  border-radius: 20px;
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 0 12px rgba(143, 11, 83, 0.904),
+    0 0 24px rgba(199, 109, 154, 0.959);
+  font-weight: bold;
+  color: #f0f0f0;
+  border: 1px solid rgba(218, 39, 107, 0.945); /* ゴールド系 */
+}
+
+
+// ユーザーめんっゆーアイコンサイズ
+.dropdown-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 4px;
+  flex-shrink: 0;
+}

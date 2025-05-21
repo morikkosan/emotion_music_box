@@ -2,15 +2,11 @@ class EmotionLogsController < ApplicationController
   before_action :authenticate_user!, except: %i[index show]
   before_action :ensure_owner, only: [:edit, :update, :destroy]
 
-  ### ----  public アクション  ---- ###
-
   def index
     Rails.logger.error "★ index: FLASH notice = #{flash[:notice].inspect}, session = #{session.id}"
-    sleep 2
 
     @emotion_logs = EmotionLog.includes(:user, :bookmarks, :tags)
 
-    # --- emotion / genre 絞り込み ---
     if params[:emotion].present?
       @emotion_logs = @emotion_logs.where(emotion: params[:emotion])
     elsif params[:hp].present?
@@ -45,21 +41,22 @@ class EmotionLogsController < ApplicationController
   end
 
   def show
-    @emotion_log = EmotionLog.find(params[:id])
-    @comments = Comment.where(emotion_log_id: @emotion_log.id)
-                       .includes(:user, :comment_reactions)
-                       .order(created_at: :desc)
+  @emotion_log = EmotionLog.find(params[:id])
+  @comments = Comment.where(emotion_log_id: @emotion_log.id)
+                  .includes(:user, :comment_reactions)
+                  .order(created_at: :desc)
+                  .page(params[:page])
+                  .per(10)
 
-    @reaction_counts = CommentReaction
-                         .where(comment_id: @comments.map(&:id))
-                         .group(:comment_id, :kind)
-                         .count
+  @reaction_counts = CommentReaction.where(comment_id: @comments.map(&:id)).group(:comment_id, :kind).count
+  @user_reactions = current_user&.comment_reactions&.where(comment_id: @comments.map(&:id))&.pluck(:comment_id, :kind)&.to_h || {}
 
-    @user_reactions = current_user&.comment_reactions
-                                  &.where(comment_id: @comments.map(&:id))
-                                  &.pluck(:comment_id, :kind)
-                                  &.to_h || {}
+  respond_to do |format|
+    format.html
+    format.turbo_stream
   end
+end
+
 
   def new
     @emotion_log = EmotionLog.new(music_url: params[:music_url], track_name: params[:track_name])
@@ -76,15 +73,9 @@ class EmotionLogsController < ApplicationController
     Rails.logger.error "★ 計算した hp_percentage = #{hp_percentage}"
 
     if @emotion_log.save
-      render json: {
-        success: true,
-        message: '記録が保存されました',
-        redirect_url: emotion_logs_path,
-        hpPercentage: hp_percentage
-      }
+      render json: { success: true, message: '記録が保存されました', redirect_url: emotion_logs_path, hpPercentage: hp_percentage }
     else
-      render json: { success: false, errors: @emotion_log.errors.full_messages },
-             status: :unprocessable_entity
+      render json: { success: false, errors: @emotion_log.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
@@ -98,15 +89,9 @@ class EmotionLogsController < ApplicationController
 
     if @emotion_log.update(emotion_log_params)
       hp_percentage = calculate_hp(@emotion_log.emotion)
-      render json: {
-        success: true,
-        message: '記録が更新されました',
-        redirect_url: emotion_logs_path,
-        hpPercentage: hp_percentage
-      }
+      render json: { success: true, message: '記録が更新されました', redirect_url: emotion_logs_path, hpPercentage: hp_percentage }
     else
-      render json: { success: false, errors: @emotion_log.errors.full_messages },
-             status: :unprocessable_entity
+      render json: { success: false, errors: @emotion_log.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
@@ -114,15 +99,25 @@ class EmotionLogsController < ApplicationController
     log = EmotionLog.find(params[:id])
     dom_key = view_context.dom_id(log)
     log.destroy
-    render turbo_stream: turbo_stream.remove(dom_key)
+    render turbo_stream: turbo_stream.remove(dom_key) + turbo_stream.append(
+  "modal-container",
+  view_context.tag.div(
+    "",  # 中身は空でもOK
+    id: "flash-container",
+    data: {
+      flash_notice: "投稿を削除しました",
+      flash_alert:  nil
+    }
+  )
+)
   end
+
+
 
   def form
     @emotion_log = EmotionLog.new(music_url: params[:music_url], track_name: params[:track_name])
     respond_to do |format|
-      format.turbo_stream { render turbo_stream: turbo_stream.replace('modal-content',
-                                                                      partial: 'emotion_logs/form',
-                                                                      locals: { emotion_log: @emotion_log }) }
+      format.turbo_stream { render turbo_stream: turbo_stream.replace('modal-content', partial: 'emotion_logs/form', locals: { emotion_log: @emotion_log }) }
       format.html { redirect_to emotion_logs_path }
     end
   end
@@ -143,7 +138,7 @@ class EmotionLogsController < ApplicationController
   end
 
   def recommended
-    hp = params[:hp].to_i
+  hp = params[:hp].to_i.clamp(0, 100)
     emotion = case hp
               when 0..1 then "限界"
               when 2..25 then "イライラ"
@@ -164,32 +159,31 @@ class EmotionLogsController < ApplicationController
     render :index
   end
 
-  ### ----  private 以下 ---- ###
-
   private
 
   def apply_sort_and_period_filters(logs)
-    # 並び順
-    logs = case params[:sort]
-           when "new"      then logs.order(created_at: :desc)
-           when "old"      then logs.order(created_at: :asc)
-           when "likes"    then logs.left_joins(:bookmarks).group("emotion_logs.id").order("COUNT(bookmarks.id) DESC")
-           when "comments" then logs.left_joins(:comments).group("emotion_logs.id").order("COUNT(comments.id) DESC")
-           else logs
-           end
+  sort_param = params[:sort].presence || "new"
 
-    # 期間フィルター
-    logs = case params[:period]
-           when "today"    then logs.where(date: Date.today)
-           when "week"     then logs.where(date: 1.week.ago.to_date..Date.today)
-           when "month"    then logs.where(date: 1.month.ago.to_date..Date.today)
-           when "halfyear" then logs.where(date: 6.months.ago.to_date..Date.today)
-           when "year"     then logs.where(date: 1.year.ago.to_date..Date.today)
-           else logs
-           end
+  logs = case sort_param
+         when "new"      then logs.newest
+         when "old"      then logs.oldest
+         when "likes"    then logs.by_bookmarks
+         when "comments" then logs.by_comments
+         else logs
+         end
 
-    logs
-  end
+  logs = case params[:period]
+         when "today"    then logs.for_today
+         when "week"     then logs.for_week
+         when "month"    then logs.for_month
+         when "halfyear" then logs.for_half_year
+         when "year"     then logs.for_year
+         else logs
+         end
+
+  logs
+end
+
 
   def emotion_log_params
     params.require(:emotion_log).permit(:date, :emotion, :description, :music_url, :track_name, :tag_names)

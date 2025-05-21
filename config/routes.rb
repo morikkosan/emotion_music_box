@@ -36,6 +36,7 @@ Rails.application.routes.draw do
   get '/soundcloud_client_id',   to: 'sound_cloud#client_id'
   get '/soundcloud/search',      to: 'sound_cloud#search'
   get "tags/search", to: "tags#search"
+  get "/terms", to: "pages#terms", as: :terms
 
   # PWA／ヘルスチェック
   get 'up',               to: 'rails/health#show',           as: :rails_health_check

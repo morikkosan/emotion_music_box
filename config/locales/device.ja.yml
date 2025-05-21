@@ -4,8 +4,15 @@ ja:
       signed_in: "ログインに成功しました！"
       signed_out: "ログアウトに成功しました！"
     failure:
+      unauthenticated: "ログインしてください。"
+      user:
+        unauthenticated: "ログインが必要です。"
       invalid: "ログインに失敗しました・・"
       already_authenticated: "すでにログイン済みです"
+      not_found_in_database: "そのメールアドレスまたはパスワードは登録されていません。"
+      timeout: "セッションの有効期限が切れました。もう一度ログインしてください。"
+      inactive: "このアカウントは現在無効になっています。"
+      locked: "アカウントがロックされています。"
     omniauth_callbacks:
       success: "%{kind}アカウントでログインしました。"
       failure: "%{kind}アカウントでのログインに失敗しました。"
