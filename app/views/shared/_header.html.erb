@@ -1,186 +1,4 @@
-<style>
-  .mypage-item {
-    width: 160px;
-    height: 160px;
-    background: rgba(0, 0, 0, 0.6);
-    border: none;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-    cursor: pointer;
-  }
 
-  .mypage-item:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
-  }
-
-  .mypage-item.search-item.wide {
-    width: 240px;
-  }
-
-  .mypage-icon {
-    display: block;
-    margin: 0 auto;
-    max-width: 90%;
-  }
-
-  .mypage-text {
-    margin-top: 0.5rem;
-    color: #fff;
-    font-size: 1rem;
-    text-align: center;
-  }
-
-  .user-dropdown-wrapper {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-  }
-
-  .user-dropdown {
-    display: inline-block;
-    position: relative;
-  }
-
-  .user-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    cursor: default;
-  }
-
-  .user-bar img {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-  }
-
-  .user-bar span {
-    color: #fff;
-    font-size: 1.1rem;
-    font-weight: 500;
-     box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.4),
-    0 0 12px rgba(230, 0, 255, 0.3),
-    0 0 24px rgba(230, 0, 255, 0.2);
-  }
-
-  .dropdown-menu {
-    display: none;
-    background-color: #222;
-    padding: 0.75rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    position: absolute;
-    top: 100%;
-    right: 0;
-    min-width: 200px;
-  }
-
-  .user-dropdown:hover .dropdown-menu,
-  .dropdown-menu:hover {
-    display: block;
-     box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.4),
-    0 0 12px rgba(230, 0, 255, 0.3),
-    0 0 24px rgba(230, 0, 255, 0.2);
-  }
-
-  .dropdown-item {
-    color: #fff;
-    padding: 0.6rem 0.9rem;
-    display: block;
-    font-size: 1rem;
-    text-decoration: none;
-  }
-
-  .dropdown-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    
-  }
-
-  .dj-icon-fixed {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    z-index: 2000;
-  }
-
-  .dj-icon-fixed img {
-    width: 220px;     /* 好みに応じて調整可能 */
-    height: auto;
-    display: block;
-  }
-
-.mypage-item select.form-control {
-  font-weight: bold;                     /* 文字を太く */
-  color: #fff;                           /* 白文字に統一（任意） */
-  background-color: #333;                /* ダーク背景 */
-  border: 1px solid #666;                /* 枠線調整 */
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.4); /* 内側の影で立体感 */
-
-  transition: box-shadow 0.25s ease, border-color 0.25s ease;
-}
-
-.mypage-item select.form-control:hover {
-  box-shadow:
-    0 0 6px rgba(230, 0, 255, 0.5),
-    0 0 12px rgba(230, 0, 255, 0.3);     /* 紫がかったネオン風 */
-  border-color: rgba(230, 0, 255, 0.6);  /* 境界線も光るように */
-  cursor: pointer;
-}
-
-.mypage-item input.form-control[type="text"] {
-  font-weight: bold;
-  color: #fff;                              /* ← 文字を白に */
-  background-color: #333;                   /* ダーク背景 */
-  border: 1px solid #666;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
-
-  transition: box-shadow 0.25s ease, border-color 0.25s ease;
-}
-
-.mypage-item input.form-control[type="text"]::placeholder {
-  color: #aaa;                              /* プレースホルダーは淡いグレーに */
-}
-
-.mypage-item input.form-control[type="text"]:hover,
-.mypage-item input.form-control[type="text"]:focus {
-  box-shadow:
-    0 0 6px rgba(0, 170, 255, 0.5),
-    0 0 12px rgba(0, 170, 255, 0.3);         /* 青く光るエフェクト */
-  border-color: rgba(0, 170, 255, 0.6);
-  outline: none;
-}
-
-/* 入力欄の下角を削る */
-.no-bottom-radius {
-  border-bottom-left-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
-}
-
-/* 候補リストの上角を削る + デザイン */
-.tag-suggestions {
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-  background-color: #222;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
-}
-
-.mypage-item.search-item.wide {
-  overflow: visible;
-  height: auto;
-  min-height: 160px;
-}
-
-
-</style>
 
 
 <div class="container mt-5 position-relative">
@@ -193,29 +11,46 @@
 
 
   <% if user_signed_in? %>
-    <div class="user-dropdown-wrapper">
-      <div class="user-dropdown">
-        <div class="user-bar">
-          <%= image_tag current_user.profile_avatar_url, size: "32x32", class: "rounded-circle", alt: current_user.name %>
+  <div class="user-dropdown-wrapper">
+    <div class="user-dropdown">
+      <div class="user-bar">
+        <%= image_tag current_user.profile_avatar_url, size: "32x32", class: "rounded-circle", alt: current_user.name %>
+        <span class="ms-2 text-white"><%= current_user.name %></span>
+      </div>
 
-          <span class="ms-2 text-white"><%= current_user.name %></span>
-        </div>
-        <div class="dropdown-menu">
-          <%= link_to "ログアウト", destroy_user_session_path,
-            method: :delete,
-            data: { turbo: false },
-            id: "logout-link",
-            class: "dropdown-item text-danger" %>
+      <div class="dropdown-menu">
 
-          <div class="dropdown-divider"></div>
-          <%= link_to 'プロフィール編集', edit_user_registration_path, class: 'dropdown-item' %>
-          <%= link_to 'マイページ', my_emotion_logs_path, class: 'dropdown-item' %>
-          <%= link_to 'お気に入りリスト', bookmarks_emotion_logs_path, class: 'dropdown-item' %>
-          <%= link_to 'お問い合わせ', '#', class: 'dropdown-item' %>
-        </div>
+        <%= link_to destroy_user_session_path,
+                    method: :delete,
+                    data: { turbo: false },
+                    id: "logout-link",
+                    class: "dropdown-item d-flex align-items-center text-danger" do %>
+          <%= image_tag "log_out.png", class: "dropdown-icon me-2", alt: "ログアウト" %>
+          ログアウト
+        <% end %>
+
+        <div class="dropdown-divider"></div>
+
+        <%= link_to edit_user_registration_path, class: "dropdown-item d-flex align-items-center" do %>
+          <%= image_tag "profile_edit.png", class: "dropdown-icon me-2", alt: "プロフィール編集" %>
+          プロフィール編集
+        <% end %>
+
+        <%= link_to my_emotion_logs_path, class: "dropdown-item d-flex align-items-center" do %>
+          <%= image_tag "test1.png", class: "dropdown-icon me-2", alt: "マイページ" %>
+          マイページ
+        <% end %>
+
+        <%= link_to "#", class: "dropdown-item d-flex align-items-center" do %>
+          <%= image_tag "form_contact.png", class: "dropdown-icon me-2", alt: "お問い合わせ" %>
+          お問い合わせ
+        <% end %>
+
       </div>
     </div>
-  <% end %>
+  </div>
+<% end %>
+
 </div>
 
 
@@ -281,45 +116,36 @@
 
 
 
+
 <div class="d-flex justify-content-center align-items-start flex-wrap mt-4" style="gap: 1rem;">
   <!-- EMOTION -->
   <div class="mypage-item search-item wide">
-    <div style="color: magenta; font-weight: bold; font-size: 1rem; margin-bottom: 0.3rem; text-align: center;">
-      EMOTION
-    </div>
-    <%= form_with url: emotion_logs_path, method: :get, local: true do |f| %>
-      <%= select_tag :emotion,
-                     options_for_select(
-                       [['選択しない', ''], ['最高', '最高'], ['気分良い', '気分良い'],
-                        ['いつも通り', 'いつも通り'], ['イライラ', 'イライラ'], ['限界', '限界']],
-                     selected: params[:emotion]
-                     ),
-                     class: 'form-control',
-                     onchange: 'this.form.submit()' %>
-      <%= hidden_field_tag :genre, params[:genre] %>
-    <% end %>
+  <div style="color: magenta; font-weight: bold; font-size: 1rem; margin-bottom: 0.3rem; text-align: center;">
+    EMOTION
   </div>
-
-<!-- 中央の「同士を探す」 -->
-<div class="mypage-item d-flex justify-content-center <div class="mypage-item d-flex flex-column justify-content-center align-items-center"
-     style="width: 160px; height: 160px; background: rgba(0, 0, 0, 0.6); border-radius: 8px; box-shadow: none; cursor: default;">
-  
-  <span style="color: #ff66cc; font-weight: bold; font-size: 1.1rem; text-shadow: 0 0 8px rgba(255, 102, 204, 0.5); text-align: center;">
-    ←同士を探す→
-  </span>
-
-  <%= link_to '検索リセット', emotion_logs_path,
-              class: 'btn btn-sm mt-2',
-              style: 'color: #fff; background-color: #555;
-                      border: none; border-radius: 20px;
-                      padding: 0.3rem 0.7rem;
-                      text-shadow: 0 0 6px #f0f;
-                      transition: all 0.2s ease;' %>
-<%# ↑ ボタン風リンクとして実装 %>
+  <%= form_with url: emotion_logs_path,
+                method: :get,
+                data: { turbo_frame: "logs_list" },
+                html: { class: "w-100 h-100 d-flex flex-column justify-content-center align-items-center" } do %>
+    <%= select_tag :emotion,
+                   options_for_select(
+                     [['選択しない', ''], ['最高', '最高'], ['気分良い', '気分良い'],
+                      ['いつも通り', 'いつも通り'], ['イライラ', 'イライラ'], ['限界', '限界']],
+                   selected: params[:emotion]
+                   ),
+                   class: 'form-control',
+                   onchange: 'this.form.submit()' %>
+    <%= hidden_field_tag :genre, params[:genre] %>
+  <% end %>
 </div>
 
+<!-- 🔁 検索リセットボタン（ジャンルとタグの中間） -->
+<!-- 🔁 検索リセットボタン（ジャンルとタグの中間） -->
+<div class="text-center my-3">
+  <%= link_to "検索をリセット", emotion_logs_path, class: "btn btn-outline-secondary neon-btn" %>
+</div>
 
-  <!-- TAG -->
+<!-- TAGフォームも同様に修正 -->
 <div class="mypage-item search-item wide"
      data-controller="tag-autocomplete"
      style="position: relative;">
@@ -327,7 +153,10 @@
     TAG
   </div>
 
-  <%= form_with url: emotion_logs_path, method: :get, local: true do |f| %>
+  <%= form_with url: emotion_logs_path,
+                method: :get,
+                data: { turbo_frame: "logs_list" },
+                html: { class: "w-100 h-100 d-flex flex-column justify-content-center align-items-center" } do |f| %>
     <%= f.text_field :genre,
                      placeholder: 'Search by genre',
                      class: 'form-control no-bottom-radius',
@@ -337,19 +166,18 @@
     <%= hidden_field_tag :emotion, params[:emotion] %>
   <% end %>
 
-  <!-- 候補リスト -->
-<ul
-  data-tag-autocomplete-target="suggestions"
-  class="list-group tag-suggestions"
-  style="position: absolute;
-         bottom: calc(100% - 2px); /* ← ← ← 食い込ませる */
-         left: 0;
-         width: 100%;
-         z-index: 9999;
-         margin: 0;">
-</ul>
-
+  <ul
+    data-tag-autocomplete-target="suggestions"
+    class="list-group tag-suggestions"
+    style="position: absolute;
+           bottom: calc(100% - 2px);
+           left: 0;
+           width: 100%;
+           z-index: 9999;
+           margin: 0;">
+  </ul>
 </div>
+
 
 
 

@@ -17,5 +17,9 @@
       <%= link_to "半年", emotion_logs_path(request.query_parameters.merge(period: "halfyear")), class: "btn btn-outline-secondary btn-sm #{'active' if params[:period] == 'halfyear'}" %>
       <%= link_to "年間", emotion_logs_path(request.query_parameters.merge(period: "year")), class: "btn btn-outline-secondary btn-sm #{'active' if params[:period] == 'year'}" %>
     </div>
+    <h5 class="mt-4">リセット</h5>
+<div class="d-grid gap-2">
+  <%= link_to "全て表示", emotion_logs_path, class: "btn btn-outline-danger btn-sm" %>
+</div>
   </div>
 </div>
