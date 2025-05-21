@@ -1,3 +1,4 @@
+<% content_for :title, "ユーザーログイン失敗" %>
 <%# app/views/devise/sessions/new.html.erb %>
 <% @emotion_logs ||= EmotionLog.includes(:user, :bookmarks, :tags).order(date: :desc).limit(10) %>
 <% @mypage_title = "ようこそ" %>
