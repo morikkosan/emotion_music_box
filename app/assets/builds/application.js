@@ -14382,6 +14382,8 @@ var submit_handler_controller_default = class extends Controller {
   submit(event) {
     console.log("\u{1F7E2} submit-handler: submit\u30A4\u30D9\u30F3\u30C8\u767A\u706B");
     event.preventDefault();
+    const loader = document.getElementById("loading-overlay");
+    if (loader) loader.style.display = "flex";
     if (this.hasSubmitTarget) this.submitTarget.disabled = true;
     const form = this.element;
     const formData = new FormData(form);
@@ -14405,6 +14407,8 @@ var submit_handler_controller_default = class extends Controller {
         alert("\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
       }).finally(() => {
         if (this.hasSubmitTarget) this.submitTarget.disabled = false;
+        const loader2 = document.getElementById("loading-overlay");
+        if (loader2) loader2.style.display = "none";
       });
       return;
     }
@@ -14446,6 +14450,8 @@ var submit_handler_controller_default = class extends Controller {
       alert("\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
     }).finally(() => {
       if (this.hasSubmitTarget) this.submitTarget.disabled = false;
+      const loader2 = document.getElementById("loading-overlay");
+      if (loader2) loader2.style.display = "none";
     });
   }
 };
