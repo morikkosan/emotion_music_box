@@ -14936,16 +14936,35 @@ document.addEventListener("turbo:load", () => {
   } else {
     console.log("\u2705 \u65E2\u306B\u4FDD\u5B58\u3055\u308C\u305FHP\u3092\u4F7F\u7528\u4E2D:", localStorage.getItem("hpPercentage"));
   }
+  document.addEventListener("turbo:frame-load", () => {
+    const loader2 = document.getElementById("loading-overlay");
+    if (loader2) {
+      console.log("\u{1F7E2} turbo:frame-load \u2192 \u30ED\u30FC\u30C7\u30A3\u30F3\u30B0\u975E\u8868\u793A");
+      loader2.style.display = "none";
+    }
+  });
+  const modalFixObserver = new MutationObserver(() => {
+    const modal2 = document.querySelector(".modal.show");
+    const modalContent = document.querySelector(".modal-content");
+    const loader2 = document.getElementById("loading-overlay");
+    if (modal2 && modalContent && loader2 && loader2.style.display !== "none") {
+      console.log("\u{1F6E0} turbo-frame + modal \u3092\u691C\u51FA \u2192 \u30ED\u30FC\u30C7\u30A3\u30F3\u30B0\u975E\u8868\u793A");
+      loader2.style.display = "none";
+    }
+  });
+  modalFixObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
   const recommendButton = document.getElementById("show-recommendations-btn");
-  const hpBar = document.getElementById("hp-bar");
-  if (recommendButton && hpBar) {
+  if (recommendButton) {
     recommendButton.addEventListener("click", () => {
-      const widthStr = hpBar.style.width;
-      const hp = parseInt(widthStr);
+      const storedHP = localStorage.getItem("hpPercentage");
+      const hp = parseInt(storedHP);
       if (!isNaN(hp)) {
         window.location.href = `/emotion_logs?hp=${hp}`;
       } else {
-        alert("HP\u30B2\u30FC\u30B8\u306E\u5024\u304C\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F");
+        alert("HP\u30B2\u30FC\u30B8\u306E\u5024\u304C\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\uFF08localStorage\u306B\u4FDD\u5B58\u3055\u308C\u3066\u3044\u307E\u305B\u3093\uFF09");
       }
     });
   }
@@ -15127,6 +15146,16 @@ modalContentObserver.observe(document.body, {
   childList: true,
   subtree: true
 });
+window.goToRecommended = function() {
+  const storedHP = localStorage.getItem("hpPercentage");
+  const hp = parseInt(storedHP);
+  console.log("\u{1F525} goToRecommended \u5B9F\u884C: HP =", hp);
+  if (!isNaN(hp)) {
+    window.location.href = `/emotion_logs/recommended?hp=${hp}`;
+  } else {
+    alert("HP\u30B2\u30FC\u30B8\u306E\u5024\u304C\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\uFF08localStorage\u306B\u4FDD\u5B58\u3055\u308C\u3066\u3044\u307E\u305B\u3093\uFF09");
+  }
+};
 /*! Bundled license information:
 
 @hotwired/turbo/dist/turbo.es2017-esm.js:

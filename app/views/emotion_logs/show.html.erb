@@ -99,6 +99,9 @@
       <turbo-frame id="comments">
         <div id="comments" data-comment-form-target="comments">
       <%= render @comments %>
+      <div class="text-center mt-3">
+  <%= paginate @comments %>
+</div>
         </div>
       </turbo-frame>
     </div>

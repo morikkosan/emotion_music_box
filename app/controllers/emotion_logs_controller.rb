@@ -43,8 +43,10 @@ class EmotionLogsController < ApplicationController
   def show
   @emotion_log = EmotionLog.find(params[:id])
   @comments = Comment.where(emotion_log_id: @emotion_log.id)
-                    .includes(:user, :comment_reactions)
-                    .order(created_at: :desc)
+                  .includes(:user, :comment_reactions)
+                  .order(created_at: :desc)
+                  .page(params[:page])
+                  .per(10)
 
   @reaction_counts = CommentReaction.where(comment_id: @comments.map(&:id)).group(:comment_id, :kind).count
   @user_reactions = current_user&.comment_reactions&.where(comment_id: @comments.map(&:id))&.pluck(:comment_id, :kind)&.to_h || {}
