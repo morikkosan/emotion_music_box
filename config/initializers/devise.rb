@@ -1,4 +1,4 @@
-require Rails.root.join("app/strategies/omniauth/strategies/soundcloud").to_s
+require Rails.root.join("app/strategies/omniauth/strategies/sound_cloud").to_s
 
 Devise.setup do |config|
   ENV['SOUNDCLOUD_REDIRECT_URI'] = 'https://moriappli-emotion.com/auth/soundcloud/callback'
