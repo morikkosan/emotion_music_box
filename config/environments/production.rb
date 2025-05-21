@@ -5,7 +5,6 @@ Rails.application.configure do
   # --- 本番環境でもコード／ビューを自動リロードする設定 ---
   # デプロイ本番の時は　falseに 開発ではtrue
   config.cache_classes = true
-  config.eager_load    = false
   config.reload_classes_only_on_change = true
   config.file_watcher = ActiveSupport::EventedFileUpdateChecker
   # ----------------------------------------
