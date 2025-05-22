@@ -3,6 +3,9 @@ ja:
     sessions:
       signed_in: "ログインに成功しました！"
       signed_out: "ログアウトに成功しました！"
+      already_signed_out: "すでにログアウト済みです"
+      user:
+        already_signed_out: "すでにログアウト済みです"
     failure:
       unauthenticated: "ログインしてください。"
       user:
