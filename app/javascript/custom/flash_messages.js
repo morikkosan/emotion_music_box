@@ -5,7 +5,7 @@
     const flashNotice = flashContainer?.dataset.flashNotice || document.body.dataset.flashNotice;
     const flashAlert  = flashContainer?.dataset.flashAlert  || document.body.dataset.flashAlert;
 
-    console.log("💡 showFlashSwal: notice =", flashNotice, ", alert =", flashAlert);
+    //console.log("💡 showFlashSwal: notice =", flashNotice, ", alert =", flashAlert);
 
     if (!window.Swal) {
       console.warn("⚠️ SweetAlert2 (Swal) が読み込まれていません");
@@ -13,7 +13,7 @@
     }
 
     if (flashAlert === "すでにログイン済みです") {
-      console.log("🟡 ログイン済み通知はモーダルを表示せずスキップ");
+      //console.log("🟡 ログイン済み通知はモーダルを表示せずスキップ");
       return;
     }
 
@@ -58,7 +58,7 @@
     for (const mutation of mutationsList) {
       for (const node of mutation.addedNodes) {
         if (node.id === "flash-container") {
-          console.log("🔁 MutationObserver: flash-container が追加されました");
+          //console.log("🔁 MutationObserver: flash-container が追加されました");
           showFlashSwal();
           return;
         }
@@ -122,5 +122,5 @@
     });
   });
 
-  console.log("🔥 custom_flash.js 完全ロード:", Date.now());
+  //console.log("🔥 custom_flash.js 完全ロード:", Date.now());
 })();

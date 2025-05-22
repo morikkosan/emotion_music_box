@@ -1,8 +1,8 @@
 class ApplicationController < ActionController::Base
   protect_from_forgery with: :exception
 
-  before_action :log_session_info
-  before_action :debug_session_state
+  # before_action :log_session_info
+  # before_action :debug_session_state
   before_action :set_locale
   before_action :configure_permitted_parameters, if: :devise_controller?
 
@@ -50,13 +50,13 @@ end
     I18n.locale = :ja
   end
 
-  def debug_session_state
-    Rails.logger.info "🟢 Current session['omniauth.state']: #{session['omniauth.state']}"
-  end
+  # def debug_session_state
+  #   Rails.logger.info "🟢 Current session['omniauth.state']: #{session['omniauth.state']}"
+  # end
 
-  def log_session_info
-    Rails.logger.debug "🔍 [SESSION] session_id: #{session.id}"
-    Rails.logger.debug "🔍 [SESSION] Current session data: #{session.to_hash}"
-    Rails.logger.debug "🟢 Current session['omniauth.state']: #{session['omniauth.state']}"
-  end
+  # def log_session_info
+  #   Rails.logger.debug "🔍 [SESSION] session_id: #{session.id}"
+  #   Rails.logger.debug "🔍 [SESSION] Current session data: #{session.to_hash}"
+  #   Rails.logger.debug "🟢 Current session['omniauth.state']: #{session['omniauth.state']}"
+  # end
 end

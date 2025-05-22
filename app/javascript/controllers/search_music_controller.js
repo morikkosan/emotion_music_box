@@ -10,7 +10,7 @@ export default class extends Controller {
    * ライフサイクル
    * ===========================*/
   connect () {
-    console.log("🎧 search_music_controller connected");
+    //console.log("🎧 search_music_controller connected");
     this.currentPage   = 1;
     this.searchResults = [];
   }
@@ -60,7 +60,7 @@ export default class extends Controller {
       const div = document.createElement("div");
       div.classList.add("track-result", "mb-3");
       div.innerHTML = `
-        <div class=\"d-flex align-items-center\">\n          <img src=\"${track.artwork_url || "https://placehold.jp/100x100.png"}\" class=\"img-thumbnail me-3\" style=\"width:100px;height:100px;\">\n          <div>\n            <p><strong>${track.title}</strong><br>${track.user.username}</p>\n            <a href=\"${track.permalink_url}\" class=\"btn btn-info btn-sm\" target=\"_blank\">SoundCloudで再生</a>\n            <button type=\"button\" class=\"btn btn-success btn-sm\" data-action=\"search-music#select\" data-audio=\"${track.permalink_url}\" data-name=\"${track.title}\" data-artist=\"${track.user.username}\">選択</button>\n          </div>\n        </div>\n        <div class=\"player-slot mt-2\"></div><hr/>`;
+        <div class=\"d-flex align-items-center\">\n          <img src=\"${track.artwork_url || "https://placehold.jp/100x100.png"}\" class=\"img-thumbnail me-3\" style=\"width:100px;height:100px;\">\n          <div>\n            <p><strong>${track.title}</strong><br>${track.user.username}</p>\n            <a href=\"${track.permalink_url}\" class=\"btn btn-info btn-sm\" target=\"_blank\">SoundCloudで再生</a>\n            <button type=\"button\" class=\"btn btn-success btn-sm\" data-action=\"search-music#select\" data-audio=\"${track.permalink_url}\" data-name=\"${track.title}\" data-artist=\"${track.user.username}\">選択or視聴</button>\n          </div>\n        </div>\n        <div class=\"player-slot mt-2\"></div><hr/>`;
       this.resultsTarget.appendChild(div);
     });
 
