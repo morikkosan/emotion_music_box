@@ -1,10 +1,18 @@
 <!-- app/views/comments/_comment.html.erb -->
 <turbo-frame id="comment_<%= comment.id %>">
   <div class="d-flex justify-content-between align-items-start my-2 p-2 border rounded">
-    <!-- 左側：ユーザー名＋本文 -->
-    <div>
-      <strong><%= comment.user.name %></strong>
-      <p class="mb-1"><%= comment.body %></p>
+    <!-- 左側：アバター＋ユーザー名＋本文 -->
+    <div class="d-flex align-items-start gap-2">
+      <% if comment.user.avatar_url.present? %>
+        <%= image_tag comment.user.avatar_url, alt: "ユーザーのプロフィール画像", width: 60, height: 60, class: "rounded-circle flex-shrink-0" %>
+      <% else %>
+        <%= image_tag "default_avatar.png", alt: "デフォルトプロフィール画像", width: 60, height: 60, class: "rounded-circle flex-shrink-0" %>
+      <% end %>
+
+      <div>
+        <strong><%= comment.user.name %></strong>
+        <p class="mb-1"><%= comment.body %></p>
+      </div>
     </div>
 
     <!-- 右側：ボタン群 -->
