@@ -144,7 +144,23 @@
 <!-- 🔁 検索リセットボタン（ジャンルとタグの中間） -->
 <div class="text-center my-3">
   <%= link_to "検索をリセット", emotion_logs_path, class: "btn btn-outline-secondary neon-btn" %>
+  <strong
+    style="
+      position: absolute;
+      bottom: 20em;   /* ← “下から上に*/
+      left: 50%;
+      transform: translateX(-50%);
+      width: max-content;
+      background: rgba(198, 218, 219, 0.8);  /* お好みで背景薄く入れて可読性UP */
+      padding: 0.2em 1em;
+      border-radius: 8px;
+      font-size: 1.1em;
+      z-index: 2;
+    ">
+    投稿するとあなたのHPが変わるかも？
+  </strong>
 </div>
+
 
 <!-- TAGフォームも同様に修正 -->
 <div class="mypage-item search-item wide"

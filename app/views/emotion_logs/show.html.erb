@@ -15,7 +15,7 @@
   <% if @emotion_log.user.avatar_url.present? %>
     <%= image_tag @emotion_log.user.avatar_url, alt: "投稿者のプロフィール画像", width: 70, height: 70, class: "rounded-circle" %>
   <% else %>
-    <%= image_tag "default_avatar.png", alt: "デフォルトプロフィール画像", width: 60, height: 60, class: "rounded-circle" %>
+    <%= image_tag "default_stick_figure.png", alt: "デフォルトプロフィール画像", width: 60, height: 60, class: "rounded-circle" %>
   <% end %>
 
   <span class="fw-bold"><%= @emotion_log.user.name %></span>
