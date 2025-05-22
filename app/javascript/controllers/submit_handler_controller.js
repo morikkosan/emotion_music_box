@@ -26,77 +26,37 @@ export default class extends Controller {
   }
 
   submit(event) {
-    //console.log("🟢 submit-handler: submitイベント発火");
-
-    event.preventDefault();
-    const loader = document.getElementById("loading-overlay");
+  event.preventDefault();
+  const loader = document.getElementById("loading-overlay");
   if (loader) loader.style.display = "flex";
 
-    if (this.hasSubmitTarget) this.submitTarget.disabled = true;
+  if (this.hasSubmitTarget) this.submitTarget.disabled = true;
 
-    const form = this.element;
-    const formData = new FormData(form);
+  const form = this.element;
+  const formData = new FormData(form);
 
-    const formDate = formData.get("emotion_log[date]");
-    const today = getTodayString();
-
-    if (formDate !== today) {
-      //console.log("今日以外の日付のためHPゲージ更新しません");
-
-      fetch(form.action, {
-        method: "POST",
-        headers: { Accept: "application/json" },
-        body: formData,
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            alert("記録は保存されましたが、HPゲージの反映は今日の記録のみです。");
-            window.location.href = data.redirect_url;
-          } else {
-            alert("保存に失敗しました: " + (data.errors || []).join("\n"));
-          }
-        })
-        .catch(error => {
-          console.error("送信エラー:", error);
-          alert("予期しないエラーが発生しました");
-        })
-        .finally(() => {
-          if (this.hasSubmitTarget) this.submitTarget.disabled = false;
-           const loader = document.getElementById("loading-overlay");
-  if (loader) loader.style.display = "none";
-        });
-
-      return;
-    }
-
-    fetch(form.action, {
-      method: "POST",
-      headers: { Accept: "application/json" },
-      body: formData,
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          const storedDate = localStorage.getItem("hpPercentageDate");
-          if (storedDate !== today) {
-            //console.log("日付が変わったためHPゲージをリセット（50に戻す）");
-            localStorage.setItem("hpPercentage", "50");
-          }
-
+  fetch(form.action, {
+    method: "POST",
+    headers: { Accept: "application/json" },
+    body: formData,
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (data.hp_today) {
+          // サーバーが「今日の記録」と認定
+          // HPバー・ローカル更新
           let hpPercentage = 50;
           const storedHP = parseFloat(localStorage.getItem("hpPercentage"));
           if (!isNaN(storedHP)) hpPercentage = storedHP;
 
           if (typeof data.hpPercentage !== "undefined") {
-            //console.log("サーバーから受け取ったhpPercentage = ", data.hpPercentage);
             hpPercentage += parseFloat(data.hpPercentage);
             hpPercentage = Math.max(0, Math.min(100, hpPercentage));
           }
-
+          // ここもサーバー側「今日」判定で日付書き換え
           localStorage.setItem("hpPercentage", hpPercentage.toString());
-          localStorage.setItem("hpPercentageDate", today);
-
+          localStorage.setItem("hpPercentageDate", new Date().toISOString().slice(0, 10));
           if (window.updateHPBar) window.updateHPBar();
 
           const toastEl = document.getElementById("save-toast");
@@ -109,17 +69,21 @@ export default class extends Controller {
             window.location.href = data.redirect_url;
           }, 1500);
         } else {
-          alert("保存に失敗しました: " + (data.errors || []).join("\n"));
+          // 今日以外の記録
+          alert("記録は保存されましたが、HPゲージの反映は今日の記録のみです。");
+          window.location.href = data.redirect_url;
         }
-      })
-      .catch(error => {
-        console.error("送信エラー:", error);
-        alert("予期しないエラーが発生しました");
-      })
-      .finally(() => {
-        if (this.hasSubmitTarget) this.submitTarget.disabled = false;
-         const loader = document.getElementById("loading-overlay");
-  if (loader) loader.style.display = "none";
-      });
-  }
-}
+      } else {
+        alert("保存に失敗しました: " + (data.errors || []).join("\n"));
+      }
+    })
+    .catch(error => {
+      console.error("送信エラー:", error);
+      alert("予期しないエラーが発生しました");
+    })
+    .finally(() => {
+      if (this.hasSubmitTarget) this.submitTarget.disabled = false;
+      const loader = document.getElementById("loading-overlay");
+      if (loader) loader.style.display = "none";
+    });
+}}

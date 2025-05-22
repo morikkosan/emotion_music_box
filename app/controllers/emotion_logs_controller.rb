@@ -67,17 +67,23 @@ end
   end
 
   def create
-    @emotion_log = current_user.emotion_logs.build(emotion_log_params)
-    hp_percentage = calculate_hp(@emotion_log.emotion)
-    # Rails.logger.error "★ 受け取った emotion = #{@emotion_log.emotion}"
-    # Rails.logger.error "★ 計算した hp_percentage = #{hp_percentage}"
+  @emotion_log = current_user.emotion_logs.build(emotion_log_params)
+  hp_percentage = calculate_hp(@emotion_log.emotion)
 
-    if @emotion_log.save
-      render json: { success: true, message: '記録が保存されました', redirect_url: emotion_logs_path, hpPercentage: hp_percentage }
-    else
-      render json: { success: false, errors: @emotion_log.errors.full_messages }, status: :unprocessable_entity
-    end
+  if @emotion_log.save
+    is_today = @emotion_log.date.to_date == Date.current  # ← ここ追加！
+    render json: {
+      success: true,
+      message: '記録が保存されました',
+      redirect_url: emotion_logs_path,
+      hpPercentage: hp_percentage,
+      hp_today: is_today     # ← ここ追加！
+    }
+  else
+    render json: { success: false, errors: @emotion_log.errors.full_messages }, status: :unprocessable_entity
   end
+end
+
 
   def edit
     @emotion_log = EmotionLog.find(params[:id])
@@ -85,15 +91,24 @@ end
   end
 
   def update
-    @emotion_log = EmotionLog.find(params[:id])
+  @emotion_log = EmotionLog.find(params[:id])
 
-    if @emotion_log.update(emotion_log_params)
-      hp_percentage = calculate_hp(@emotion_log.emotion)
-      render json: { success: true, message: '記録が更新されました', redirect_url: emotion_logs_path, hpPercentage: hp_percentage }
-    else
-      render json: { success: false, errors: @emotion_log.errors.full_messages }, status: :unprocessable_entity
-    end
+  if @emotion_log.update(emotion_log_params)
+    hp_percentage = calculate_hp(@emotion_log.emotion)
+    is_today = @emotion_log.date.to_date == Date.current # ← 追加
+
+    render json: {
+      success: true,
+      message: '記録が更新されました',
+      redirect_url: emotion_logs_path,
+      hpPercentage: hp_percentage,
+      hp_today: is_today        # ← 追加返却
+    }
+  else
+    render json: { success: false, errors: @emotion_log.errors.full_messages }, status: :unprocessable_entity
   end
+end
+
 
   def destroy
     log = EmotionLog.find(params[:id])
