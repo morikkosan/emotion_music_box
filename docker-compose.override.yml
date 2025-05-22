@@ -5,7 +5,7 @@ services:
 
     environment:
       # override したいものだけ
-      - RAILS_ENV=production
+      # - RAILS_ENV=production
       - SOUNDCLOUD_REDIRECT_URI=https://moriappli-emotion.com/auth/soundcloud/callback
 
     volumes:

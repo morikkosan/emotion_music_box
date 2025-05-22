@@ -8,7 +8,7 @@ export default class extends Controller {
   static targets = ["submit"];
 
   connect() {
-    console.log("📝 submit-handler connected");
+    //console.log("📝 submit-handler connected");
 
     if (this.hasSubmitTarget) this.submitTarget.disabled = false;
 
@@ -18,7 +18,7 @@ export default class extends Controller {
       if (dateInput) {
         dateInput.addEventListener("change", (e) => {
           const val = e.target.value;
-          console.log("📌 遅延bind: カレンダーchangeイベント:", val);
+          //console.log("📌 遅延bind: カレンダーchangeイベント:", val);
           e.target.value = val; // 再代入で安定させる
         });
       }
@@ -26,7 +26,7 @@ export default class extends Controller {
   }
 
   submit(event) {
-    console.log("🟢 submit-handler: submitイベント発火");
+    //console.log("🟢 submit-handler: submitイベント発火");
 
     event.preventDefault();
     const loader = document.getElementById("loading-overlay");
@@ -41,7 +41,7 @@ export default class extends Controller {
     const today = getTodayString();
 
     if (formDate !== today) {
-      console.log("今日以外の日付のためHPゲージ更新しません");
+      //console.log("今日以外の日付のためHPゲージ更新しません");
 
       fetch(form.action, {
         method: "POST",
@@ -80,7 +80,7 @@ export default class extends Controller {
         if (data.success) {
           const storedDate = localStorage.getItem("hpPercentageDate");
           if (storedDate !== today) {
-            console.log("日付が変わったためHPゲージをリセット（50に戻す）");
+            //console.log("日付が変わったためHPゲージをリセット（50に戻す）");
             localStorage.setItem("hpPercentage", "50");
           }
 
@@ -89,7 +89,7 @@ export default class extends Controller {
           if (!isNaN(storedHP)) hpPercentage = storedHP;
 
           if (typeof data.hpPercentage !== "undefined") {
-            console.log("サーバーから受け取ったhpPercentage = ", data.hpPercentage);
+            //console.log("サーバーから受け取ったhpPercentage = ", data.hpPercentage);
             hpPercentage += parseFloat(data.hpPercentage);
             hpPercentage = Math.max(0, Math.min(100, hpPercentage));
           }
