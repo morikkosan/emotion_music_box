@@ -76,7 +76,7 @@
   <input type="file" id="avatarInput" class="form-control-file" />
 
   <%= f.hidden_field :cropped_avatar_data, id: "croppedAvatarData" %>
-  <%= f.hidden_field :avatar_url, id: "avatarUrlField" %>
+<%= f.hidden_field :avatar_url, id: "avatarUrlField", value: resource.avatar_url.presence || asset_path("default_stick_figure.png") %>
 </div>
 
 
@@ -97,10 +97,11 @@
     <hr>
     <div class="text-end mt-5">
       <%= button_to "アカウント削除",
-                    registration_path(resource_name),
-                    method: :delete,
-                    data: { confirm: "本当に削除しますか？" },
-                    class: "btn btn-link text-danger-emphasis small fw-semibold" %>
+      registration_path(resource_name),
+      method: :delete,
+      data: { confirm: "本当に削除しますか？", turbo: false },
+      class: "btn btn-link text-danger-emphasis small fw-semibold" %>
+
     </div>
 
     <p class="text-center">

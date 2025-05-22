@@ -6,7 +6,7 @@
       <% if comment.user.avatar_url.present? %>
         <%= image_tag comment.user.avatar_url, alt: "ユーザーのプロフィール画像", width: 60, height: 60, class: "rounded-circle flex-shrink-0" %>
       <% else %>
-        <%= image_tag "default_avatar.png", alt: "デフォルトプロフィール画像", width: 60, height: 60, class: "rounded-circle flex-shrink-0" %>
+        <%= image_tag "default_stick_figure.png", alt: "デフォルトプロフィール画像", width: 60, height: 60, class: "rounded-circle flex-shrink-0" %>
       <% end %>
 
       <div>
