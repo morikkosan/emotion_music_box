@@ -4,7 +4,7 @@ export default class extends Controller {
   static targets = ["input", "tags", "suggestions", "hidden"]
 
   connect() {
-    console.log("🟢 tag-input controller connected")
+    //console.log("🟢 tag-input controller connected")
     this.selectedTags = []
 
     // 既存タグがあれば初期セットしてバッジ表示
