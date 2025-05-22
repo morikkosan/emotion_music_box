@@ -1,20 +1,20 @@
 <!-- app/views/emotion_logs/_search_form.html.erb -->
 <div data-controller="search-music"
-     data-search-music-target="section"
-     class="p-4">
+    data-search-music-target="section"
+    class="p-4">
   <!-- ① ローディング -->
   <div data-search-music-target="loading"
-       class="text-center mb-3"
-       style="display:none">
+      class="text-center mb-3"
+      style="display:none">
     <span class="spinner-border" role="status"></span>
   </div>
 
   <!-- ② 検索フォーム -->
   <div class="input-group mb-3">
     <input type="text"
-           class="form-control"
-           placeholder="曲名やアーティスト名を入力"
-           data-search-music-target="query">
+          class="form-control"
+          placeholder="曲名やアーティスト名を入力"
+          data-search-music-target="query">
     <button type="button"
             class="btn btn-primary"
             data-action="search-music#search">
