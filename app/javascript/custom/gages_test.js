@@ -49,7 +49,7 @@ const widthStr = hpBar.dataset.width || hpBar.style.width;
   
   const hp = parseInt(widthStr);      // → 85
 
-  console.log("🔥 表示中のバーから取得したHP値:", hp);
+  //console.log("🔥 表示中のバーから取得したHP値:", hp);
 
   if (!isNaN(hp)) {
     window.location.href = `/emotion_logs/recommended?hp=${hp}`;
@@ -59,14 +59,14 @@ const widthStr = hpBar.dataset.width || hpBar.style.width;
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("📦 DOMContentLoaded 発火 → HPバー更新");
+  ////console.log("📦 DOMContentLoaded 発火 → HPバー更新");
   window.updateHPBar();
 });
 
 document.addEventListener("turbo:load", () => {
-  console.log("🚀 turbo:load 発火 → HPバー更新");
+  //console.log("🚀 turbo:load 発火 → HPバー更新");
   window.updateHPBar();
 });
 
 
-console.log("✅ HPバー更新スクリプト読み込み完了");
+//console.log("✅ HPバー更新スクリプト読み込み完了");

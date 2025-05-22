@@ -3,7 +3,7 @@ class EmotionLogsController < ApplicationController
   before_action :ensure_owner, only: [:edit, :update, :destroy]
 
   def index
-    Rails.logger.error "★ index: FLASH notice = #{flash[:notice].inspect}, session = #{session.id}"
+    # Rails.logger.error "★ index: FLASH notice = #{flash[:notice].inspect}, session = #{session.id}"
 
     @emotion_logs = EmotionLog.includes(:user, :bookmarks, :tags)
 
@@ -69,8 +69,8 @@ end
   def create
     @emotion_log = current_user.emotion_logs.build(emotion_log_params)
     hp_percentage = calculate_hp(@emotion_log.emotion)
-    Rails.logger.error "★ 受け取った emotion = #{@emotion_log.emotion}"
-    Rails.logger.error "★ 計算した hp_percentage = #{hp_percentage}"
+    # Rails.logger.error "★ 受け取った emotion = #{@emotion_log.emotion}"
+    # Rails.logger.error "★ 計算した hp_percentage = #{hp_percentage}"
 
     if @emotion_log.save
       render json: { success: true, message: '記録が保存されました', redirect_url: emotion_logs_path, hpPercentage: hp_percentage }

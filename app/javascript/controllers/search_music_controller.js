@@ -10,7 +10,7 @@ export default class extends Controller {
    * ライフサイクル
    * ===========================*/
   connect () {
-    console.log("🎧 search_music_controller connected");
+    //console.log("🎧 search_music_controller connected");
     this.currentPage   = 1;
     this.searchResults = [];
   }

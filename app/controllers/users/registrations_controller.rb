@@ -23,7 +23,7 @@ end
 
   # Devise の update_resource をオーバーライド
   def update_resource(resource, params)
-    Rails.logger.info "Update Params: #{params.inspect}"
+    # Rails.logger.info "Update Params: #{params.inspect}"
 
     # Cloudinaryアップロード済みURLをavatar_urlカラムに保存
     if params[:avatar_url].present?

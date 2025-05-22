@@ -14179,7 +14179,6 @@ Controller.values = {};
 // app/javascript/controllers/modal_controller.js
 var modal_controller_default = class extends Controller {
   connect() {
-    console.log("\u{1F7E2} modal_controller connected");
     const modals = document.querySelectorAll("#modal-container");
     if (modals.length > 1) {
       modals.forEach((el, idx) => {
@@ -14201,7 +14200,6 @@ var search_music_controller_default = class extends Controller {
    * ライフサイクル
    * ===========================*/
   connect() {
-    console.log("\u{1F3A7} search_music_controller connected");
     this.currentPage = 1;
     this.searchResults = [];
   }
@@ -14366,21 +14364,18 @@ function getTodayString() {
 var submit_handler_controller_default = class extends Controller {
   static targets = ["submit"];
   connect() {
-    console.log("\u{1F4DD} submit-handler connected");
     if (this.hasSubmitTarget) this.submitTarget.disabled = false;
     setTimeout(() => {
       const dateInput = this.element.querySelector('input[type="date"]');
       if (dateInput) {
         dateInput.addEventListener("change", (e) => {
           const val = e.target.value;
-          console.log("\u{1F4CC} \u9045\u5EF6bind: \u30AB\u30EC\u30F3\u30C0\u30FCchange\u30A4\u30D9\u30F3\u30C8:", val);
           e.target.value = val;
         });
       }
     }, 100);
   }
   submit(event) {
-    console.log("\u{1F7E2} submit-handler: submit\u30A4\u30D9\u30F3\u30C8\u767A\u706B");
     event.preventDefault();
     const loader = document.getElementById("loading-overlay");
     if (loader) loader.style.display = "flex";
@@ -14390,7 +14385,6 @@ var submit_handler_controller_default = class extends Controller {
     const formDate = formData.get("emotion_log[date]");
     const today = getTodayString();
     if (formDate !== today) {
-      console.log("\u4ECA\u65E5\u4EE5\u5916\u306E\u65E5\u4ED8\u306E\u305F\u3081HP\u30B2\u30FC\u30B8\u66F4\u65B0\u3057\u307E\u305B\u3093");
       fetch(form.action, {
         method: "POST",
         headers: { Accept: "application/json" },
@@ -14420,14 +14414,12 @@ var submit_handler_controller_default = class extends Controller {
       if (data.success) {
         const storedDate = localStorage.getItem("hpPercentageDate");
         if (storedDate !== today) {
-          console.log("\u65E5\u4ED8\u304C\u5909\u308F\u3063\u305F\u305F\u3081HP\u30B2\u30FC\u30B8\u3092\u30EA\u30BB\u30C3\u30C8\uFF0850\u306B\u623B\u3059\uFF09");
           localStorage.setItem("hpPercentage", "50");
         }
         let hpPercentage = 50;
         const storedHP = parseFloat(localStorage.getItem("hpPercentage"));
         if (!isNaN(storedHP)) hpPercentage = storedHP;
         if (typeof data.hpPercentage !== "undefined") {
-          console.log("\u30B5\u30FC\u30D0\u30FC\u304B\u3089\u53D7\u3051\u53D6\u3063\u305FhpPercentage = ", data.hpPercentage);
           hpPercentage += parseFloat(data.hpPercentage);
           hpPercentage = Math.max(0, Math.min(100, hpPercentage));
         }
@@ -14461,23 +14453,17 @@ var bookmark_toggle_controller_default = class extends Controller {
   static targets = ["icon", "count"];
   connect() {
     this.element.addEventListener("turbo:frame-load", () => {
-      console.log("Turbo frame loaded, targets are available.");
     });
   }
   toggle(event) {
-    console.log("\u{1F4CC} toggle() \u767A\u706B");
     const isBookmarked = this.iconTarget.dataset.toggled === "true";
-    console.log("\u{1F504} \u73FE\u5728\u306E\u72B6\u614B:", isBookmarked ? "bookmarked" : "unbookmarked");
     const newIconSrc = isBookmarked ? this.iconTarget.dataset.unbookmarkedUrl : this.iconTarget.dataset.bookmarkedUrl;
-    console.log("\u{1F5BC}\uFE0F \u5207\u308A\u66FF\u3048\u308B\u753B\u50CF\u30D1\u30B9:", newIconSrc);
     this.iconTarget.src = "";
     this.iconTarget.src = newIconSrc;
     this.iconTarget.dataset.toggled = isBookmarked ? "false" : "true";
-    console.log("\u2705 \u65B0\u3057\u3044\u72B6\u614B:", this.iconTarget.dataset.toggled);
     const currentCount = parseInt(this.countTarget.innerText, 10);
     const updatedCount = isBookmarked ? currentCount - 1 : currentCount + 1;
     this.countTarget.innerText = updatedCount;
-    console.log("\u{1F522} \u30AB\u30A6\u30F3\u30C8\u66F4\u65B0:", currentCount, "\u2192", updatedCount);
   }
 };
 
@@ -14491,15 +14477,12 @@ var comment_form_controller_default = class extends Controller {
   static targets = ["submit", "textarea", "comments"];
   /** 送信開始時 */
   sending(event) {
-    console.log("[comment-form] sending:", event);
     this.showToast("\u9001\u4FE1\u4E2D\u2026");
     this.submitTarget.disabled = true;
   }
   /** 送信完了時（成功・失敗とも） */
   sent(event) {
-    console.log("[comment-form] sent detail:", event.detail);
     if (event.detail.success) {
-      console.log("[comment-form] -> success, Reset & Scroll");
       this.showToast("\u9001\u4FE1\u3057\u307E\u3057\u305F \u2705", 1500);
       this.scrollToBottom();
       this.element.reset();
@@ -14512,7 +14495,6 @@ var comment_form_controller_default = class extends Controller {
   }
   /* ---------- helper ---------- */
   showToast(message, hideAfter = 0) {
-    console.log("[comment-form] showToast:", message);
     let toast = document.getElementById("comment-toast");
     if (!toast) {
       toast = document.createElement("div");
@@ -14525,7 +14507,6 @@ var comment_form_controller_default = class extends Controller {
     if (hideAfter > 0) {
       setTimeout(() => {
         toast.style.opacity = 0;
-        console.log("[comment-form] toast hidden");
       }, hideAfter);
     }
   }
@@ -14535,7 +14516,6 @@ var comment_form_controller_default = class extends Controller {
       console.warn("[comment-form] #comments not found");
       return;
     }
-    console.log("[comment-form] scrollToBottom \u2192", list.scrollHeight);
     list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
   }
 };
@@ -14587,7 +14567,6 @@ var reaction_controller_default = class extends Controller {
 var tag_input_controller_default = class extends Controller {
   static targets = ["input", "tags", "suggestions", "hidden"];
   connect() {
-    console.log("\u{1F7E2} tag-input controller connected");
     this.selectedTags = [];
     const initialTagsString = this.hiddenTarget.value;
     if (initialTagsString) {
@@ -14766,13 +14745,11 @@ document.addEventListener("DOMContentLoaded", function() {
     const flashContainer = document.querySelector("#flash-container");
     const flashNotice = flashContainer?.dataset.flashNotice || document.body.dataset.flashNotice;
     const flashAlert = flashContainer?.dataset.flashAlert || document.body.dataset.flashAlert;
-    console.log("\u{1F4A1} showFlashSwal: notice =", flashNotice, ", alert =", flashAlert);
     if (!window.Swal) {
       console.warn("\u26A0\uFE0F SweetAlert2 (Swal) \u304C\u8AAD\u307F\u8FBC\u307E\u308C\u3066\u3044\u307E\u305B\u3093");
       return;
     }
     if (flashAlert === "\u3059\u3067\u306B\u30ED\u30B0\u30A4\u30F3\u6E08\u307F\u3067\u3059") {
-      console.log("\u{1F7E1} \u30ED\u30B0\u30A4\u30F3\u6E08\u307F\u901A\u77E5\u306F\u30E2\u30FC\u30C0\u30EB\u3092\u8868\u793A\u305B\u305A\u30B9\u30AD\u30C3\u30D7");
       return;
     }
     if (flashAlert) {
@@ -14811,7 +14788,6 @@ document.addEventListener("DOMContentLoaded", function() {
     for (const mutation of mutationsList) {
       for (const node of mutation.addedNodes) {
         if (node.id === "flash-container") {
-          console.log("\u{1F501} MutationObserver: flash-container \u304C\u8FFD\u52A0\u3055\u308C\u307E\u3057\u305F");
           showFlashSwal();
           return;
         }
@@ -14866,7 +14842,6 @@ document.addEventListener("DOMContentLoaded", function() {
       });
     });
   });
-  console.log("\u{1F525} custom_flash.js \u5B8C\u5168\u30ED\u30FC\u30C9:", Date.now());
 })();
 
 // app/javascript/custom/gages_test.js
@@ -14904,7 +14879,6 @@ window.goToRecommended = function() {
   }
   const widthStr = hpBar.dataset.width || hpBar.style.width;
   const hp = parseInt(widthStr);
-  console.log("\u{1F525} \u8868\u793A\u4E2D\u306E\u30D0\u30FC\u304B\u3089\u53D6\u5F97\u3057\u305FHP\u5024:", hp);
   if (!isNaN(hp)) {
     window.location.href = `/emotion_logs/recommended?hp=${hp}`;
   } else {
@@ -14912,17 +14886,13 @@ window.goToRecommended = function() {
   }
 };
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("\u{1F4E6} DOMContentLoaded \u767A\u706B \u2192 HP\u30D0\u30FC\u66F4\u65B0");
   window.updateHPBar();
 });
 document.addEventListener("turbo:load", () => {
-  console.log("\u{1F680} turbo:load \u767A\u706B \u2192 HP\u30D0\u30FC\u66F4\u65B0");
   window.updateHPBar();
 });
-console.log("\u2705 HP\u30D0\u30FC\u66F4\u65B0\u30B9\u30AF\u30EA\u30D7\u30C8\u8AAD\u307F\u8FBC\u307F\u5B8C\u4E86");
 
 // app/javascript/application.js
-console.log("\u{1F525} application.js \u8AAD\u307F\u8FBC\u307F\u958B\u59CB", Date.now());
 Rails.start();
 window.bootstrap = bootstrap_esm_exports;
 document.addEventListener("turbo:visit", () => {
@@ -14937,14 +14907,11 @@ document.addEventListener("turbo:load", () => {
   if (savedDate !== today) {
     localStorage.setItem("hpPercentage", "50");
     localStorage.setItem("hpDate", today);
-    console.log("\u2705 HP\u3068\u65E5\u4ED8\u3092\u521D\u671F\u5316\u3057\u307E\u3057\u305F:", today);
   } else {
-    console.log("\u2705 \u65E2\u306B\u4FDD\u5B58\u3055\u308C\u305FHP\u3092\u4F7F\u7528\u4E2D:", localStorage.getItem("hpPercentage"));
   }
   document.addEventListener("turbo:frame-load", () => {
     const loader2 = document.getElementById("loading-overlay");
     if (loader2) {
-      console.log("\u{1F7E2} turbo:frame-load \u2192 \u30ED\u30FC\u30C7\u30A3\u30F3\u30B0\u975E\u8868\u793A");
       loader2.style.display = "none";
     }
   });
@@ -14953,7 +14920,6 @@ document.addEventListener("turbo:load", () => {
     const modalContent = document.querySelector(".modal-content");
     const loader2 = document.getElementById("loading-overlay");
     if (modal2 && modalContent && loader2 && loader2.style.display !== "none") {
-      console.log("\u{1F6E0} turbo-frame + modal \u3092\u691C\u51FA \u2192 \u30ED\u30FC\u30C7\u30A3\u30F3\u30B0\u975E\u8868\u793A");
       loader2.style.display = "none";
     }
   });
@@ -15142,7 +15108,6 @@ var modalContentObserver = new MutationObserver(() => {
   const modalContent = document.querySelector(".modal-content");
   const loader = document.getElementById("loading-overlay");
   if (modal && modalContent && loader && loader.style.display !== "none") {
-    console.log("\u2705 \u30E2\u30FC\u30C0\u30EB\u3068\u4E2D\u8EAB\u3092\u691C\u51FA \u2192 \u30ED\u30FC\u30C7\u30A3\u30F3\u30B0\u3092\u975E\u8868\u793A\u306B\u3057\u307E\u3059");
     loader.style.display = "none";
     modalContentObserver.disconnect();
   }
@@ -15154,7 +15119,6 @@ modalContentObserver.observe(document.body, {
 window.goToRecommended = function() {
   const storedHP = localStorage.getItem("hpPercentage");
   const hp = parseInt(storedHP);
-  console.log("\u{1F525} goToRecommended \u5B9F\u884C: HP =", hp);
   if (!isNaN(hp)) {
     window.location.href = `/emotion_logs/recommended?hp=${hp}`;
   } else {
