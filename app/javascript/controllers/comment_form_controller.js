@@ -11,17 +11,17 @@ export default class extends Controller {
 
   /** 送信開始時 */
   sending(event) {
-    console.log("[comment-form] sending:", event)
+    //console.log("[comment-form] sending:", event)
     this.showToast("送信中…")
     this.submitTarget.disabled = true           // 二重送信防止
   }
 
   /** 送信完了時（成功・失敗とも） */
   sent(event) {
-    console.log("[comment-form] sent detail:", event.detail)
+    //console.log("[comment-form] sent detail:", event.detail)
 
     if (event.detail.success) {
-      console.log("[comment-form] -> success, Reset & Scroll")
+      //console.log("[comment-form] -> success, Reset & Scroll")
       this.showToast("送信しました ✅", 1500)
       this.scrollToBottom()
       this.element.reset()                      // フォーム入力クリア
@@ -36,7 +36,7 @@ export default class extends Controller {
 
   /* ---------- helper ---------- */
   showToast(message, hideAfter = 0) {
-    console.log("[comment-form] showToast:", message)
+    //console.log("[comment-form] showToast:", message)
     let toast = document.getElementById("comment-toast")
 
     if (!toast) {
@@ -57,7 +57,7 @@ export default class extends Controller {
     if (hideAfter > 0) {
       setTimeout(() => {
         toast.style.opacity = 0
-        console.log("[comment-form] toast hidden")
+        //console.log("[comment-form] toast hidden")
       }, hideAfter)
     }
   }
@@ -69,7 +69,7 @@ export default class extends Controller {
       console.warn("[comment-form] #comments not found")
       return
     }
-    console.log("[comment-form] scrollToBottom →", list.scrollHeight)
+    //console.log("[comment-form] scrollToBottom →", list.scrollHeight)
     list.scrollTo({ top: list.scrollHeight, behavior: "smooth" })
   }
 }

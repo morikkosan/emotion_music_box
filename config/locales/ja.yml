@@ -1,0 +1,99 @@
+ja:
+  activerecord:
+    attributes:
+      active_storage_attachment:
+        name: "名前"
+        record_type: "レコードタイプ"
+        record_id: "レコードID"
+        blob_id: "Blob ID"
+        created_at: "作成日時"
+
+      active_storage_blob:
+        key: "キー"
+        filename: "ファイル名"
+        content_type: "コンテンツタイプ"
+        metadata: "メタデータ"
+        service_name: "サービス名"
+        byte_size: "バイトサイズ"
+        checksum: "チェックサム"
+        created_at: "作成日時"
+
+      active_storage_variant_record:
+        blob_id: "Blob ID"
+        variation_digest: "バリエーションダイジェスト"
+
+      bookmark:
+        user_id: "ユーザーID"
+        emotion_log_id: "感情ログID"
+        created_at: "作成日時"
+        updated_at: "更新日時"
+
+      comment_reaction:
+        kind: "リアクション種別"
+        user_id: "ユーザーID"
+        comment_id: "コメントID"
+        created_at: "作成日時"
+        updated_at: "更新日時"
+
+      comment:
+        body: "コメント内容"
+        user_id: "ユーザーID"
+        emotion_log_id: "感情ログID"
+        created_at: "作成日時"
+        updated_at: "更新日時"
+        reactions_count: "リアクション数"
+
+      emotion_log_tag:
+        emotion_log_id: "感情ログID"
+        tag_id: "タグID"
+        created_at: "作成日時"
+        updated_at: "更新日時"
+
+      emotion_log:
+        emotion: "感情"
+        description: "今日の一言"
+        created_at: "作成日時"
+        updated_at: "更新日時"
+        date: "日付"
+        music_url: "音楽URL"
+        user_id: "ユーザーID"
+        track_name: "曲名"
+        comments_count: "コメント数"
+
+      identity:
+        user_id: "ユーザーID"
+        provider: "プロバイダ"
+        uid: "UID"
+        created_at: "作成日時"
+        updated_at: "更新日時"
+
+      session:
+        session_id: "セッションID"
+        data: "データ"
+        created_at: "作成日時"
+        updated_at: "更新日時"
+
+      tag:
+        name: "名前"
+        created_at: "作成日時"
+        updated_at: "更新日時"
+
+      user:
+        email: "メールアドレス"
+        encrypted_password: "暗号化パスワード"
+        reset_password_token: "パスワード再設定トークン"
+        reset_password_sent_at: "パスワード再設定送信日時"
+        remember_created_at: "ログイン記憶作成日時"
+        created_at: "作成日時"
+        updated_at: "更新日時"
+        provider: "プロバイダ"
+        uid: "UID"
+        name: "名前"
+        gender: "性別"
+        age: "年齢"
+        soundcloud_uid: "SoundCloud UID"
+        soundcloud_token: "SoundCloud トークン"
+        soundcloud_refresh_token: "SoundCloud リフレッシュトークン"
+        soundcloud_token_expires_at: "SoundCloud トークン有効期限"
+        profile_completed: "プロフィール完成済み"
+        avatar_url: "プロフィール画像URL"
