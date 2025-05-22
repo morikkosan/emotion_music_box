@@ -1,4 +1,24 @@
 ja:
+  datetime:
+    distance_in_words:
+      about_x_hours: "%{count}時間前"
+      about_x_months: "%{count}ヶ月前"
+      about_x_years: "%{count}年前"
+      almost_x_years: "%{count}年弱"
+      half_a_minute: "30秒前"
+      less_than_x_seconds:
+        one: "1秒未満"
+        other: "%{count}秒未満"
+      less_than_x_minutes:
+        one: "1分未満"
+        other: "%{count}分未満"
+      over_x_years: "%{count}年以上"
+      x_seconds: "%{count}秒前"
+      x_minutes: "%{count}分前"
+      x_days: "%{count}日前"
+      x_months: "%{count}ヶ月前"
+      x_years: "%{count}年前"
+
   activerecord:
     attributes:
       active_storage_attachment:
@@ -28,13 +48,6 @@ ja:
         created_at: "作成日時"
         updated_at: "更新日時"
 
-      comment_reaction:
-        kind: "リアクション種別"
-        user_id: "ユーザーID"
-        comment_id: "コメントID"
-        created_at: "作成日時"
-        updated_at: "更新日時"
-
       comment:
         body: "コメント内容"
         user_id: "ユーザーID"
@@ -42,6 +55,13 @@ ja:
         created_at: "作成日時"
         updated_at: "更新日時"
         reactions_count: "リアクション数"
+
+      comment_reaction:
+        kind: "リアクション種別"
+        user_id: "ユーザーID"
+        comment_id: "コメントID"
+        created_at: "作成日時"
+        updated_at: "更新日時"
 
       emotion_log_tag:
         emotion_log_id: "感情ログID"
