@@ -3,7 +3,7 @@ import * as bootstrap from "bootstrap"
 
 export default class extends Controller {
   connect () {
-    console.log("🟢 modal_controller connected")
+    //console.log("🟢 modal_controller connected")
 
     // ------- モーダルの重複排除（あなた仕様） -------
     const modals = document.querySelectorAll("#modal-container")

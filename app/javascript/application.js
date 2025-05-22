@@ -6,7 +6,7 @@ import "./custom/comments";
 import "./custom/flash_messages";
 import "./custom/gages_test";
 
-console.log("🔥 application.js 読み込み開始", Date.now());
+//console.log("🔥 application.js 読み込み開始", Date.now());
 
 Rails.start();
 window.bootstrap = bootstrap;
@@ -28,16 +28,16 @@ document.addEventListener("turbo:load", () => {
   if (savedDate !== today) {
     localStorage.setItem("hpPercentage", "50");
     localStorage.setItem("hpDate", today);
-    console.log("✅ HPと日付を初期化しました:", today);
+    //console.log("✅ HPと日付を初期化しました:", today);
   } else {
-    console.log("✅ 既に保存されたHPを使用中:", localStorage.getItem("hpPercentage"));
+    //console.log("✅ 既に保存されたHPを使用中:", localStorage.getItem("hpPercentage"));
   }
 
   //ローディングを非表示にする
 document.addEventListener("turbo:frame-load", () => {
   const loader = document.getElementById("loading-overlay");
   if (loader) {
-    console.log("🟢 turbo:frame-load → ローディング非表示");
+    //console.log("🟢 turbo:frame-load → ローディング非表示");
     loader.style.display = "none";
   }
 });
@@ -48,7 +48,7 @@ const modalFixObserver = new MutationObserver(() => {
   const loader = document.getElementById("loading-overlay");
 
   if (modal && modalContent && loader && loader.style.display !== "none") {
-    console.log("🛠 turbo-frame + modal を検出 → ローディング非表示");
+    //console.log("🛠 turbo-frame + modal を検出 → ローディング非表示");
     loader.style.display = "none";
   }
 });
@@ -267,7 +267,7 @@ const modalContentObserver = new MutationObserver(() => {
   const loader = document.getElementById("loading-overlay");
 
   if (modal && modalContent && loader && loader.style.display !== "none") {
-    console.log("✅ モーダルと中身を検出 → ローディングを非表示にします");
+    //console.log("✅ モーダルと中身を検出 → ローディングを非表示にします");
     loader.style.display = "none";
     modalContentObserver.disconnect();
   }
@@ -283,7 +283,7 @@ window.goToRecommended = function () {
   const storedHP = localStorage.getItem("hpPercentage");
   const hp = parseInt(storedHP);
 
-  console.log("🔥 goToRecommended 実行: HP =", hp);
+  //console.log("🔥 goToRecommended 実行: HP =", hp);
 
   if (!isNaN(hp)) {
     window.location.href = `/emotion_logs/recommended?hp=${hp}`;
