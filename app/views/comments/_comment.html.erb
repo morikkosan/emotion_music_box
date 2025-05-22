@@ -12,8 +12,13 @@
       <div>
         <strong><%= comment.user.name %></strong>
         <p class="mb-1"><%= comment.body %></p>
+<small style="color: #666;"><%= time_ago_in_words(comment.created_at) %></small>
+
+
+
       </div>
     </div>
+    
 
     <!-- 右側：ボタン群 -->
     <div class="d-flex flex-column align-items-end ms-3">
