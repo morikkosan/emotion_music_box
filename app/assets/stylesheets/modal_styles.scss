@@ -1,0 +1,73 @@
+/* ネオン風モーダル背景 */
+#modal-container.modal.show {
+  background-color: rgba(10, 10, 20, 0.3);
+  backdrop-filter: blur(5px);
+}
+
+/* モーダルダイアログの枠 */
+#modal-container .modal-dialog {
+  border-radius: 12px;
+  border: 2px solid;
+  border-image: linear-gradient(45deg, #00ffff, #ff00ff) 1; /* 水色→マゼンタのグラデーション枠線 */
+  box-shadow:
+    0 0 15px #00ffff,
+    0 0 30px #ff00ff,
+    0 0 45px #00ffff;
+  max-width: 600px;
+}
+
+/* モーダルコンテンツは変更なし */
+#modal-container .modal-content {
+  background: linear-gradient(145deg, #0d1117, #1a1a2e);
+  border-radius: 12px;
+  border: 1px solid #00ffff;
+  box-shadow:
+    inset 0 0 10px #00ffffaa,
+    0 0 15px #00ffff;
+  color: #c0f7f7;
+  font-weight: 600;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ボタン */
+#modal-container .btn-primary {
+  background: linear-gradient(45deg, #a37bbd, #b893ff); /* 修正済み：優しい紫系グラデ */
+  border: none;
+  color: #1c2233;                                   /* 修正済み：濃いテキスト色 */
+  font-weight: 600;
+  text-shadow: none;                                /* 修正済み：テキストシャドウなし */
+  box-shadow: none;                                 /* 修正済み：ボックスシャドウなし */
+  transition: background-color 0.3s ease;
+}
+
+#modal-container .btn-primary:hover {
+  background: linear-gradient(45deg, #8c69b3, #a080d7); /* 修正済み：ホバー時グラデ */
+  box-shadow: none;
+}
+
+/* 入力欄 */
+#modal-container input.form-control,
+#modal-container textarea.form-control {
+  background-color: #1c2233;                   /* 修正済み：明るめの濃紺 */
+  border: 1px solid #a37bbd;                   /* 修正済み：紫系の薄い枠線 */
+  color: #e0d9f7;                              /* 修正済み：薄い文字色 */
+  box-shadow: none;                            /* 修正済み：影なし */
+  transition: border-color 0.3s ease;
+}
+
+#modal-container input.form-control:focus,
+#modal-container textarea.form-control:focus {
+  border-color: #b893ff;                       /* 修正済み：フォーカス時淡い紫 */
+  box-shadow: 0 0 8px #b893ff inset;          /* 修正済み：内側のやわらかい光 */
+  outline: none;
+}
+
+/* スクロールバー（必要なら） */
+#modal-container .modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+#modal-container .modal-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(45deg, #00ffff, #ff00ff);
+  border-radius: 10px;
+}
