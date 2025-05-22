@@ -14361,9 +14361,6 @@ var search_music_controller_default = class extends Controller {
 };
 
 // app/javascript/controllers/submit_handler_controller.js
-function getTodayString() {
-  return (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-}
 var submit_handler_controller_default = class extends Controller {
   static targets = ["submit"];
   connect() {
@@ -14385,58 +14382,35 @@ var submit_handler_controller_default = class extends Controller {
     if (this.hasSubmitTarget) this.submitTarget.disabled = true;
     const form = this.element;
     const formData = new FormData(form);
-    const formDate = formData.get("emotion_log[date]");
-    const today = getTodayString();
-    if (formDate !== today) {
-      fetch(form.action, {
-        method: "POST",
-        headers: { Accept: "application/json" },
-        body: formData
-      }).then((res) => res.json()).then((data) => {
-        if (data.success) {
-          alert("\u8A18\u9332\u306F\u4FDD\u5B58\u3055\u308C\u307E\u3057\u305F\u304C\u3001HP\u30B2\u30FC\u30B8\u306E\u53CD\u6620\u306F\u4ECA\u65E5\u306E\u8A18\u9332\u306E\u307F\u3067\u3059\u3002");
-          window.location.href = data.redirect_url;
-        } else {
-          alert("\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + (data.errors || []).join("\n"));
-        }
-      }).catch((error2) => {
-        console.error("\u9001\u4FE1\u30A8\u30E9\u30FC:", error2);
-        alert("\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
-      }).finally(() => {
-        if (this.hasSubmitTarget) this.submitTarget.disabled = false;
-        const loader2 = document.getElementById("loading-overlay");
-        if (loader2) loader2.style.display = "none";
-      });
-      return;
-    }
     fetch(form.action, {
       method: "POST",
       headers: { Accept: "application/json" },
       body: formData
     }).then((res) => res.json()).then((data) => {
       if (data.success) {
-        const storedDate = localStorage.getItem("hpPercentageDate");
-        if (storedDate !== today) {
-          localStorage.setItem("hpPercentage", "50");
-        }
-        let hpPercentage = 50;
-        const storedHP = parseFloat(localStorage.getItem("hpPercentage"));
-        if (!isNaN(storedHP)) hpPercentage = storedHP;
-        if (typeof data.hpPercentage !== "undefined") {
-          hpPercentage += parseFloat(data.hpPercentage);
-          hpPercentage = Math.max(0, Math.min(100, hpPercentage));
-        }
-        localStorage.setItem("hpPercentage", hpPercentage.toString());
-        localStorage.setItem("hpPercentageDate", today);
-        if (window.updateHPBar) window.updateHPBar();
-        const toastEl = document.getElementById("save-toast");
-        if (toastEl) {
-          const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
-          toast.show();
-        }
-        setTimeout(() => {
+        if (data.hp_today) {
+          let hpPercentage = 50;
+          const storedHP = parseFloat(localStorage.getItem("hpPercentage"));
+          if (!isNaN(storedHP)) hpPercentage = storedHP;
+          if (typeof data.hpPercentage !== "undefined") {
+            hpPercentage += parseFloat(data.hpPercentage);
+            hpPercentage = Math.max(0, Math.min(100, hpPercentage));
+          }
+          localStorage.setItem("hpPercentage", hpPercentage.toString());
+          localStorage.setItem("hpPercentageDate", (/* @__PURE__ */ new Date()).toISOString().slice(0, 10));
+          if (window.updateHPBar) window.updateHPBar();
+          const toastEl = document.getElementById("save-toast");
+          if (toastEl) {
+            const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+            toast.show();
+          }
+          setTimeout(() => {
+            window.location.href = data.redirect_url;
+          }, 1500);
+        } else {
+          alert("\u8A18\u9332\u306F\u4FDD\u5B58\u3055\u308C\u307E\u3057\u305F\u304C\u3001HP\u30B2\u30FC\u30B8\u306E\u53CD\u6620\u306F\u4ECA\u65E5\u306E\u8A18\u9332\u306E\u307F\u3067\u3059\u3002");
           window.location.href = data.redirect_url;
-        }, 1500);
+        }
       } else {
         alert("\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + (data.errors || []).join("\n"));
       }
