@@ -87,11 +87,16 @@
           <div class="card-body">
             <div class="d-flex align-items-center">
               <p class="card-text mb-0">
+              <% if user_signed_in? %>
                 <%= link_to log.emotion, emotion_log_path(log), class: "button", data: { turbo: false } %>
-                <span class="ms-3">
-                  <%= log.description.present? ? log.description.truncate(10) : "一言はありません" %>
-                </span>
-              </p>
+              <% else %>
+                <%= link_to log.emotion, user_soundcloud_omniauth_authorize_path, class: "button", data: { turbo: false } %>
+              <% end %>
+              <span class="ms-3">
+                <%= log.description.present? ? log.description.truncate(10) : "一言はありません" %>
+              </span>
+            </p>
+
               <%= render 'mini_music_player', log: log %>
             </div>
           </div>
