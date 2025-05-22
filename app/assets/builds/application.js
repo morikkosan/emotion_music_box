@@ -14190,6 +14190,9 @@ var modal_controller_default = class extends Controller {
     bsModal.show();
     const desc = this.element.querySelector("#emotion_log_description");
     if (desc) setTimeout(() => desc.focus(), 100);
+    this.element.addEventListener("hidden.bs.modal", () => {
+      this.element.remove();
+    });
   }
 };
 
@@ -14251,7 +14254,7 @@ var search_music_controller_default = class extends Controller {
           <div>
             <p><strong>${track.title}</strong><br>${track.user.username}</p>
             <a href="${track.permalink_url}" class="btn btn-info btn-sm" target="_blank">SoundCloud\u3067\u518D\u751F</a>
-            <button type="button" class="btn btn-success btn-sm" data-action="search-music#select" data-audio="${track.permalink_url}" data-name="${track.title}" data-artist="${track.user.username}">\u9078\u629E</button>
+            <button type="button" class="btn btn-success btn-sm" data-action="search-music#select" data-audio="${track.permalink_url}" data-name="${track.title}" data-artist="${track.user.username}">\u9078\u629Eor\u8996\u8074</button>
           </div>
         </div>
         <div class="player-slot mt-2"></div><hr/>`;
