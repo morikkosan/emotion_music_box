@@ -1,0 +1,37 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env.production
+    environment:
+      - RAILS_ENV=production
+      - SOUNDCLOUD_REDIRECT_URI=https://moriappli-emotion.com/auth/soundcloud/callback
+    command:
+      - bash
+      - -c
+      - |
+        rm -f tmp/pids/server.pid && \
+        bundle exec rails db:prepare && \
+        bundle exec rails server \
+          -b 'ssl://0.0.0.0:443?key=/etc/ssl/private/moriappli-emotion.com-key.pem&cert=/etc/ssl/certs/moriappli-emotion.com.pem' \
+          -e production
+    volumes:
+      - .:/rails
+      - bundle_data:/usr/local/bundle:cached
+      - node_modules:/rails/node_modules
+      - ./docker/certs/moriappli-emotion.com.pem:/etc/ssl/certs/moriappli-emotion.com.pem:ro
+      - ./docker/certs/moriappli-emotion.com-key.pem:/etc/ssl/private/moriappli-emotion.com-key.pem:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "443:443"
+    restart: always
+
+volumes:
+  bundle_data:
+  node_modules:
