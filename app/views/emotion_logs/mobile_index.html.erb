@@ -1,33 +1,23 @@
-<div class="container mt-5 position-relative">
-  <!-- ✅ DJアイコン（固定） -->
-  <!-- <div class="dj-icon-fixed">
-    <%= image_tag "dj_robot_icon.png", alt: "DJ Robot" %>
-  </div> -->
-
+<div class="container mt-3 position-relative">
   <% if user_signed_in? %>
     <!-- ✅ ユーザードロップダウン -->
-    <div class="user-dropdown-wrapper">
+    <div class="user-dropdown-wrapper px-3">
       <div class="user-dropdown">
         <div class="user-bar">
           <%= image_tag current_user.profile_avatar_url, size: "32x32", class: "rounded-circle", alt: current_user.name %>
           <span class="ms-2 text-white"><%= current_user.name %></span>
         </div>
-
         <div class="dropdown-menu">
           <%= link_to destroy_user_session_path, method: :delete, data: { turbo: false }, id: "logout-link", class: "dropdown-item d-flex align-items-center text-danger" do %>
             <%= image_tag "log_out.png", class: "dropdown-icon me-2", alt: "ログアウト" %> ログアウト
           <% end %>
-
           <div class="dropdown-divider"></div>
-
           <%= link_to edit_user_registration_path, class: "dropdown-item d-flex align-items-center" do %>
             <%= image_tag "profile_edit.png", class: "dropdown-icon me-2", alt: "プロフィール編集" %> プロフィール編集
           <% end %>
-
           <%= link_to my_emotion_logs_path, class: "dropdown-item d-flex align-items-center" do %>
             <%= image_tag "test1.png", class: "dropdown-icon me-2", alt: "マイページ" %> マイページ
           <% end %>
-
           <%= link_to "#", class: "dropdown-item d-flex align-items-center" do %>
             <%= image_tag "form_contact.png", class: "dropdown-icon me-2", alt: "お問い合わせ" %> お問い合わせ
           <% end %>
@@ -37,32 +27,47 @@
   <% end %>
 
   <!-- ✅ ロゴ表示 -->
-  <div class="text-center mt-4">
+  <div class="text-start mt-2 px-3">
     <%= link_to emotion_logs_path do %>
-      <%= image_tag "logo1.png", alt: "Emotion List Logo", class: "img-fluid neon-icon", style: "max-width:700px; width:100%;" %>
+      <%= image_tag "logo1.png", alt: "Emotion List Logo", class: "img-fluid neon-icon", style: "max-width:150px; width:100%;" %>
     <% end %>
   </div>
 
+  <% if user_signed_in? %>
+    <!-- ✅ HPバー -->
+    <div id="hp-bar-container" class="px-3 my-3">
+      <span class="today_mental_text d-block mb-1 text-white text-center" style="font-weight: bold;">
+        👍Today's stress level <span id="bar-width-display"></span> 👍
+      </span>
+      <p id="hp-status-text" class="text-center text-white">メンタル正常</p>
+      <div id="hp-bar" class="w-100" style="height: 10px; background-color: #ccc; border-radius: 4px;"></div>
+    </div>
+
+    <!-- ✅ ネオン風記録ボタン -->
+    <div class="w-100 text-center my-4" style="z-index: 1030;">
+      <%= link_to "今日の気持ちを記録する",
+                  new_emotion_log_path(format: :turbo_stream),
+                  id: "record-button",
+                  class: "record-mobile-button",
+                  data: { controller: "record-btn", action: "click->record-btn#hide", turbo_prefetch: false } %>
+    </div>
+  <% end %>
+
   <% unless user_signed_in? %>
-    <!-- ✅ ログイン前のキャッチコピー -->
     <div class="text-center mt-5 mb-4">
       <h1 style="font-size:2rem; font-weight:bold; color:rgb(215,205,216); text-shadow:0 0 8px,#1ee4da;">
         音楽とストレスを支配する
       </h1>
     </div>
-
-    <!-- ✅ ログイン/新規登録ボタン -->
     <div class="neon-btn-panel text-center mt-4">
       <%= link_to "https://soundcloud.com/signup", target: "_blank", rel: "noopener", class: "neon-btn btn-neon-xl me-3" do %>
         <div class="neon-btn-title">新規作成</div>
         <div class="neon-btn-sub">(SoundCloudアカウントも簡単作成)</div>
       <% end %>
-
       <%= link_to user_soundcloud_omniauth_authorize_path, class: "neon-btn btn-neon-xl", data: { turbo: false } do %>
         <div class="neon-btn-title">ログインして始める</div>
       <% end %>
     </div>
-
     <div class="neon-btn-footer large-text text-center mt-2">
       <strong>※ はじめての方は新規作成で登録後、<br>
         この画面に戻って「ログインして始める」をクリック、さらに「Connect and Continue」を押せば、あなたの新しい音楽の旅が始まります。</strong>
@@ -70,46 +75,33 @@
   <% end %>
 </div>
 
-
-<!-- ✅ 上部中央に固定されたネオン風ボタン -->
-<% if user_signed_in? %>
-  <!-- ✅ ログインユーザーだけに表示 -->
-  <div class="w-100 text-center" style="z-index: 1030;">
-    <%= link_to "今日の気持ちを記録する",
-                new_emotion_log_path(format: :turbo_stream),
-                id: "record-button",
-                class: "record-mobile-button",
-                data: { controller: "record-btn", action: "click->record-btn#hide", turbo_prefetch: false } %>
-  </div>
-<% end %>
-
-
-<!-- ✅ 投稿一覧などメインコンテンツ -->
-<div class="mobile-content pt-5 pb-5 px-3">
+<!-- ✅ 投稿一覧 -->
+<div class="mobile-content pb-5 px-3 mt-4">
   <%= render partial: "emotion_logs/mobile_list", locals: { logs: @emotion_logs } %>
 </div>
 
 <% if user_signed_in? %>
-  <!-- ✅ 下部のメニュー -->
+  <!-- ✅ フッターメニュー -->
   <nav class="mobile-footer fixed-bottom bg-dark text-white d-flex justify-content-around py-2">
     <%= link_to emotion_logs_path, class: "text-center text-white small" do %>
       <i class="bi bi-house fs-4"></i><br>ホーム
     <% end %>
-
     <%= link_to "#", onclick: "goToRecommended()", class: "text-center text-white small" do %>
       <i class="bi bi-fire fs-4"></i><br>おすすめ🔥
     <% end %>
 
-    <%= link_to "#", class: "text-center text-white small", data: { controller: "search-modal", action: "click->search-modal#open" } do %>
-      <i class="bi bi-search fs-4"></i><br>検索
-    <% end %>
-
+    <%= link_to "#", class: "text-center text-white small",
+  data: { controller: "mobile-super-search", action: "click->mobile-super-search#open" } do %>
+  <i class="bi bi-search fs-4"></i><br>検索
+<% end %>
     <%= link_to my_emotion_logs_path, class: "text-center text-white small" do %>
       <i class="bi bi-person fs-4"></i><br>マイページ
     <% end %>
-
     <%= link_to bookmarks_emotion_logs_path, class: "text-center text-white small" do %>
       <i class="bi bi-heart fs-4"></i><br>お気に入り
     <% end %>
   </nav>
 <% end %>
+
+<%= render "emotion_logs/mobile_super_search" %>
+

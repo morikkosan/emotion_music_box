@@ -14738,6 +14738,14 @@ var view_switcher_controller_default = class extends Controller {
   }
 };
 
+// app/javascript/controllers/mobile_super_search_controller.js
+var mobile_super_search_controller_default = class extends Controller {
+  open() {
+    const modal = document.getElementById("mobile-super-search-modal");
+    Modal.getOrCreateInstance(modal).show();
+  }
+};
+
 // app/javascript/controllers/index.js
 var application = Application.start();
 application.register("modal", modal_controller_default);
@@ -14750,6 +14758,7 @@ application.register("tag-input", tag_input_controller_default);
 application.register("tag-autocomplete", tag_autocomplete_controller_default);
 application.register("view-switcher", view_switcher_controller_default);
 application.register("record-btn", record_btn_controller_default);
+application.register("mobile-super-search", mobile_super_search_controller_default);
 
 // app/javascript/custom/comments.js
 document.addEventListener("DOMContentLoaded", function() {
