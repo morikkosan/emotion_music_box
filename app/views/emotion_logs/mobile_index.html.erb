@@ -6,11 +6,13 @@
   </div>
 </div>
 
-<!-- ✅ 「記録する」ボタン（上部中央に固定）-->
-<div class="fixed-top w-100 text-center mt-2" style="z-index: 1030;">
-  <%= link_to "#", class: "btn btn-primary rounded-pill px-4 py-2 shadow", data: { controller: "record-modal", action: "click->record-modal#open" } do %>
-    今日の気持ちを記録する
-  <% end %>
+<!-- ✅ 上部中央に固定されたネオン風ボタン -->
+<div class="fixed-top w-100 text-center mt-5" style="z-index: 1030;">
+  <%= link_to "今日の気持ちを記録する",
+              new_emotion_log_path(format: :turbo_stream),
+              id: "record-button",
+              data: { controller: "record-btn", action: "click->record-btn#hide", turbo_prefetch: false },
+              class: "record-mobile-button" %>
 </div>
 
 <!-- ✅ 投稿一覧などメインコンテンツ -->
@@ -20,27 +22,22 @@
 
 <!-- ✅ 下部のメニュー -->
 <nav class="mobile-footer fixed-bottom bg-dark text-white d-flex justify-content-around py-2">
-  <!-- ホーム -->
   <%= link_to emotion_logs_path, class: "text-center text-white small" do %>
     <i class="bi bi-house fs-4"></i><br>ホーム
   <% end %>
 
-  <!-- おすすめ -->
   <%= link_to "#", onclick: "goToRecommended()", class: "text-center text-white small" do %>
     <i class="bi bi-fire fs-4"></i><br>おすすめ🔥
   <% end %>
 
-  <!-- 検索（モーダル） -->
   <%= link_to "#", class: "text-center text-white small", data: { controller: "search-modal", action: "click->search-modal#open" } do %>
     <i class="bi bi-search fs-4"></i><br>検索
   <% end %>
 
-  <!-- マイページ -->
   <%= link_to my_emotion_logs_path, class: "text-center text-white small" do %>
     <i class="bi bi-person fs-4"></i><br>マイページ
   <% end %>
 
-  <!-- お気に入り -->
   <%= link_to bookmarks_emotion_logs_path, class: "text-center text-white small" do %>
     <i class="bi bi-heart fs-4"></i><br>お気に入り
   <% end %>

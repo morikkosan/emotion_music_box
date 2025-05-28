@@ -7,33 +7,35 @@
 # Ignore bundler config.
 /.bundle
 
-# Ignore all environment files.
+# ✅ Ignore all environment variable files
 /.env*
 
-# Ignore all logfiles and tempfiles.
+# ✅ Ignore all logfiles and tempfiles.
 /log/*
 /tmp/*
 !/log/.keep
 !/tmp/.keep
 
-# Ignore pidfiles, but keep the directory.
+# ✅ Ignore pidfiles, but keep the directory.
 /tmp/pids/*
 !/tmp/pids/
 !/tmp/pids/.keep
 
-# Ignore storage (uploaded files in development and any SQLite databases).
+# ✅ Ignore storage (uploaded files in dev and SQLite dbs)
 /storage/*
 !/storage/.keep
 /tmp/storage/*
 !/tmp/storage/
 !/tmp/storage/.keep
 
+# ✅ Ignore precompiled frontend assets
 /public/assets
 
-# Ignore master key for decrypting credentials and more.
+# ✅ Ignore Rails credentials key
 /config/master.key
-node_modules/
+
+# ✅ Ignore Node.js dependencies
 node_modules/
 
+# ✅ Ignore Windows security metadata
 *:Zone.Identifier
-
