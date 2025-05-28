@@ -1,136 +1,177 @@
+
+
+
 <div class="container mt-5 position-relative">
-  <!-- ✅ DJアイコン（固定） -->
-  <div class="dj-icon-fixed">
-    <%= image_tag "dj_robot_icon.png", alt: "DJ Robot" %>
-  </div>
+
+
+<div class="dj-icon-fixed">
+  <%= image_tag "dj_robot_icon.png", alt: "DJ Robot" %>
+</div>
+
+
 
   <% if user_signed_in? %>
-    <!-- ✅ ユーザードロップダウン -->
-    <div class="user-dropdown-wrapper">
-      <div class="user-dropdown">
-        <div class="user-bar">
-          <%= image_tag current_user.profile_avatar_url, size: "32x32", class: "rounded-circle", alt: current_user.name %>
-          <span class="ms-2 text-white"><%= current_user.name %></span>
-        </div>
+  <div class="user-dropdown-wrapper">
+    <div class="user-dropdown">
+      <div class="user-bar">
+        <%= image_tag current_user.profile_avatar_url, size: "32x32", class: "rounded-circle", alt: current_user.name %>
+        <span class="ms-2 text-white"><%= current_user.name %></span>
+      </div>
 
-        <div class="dropdown-menu">
-          <%= link_to destroy_user_session_path, method: :delete, data: { turbo: false }, id: "logout-link", class: "dropdown-item d-flex align-items-center text-danger" do %>
-            <%= image_tag "log_out.png", class: "dropdown-icon me-2", alt: "ログアウト" %> ログアウト
-          <% end %>
+      <div class="dropdown-menu">
 
-          <div class="dropdown-divider"></div>
+        <%= link_to destroy_user_session_path,
+                    method: :delete,
+                    data: { turbo: false },
+                    id: "logout-link",
+                    class: "dropdown-item d-flex align-items-center text-danger" do %>
+          <%= image_tag "log_out.png", class: "dropdown-icon me-2", alt: "ログアウト" %>
+          ログアウト
+        <% end %>
 
-          <%= link_to edit_user_registration_path, class: "dropdown-item d-flex align-items-center" do %>
-            <%= image_tag "profile_edit.png", class: "dropdown-icon me-2", alt: "プロフィール編集" %> プロフィール編集
-          <% end %>
+        <div class="dropdown-divider"></div>
 
-          <%= link_to my_emotion_logs_path, class: "dropdown-item d-flex align-items-center" do %>
-            <%= image_tag "test1.png", class: "dropdown-icon me-2", alt: "マイページ" %> マイページ
-          <% end %>
+        <%= link_to edit_user_registration_path, class: "dropdown-item d-flex align-items-center" do %>
+          <%= image_tag "profile_edit.png", class: "dropdown-icon me-2", alt: "プロフィール編集" %>
+          プロフィール編集
+        <% end %>
 
-          <%= link_to "#", class: "dropdown-item d-flex align-items-center" do %>
-            <%= image_tag "form_contact.png", class: "dropdown-icon me-2", alt: "お問い合わせ" %> お問い合わせ
-          <% end %>
-        </div>
+        <%= link_to my_emotion_logs_path, class: "dropdown-item d-flex align-items-center" do %>
+          <%= image_tag "test1.png", class: "dropdown-icon me-2", alt: "マイページ" %>
+          マイページ
+        <% end %>
+
+        <%= link_to "#", class: "dropdown-item d-flex align-items-center" do %>
+          <%= image_tag "form_contact.png", class: "dropdown-icon me-2", alt: "お問い合わせ" %>
+          お問い合わせ
+        <% end %>
+
       </div>
     </div>
-  <% end %>
+  </div>
+<% end %>
 
-  <!-- ✅ ロゴ表示 -->
+</div>
+
+
+  <!-- ロゴ -->
   <div class="text-center mt-4">
     <%= link_to emotion_logs_path do %>
       <%= image_tag "logo1.png", alt: "Emotion List Logo", class: "img-fluid neon-icon", style: "max-width:700px; width:100%;" %>
     <% end %>
   </div>
 
-  <% unless user_signed_in? %>
-    <!-- ✅ ログイン前のキャッチコピー -->
-    <div class="text-center mt-5 mb-4">
-      <h1 style="font-size:3rem; font-weight:bold; color:rgb(215,205,216); text-shadow:0 0 10px,#1ee4da;">
-        音楽とストレスを支配する
-      </h1>
-    </div>
+  <!-- キャッチコピー -->
+ <% unless user_signed_in? %>
+  <!-- キャッチコピー -->
+  <div class="text-center mt-5 mb-4">
+    <h1 style="font-size:3rem; font-weight:bold; color:rgb(215,205,216); text-shadow:0 0 10px,#1ee4da;">
+      音楽とストレスを支配する
+    </h1>
+  </div>
 
-    <!-- ✅ ログイン/新規登録ボタン -->
-    <div class="neon-btn-panel text-center mt-4">
-      <%= link_to "https://soundcloud.com/signup", target: "_blank", rel: "noopener", class: "neon-btn btn-neon-xl me-3" do %>
-        <div class="neon-btn-title">新規作成</div>
-        <div class="neon-btn-sub">(SoundCloudアカウントも簡単作成)</div>
+  <!-- Neon ボタン群（ログイン前） -->
+  <div class="neon-btn-panel text-center mt-4">
+    <%= link_to "https://soundcloud.com/signup",
+                target: "_blank",
+                rel: "noopener",
+                class: "neon-btn btn-neon-xl me-3" do %>
+      <div class="neon-btn-title">新規作成</div>
+      <div class="neon-btn-sub">(SoundCloudアカウントも簡単作成)</div>
+    <% end %>
+
+      <%= link_to user_soundcloud_omniauth_authorize_path,
+                class: "neon-btn btn-neon-xl",
+                data: { turbo: false } do %>
+      <div class="neon-btn-title">ログインして始める</div>
+    <% end %>
+
+  </div>
+
+  <div class="neon-btn-footer large-text text-center mt-2">
+    <strong>※ はじめての方は新規作成で登録後、<br>
+この画面に戻って「ログインして始める」をクリック、さらに「Connect and Continue」を押せば、あなたの新しい音楽の旅が始まります。
+</strong>
+  </div>
+<% end %>
+
+
+  <!-- メインメニュー -->
+ <% if user_signed_in? %>
+  <div class="d-flex justify-content-center align-items-stretch flex-wrap mt-4" style="gap: 1.2rem;">
+    <!-- ホーム -->
+    <div class="mypage-item">
+      <%= link_to emotion_logs_path, class: 'mypage-icon-link' do %>
+        <%= image_tag 'home.png', alt: 'ホーム', class: 'mypage-icon' %>
+        <div class='mypage-text'>ホーム</div>
       <% end %>
+    </div>
 
-      <%= link_to user_soundcloud_omniauth_authorize_path, class: "neon-btn btn-neon-xl", data: { turbo: false } do %>
-        <div class="neon-btn-title">ログインして始める</div>
+    <!-- おすすめ🔥 -->
+    <div class="mypage-item">
+      <%= link_to "#", class: "mypage-icon-link", onclick: "goToRecommended()" do %>
+        <%= image_tag 'hot.png', alt: 'おすすめ', class: 'mypage-icon' %>
+        <div class='mypage-text'>おすすめ🔥</div>
       <% end %>
     </div>
 
-    <div class="neon-btn-footer large-text text-center mt-2">
-      <strong>※ はじめての方は新規作成で登録後、<br>
-        この画面に戻って「ログインして始める」をクリック、さらに「Connect and Continue」を押せば、あなたの新しい音楽の旅が始まります。</strong>
+    <!-- EMOTION -->
+    <div class="mypage-item search-item wide">
+      <div style="color: magenta; font-weight: bold; font-size: 1rem; margin-bottom: 0.3rem; text-align: center;">
+        EMOTION
+      </div>
+      <%= form_with url: emotion_logs_path, method: :get, data: { turbo_frame: "logs_list" }, html: { class: "w-100 h-100 d-flex flex-column justify-content-center align-items-center" } do %>
+        <%= select_tag :emotion,
+                       options_for_select(
+                         [['選択しない', ''], ['最高', '最高'], ['気分良い', '気分良い'],
+                          ['いつも通り', 'いつも通り'], ['イライラ', 'イライラ'], ['限界', '限界']],
+                       selected: params[:emotion]
+                       ),
+                       class: 'form-control',
+                       onchange: 'this.form.submit()' %>
+        <%= hidden_field_tag :genre, params[:genre] %>
+      <% end %>
     </div>
-  <% end %>
 
-  <% if user_signed_in? %>
-    <!-- ✅ メインメニュー -->
-    <div class="d-flex justify-content-center align-items-stretch flex-wrap mt-4">
-      <div class="mypage-item">
-        <%= link_to emotion_logs_path, class: 'mypage-icon-link' do %>
-          <%= image_tag 'home.png', alt: 'ホーム', class: 'mypage-icon' %>
-          <div class='mypage-text'>ホーム</div>
-        <% end %>
+    <!-- TAGフォーム -->
+    <div class="mypage-item search-item wide" data-controller="tag-autocomplete" style="position: relative;">
+      <div style="color: #00aaff; font-weight: bold; font-size: 1rem; margin-bottom: 0.3rem; text-align: center;">
+        TAG
       </div>
-
-      <div class="mypage-item">
-        <%= link_to "#", class: "mypage-icon-link", onclick: "goToRecommended()" do %>
-          <%= image_tag 'hot.png', alt: 'おすすめ', class: 'mypage-icon' %>
-          <div class='mypage-text'>おすすめ🔥</div>
-        <% end %>
-      </div>
-
-      <!-- ✅ EMOTIONフォーム -->
-      <div class="d-flex justify-content-center align-items-start flex-wrap mt-4" style="gap: 1rem;">
-        <div class="mypage-item search-item wide">
-          <div style="color: magenta; font-weight: bold; font-size: 1rem; margin-bottom: 0.3rem; text-align: center;">EMOTION</div>
-          <%= form_with url: emotion_logs_path, method: :get, data: { turbo_frame: "logs_list" }, html: { class: "w-100 h-100 d-flex flex-column justify-content-center align-items-center" } do %>
-            <%= select_tag :emotion, options_for_select([
-              ['選択しない', ''], ['最高', '最高'], ['気分良い', '気分良い'],
-              ['いつも通り', 'いつも通り'], ['イライラ', 'イライラ'], ['限界', '限界']
-            ], selected: params[:emotion]), class: 'form-control', onchange: 'this.form.submit()' %>
-            <%= hidden_field_tag :genre, params[:genre] %>
-          <% end %>
-        </div>
-
-        <!-- ✅ 検索リセット -->
-        <div class="text-center my-3">
-          <%= link_to "検索をリセット", emotion_logs_path, class: "btn btn-outline-secondary neon-btn" %>
-          <strong style="position: absolute; bottom: 20em; left: 50%; transform: translateX(-50%); width: max-content; background: rgba(198, 218, 219, 0.8); padding: 0.2em 1em; border-radius: 8px; font-size: 1.1em; z-index: 2;">
-            投稿するとあなたのHPが変わるかも？
-          </strong>
-        </div>
-
-        <!-- ✅ TAGフォーム -->
-        <div class="mypage-item search-item wide" data-controller="tag-autocomplete" style="position: relative;">
-          <div style="color: #00aaff; font-weight: bold; font-size: 1rem; margin-bottom: 0.3rem; text-align: center;">TAG</div>
-          <%= form_with url: emotion_logs_path, method: :get, data: { turbo_frame: "logs_list" }, html: { class: "w-100 h-100 d-flex flex-column justify-content-center align-items-center" } do |f| %>
-            <%= f.text_field :genre, placeholder: 'Search by genre', class: 'form-control no-bottom-radius', value: params[:genre], autocomplete: 'off', data: { tag_autocomplete_target: "input" } %>
-            <%= hidden_field_tag :emotion, params[:emotion] %>
-          <% end %>
-          <ul data-tag-autocomplete-target="suggestions" class="list-group tag-suggestions" style="position: absolute; bottom: calc(100% - 2px); left: 0; width: 100%; z-index: 9999; margin: 0;"></ul>
-        </div>
-      </div>
-
-      <div class="mypage-item">
-        <%= link_to my_emotion_logs_path, class: 'mypage-icon-link' do %>
-          <%= image_tag 'mypage_logo.png', alt: 'マイページ', class: 'mypage-icon' %>
-          <div class='mypage-text'>マイページ</div>
-        <% end %>
-      </div>
-
-      <div class="mypage-item">
-        <%= link_to bookmarks_emotion_logs_path, class: 'mypage-icon-link' do %>
-          <%= image_tag 'favorite.png', alt: 'お気に入りリスト', class: 'mypage-icon' %>
-          <div class='mypage-text'>お気に入りリスト</div>
-        <% end %>
-      </div>
+      <%= form_with url: emotion_logs_path, method: :get, data: { turbo_frame: "logs_list" }, html: { class: "w-100 h-100 d-flex flex-column justify-content-center align-items-center" } do |f| %>
+        <%= f.text_field :genre,
+                         placeholder: 'Search by genre',
+                         class: 'form-control no-bottom-radius',
+                         value: params[:genre],
+                         autocomplete: 'off',
+                         data: { tag_autocomplete_target: "input" } %>
+        <%= hidden_field_tag :emotion, params[:emotion] %>
+      <% end %>
+      <ul data-tag-autocomplete-target="suggestions"
+          class="list-group tag-suggestions"
+          style="position: absolute;
+                 bottom: calc(100% - 2px);
+                 left: 0;
+                 width: 100%;
+                 z-index: 9999;
+                 margin: 0;">
+      </ul>
     </div>
-  <% end %>
-</div>
+
+    <!-- マイページ -->
+    <div class="mypage-item">
+      <%= link_to my_emotion_logs_path, class: 'mypage-icon-link' do %>
+        <%= image_tag 'mypage_logo.png', alt: 'マイページ', class: 'mypage-icon' %>
+        <div class='mypage-text'>マイページ</div>
+      <% end %>
+    </div>
+
+    <!-- お気に入り -->
+    <div class="mypage-item">
+      <%= link_to bookmarks_emotion_logs_path, class: 'mypage-icon-link' do %>
+        <%= image_tag 'favorite.png', alt: 'お気に入りリスト', class: 'mypage-icon' %>
+        <div class='mypage-text'>お気に入りリスト</div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
