@@ -14712,7 +14712,10 @@ var view_switcher_controller_default = class extends Controller {
     const url = new URL(window.location.href);
     const isAlreadyMobile = url.searchParams.get("view") === "mobile";
     const isOnTargetPage = [
+      "/",
       "/emotion_logs",
+      "/emotion_logs/",
+      "/emotion_logs/index",
       "/my_emotion_logs",
       "/bookmarks/emotion_logs",
       "/recommended"
