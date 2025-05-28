@@ -1,38 +1,43 @@
-/* ✅ モバイル用ネオン風ボタン：上部中央に固定 */
 #record-button.record-mobile-button {
   position: fixed;
-  top: 15rem; /* ←★ここを 1rem → 5rem に変更（必要に応じて調整してOK） */
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1030;
+  /* 右下、メニューバー上あたりに配置 */
+  right: 1.2rem;           /* 画面右からの距離 */
+  bottom: 4.2rem;          /* 画面下からの距離（メニューの上に来るように調整。必要なら+0.5remずつ調整OK） */
+  left: auto;
+  top: auto;
+
+  z-index: 1051;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem 2rem;
-  border-radius: 50px;
-  font-size: 1rem;
+
+  /* サイズを小さく */
+  padding: 0.6rem 1.3rem;
+  border-radius: 28px;
+  font-size: 0.92rem;
   font-weight: bold;
   color: white;
   background: linear-gradient(135deg, #ff00cc, #00ccff);
-  border: 3px solid #eb2df8;
+  border: 2px solid #eb2df8;
   box-shadow:
-    0 0 12px rgba(230, 0, 255, 0.6),
-    0 0 24px rgba(230, 0, 255, 0.4);
+    0 0 10px rgba(230, 0, 255, 0.6),
+    0 0 18px rgba(230, 0, 255, 0.3);
   transition: box-shadow 0.3s ease, transform 0.2s ease;
   animation: neon-pulse 2s infinite alternate;
   text-decoration: none;
-  max-width: 90%;
+  max-width: 64vw; /* 横幅を抑えめに */
+  min-width: 90px;
 }
 
-
-/* ✅ ホバー時：少し浮かせて発光強調 */
+/* ホバー時 */
 #record-button.record-mobile-button:hover {
-  transform: translate(-50%, -2px);
+  transform: translateY(-4px);
   box-shadow:
     0 0 15px #00c3ff,
     0 0 30px #a100ff,
     0 0 45px #ff00cc !important;
 }
+
 
 /* ✅ SoundCloud プレーヤーの横はみ出し対策 */
 /* プレーヤー全体をラップしてスクロール可能に */
@@ -51,4 +56,118 @@
   height: 100px; /* お好みで調整可能 */
   border: none;
   display: block;
+}
+
+
+
+/* モーダル全体 */
+.mobile-super-search-modal-content {
+  background: #141824 !important;
+  color: #fff;
+  border-radius: 22px;
+  box-shadow: 0 0 36px #eb2df866;
+  border: 2.5px solid #eb2df8;
+  padding: 0;
+}
+
+.mobile-super-search-form {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* ラベル */
+.mobile-form-label {
+  color: #e0bbff;
+  font-weight: bold;
+  text-shadow: 0 0 8px #ff2ffb99, 0 0 4px #00e7ff44;
+  margin-bottom: 0.5rem;
+}
+
+/* セレクト・テキストボックス */
+.mobile-form-control,
+.mobile-form-select {
+  background: rgba(32, 0, 48, 0.92) !important;
+  border: 2px solid #eb2df8 !important;
+  color: #fff !important;
+  border-radius: 14px !important;
+  font-size: 1.1rem !important;
+  box-shadow:
+    0 0 10px #00fff755,
+    0 0 16px #eb2df866;
+  padding: 0.85rem 1.2rem !important;
+  outline: none !important;
+  transition: box-shadow 0.3s, border-color 0.3s, background 0.3s;
+  margin-bottom: 6px;
+}
+.mobile-form-control:focus,
+.mobile-form-select:focus {
+  border-color: #00fff7 !important;
+  box-shadow:
+    0 0 22px #ff00cccc,
+    0 0 38px #00fff7cc;
+  background: rgba(44, 0, 77, 0.96) !important;
+  color: #fff !important;
+}
+
+/* サジェスト */
+.mobile-tag-suggestions {
+  background: rgba(32, 0, 48, 0.96) !important;
+  border-radius: 0 0 12px 12px !important;
+  box-shadow: 0 8px 32px #eb2df866 !important;
+  overflow: hidden;
+  margin-top: 2px !important;
+  z-index: 9999;
+}
+
+.mobile-tag-suggestions li,
+.mobile-tag-suggestions .list-group-item {
+  background: transparent !important;
+  color: #fff !important;
+  cursor: pointer !important;
+  padding: 0.7rem 1.2rem !important;
+  border: none !important;
+  transition: background 0.2s, color 0.2s !important;
+}
+.mobile-tag-suggestions li:hover,
+.mobile-tag-suggestions .list-group-item:hover {
+  background: #eb2df8 !important;
+  color: #12052e !important;
+}
+
+/* ネオンボタン */
+.mobile-neon-btn {
+  border: 2px solid #eb2df8 !important;
+  background: linear-gradient(100deg, #ff00cc 0%, #00ccff 100%) !important;
+  color: #fff !important;
+  border-radius: 14px !important;
+  box-shadow:
+    0 0 20px #eb2df8cc,
+    0 0 32px #00fff799;
+  font-weight: bold !important;
+  font-size: 1.2rem !important;
+  padding: 0.7rem 2rem !important;
+  transition: box-shadow 0.3s, background 0.3s, color 0.2s !important;
+  text-shadow: 0 0 8px #ff2ffb99, 0 0 4px #00e7ff44;
+  margin-bottom: 8px;
+}
+.mobile-neon-btn:hover {
+  background: linear-gradient(100deg, #00ccff 0%, #ff00cc 100%) !important;
+  box-shadow:
+    0 0 40px #00fff7cc,
+    0 0 48px #eb2df899;
+  color: #fff !important;
+}
+
+/* リセットボタンも色統一 */
+.mobile-reset-btn {
+  border: 2px solid #eb2df8 !important;
+  color: #eb2df8 !important;
+  background: transparent !important;
+  border-radius: 12px !important;
+  font-weight: bold !important;
+  transition: background 0.2s, color 0.2s !important;
+}
+.mobile-reset-btn:hover {
+  background: #eb2df8 !important;
+  color: #12052e !important;
 }
