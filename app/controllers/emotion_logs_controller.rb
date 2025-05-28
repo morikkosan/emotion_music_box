@@ -3,8 +3,6 @@ class EmotionLogsController < ApplicationController
   before_action :ensure_owner, only: [:edit, :update, :destroy]
 
   def index
-    # Rails.logger.error "★ index: FLASH notice = #{flash[:notice].inspect}, session = #{session.id}"
-
     @emotion_logs = EmotionLog.includes(:user, :bookmarks, :tags)
 
     if params[:emotion].present?
@@ -23,11 +21,15 @@ class EmotionLogsController < ApplicationController
     end
 
     @emotion_logs = @emotion_logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
-
     @emotion_logs = apply_sort_and_period_filters(@emotion_logs)
-
     @emotion_logs = @emotion_logs.page(params[:page]).per(7)
     @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id) if user_signed_in?
+
+    if params[:view] == "mobile"
+      render :mobile_index
+    else
+      render :index
+    end
   end
 
   def my_emotion_logs
@@ -37,26 +39,30 @@ class EmotionLogsController < ApplicationController
     @emotion_logs = apply_sort_and_period_filters(logs).page(params[:page]).per(7)
     @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
     @mypage_title = "👮マイページ👮"
-    render :index
+
+    if params[:view] == "mobile"
+      render :mobile_index
+    else
+      render :index
+    end
   end
 
   def show
-  @emotion_log = EmotionLog.find(params[:id])
-  @comments = Comment.where(emotion_log_id: @emotion_log.id)
-                  .includes(:user, :comment_reactions)
-                  .order(created_at: :desc)
-                  .page(params[:page])
-                  .per(10)
+    @emotion_log = EmotionLog.find(params[:id])
+    @comments = Comment.where(emotion_log_id: @emotion_log.id)
+                    .includes(:user, :comment_reactions)
+                    .order(created_at: :desc)
+                    .page(params[:page])
+                    .per(10)
 
-  @reaction_counts = CommentReaction.where(comment_id: @comments.map(&:id)).group(:comment_id, :kind).count
-  @user_reactions = current_user&.comment_reactions&.where(comment_id: @comments.map(&:id))&.pluck(:comment_id, :kind)&.to_h || {}
+    @reaction_counts = CommentReaction.where(comment_id: @comments.map(&:id)).group(:comment_id, :kind).count
+    @user_reactions = current_user&.comment_reactions&.where(comment_id: @comments.map(&:id))&.pluck(:comment_id, :kind)&.to_h || {}
 
-  respond_to do |format|
-    format.html
-    format.turbo_stream
+    respond_to do |format|
+      format.html
+      format.turbo_stream
+    end
   end
-end
-
 
   def new
     @emotion_log = EmotionLog.new(music_url: params[:music_url], track_name: params[:track_name])
@@ -67,23 +73,22 @@ end
   end
 
   def create
-  @emotion_log = current_user.emotion_logs.build(emotion_log_params)
-  hp_percentage = calculate_hp(@emotion_log.emotion)
+    @emotion_log = current_user.emotion_logs.build(emotion_log_params)
+    hp_percentage = calculate_hp(@emotion_log.emotion)
+    is_today = @emotion_log.date.to_date == Date.current
 
-  if @emotion_log.save
-    is_today = @emotion_log.date.to_date == Date.current  # ← ここ追加！
-    render json: {
-      success: true,
-      message: '記録が保存されました',
-      redirect_url: emotion_logs_path,
-      hpPercentage: hp_percentage,
-      hp_today: is_today     # ← ここ追加！
-    }
-  else
-    render json: { success: false, errors: @emotion_log.errors.full_messages }, status: :unprocessable_entity
+    if @emotion_log.save
+      render json: {
+        success: true,
+        message: '記録が保存されました',
+        redirect_url: emotion_logs_path,
+        hpPercentage: hp_percentage,
+        hp_today: is_today
+      }
+    else
+      render json: { success: false, errors: @emotion_log.errors.full_messages }, status: :unprocessable_entity
+    end
   end
-end
-
 
   def edit
     @emotion_log = EmotionLog.find(params[:id])
@@ -91,43 +96,40 @@ end
   end
 
   def update
-  @emotion_log = EmotionLog.find(params[:id])
+    @emotion_log = EmotionLog.find(params[:id])
 
-  if @emotion_log.update(emotion_log_params)
-    hp_percentage = calculate_hp(@emotion_log.emotion)
-    is_today = @emotion_log.date.to_date == Date.current # ← 追加
+    if @emotion_log.update(emotion_log_params)
+      hp_percentage = calculate_hp(@emotion_log.emotion)
+      is_today = @emotion_log.date.to_date == Date.current
 
-    render json: {
-      success: true,
-      message: '記録が更新されました',
-      redirect_url: emotion_logs_path,
-      hpPercentage: hp_percentage,
-      hp_today: is_today        # ← 追加返却
-    }
-  else
-    render json: { success: false, errors: @emotion_log.errors.full_messages }, status: :unprocessable_entity
+      render json: {
+        success: true,
+        message: '記録が更新されました',
+        redirect_url: emotion_logs_path,
+        hpPercentage: hp_percentage,
+        hp_today: is_today
+      }
+    else
+      render json: { success: false, errors: @emotion_log.errors.full_messages }, status: :unprocessable_entity
+    end
   end
-end
-
 
   def destroy
     log = EmotionLog.find(params[:id])
     dom_key = view_context.dom_id(log)
     log.destroy
     render turbo_stream: turbo_stream.remove(dom_key) + turbo_stream.append(
-  "modal-container",
-  view_context.tag.div(
-    "",  # 中身は空でもOK
-    id: "flash-container",
-    data: {
-      flash_notice: "投稿を削除しました",
-      flash_alert:  nil
-    }
-  )
-)
+      "modal-container",
+      view_context.tag.div(
+        "",
+        id: "flash-container",
+        data: {
+          flash_notice: "投稿を削除しました",
+          flash_alert:  nil
+        }
+      )
+    )
   end
-
-
 
   def form
     @emotion_log = EmotionLog.new(music_url: params[:music_url], track_name: params[:track_name])
@@ -149,11 +151,16 @@ end
     @emotion_logs = apply_sort_and_period_filters(logs).page(params[:page]).per(7)
     @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
     @bookmark_page = "♡お気に入りリスト♡"
-    render :index
+
+    if params[:view] == "mobile"
+      render :mobile_index
+    else
+      render :index
+    end
   end
 
   def recommended
-  hp = params[:hp].to_i.clamp(0, 100)
+    hp = params[:hp].to_i.clamp(0, 100)
     emotion = case hp
               when 0..1 then "限界"
               when 2..25 then "イライラ"
@@ -166,39 +173,41 @@ end
     logs = EmotionLog.includes(:user, :bookmarks, :tags).where(emotion: emotion)
     logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
     @emotion_logs = apply_sort_and_period_filters(logs).page(params[:page])
-
     @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
     @mypage_title = "おすすめ🔥（#{emotion}）"
     @recommended_page = "🔥おすすめ🔥"
 
-    render :index
+    if params[:view] == "mobile"
+      render :mobile_index
+    else
+      render :index
+    end
   end
 
   private
 
   def apply_sort_and_period_filters(logs)
-  sort_param = params[:sort].presence || "new"
+    sort_param = params[:sort].presence || "new"
 
-  logs = case sort_param
-         when "new"      then logs.newest
-         when "old"      then logs.oldest
-         when "likes"    then logs.by_bookmarks
-         when "comments" then logs.by_comments
-         else logs
-         end
+    logs = case sort_param
+           when "new"      then logs.newest
+           when "old"      then logs.oldest
+           when "likes"    then logs.by_bookmarks
+           when "comments" then logs.by_comments
+           else logs
+           end
 
-  logs = case params[:period]
-         when "today"    then logs.for_today
-         when "week"     then logs.for_week
-         when "month"    then logs.for_month
-         when "halfyear" then logs.for_half_year
-         when "year"     then logs.for_year
-         else logs
-         end
+    logs = case params[:period]
+           when "today"    then logs.for_today
+           when "week"     then logs.for_week
+           when "month"    then logs.for_month
+           when "halfyear" then logs.for_half_year
+           when "year"     then logs.for_year
+           else logs
+           end
 
-  logs
-end
-
+    logs
+  end
 
   def emotion_log_params
     params.require(:emotion_log).permit(:date, :emotion, :description, :music_url, :track_name, :tag_names)

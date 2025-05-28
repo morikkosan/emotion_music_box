@@ -1,0 +1,53 @@
+/* ✅ モバイル用ネオン風ボタン：上部中央に固定 */
+#record-button.record-mobile-button {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1030;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: white;
+  background: linear-gradient(135deg, #ff00cc, #00ccff);
+  border: 3px solid #eb2df8;
+  box-shadow:
+    0 0 12px rgba(230, 0, 255, 0.6),
+    0 0 24px rgba(230, 0, 255, 0.4);
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+  animation: neon-pulse 2s infinite alternate;
+  text-decoration: none;
+  max-width: 90%;
+}
+
+/* ✅ ホバー時：少し浮かせて発光強調 */
+#record-button.record-mobile-button:hover {
+  transform: translate(-50%, -2px);
+  box-shadow:
+    0 0 15px #00c3ff,
+    0 0 30px #a100ff,
+    0 0 45px #ff00cc !important;
+}
+
+/* ✅ SoundCloud プレーヤーの横はみ出し対策 */
+/* プレーヤー全体をラップしてスクロール可能に */
+.soundcloud-player-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  display: block;
+}
+
+/* iframe を縮小して収める */
+.soundcloud-player-wrapper iframe {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 280px; /* 最小幅も保険で指定 */
+  height: 100px; /* お好みで調整可能 */
+  border: none;
+  display: block;
+}

@@ -1,0 +1,41 @@
+<% logs.each do |log| %>
+  <div class="card mb-3 shadow-sm">
+    <div class="card-body">
+      <!-- 上段：日付とタグ -->
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <small class="text-muted"><%= log.created_at.strftime("%Y/%m/%d %H:%M") %></small>
+        <div>
+          <% log.tags.each do |tag| %>
+            <span class="badge bg-primary"><%= tag.name %></span>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- 中段：感情 + コメント -->
+      <h5 class="mb-2">
+        <%= link_to log.emotion, emotion_log_path(log), class: "text-decoration-none" %>
+      </h5>
+      <p class="mb-2"><%= log.description.presence || "（一言はありません）" %></p>
+
+      <!-- プレイヤー -->
+      <%= render "mini_music_player", log: log %>
+
+      <!-- 下段：コメント数 + ブックマーク or 削除 -->
+      <div class="d-flex justify-content-between align-items-center mt-2">
+        <div class="d-flex align-items-center">
+          <%= image_tag "comment_icon.png", alt: "コメント数", style: "width: 24px; height: 24px;" %>
+          <span class="ms-1"><%= log.comments_count %></span>
+        </div>
+
+        <% if current_user == log.user %>
+          <%= link_to "削除", emotion_log_path(log),
+                      method: :delete,
+                      data: { turbo_confirm: "本当に削除しますか？", turbo_stream: true },
+                      class: "btn btn-outline-danger btn-sm" %>
+        <% else %>
+          <%= render "bookmark_buttons", emotion_log: log %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
