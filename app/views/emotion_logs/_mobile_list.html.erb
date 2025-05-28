@@ -1,22 +1,35 @@
 <% logs.each do |log| %>
-  <div class="card mb-3 shadow-sm">
-    <div class="card-body">
-      <!-- 上段：日付とタグ -->
-      <div class="d-flex justify-content-between align-items-center mb-1">
-        <small class="text-muted"><%= log.created_at.strftime("%Y/%m/%d %H:%M") %></small>
-        <div>
-          <% log.tags.each do |tag| %>
-            <span class="badge bg-primary"><%= tag.name %></span>
-          <% end %>
-        </div>
+ <div class="card mb-3 shadow-sm">
+  <div class="card-body py-2 px-3"> <!-- 上下の余白を調整 -->
+    
+    <!-- 上段：日付とタグ -->
+    <div class="d-flex justify-content-between align-items-center" style="margin-bottom: 4px;">
+      <small style="color: #ccc;"><%= log.created_at.strftime("%Y/%m/%d %H:%M") %></small>
+      <div>
+        <% log.tags.each do |tag| %>
+    <% if user_signed_in? %>
+      <%= link_to tag.name, emotion_logs_path(genre: tag.name),
+            class: "badge bg-primary text-light me-1",
+            style: "font-size: 0.7rem; padding: 0.2em 0.4em;" %>
+    <% else %>
+      <span class="badge bg-primary text-light me-1"
+            style="font-size: 0.7rem; padding: 0.2em 0.4em;"
+            title="ログインすると使えます"><%= tag.name %></span>
+    <% end %>
+  <% end %>
       </div>
+    </div>
 
-      <!-- 中段：感情 + コメント -->
-      <h5 class="mb-2">
-        <%= link_to log.emotion, emotion_log_path(log), class: "text-decoration-none" %>
-      </h5>
-      <p class="mb-2"><%= log.description.presence || "（一言はありません）" %></p>
-
+    <!-- 中段：感情 + コメント -->
+    <h5 class="mb-1">
+  <% if user_signed_in? %>
+    <%= link_to log.emotion, emotion_log_path(log), class: "text-decoration-none" %>
+  <% else %>
+    <%= link_to log.emotion, user_soundcloud_omniauth_authorize_path, class: "text-decoration-none", data: { turbo: false } %>
+  <% end %>
+</h5>
+    <p class="mb-0" style="font-size: 0.9rem;"><%= log.description.presence || "（一言はありません）" %></p>
+    
       <!-- プレイヤー -->
       <%= render "mini_music_player", log: log %>
 

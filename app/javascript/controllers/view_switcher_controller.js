@@ -21,12 +21,16 @@ export default class extends Controller {
     const url = new URL(window.location.href);
     const isAlreadyMobile = url.searchParams.get("view") === "mobile";
 
-    const isOnTargetPage = [
-      "/emotion_logs",
-      "/my_emotion_logs",
-      "/bookmarks/emotion_logs",
-      "/recommended"
-    ].some(prefix => path.startsWith(prefix));
+  const isOnTargetPage = [
+    "/",
+    "/emotion_logs",
+    "/emotion_logs/", 
+    "/emotion_logs/index", 
+    "/my_emotion_logs",
+    "/bookmarks/emotion_logs",
+    "/recommended"
+  ].some(prefix => path.startsWith(prefix));
+
 
     console.log("📏 幅:", width);
     console.log("✅ isNarrow（600以下）:", isNarrow);

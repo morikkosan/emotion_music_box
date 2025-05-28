@@ -1,7 +1,7 @@
 /* ✅ モバイル用ネオン風ボタン：上部中央に固定 */
 #record-button.record-mobile-button {
   position: fixed;
-  top: 1rem;
+  top: 15rem; /* ←★ここを 1rem → 5rem に変更（必要に応じて調整してOK） */
   left: 50%;
   transform: translateX(-50%);
   z-index: 1030;
@@ -23,6 +23,7 @@
   text-decoration: none;
   max-width: 90%;
 }
+
 
 /* ✅ ホバー時：少し浮かせて発光強調 */
 #record-button.record-mobile-button:hover {
