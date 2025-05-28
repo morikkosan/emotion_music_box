@@ -1,3 +1,5 @@
+<% content_for :title, "エモミュ" %>
+
 <div class="container mt-3 position-relative">
   <% if user_signed_in? %>
     <!-- ✅ ユーザードロップダウン -->
@@ -35,14 +37,28 @@
   <br><br>
 
   <% if user_signed_in? %>
-    <!-- ✅ HPバー -->
-    <div id="hp-bar-container" class="px-3 my-3">
-      <span class=" d-block mb-1 text-white text-center">
-        👍Today's stress level <span id="bar-width-display"></span> 👍
+    <% if @bookmark_page.present? %>
+      <span class="bookmark_title">
+        <%= @bookmark_page %>
       </span>
-      <p id="hp-status-text" class="text-center text-white">メンタル正常</p>
-      <div id="hp-bar" class="w-100" style="height: 10px; background-color: #ccc; border-radius: 4px;"></div>
-    </div>
+    <% elsif @mypage_title.present? %>
+      <span class="bookmark_title">
+        <%= @mypage_title %>
+      </span>
+    <% elsif @recommended_page.present? %>
+      <span class="bookmark_title">
+        <%= @recommended_page %> <!-- 例: 「おすすめ🔥」 -->
+      </span>
+    <% else %>
+      <!-- ✅ HPバー -->
+      <div id="hp-bar-container" class="px-3 my-3">
+        <span class="d-block mb-1 text-white text-center">
+          👍Today's stress level <span id="bar-width-display"></span> 👍
+        </span>
+        <p id="hp-status-text" class="text-center text-white">メンタル正常</p>
+        <div id="hp-bar" class="w-100" style="height: 10px; background-color: #ccc; border-radius: 4px;"></div>
+      </div>
+    <% end %>
 
     <!-- ✅ ネオン風記録ボタン -->
     <div class="w-100 text-center my-4" style="z-index: 1030;">
@@ -75,6 +91,7 @@
     </div>
   <% end %>
 </div>
+
 
 <!-- ✅ 投稿一覧 -->
 <div class="mobile-content pb-5 px-3 mt-4">
