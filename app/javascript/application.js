@@ -291,3 +291,18 @@ window.goToRecommended = function () {
     alert("HPゲージの値が取得できませんでした（localStorageに保存されていません）");
   }
 };
+
+
+function hideScreenCover() {
+  var cover = document.getElementById("screen-cover-loading");
+  if (cover) {
+    // ★ ここで数秒だけローディングを"意図的に"残す
+    setTimeout(() => {
+      cover.classList.add("hide");
+      setTimeout(() => { cover.style.display = "none"; }, 200); // ← フェードアウト
+    }); // ← ここを好きなだけ遅らせる（例: 1200ミリ秒 = 1.2秒）
+  }
+}
+window.addEventListener("DOMContentLoaded", hideScreenCover);
+window.addEventListener("load", hideScreenCover);
+document.addEventListener("turbo:load", hideScreenCover);
