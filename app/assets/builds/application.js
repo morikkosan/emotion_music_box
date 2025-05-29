@@ -15172,6 +15172,20 @@ window.goToRecommended = function() {
     alert("HP\u30B2\u30FC\u30B8\u306E\u5024\u304C\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\uFF08localStorage\u306B\u4FDD\u5B58\u3055\u308C\u3066\u3044\u307E\u305B\u3093\uFF09");
   }
 };
+function hideScreenCover() {
+  var cover = document.getElementById("screen-cover-loading");
+  if (cover) {
+    setTimeout(() => {
+      cover.classList.add("hide");
+      setTimeout(() => {
+        cover.style.display = "none";
+      }, 200);
+    });
+  }
+}
+window.addEventListener("DOMContentLoaded", hideScreenCover);
+window.addEventListener("load", hideScreenCover);
+document.addEventListener("turbo:load", hideScreenCover);
 /*! Bundled license information:
 
 @hotwired/turbo/dist/turbo.es2017-esm.js:

@@ -209,6 +209,16 @@ h1 i.bi bi-heart-pulse {
   border-radius: 30px; /* ここだけ残す */
   z-index: 0;
 }
+
+@media (max-width: 600px) {
+  #hp-bar-container {
+    width: 98vw !important;
+    max-width: 98vw !important;
+    margin-left: -8vw;  /* 必要なら左右中央揃え用に補正 */
+    box-sizing: border-box;
+    padding: 0;
+  }
+}
 /* ページネーションのスタイル */
 /* ページネーション全体のデザイン */
 .pagination {
@@ -414,15 +424,15 @@ h1 i.bi bi-heart-pulse {
   height: auto;
 }
 
-#loading-indicator {
-  display: none;
-  visibility: hidden; /* 念のため追加 */
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1000; /* 他の要素の上に表示 */
-}
+// #loading-indicator {
+//   display: none;
+//   visibility: hidden; /* 念のため追加 */
+//   position: fixed;
+//   top: 50%;
+//   left: 50%;
+//   transform: translate(-50%, -50%);
+//   z-index: 1000; /* 他の要素の上に表示 */
+// }
 
 
 // パックマン
@@ -512,6 +522,16 @@ h1 i.bi bi-heart-pulse {
   50% { opacity: 0.4; }
 }
 
+
+#screen-cover-loading {
+  position: fixed;
+  inset: 0;
+  background: #18182a; /* ←背景色お好みで */
+  z-index: 2147483647; /* 他全部より上！ */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 
 

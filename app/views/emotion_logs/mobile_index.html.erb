@@ -50,14 +50,15 @@
         <%= @recommended_page %> <!-- 例: 「おすすめ🔥」 -->
       </span>
     <% else %>
-      <!-- ✅ HPバー -->
-      <div id="hp-bar-container" class="px-3 my-3">
-        <span class="d-block mb-1 text-white text-center">
-          👍Today's stress level <span id="bar-width-display"></span> 👍
-        </span>
-        <p id="hp-status-text" class="text-center text-white">メンタル正常</p>
-        <div id="hp-bar" class="w-100" style="height: 10px; background-color: #ccc; border-radius: 4px;"></div>
-      </div>
+      <!-- モバイル版専用のHPバー -->
+<div class="mobile-hp-bar-container">
+  
+  <p id="hp-status-text">メンタル正常</p>
+  <div class="mobile-hp-bar" id="hp-bar"></div>
+  <span class="mobile_today_mental_text">
+    👆Today's stress level <span id="bar-width-display"></span>👆
+  </span>
+</div>
     <% end %>
 
     <!-- ✅ ネオン風記録ボタン -->
