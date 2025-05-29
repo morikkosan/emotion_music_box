@@ -1,3 +1,5 @@
+# docker-compose.yml（共通構成）
+
 services:
   redis:
     image: redis
@@ -25,7 +27,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: >  # 👈 buildと同じレベルに揃える！！
+    command: >
       bash -c "
       rm -f tmp/pids/server.pid;
       bundle exec rails db:prepare;
@@ -35,14 +37,11 @@ services:
     tty: true
     stdin_open: true
     volumes:
-      # キャッシュ用ボリュームはそのまま
+      - .:/rails
       - bundle_data:/usr/local/bundle:cached
       - node_modules:/rails/node_modules
-
-      # SSL 証明書もマウント
       - ./docker/certs/moriappli-emotion.com.pem:/etc/ssl/certs/moriappli-emotion.com.pem:ro
       - ./docker/certs/moriappli-emotion.com-key.pem:/etc/ssl/private/moriappli-emotion.com-key.pem:ro
-
     environment:
       - TZ=Asia/Tokyo
       - SESSION_SECRET=${SESSION_SECRET}
@@ -53,9 +52,10 @@ services:
       - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
       - APP_DATABASE_PASSWORD=password
       - SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
-      - RAILS_ENV=development
+      - RAILS_ENV=${RAILS_ENV}
     env_file:
-      - .env.production
+      - .env.development
+
     ports:
       - "443:443"
     depends_on:

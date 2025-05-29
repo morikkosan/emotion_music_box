@@ -1,0 +1,86 @@
+<div class="container mt-4 mobile-container">
+  <h1 class="text-center mt-3 mobile-title">
+    <i class="bi bi-heart-pulse"></i> Emotion Log <i class="bi bi-heart-pulse"></i>
+  </h1>
+
+  <!-- レコードの情報を表示する部分 -->
+  <div class="card mb-3 mobile-card">
+    <div class="card-header d-flex justify-content-between align-items-center mobile-card-header py-1 px-2">
+      <div class="d-flex align-items-center gap-1 mobile-header-user">
+        <% if @emotion_log.user.avatar_url.present? %>
+          <%= image_tag @emotion_log.user.avatar_url, alt: "投稿者のプロフィール画像", width: 40, height: 40, class: "rounded-circle mobile-avatar" %>
+        <% else %>
+          <%= image_tag "default_stick_figure.png", alt: "デフォルトプロフィール画像", width: 36, height: 36, class: "rounded-circle mobile-avatar" %>
+        <% end %>
+        <span class="fw-bold mobile-username" style="font-size: 1rem;"><%= @emotion_log.user.name %></span>
+      </div>
+      <div class="mobile-meta" style="font-size:0.9rem;">
+        <strong>記録:</strong>
+        <%= @emotion_log.created_at.strftime('%y-%m-%d %H:%M') %>
+
+        <% if @emotion_log.tags.any? %>
+             <span class="mobile-tags ms-2">
+            <% @emotion_log.tags.each do |tag| %>
+              <span class="badge bg-secondary me-1 mobile-tag" style="font-size:0.85rem;"><%= tag.name %></span>
+            <% end %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+    <div class="card-body text-center py-2 px-2 mobile-card-body">
+      <p class="mb-1" style="font-size:1rem;"><strong>感情:</strong> <%= @emotion_log.emotion %></p>
+      <p class="mb-1" style="font-size:0.95rem;"><strong>日記:</strong> <%= @emotion_log.description %></p>
+      <% if current_user == @emotion_log.user %>
+        <%= link_to '編集',
+            edit_emotion_log_path(@emotion_log, format: :turbo_stream),
+            data: { turbo_frame: "modal-container" },
+            class: 'btn btn-danger btn-xs mobile-edit-btn', style: "font-size: 0.8rem; padding: 2px 8px;" %>
+      <% end %>
+      <% if @emotion_log.music_url.present? %>
+        <div class="mt-2">
+          <%= render 'mini_music_player', log: @emotion_log %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- ==== コメントセクション ==== -->
+  <div class="d-flex justify-content-center">
+    <div class="card mb-3 w-100 mobile-comment-card" style="max-width: 700px;">
+      <div class="card-header py-1 px-2 mobile-comment-header" style="font-size:0.9rem;">
+        <strong id="comment-count">コメント (<%= @emotion_log.comments_count %>)</strong>
+      </div>
+      <div class="card-body py-2 px-2 mobile-comment-body">
+        <turbo-frame id="new_comment">
+          <%= form_with url: emotion_log_comments_path(@emotion_log),
+                        data: {
+                          controller:    "comment-form",
+                          action:        "turbo:submit-start->comment-form#sending turbo:submit-end->comment-form#sent",
+                          turbo_stream:  true
+                        },
+                        class: "mb-2" do |f| %>
+            <%= f.text_area :body,
+                  rows: 2,
+                  class: "form-control mobile-comment-textarea",
+                  placeholder: "コメントを入力…",
+                  data: { comment_form_target: "textarea" } %>
+            <%= f.submit "送信",
+                  class: "btn btn-primary btn-xs mt-1 mobile-comment-submit",
+                  data: { comment_form_target: "submit" },
+                  style: "font-size: 0.9rem; padding: 2px 10px;" %>
+          <% end %>
+        </turbo-frame>
+        <turbo-frame id="comments">
+          <div id="comments" data-comment-form-target="comments">
+            <%= render @comments %>
+            <div class="text-center mt-2">
+              <%= paginate @comments %>
+            </div>
+          </div>
+        </turbo-frame>
+      </div>
+    </div>
+  </div>
+
+  <%= render 'shared/mobile_footer' %>
+</div>

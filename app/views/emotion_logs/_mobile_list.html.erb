@@ -1,0 +1,55 @@
+<% logs.each do |log| %>
+  <div class="card mb-2 shadow-sm" style="border-radius: 12px;">
+    <div class="card-body py-2 px-2"> <!-- 高さを調整 -->
+
+      <!-- 上段：日付とタグ -->
+      <div class="d-flex justify-content-between align-items-center" style="margin-bottom: 2px;">
+        <small style="color: #ccc; font-size: 0.75rem;"><%= log.created_at.strftime("%Y/%m/%d %H:%M") %></small>
+        <div>
+          <% log.tags.each do |tag| %>
+            <% if user_signed_in? %>
+              <%= link_to tag.name, emotion_logs_path(genre: tag.name),
+                          class: "badge bg-primary text-light me-1",
+                          style: "font-size: 0.65rem; padding: 0.15em 0.4em;" %>
+            <% else %>
+              <span class="badge bg-primary text-light me-1"
+                    style="font-size: 0.65rem; padding: 0.15em 0.4em;"
+                    title="ログインすると使えます"><%= tag.name %></span>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- 中段：感情 + コメント -->
+      <h6 class="mb-1 mt-1" style="font-weight: bold;">
+  <% if user_signed_in? %>
+    <%= link_to log.emotion, emotion_log_path(log, view: "mobile"), class: "text-decoration-none text-light" %>
+  <% else %>
+    <%= link_to log.emotion, user_soundcloud_omniauth_authorize_path, class: "text-decoration-none text-light", data: { turbo: false } %>
+  <% end %>
+</h6>
+      <p class="mb-1" style="font-size: 0.85rem; color: #ddd;"><%= log.description.presence || "（一言はありません）" %></p>
+
+      <!-- プレイヤー -->
+      <%= render "mini_music_player", log: log %>
+
+      <!-- 下段：コメント数 + ブックマーク or 削除 -->
+      <div class="d-flex justify-content-between align-items-center mt-1">
+        <div class="d-flex align-items-center">
+          <%= image_tag "comment_icon.png", alt: "コメント数", style: "width: 20px; height: 20px;" %>
+          <span class="ms-1 text-white" style="font-size: 0.85rem;"><%= log.comments_count %></span>
+        </div>
+
+        <% if current_user == log.user %>
+          <%= link_to "削除", emotion_log_path(log),
+                      method: :delete,
+                      data: { turbo_confirm: "本当に削除しますか？", turbo_stream: true },
+                      class: "btn btn-outline-danger btn-sm px-2 py-1",
+                      style: "font-size: 0.75rem;" %>
+        <% else %>
+          <%= render "bookmark_buttons", emotion_log: log %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

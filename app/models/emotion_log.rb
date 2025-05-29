@@ -29,16 +29,20 @@ scope :for_year,      -> { where(date: 1.year.ago.to_date..Date.current) }
 
   scope :newest,      -> { order(created_at: :desc) }
 scope :oldest,      -> { order(created_at: :asc) }
-scope :by_bookmarks, -> {
-  left_joins(:bookmarks)
-    .group(:id)
-    .order('COUNT(bookmarks.id) DESC')
-}
-scope :by_comments, -> {
-  left_joins(:comments)
-    .group(:id)
-    .order('COUNT(comments.id) DESC')
-}
+  scope :by_bookmarks, -> {
+    left_joins(:bookmarks, :user)
+      .select('emotion_logs.*, users.id as user_id, users.name as user_name, users.avatar_url as user_avatar_url, COUNT(bookmarks.id) AS bookmarks_count')
+      .group('emotion_logs.id, users.id, users.name, users.avatar_url')
+      .order('COUNT(bookmarks.id) DESC')
+  }
+
+  scope :by_comments, -> {
+    left_joins(:comments, :user)
+      .select('emotion_logs.*, users.id as user_id, users.name as user_name, users.avatar_url as user_avatar_url, COUNT(comments.id) AS comments_count')
+      .group('emotion_logs.id, users.id, users.name, users.avatar_url')
+      .order('COUNT(comments.id) DESC')
+  }
+
 
 
   private
