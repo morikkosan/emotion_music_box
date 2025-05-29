@@ -6,7 +6,8 @@ class EmotionLogsController < ApplicationController
     Rails.logger.info "📱 UserAgent: #{request.user_agent}"
     Rails.logger.info "📱 Mobile判定: #{mobile_device?}"
 
-    @emotion_logs = EmotionLog.includes(:user, :bookmarks, :tags)
+   @emotion_logs = EmotionLog.left_joins(:user, :bookmarks, :tags)
+
 
     if params[:emotion].present?
       @emotion_logs = @emotion_logs.where(emotion: params[:emotion])
