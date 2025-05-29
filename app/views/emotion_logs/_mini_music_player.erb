@@ -2,14 +2,30 @@
   <div class="ms-3 mini-player">
     <% if log.music_url.include?("soundcloud.com") %>
       <!-- SoundCloud の埋め込みプレーヤー -->
-      <iframe
-        width="500"
-        height="150"
-        scrolling="no"
-        frameborder="no"
-        allow="autoplay"
-        src="https://w.soundcloud.com/player/?url=<%= CGI.escape(log.music_url) %>&auto_play=false">
-      </iframe>
+      <% if params[:view] == "mobile" %>
+        <!-- ✅ モバイル用：幅100%でレスポンシブ対応 -->
+        <div class="soundcloud-player-wrapper">
+          <iframe
+  width="100%"
+  height="80"
+  scrolling="no"
+  frameborder="no"
+  allow="autoplay"
+  style="height: 80px;"
+  src="https://w.soundcloud.com/player/?url=<%= CGI.escape(log.music_url) %>&auto_play=false&visual=false&show_user=false&show_comments=false">
+</iframe>
+        </div>
+      <% else %>
+        <!-- ✅ デスクトップ用 -->
+        <iframe
+          width="500"
+          height="150"
+          scrolling="no"
+          frameborder="no"
+          allow="autoplay"
+          src="https://w.soundcloud.com/player/?url=<%= CGI.escape(log.music_url) %>&auto_play=false">
+        </iframe>
+      <% end %>
     <% else %>
       <!-- 通常の MP3 再生 -->
       <audio controls class="mini-audio" preload="none">
