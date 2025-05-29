@@ -1,3 +1,34 @@
+.mobile-card, .mobile-comment-card {
+  margin-bottom: 0.75rem;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.mobile-card-header, .mobile-comment-header {
+  height: 38px;
+  min-height: 0;
+  padding-top: 0.1rem;
+  padding-bottom: 0.1rem;
+}
+.mobile-avatar {
+  width: 36px !important;
+  height: 36px !important;
+}
+.mobile-card-body, .mobile-comment-body {
+  padding: 0.6rem 0.6rem;
+}
+.mobile-tag {
+  font-size: 0.9rem;
+  padding: 0.2em 0.5em;
+}
+
+.mobile-tags {
+  display: flex;
+  gap: 0.4rem;         /* タグ同士の間隔。好きな幅でOK */
+  align-items: center; /* 縦位置も揃う */
+}
+
+
+
 #record-button.record-mobile-button {
   position: fixed;
   /* 右下、メニューバー上あたりに配置 */

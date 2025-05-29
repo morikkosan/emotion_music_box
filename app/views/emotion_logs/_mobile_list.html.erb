@@ -22,12 +22,12 @@
 
       <!-- 中段：感情 + コメント -->
       <h6 class="mb-1 mt-1" style="font-weight: bold;">
-        <% if user_signed_in? %>
-          <%= link_to log.emotion, emotion_log_path(log), class: "text-decoration-none text-light" %>
-        <% else %>
-          <%= link_to log.emotion, user_soundcloud_omniauth_authorize_path, class: "text-decoration-none text-light", data: { turbo: false } %>
-        <% end %>
-      </h6>
+  <% if user_signed_in? %>
+    <%= link_to log.emotion, emotion_log_path(log, view: "mobile"), class: "text-decoration-none text-light" %>
+  <% else %>
+    <%= link_to log.emotion, user_soundcloud_omniauth_authorize_path, class: "text-decoration-none text-light", data: { turbo: false } %>
+  <% end %>
+</h6>
       <p class="mb-1" style="font-size: 0.85rem; color: #ddd;"><%= log.description.presence || "（一言はありません）" %></p>
 
       <!-- プレイヤー -->
