@@ -202,3 +202,48 @@
   background: #eb2df8 !important;
   color: #12052e !important;
 }
+
+// モバイル版ゲージ
+@media (max-width: 600px) {
+  .mobile-hp-bar-container {
+    width: 96vw;
+    max-width: 96vw;
+    margin: 0 auto;
+    padding: 0 1vw;
+    position: relative;
+    z-index: 1;
+    /* 必要ならbackgroundやborder-radiusも */
+  }
+
+  .mobile-hp-bar {
+    height: 14px;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 10px;
+    /* 色やアニメーションもそのまま引き継いでOK */
+  }
+}
+
+.mobile_today_mental_text {
+  font-size: 20px;        /* 好きなサイズに調整！ */
+  color: #bbb;            /* 少し薄めの色に */
+  margin-top: 2px;
+  font-weight: normal;
+  display: block;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+// スクリーンローディング隠し
+#screen-cover-loading {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: #111;     /* ←黒紙っぽい色、白なら #fff */
+  z-index: 99999;       /* 他全部より上 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}

@@ -20,7 +20,7 @@
 
       <div class="dropdown-menu">
 
-        <%= link_to destroy_user_session_path,
+        <%= link_to destroy_user_session_path(view: 'mobile'),
                     method: :delete,
                     data: { turbo: false },
                     id: "logout-link",
@@ -31,12 +31,12 @@
 
         <div class="dropdown-divider"></div>
 
-        <%= link_to edit_user_registration_path, class: "dropdown-item d-flex align-items-center" do %>
+        <%= link_to edit_user_registration_path(view: 'mobile'), class: "dropdown-item d-flex align-items-center" do %>
           <%= image_tag "profile_edit.png", class: "dropdown-icon me-2", alt: "プロフィール編集" %>
           プロフィール編集
         <% end %>
 
-        <%= link_to my_emotion_logs_path, class: "dropdown-item d-flex align-items-center" do %>
+        <%= link_to my_emotion_logs_path(view: 'mobile'), class: "dropdown-item d-flex align-items-center" do %>
           <%= image_tag "test1.png", class: "dropdown-icon me-2", alt: "マイページ" %>
           マイページ
         <% end %>
@@ -56,7 +56,7 @@
 
   <!-- ロゴ -->
   <div class="text-center mt-4">
-    <%= link_to emotion_logs_path do %>
+    <%= link_to emotion_logs_path(view: 'mobile') do %>
       <%= image_tag "logo1.png", alt: "Emotion List Logo", class: "img-fluid neon-icon", style: "max-width:700px; width:100%;" %>
     <% end %>
   </div>
@@ -80,7 +80,7 @@
       <div class="neon-btn-sub">(SoundCloudアカウントも簡単作成)</div>
     <% end %>
 
-      <%= link_to user_soundcloud_omniauth_authorize_path,
+      <%= link_to user_soundcloud_omniauth_authorize_path(view: 'mobile'),
                 class: "neon-btn btn-neon-xl",
                 data: { turbo: false } do %>
       <div class="neon-btn-title">ログインして始める</div>
@@ -101,7 +101,7 @@
   <div class="d-flex justify-content-center align-items-stretch flex-wrap mt-4" style="gap: 1.2rem;">
     <!-- ホーム -->
     <div class="mypage-item">
-      <%= link_to emotion_logs_path, class: 'mypage-icon-link' do %>
+      <%= link_to emotion_logs_path(view: 'mobile'), class: 'mypage-icon-link' do %>
         <%= image_tag 'home.png', alt: 'ホーム', class: 'mypage-icon' %>
         <div class='mypage-text'>ホーム</div>
       <% end %>
@@ -120,7 +120,7 @@
       <div style="color: magenta; font-weight: bold; font-size: 1rem; margin-bottom: 0.3rem; text-align: center;">
         EMOTION
       </div>
-      <%= form_with url: emotion_logs_path, method: :get, data: { turbo_frame: "logs_list" }, html: { class: "w-100 h-100 d-flex flex-column justify-content-center align-items-center" } do %>
+      <%= form_with url: emotion_logs_path(view: 'mobile'), method: :get, data: { turbo_frame: "logs_list" }, html: { class: "w-100 h-100 d-flex flex-column justify-content-center align-items-center" } do %>
         <%= select_tag :emotion,
                        options_for_select(
                          [['選択しない', ''], ['最高', '最高'], ['気分良い', '気分良い'],
@@ -138,7 +138,7 @@
       <div style="color: #00aaff; font-weight: bold; font-size: 1rem; margin-bottom: 0.3rem; text-align: center;">
         TAG
       </div>
-      <%= form_with url: emotion_logs_path, method: :get, data: { turbo_frame: "logs_list" }, html: { class: "w-100 h-100 d-flex flex-column justify-content-center align-items-center" } do |f| %>
+      <%= form_with url: emotion_logs_path(view: 'mobile'), method: :get, data: { turbo_frame: "logs_list" }, html: { class: "w-100 h-100 d-flex flex-column justify-content-center align-items-center" } do |f| %>
         <%= f.text_field :genre,
                          placeholder: 'Search by genre',
                          class: 'form-control no-bottom-radius',
@@ -160,7 +160,7 @@
 
     <!-- マイページ -->
     <div class="mypage-item">
-      <%= link_to my_emotion_logs_path, class: 'mypage-icon-link' do %>
+      <%= link_to my_emotion_logs_path(view: 'mobile'), class: 'mypage-icon-link' do %>
         <%= image_tag 'mypage_logo.png', alt: 'マイページ', class: 'mypage-icon' %>
         <div class='mypage-text'>マイページ</div>
       <% end %>
@@ -168,7 +168,7 @@
 
     <!-- お気に入り -->
     <div class="mypage-item">
-      <%= link_to bookmarks_emotion_logs_path, class: 'mypage-icon-link' do %>
+      <%= link_to bookmarks_emotion_logs_path(view: 'mobile'), class: 'mypage-icon-link' do %>
         <%= image_tag 'favorite.png', alt: 'お気に入りリスト', class: 'mypage-icon' %>
         <div class='mypage-text'>お気に入りリスト</div>
       <% end %>
