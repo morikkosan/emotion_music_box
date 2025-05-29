@@ -30,8 +30,16 @@
 
 </head>
 
-<body data-flash-notice="<%= j flash[:notice] %>"
+<body data-controller="view-switcher" data-flash-notice="<%= j flash[:notice] %>"
       data-flash-alert="<%= j flash[:alert] %>">
+      <div id="screen-cover-loading">
+  <div class="pacman-wrapper">
+    <div class="circle-packman-1"></div>
+    <div class="loading-text">Now Loading...</div>
+  </div>
+</div>
+
+
 
 <div id="flash-message" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;padding:1em;background:#333;color:#fff;text-align:center;"></div>
 

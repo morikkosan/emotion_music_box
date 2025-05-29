@@ -14425,6 +14425,21 @@ var submit_handler_controller_default = class extends Controller {
   }
 };
 
+// app/javascript/controllers/record_btn_controller.js
+var record_btn_controller_default = class extends Controller {
+  hide() {
+    this.element.classList.add("d-none");
+  }
+  connect() {
+    document.addEventListener("hidden.bs.modal", () => {
+      this.element.classList.remove("d-none");
+    });
+    document.addEventListener("turbo:load", () => {
+      this.element.classList.remove("d-none");
+    });
+  }
+};
+
 // app/javascript/controllers/bookmark_toggle_controller.js
 var bookmark_toggle_controller_default = class extends Controller {
   static targets = ["icon", "count"];
@@ -14679,6 +14694,58 @@ var tag_autocomplete_controller_default = class extends Controller {
   }
 };
 
+// app/javascript/controllers/view_switcher_controller.js
+var view_switcher_controller_default = class extends Controller {
+  connect() {
+    console.log("\u{1F7E2} view-switcher \u8D77\u52D5");
+    this.boundHandler = this.checkAndRedirect.bind(this);
+    this.checkAndRedirect();
+    window.addEventListener("resize", this.boundHandler);
+  }
+  disconnect() {
+    window.removeEventListener("resize", this.boundHandler);
+  }
+  checkAndRedirect() {
+    const width = window.innerWidth;
+    const isNarrow = width <= 600;
+    const path = window.location.pathname;
+    const url = new URL(window.location.href);
+    const isAlreadyMobile = url.searchParams.get("view") === "mobile";
+    const isOnTargetPage = [
+      "/",
+      "/emotion_logs",
+      "/emotion_logs/",
+      "/emotion_logs/index",
+      "/my_emotion_logs",
+      "/bookmarks/emotion_logs",
+      "/recommended"
+    ].some((prefix) => path.startsWith(prefix));
+    console.log("\u{1F4CF} \u5E45:", width);
+    console.log("\u2705 isNarrow\uFF08600\u4EE5\u4E0B\uFF09:", isNarrow);
+    console.log("\u2705 isOnTargetPage:", isOnTargetPage);
+    console.log("\u2705 isAlreadyMobile\uFF08view=mobile\uFF09:", isAlreadyMobile);
+    if (isNarrow && isOnTargetPage && !isAlreadyMobile) {
+      console.log("\u{1F4F1} \u30E2\u30D0\u30A4\u30EB\u306B\u5207\u66FF");
+      url.searchParams.set("view", "mobile");
+      window.location.href = url.toString();
+    } else if (!isNarrow && isOnTargetPage && isAlreadyMobile) {
+      console.log("\u{1F4BB} \u30C7\u30B9\u30AF\u30C8\u30C3\u30D7\u306B\u623B\u3059");
+      url.searchParams.delete("view");
+      window.location.href = url.pathname;
+    } else {
+      console.log("\u{1F6D1} \u6761\u4EF6\u3092\u6E80\u305F\u3055\u306A\u3044\u306E\u3067\u4F55\u3082\u3057\u306A\u3044");
+    }
+  }
+};
+
+// app/javascript/controllers/mobile_super_search_controller.js
+var mobile_super_search_controller_default = class extends Controller {
+  open() {
+    const modal = document.getElementById("mobile-super-search-modal");
+    Modal.getOrCreateInstance(modal).show();
+  }
+};
+
 // app/javascript/controllers/index.js
 var application = Application.start();
 application.register("modal", modal_controller_default);
@@ -14689,6 +14756,9 @@ application.register("comment-form", comment_form_controller_default);
 application.register("reaction", reaction_controller_default);
 application.register("tag-input", tag_input_controller_default);
 application.register("tag-autocomplete", tag_autocomplete_controller_default);
+application.register("view-switcher", view_switcher_controller_default);
+application.register("record-btn", record_btn_controller_default);
+application.register("mobile-super-search", mobile_super_search_controller_default);
 
 // app/javascript/custom/comments.js
 document.addEventListener("DOMContentLoaded", function() {
@@ -15102,6 +15172,20 @@ window.goToRecommended = function() {
     alert("HP\u30B2\u30FC\u30B8\u306E\u5024\u304C\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\uFF08localStorage\u306B\u4FDD\u5B58\u3055\u308C\u3066\u3044\u307E\u305B\u3093\uFF09");
   }
 };
+function hideScreenCover() {
+  var cover = document.getElementById("screen-cover-loading");
+  if (cover) {
+    setTimeout(() => {
+      cover.classList.add("hide");
+      setTimeout(() => {
+        cover.style.display = "none";
+      }, 200);
+    });
+  }
+}
+window.addEventListener("DOMContentLoaded", hideScreenCover);
+window.addEventListener("load", hideScreenCover);
+document.addEventListener("turbo:load", hideScreenCover);
 /*! Bundled license information:
 
 @hotwired/turbo/dist/turbo.es2017-esm.js:

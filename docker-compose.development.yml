@@ -1,0 +1,19 @@
+services:
+  web:
+    environment:
+      - RAILS_ENV=development
+    env_file:
+      - .env.development
+    volumes:
+      - .:/rails
+    entrypoint: []
+    command:
+      - bash
+      - -c
+      - |
+        rm -f tmp/pids/server.pid && \
+        bundle exec rails db:prepare && \
+        bundle exec rails server \
+          -b 'ssl://0.0.0.0:443?key=/etc/ssl/private/moriappli-emotion.com-key.pem&cert=/etc/ssl/certs/moriappli-emotion.com.pem' \
+          -e development & \
+        yarn build --watch
