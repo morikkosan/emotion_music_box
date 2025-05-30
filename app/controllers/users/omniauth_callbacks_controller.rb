@@ -26,7 +26,7 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
 
     @user = User.from_omniauth(oauth_data)
 
-    if @user.persisted?
+if @user.persisted?
   @user.update!(
     soundcloud_token: oauth_data.credentials.token,
     soundcloud_refresh_token: oauth_data.credentials.refresh_token,
@@ -35,18 +35,28 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
 
   sign_in @user
   flash[:notice] = "SoundCloudでログインしました！"
-  redirect_to emotion_logs_path  # ← ここだけでOK！root_pathでも可
+  if mobile_device?
+    redirect_to emotion_logs_path(view: "mobile")
+  else
+    redirect_to emotion_logs_path
+  end
 else
   session["devise.soundcloud_data"] = oauth_data.except(:extra)
-  redirect_to new_user_registration_url
+  # こちらも同じようにスマホ判定で出し分けてもOK
+  if mobile_device?
+    redirect_to new_user_registration_url(view: "mobile")
+  else
+    redirect_to new_user_registration_url
+  end
+end
 end
 
-  end
 
-  # ❗ GETの誤リクエスト対策
+
+  #  GETの誤リクエスト対策
   def passthru
     if request.get? && request.path.include?("soundcloud")
-      # Rails.logger.error "❌ SoundCloudのOAuthは GET をサポートしていません"
+      # Rails.logger.error " SoundCloudのOAuthは GET をサポートしていません"
       render status: 405, plain: "SoundCloud requires POST request"
     else
       super
@@ -55,7 +65,7 @@ end
 
   # ❗ OmniAuth失敗時のデフォルト（必要に応じて）
   def failure
-    # Rails.logger.info "🔴 Users::OmniauthCallbacksController#failure が呼び出されました"
+    # Rails.logger.info " Users::OmniauthCallbacksController#failure が呼び出されました"
     flash[:alert] = "SoundCloudログインがキャンセルされました。もう一度ログインをするか、ログイン画面先でSign out!を押してください"
     redirect_to root_path
   end

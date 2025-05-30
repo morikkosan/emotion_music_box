@@ -1,7 +1,14 @@
 <div class="container-fluid p-0" data-controller="search-music">
   <h1 class="text-center mt-4">
-    <i class="bi bi-heart-pulse"></i> Record emotions
+    <i class="bi bi-heart-pulse" aria-hidden="true"></i> Record emotions
   </h1>
+
+  <!-- プレースホルダー色定義 -->
+  <style>
+    .form-control::placeholder {
+      color: #bbb;
+    }
+  </style>
 
   <div class="row justify-content-center">
     <div class="col-md-8">
@@ -17,14 +24,15 @@
           <%= form.label :date, '日付' %>
           <%= form.date_field :date,
                               class: 'form-control',
-                              max: Date.current.to_s %>
+                              max: Date.current.to_s,
+                              placeholder: '例：2025-05-30' %>
         </div>
 
         <div class="mb-4">
           <%= form.label :emotion, '感情' %>
           <%= form.select :emotion,
                           ['最高', '気分良い', 'いつも通り', 'イライラ', '限界'],
-                          {},
+                          { prompt: '感情を選択してください' },
                           class: 'form-control' %>
         </div>
 
@@ -32,30 +40,27 @@
           <%= form.label :track_name, '選択した曲名' %>
           <%= form.text_field :track_name,
                               id: "selected-track",
-                              class: "form-control" %>
+                              class: "form-control",
+                              placeholder: '例：Shape of You' %>
           <%= form.hidden_field :music_url %>
         </div>
 
         <div class="mb-4" data-controller="tag-input">
           <%= label_tag :tag_names, 'ジャンル（最大3つまでです。入力してEnterキーで追加できます）' %>
-
           <input
             type="text"
             class="form-control"
             data-tag-input-target="input"
             data-action="keydown->tag-input#keydown
                          input->tag-input#filterSuggestions"
-            placeholder="タグを入力してEnter"
+            placeholder="例：Pop, Rock, アニメ　なんでもよし"
             autocomplete="off" />
-
           <div class="mt-2" data-tag-input-target="tags"></div>
-
           <div
             class="dropdown-menu"
             data-tag-input-target="suggestions"
             style="max-height:150px;overflow-y:auto;">
           </div>
-
           <%= hidden_field_tag "emotion_log[tag_names]", "",
                 id: "hidden-tags",
                 data: { "tag-input-target": "hidden" } %>
@@ -64,7 +69,8 @@
         <div class="mb-4">
           <%= form.label :description, '一言 吐いてみて' %>
           <%= form.text_field :description,
-                              class: 'form-control' %>
+                              class: 'form-control',
+                              placeholder: '例：今日は最高の気分！' %>
         </div>
 
         <div class="d-flex justify-content-center">
@@ -86,3 +92,10 @@
     </div>
   </div>
 </div>
+
+<style>
+  /* form-control 全体に対してプレースホルダーを薄いグレーに */
+  .form-control::placeholder {
+    color: #bbb;
+  }
+</style>
