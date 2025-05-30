@@ -1,22 +1,30 @@
 <% if user_signed_in? %>
   <!-- ✅ フッターメニュー -->
-  <nav class="mobile-footer fixed-bottom bg-dark text-white d-flex justify-content-around py-2">
+  <nav aria-label="フッターメニュー"
+       class="mobile-footer fixed-bottom bg-dark text-white d-flex justify-content-around py-2">
     <%= link_to emotion_logs_path, class: "text-center text-white small" do %>
-      <i class="bi bi-house fs-4"></i><br>ホーム
-    <% end %>
-    <%= link_to "#", onclick: "goToRecommended()", class: "text-center text-white small" do %>
-      <i class="bi bi-fire fs-4"></i><br>おすすめ🔥
+      <i class="bi bi-house fs-4" aria-hidden="true"></i><br>ホーム
     <% end %>
 
-    <%= link_to "#", class: "text-center text-white small",
-  data: { controller: "mobile-super-search", action: "click->mobile-super-search#open" } do %>
-  <i class="bi bi-search fs-4"></i><br>検索
-<% end %>
-    <%= link_to my_emotion_logs_path, class: "text-center text-white small" do %>
-      <i class="bi bi-person fs-4"></i><br>マイページ
+    <%= link_to "#",
+                onclick: "goToRecommended()",
+                class: "text-center text-white small" do %>
+      <i class="bi bi-fire fs-4" aria-hidden="true"></i><br>おすすめ🔥
     <% end %>
+
+    <%= link_to "#",
+                class: "text-center text-white small",
+                data: { controller: "mobile-super-search",
+                        action: "click->mobile-super-search#open" } do %>
+      <i class="bi bi-search fs-4" aria-hidden="true"></i><br>検索
+    <% end %>
+
+    <%= link_to my_emotion_logs_path, class: "text-center text-white small" do %>
+      <i class="bi bi-person fs-4" aria-hidden="true"></i><br>マイページ
+    <% end %>
+
     <%= link_to bookmarks_emotion_logs_path, class: "text-center text-white small" do %>
-      <i class="bi bi-heart fs-4"></i><br>お気に入り
+      <i class="bi bi-heart fs-4" aria-hidden="true"></i><br>お気に入り
     <% end %>
   </nav>
 <% end %>

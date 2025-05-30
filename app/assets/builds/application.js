@@ -14190,9 +14190,6 @@ var modal_controller_default = class extends Controller {
     bsModal.show();
     const desc = this.element.querySelector("#emotion_log_description");
     if (desc) setTimeout(() => desc.focus(), 100);
-    this.element.addEventListener("hidden.bs.modal", () => {
-      this.element.remove();
-    });
   }
 };
 

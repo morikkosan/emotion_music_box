@@ -2,9 +2,12 @@ class EmotionLogsController < ApplicationController
   before_action :authenticate_user!, except: %i[index show]
   before_action :ensure_owner, only: [:edit, :update, :destroy]
 
+
   def index
     Rails.logger.info "📱 UserAgent: #{request.user_agent}"
     Rails.logger.info "📱 Mobile判定: #{mobile_device?}"
+       Rails.logger.info "📢 FLASH[notice] at index: #{flash[:notice]}"
+  Rails.logger.info "📢 FLASH[alert]  at index: #{flash[:alert]}"
 
   @emotion_logs = EmotionLog.left_joins(:user, :bookmarks, :tags)
 
