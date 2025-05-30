@@ -22,9 +22,9 @@ export default class extends Controller {
     const desc = this.element.querySelector("#emotion_log_description")
     if (desc) setTimeout(() => desc.focus(), 100)
 
-        this.element.addEventListener('hidden.bs.modal', () => {
-    this.element.remove();  // モーダル自身を完全に削除する
-});
+//         this.element.addEventListener('hidden.bs.modal', () => {
+//     this.element.remove();  // モーダル自身を完全に削除する
+// });
 
   }
 }

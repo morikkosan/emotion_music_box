@@ -41,10 +41,11 @@
       <p><strong>感情:</strong> <%= @emotion_log.emotion %></p>
       <p><strong>日記:</strong> <%= @emotion_log.description %></p>
         <% if current_user == @emotion_log.user %>
-        <%= link_to '編集',
-            edit_emotion_log_path(@emotion_log, format: :turbo_stream),
-            data: { turbo_frame: "modal-container" },
-            class: 'btn btn-danger btn-sm' %>
+        <%= button_to '編集',
+              edit_emotion_log_path(@emotion_log, format: :turbo_stream),
+              form: { data: { turbo_frame: "modal-container" } },
+              class: 'btn btn-danger btn-sm',
+              method: :get %>
 
         <% end %>
         <br>
