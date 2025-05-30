@@ -17,6 +17,12 @@ def after_omniauth_failure_path_for(scope)
 end
 
 
+  helper_method :mobile_device?
+
+  def mobile_device?
+    request.user_agent.to_s.downcase =~ /mobile|webos|iphone|android/
+  end
+
 
 
 def after_sign_in_path_for(resource)
