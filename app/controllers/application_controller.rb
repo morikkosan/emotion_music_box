@@ -1,6 +1,7 @@
 class ApplicationController < ActionController::Base
   protect_from_forgery with: :exception
   before_action :force_mobile_view
+  before_action :refresh_soundcloud_token_if_needed, if: :user_signed_in?
 
   # before_action :log_session_info
   # before_action :debug_session_state
@@ -41,6 +42,30 @@ end
   end
 
   private
+
+      def refresh_soundcloud_token_if_needed
+  Rails.logger.info "▶️ SoundCloudトークン有効期限チェック開始 user_id: #{current_user.id}"
+
+  return unless current_user.soundcloud_token_expires_at.present?
+
+  if current_user.soundcloud_token_expires_at < Time.current
+    Rails.logger.info "⏳ トークン期限切れ。リフレッシュ処理開始 user_id: #{current_user.id}"
+    success = SoundCloudClient.refresh_token(current_user)
+
+    if success
+      Rails.logger.info "✅ トークンリフレッシュ成功 user_id: #{current_user.id}"
+    else
+      Rails.logger.error "❌ トークンリフレッシュ失敗 user_id: #{current_user.id}"
+      sign_out current_user
+      redirect_to new_user_session_path, alert: "SoundCloud認証が切れたため再ログインしてください"
+      return
+    end
+  else
+    Rails.logger.info "✅ トークン有効期限内 user_id: #{current_user.id}"
+  end
+end
+
+
 
     def ensure_soundcloud_authenticated
       # SoundCloud 認証済みフラグが立っていない場合にリダイレクトする
