@@ -86,7 +86,7 @@
         <div class="neon-btn-sub">(SoundCloudアカウントも簡単作成)</div>
       <% end %>
 
-      <%= link_to user_soundcloud_omniauth_authorize_path(view: 'mobile'),
+      <%= link_to user_soundcloud_omniauth_authorize_path,
                   class: "neon-btn btn-neon-xl",
                   data: { turbo: false } do %>
         <div class="neon-btn-title">ログインして始める</div>
