@@ -1,133 +1,117 @@
-<!-- app/views/emotion_logs/show.html.erb -->
 <% content_for :title, "感情詳細コメントページ" %>
-
 
 <% if params[:view] == "mobile" %>
   <%= render 'show_mobile', emotion_log: @emotion_log, comments: @comments %>
 <% else %>
-<%= render 'shared/header' %>
+  <%= render 'shared/header' %>
 
-<div class="container mt-5">
-  <h1 class="text-center mt-4">
-    <i class="bi bi-heart-pulse"></i> Emotion Log <i class="bi bi-heart-pulse"></i>
-  </h1>
+  <main class="container mt-5" aria-labelledby="page-title">
+    <h1 id="page-title" class="text-center mt-4">
+      <i class="bi bi-heart-pulse" aria-hidden="true"></i>
+      Emotion Log
+      <i class="bi bi-heart-pulse" aria-hidden="true"></i>
+    </h1>
 
-  <!-- レコードの情報を表示する部分 -->
-  <div class="card mb-4">
-  <div class="card-header d-flex justify-content-between align-items-center">
-  <div class="d-flex align-items-center gap-2">
-  <% if @emotion_log.user.avatar_url.present? %>
-    <%= image_tag @emotion_log.user.avatar_url, alt: "投稿者のプロフィール画像", width: 70, height: 70, class: "rounded-circle" %>
-  <% else %>
-    <%= image_tag "default_stick_figure.png", alt: "デフォルトプロフィール画像", width: 60, height: 60, class: "rounded-circle" %>
-  <% end %>
-
-  <span class="fw-bold"><%= @emotion_log.user.name %></span>
-</div>
-    <div>
-      <strong>記録日時:</strong>
-      <%= @emotion_log.created_at.strftime('%Y-%m-%d %H:%M:%S') %>
-
-      <% if @emotion_log.tags.any? %>
-        <span class="ms-3">
-          <% @emotion_log.tags.each do |tag| %>
-            <span class="badge bg-secondary me-1"><%= tag.name %></span>
+    <!-- レコードの情報を表示する部分 -->
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <% if @emotion_log.user.avatar_url.present? %>
+            <%= image_tag @emotion_log.user.avatar_url,
+                          alt: "#{@emotion_log.user.name} さんのプロフィール画像",
+                          width: 70, height: 70,
+                          class: "rounded-circle" %>
+          <% else %>
+            <%= image_tag "default_stick_figure.png",
+                          alt: "デフォルトプロフィール画像",
+                          width: 60, height: 60,
+                          class: "rounded-circle" %>
           <% end %>
-        </span>
-      <% end %>
-    </div>
-  </div>
-<div class="card-body text-center">
-      <p><strong>感情:</strong> <%= @emotion_log.emotion %></p>
-      <p><strong>日記:</strong> <%= @emotion_log.description %></p>
-        <% if current_user == @emotion_log.user %>
-        <%= button_to '編集',
-              edit_emotion_log_path(@emotion_log, format: :turbo_stream),
-              form: { data: { turbo_frame: "modal-container" } },
-              class: 'btn btn-danger btn-sm',
-              method: :get %>
+          <span class="fw-bold"><%= @emotion_log.user.name %></span>
+        </div>
+        <div>
+          <strong>記録日時:</strong>
+          <time datetime="<%= @emotion_log.created_at.iso8601 %>">
+            <%= @emotion_log.created_at.strftime('%Y-%m-%d %H:%M:%S') %>
+          </time>
+          <% if @emotion_log.tags.any? %>
+            <span class="ms-3">
+              <% @emotion_log.tags.each do |tag| %>
+                <span class="badge bg-secondary me-1"><%= tag.name %></span>
+              <% end %>
+            </span>
+          <% end %>
+        </div>
+      </div>
+      <div class="card-body text-center">
+        <p><strong>感情:</strong> <%= @emotion_log.emotion %></p>
+        <p><strong>日記:</strong> <%= @emotion_log.description %></p>
 
+        <% if current_user == @emotion_log.user %>
+          <%= button_to edit_emotion_log_path(@emotion_log, format: :turbo_stream),
+                method: :get,
+                form: { data: { turbo_frame: "modal-container" } },
+                class: 'btn btn-danger btn-sm',
+                aria: { label: "この感情ログを編集" } %>
         <% end %>
-        <br>
- <% if @emotion_log.music_url.present? %>
-    <%= render 'mini_music_player', log: @emotion_log %>
-  <% end %>
+
+        <% if @emotion_log.music_url.present? %>
+          <%= render 'mini_music_player', log: @emotion_log %>
+        <% end %>
       </div>
     </div>
-  </div>
 
-  <!-- 同じ画面で更新できるようにフォームを設置(ユーザー用) -->
-  <!-- <div class="card">
-    <div class="card-header">
-      <strong>感情・日記を更新する</strong>
-    </div>
-    <div class="card-body">
-      <%= form_with model: @emotion_log, local: true do |form| %>
-        <div class="mb-3">
-          <%= form.label :emotion, "感情", class: "form-label" %>
-          <%= form.text_field :emotion, class: "form-control" %>
+    <!-- コメントセクション -->
+    <div class="d-flex justify-content-center">
+      <div class="card mb-4 w-100" style="max-width: 700px;">
+        <div class="card-header">
+          <strong id="comment-count">コメント (<%= @emotion_log.comments_count %>)</strong>
         </div>
+        <div class="card-body">
+          <!-- ① コメント送信用フォーム -->
+          <turbo-frame id="new_comment">
+            <%= form_with url: emotion_log_comments_path(@emotion_log),
+                          data: {
+                            controller:    "comment-form",
+                            action:        "turbo:submit-start->comment-form#sending turbo:submit-end->comment-form#sent",
+                            turbo_stream:  true
+                          },
+                          class: "mb-3" do |f| %>
 
-        <div class="mb-3">
-          <%= form.label :description, "日記", class: "form-label" %>
-          <%= form.text_area :description, class: "form-control" %>
+              <label for="comment_body" class="visually-hidden">コメントを入力</label>
+              <%= f.text_area :body,
+                    id: "comment_body",
+                    rows: 2,
+                    class: "form-control",
+                    placeholder: "コメントを入力…",
+                    data: { comment_form_target: "textarea" } %>
+
+              <%= f.submit "送信",
+                    class: "btn btn-primary mt-2",
+                    data: { comment_form_target: "submit" },
+                    aria: { label: "コメントを送信" } %>
+            <% end %>
+          </turbo-frame>
+
+          <!-- ② コメント一覧 -->
+          <turbo-frame id="comments">
+            <div id="comments" data-comment-form-target="comments">
+              <%= render @comments %>
+              <div class="text-center mt-3">
+                <%= paginate @comments %>
+              </div>
+            </div>
+          </turbo-frame>
         </div>
-
-        <div class="text-center">
-          <%= form.submit "更新する", class: "btn btn-primary" %>
-        </div>
-      <% end %>
+      </div>
     </div>
-  </div> -->
 
-  <!-- 戻るボタンなど -->
-<!-- ==== コメントセクション ==== -->
-<!-- ==== コメントセクション ==== -->
-<div class="d-flex justify-content-center">
-  <div class="card mb-4 w-100" style="max-width: 700px;">
-    <div class="card-header">
-      <strong id="comment-count">
-        コメント (<%= @emotion_log.comments_count %>)
-      </strong>
+    <!-- 戻るボタン -->
+    <div class="text-center mt-3">
+      <%= link_to '一覧へ戻る',
+                  emotion_logs_path,
+                  class: 'btn btn-secondary',
+                  aria: { label: "感情ログ一覧へ戻る" } %>
     </div>
-    <div class="card-body">
-      <!-- ① コメント送信用フォームを new_comment フレームでラップ -->
-      <turbo-frame id="new_comment">
-        <%= form_with url: emotion_log_comments_path(@emotion_log),
-                      data: {
-                        controller:    "comment-form",
-                        action:        "turbo:submit-start->comment-form#sending turbo:submit-end->comment-form#sent",
-                        turbo_stream:  true
-                      },
-                      class: "mb-3" do |f| %>
-          <%= f.text_area :body,
-                rows: 2,
-                class: "form-control",
-                placeholder: "コメントを入力…",
-                data: { comment_form_target: "textarea" } %>
-          <%= f.submit "送信",
-                class: "btn btn-primary mt-2",
-                data: { comment_form_target: "submit" } %>
-        <% end %>
-      </turbo-frame>
-
-      <!-- ② コメント一覧を comments フレームでラップ -->
-      <turbo-frame id="comments">
-        <div id="comments" data-comment-form-target="comments">
-      <%= render @comments %>
-      <div class="text-center mt-3">
-  <%= paginate @comments %>
-</div>
-        </div>
-      </turbo-frame>
-    </div>
-  </div>
-</div>
-
-
-
-<!-- ==== 戻るボタン ==== -->
-<div class="text-center mt-3">
-  <%= link_to '一覧へ戻る', emotion_logs_path, class: 'btn btn-secondary' %>
-</div>
+  </main>
 <% end %>
