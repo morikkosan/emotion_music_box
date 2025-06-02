@@ -12,11 +12,12 @@
       <% end %>
     <% else %>
       <%= link_to user_soundcloud_omniauth_authorize_path,
-      class: 'btn btn-primary d-flex align-items-center gap-2',
-      data: { turbo: false } do %>
+  class: 'neon-bookmark-btn d-flex align-items-center gap-2 justify-content-center',
+  data: { turbo: false } do %>
   <%= image_tag '3dheart.png', alt: 'dheart', size: '24x24' %>
-  <span>ログインしてブックマークする</span>
+  <span>ログインしてブクマする</span>
 <% end %>
+
 
     <% end %>
   </div>
