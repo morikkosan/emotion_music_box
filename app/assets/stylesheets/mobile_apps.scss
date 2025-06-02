@@ -29,6 +29,27 @@
 
 
 
+/* 2カラム→モバイル時は1カラムに */
+.neon-btn-panel {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+}
+
+@media (max-width: 600px) {
+  .neon-btn-panel {
+    flex-direction: column;
+    gap: 1.2rem;
+    align-items: center;
+  }
+  .neon-btn, .mobile-neon-btn {
+    width: 90vw;
+    max-width: 360px;
+    font-size: 1.2rem;
+    margin-right: 0 !important;
+  }
+}
+
 #record-button.record-mobile-button {
   position: fixed;
   /* 右下、メニューバー上あたりに配置 */
