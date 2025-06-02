@@ -30,6 +30,8 @@ def after_sign_in_path_for(resource)
   emotion_logs_path # または希望するトップページのパス
 end
 
+
+
   def chart_data
     render json: EmotionLog.group(:emotion).count
   end
@@ -83,17 +85,19 @@ end
     end
 
     def force_mobile_view
-      # すでに?view=mobileパラメータが付いている場合は何もしない
-      return if params[:view] == 'mobile'
+  # --- /auth/ 系のURLでは絶対リダイレクト・パラメータ追加をしない ---
+  return if request.path.start_with?('/auth/')
+  return if params[:view] == 'mobile'
 
-      # モバイル端末からのアクセスかを判定
-      if request.user_agent =~ /Mobile|Android|iPhone/ && !request.xhr?
-        # GETリクエスト時だけリダイレクトで?view=mobileを付与（POSTは避ける）
-        if request.get?
-          redirect_to url_for(params.permit!.to_h.merge(view: 'mobile')), allow_other_host: false
-        end
-      end
+  # モバイル端末からのアクセスかを判定
+  if request.user_agent =~ /Mobile|Android|iPhone/ && !request.xhr?
+    # GETリクエスト時だけリダイレクトで?view=mobileを付与（POSTは避ける）
+    if request.get?
+      redirect_to url_for(params.permit!.to_h.merge(view: 'mobile')), allow_other_host: false
     end
+  end
+end
+
   # def debug_session_state
   #   Rails.logger.info "🟢 Current session['omniauth.state']: #{session['omniauth.state']}"
   # end
