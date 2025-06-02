@@ -179,6 +179,28 @@
   min-height: 160px;
 }
 
+// ブックマークしてログインするボタン
+.neon-bookmark-btn {
+  border: 2px solid #eb2df8;
+  background: linear-gradient(90deg, #ff00cc 0%, #00ccff 100%);
+  color: #fff !important;
+  border-radius: 18px;
+  box-shadow: 0 0 18px #eb2df8cc, 0 0 32px #00fff799;
+  font-weight: bold;
+  font-size: 1.12rem;
+  padding: 0.7rem 1.6rem;
+  transition: box-shadow 0.3s, background 0.3s, color 0.2s;
+  text-shadow: 0 0 8px #ff2ffb99, 0 0 4px #00e7ff44;
+  margin-bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.neon-bookmark-btn:hover {
+  background: linear-gradient(90deg, #00ccff 0%, #ff00cc 100%);
+  box-shadow: 0 0 40px #00fff7cc, 0 0 48px #eb2df899;
+  color: #fff !important;
+}
 
 // ブックマークタイトルバナー
 .bookmark_title {
