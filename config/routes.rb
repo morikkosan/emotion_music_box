@@ -32,7 +32,7 @@ Rails.application.routes.draw do
   end
 
 
-  resources :playlists, only: [:create, :index, :show, :edit, :update]
+  resources :playlists, only: [:new, :create, :index, :show, :edit, :update]
 
   get :my_emotion_logs,          to: 'emotion_logs#my_emotion_logs'
   get 'jamendo/search',          to: 'jamendo#search'

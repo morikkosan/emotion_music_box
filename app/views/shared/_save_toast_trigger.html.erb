@@ -1,0 +1,12 @@
+<turbo-stream action="append" target="comment-container">
+  <template>
+    <script>
+      // Bootstrapトーストを表示
+      const toastEl = document.getElementById("save-toast");
+      if (toastEl) {
+        const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+        toast.show();
+      }
+    </script>
+  </template>
+</turbo-stream>
