@@ -28,3 +28,18 @@ export default class extends Controller {
 
   }
 }
+
+document.addEventListener("turbo:before-stream-render", (event) => {
+  // Turbo Stream remove/replace で modal-container が対象の時
+  if (
+    event.target.tagName === "TURBO-STREAM" &&
+    ["remove", "replace"].includes(event.target.getAttribute("action")) &&
+    event.target.getAttribute("target") === "modal-container"
+  ) {
+    // 黒いモヤを消す
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove())
+    document.body.classList.remove('modal-open')
+    document.body.style.overflow = ""
+  }
+})
+

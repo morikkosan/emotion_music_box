@@ -1,7 +1,11 @@
-<div class="modal fade" id="playlistModal" tabindex="-1" aria-labelledby="playlistModalLabel" aria-hidden="true">
+<div class="modal fade show"
+     id="modal-container"
+     tabindex="-1"
+     style="display:block;"
+     data-controller="modal">
   <div class="modal-dialog">
     <div class="modal-content">
-      <%= form_with model: Playlist.new, url: playlists_path, method: :post, local: true do |f| %>
+      <%= form_with model: Playlist.new, url: playlists_path do |f| %>
         <div class="modal-header">
           <h5 class="modal-title">プレイリスト名を入力</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
