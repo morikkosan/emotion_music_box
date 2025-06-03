@@ -14392,22 +14392,17 @@ var submit_handler_controller_default = class extends Controller {
       body: formData
     }).then((res) => res.json()).then((data) => {
       if (data.success) {
-        if (data.hp_today) {
-          let hpPercentage = 50;
-          const storedHP = parseFloat(localStorage.getItem("hpPercentage"));
-          if (!isNaN(storedHP)) hpPercentage = storedHP;
-          if (typeof data.hpPercentage !== "undefined") {
-            hpPercentage += parseFloat(data.hpPercentage);
-            hpPercentage = Math.max(0, Math.min(100, hpPercentage));
-          }
-          localStorage.setItem("hpPercentage", hpPercentage.toString());
-          localStorage.setItem("hpPercentageDate", (/* @__PURE__ */ new Date()).toISOString().slice(0, 10));
-          if (window.updateHPBar) window.updateHPBar();
+        if (form.id === "playlist-form") {
+          console.log("\u2705 playlist-form submit handler \u767A\u706B\uFF01");
           const toastEl = document.getElementById("save-toast");
           if (toastEl) {
+            const body = toastEl.querySelector(".toast-body");
+            if (body) body.textContent = "\u30D7\u30EC\u30A4\u30EA\u30B9\u30C8\u3092\u4F5C\u6210\u3057\u307E\u3057\u305F\uFF01";
             const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
             toast.show();
           }
+        }
+        if (data.hp_today) {
           setTimeout(() => {
             window.location.href = data.redirect_url;
           }, 1500);
