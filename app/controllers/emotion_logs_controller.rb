@@ -169,7 +169,7 @@ class EmotionLogsController < ApplicationController
 
     @emotion_logs = apply_sort_and_period_filters(logs).page(params[:page])
     @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
-    @mypage_title = "おすすめ🔥（#{emotion}）"
+    @recommended_page = "🔥おすすめ🔥（#{emotion}）"
     @recommended_page = "🔥おすすめ🔥"
 
     render (params[:view] == "mobile" || mobile_device?) ? :mobile_index : :index
