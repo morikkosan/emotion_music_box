@@ -5,7 +5,7 @@
      data-controller="modal">
   <div class="modal-dialog">
     <div class="modal-content">
-      <%= form_with model: Playlist.new, url: playlists_path do |f| %>
+<%= form_with model: Playlist.new, url: playlists_path, html: { id: "playlist-form" } do |f| %>
         <div class="modal-header">
           <h5 class="modal-title">プレイリスト名を入力</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
