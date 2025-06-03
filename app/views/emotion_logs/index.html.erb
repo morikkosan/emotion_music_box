@@ -37,15 +37,12 @@
 
 <% if @bookmark_page.present? %>
   <div class="text-end mb-3">
-    <button
-      type="button"
-      class="btn btn-success"
-      data-bs-toggle="modal"
-      data-bs-target="#playlistModal"
-      id="open-playlist-modal"
-    >
-      ✅ プレイリストを作成する
-    </button>
+    <%= link_to "✅ プレイリストを作成する",
+      new_playlist_path(format: :turbo_stream),
+      data: { turbo_frame: "modal-container" },
+      class: "btn btn-success" %>
+
+
   </div>
 <% end %>
 
@@ -55,7 +52,9 @@
   <br><br><br><br>
 
   <% if @bookmark_page.present? || @mypage_title.present? %>
-    <%= render 'emotion_logs/playlist_sidebar', playlists: current_user.playlists.includes(:playlist_items, :emotion_logs) %>
+<div id="playlist-sidebar">
+  <%= render 'emotion_logs/playlist_sidebar', playlists: current_user.playlists.includes(:playlist_items, :emotion_logs) %>
+  </div>
   <% else %>
     <%= render 'super_search' %>
   <% end %>
@@ -150,8 +149,6 @@
   <% end %>
 </div>
 
-
-<%= render 'emotion_logs/playlist_modal' %>
 
 
 <% content_for :javascript do %>

@@ -14192,6 +14192,13 @@ var modal_controller_default = class extends Controller {
     if (desc) setTimeout(() => desc.focus(), 100);
   }
 };
+document.addEventListener("turbo:before-stream-render", (event) => {
+  if (event.target.tagName === "TURBO-STREAM" && ["remove", "replace"].includes(event.target.getAttribute("action")) && event.target.getAttribute("target") === "modal-container") {
+    document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
+    document.body.classList.remove("modal-open");
+    document.body.style.overflow = "";
+  }
+});
 
 // app/javascript/controllers/search_music_controller.js
 var search_music_controller_default = class extends Controller {
