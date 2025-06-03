@@ -36,6 +36,13 @@
 
 
 
+<!-- プレイリストrender -->
+<div class="container mt-4">
+  <% if @bookmark_page.present? %>
+    <%= render "emotion_logs/playlist_partial", emotion_logs: @emotion_logs %>
+  <% end %>
+</div>
+
 
   <% if user_signed_in? %>
   <br><br><br><br>
