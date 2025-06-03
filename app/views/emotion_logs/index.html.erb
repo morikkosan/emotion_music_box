@@ -35,20 +35,32 @@
 <% end %>
 
 
+<% if @bookmark_page.present? %>
+  <div class="text-end mb-3">
+    <button
+      type="button"
+      class="btn btn-success"
+      data-bs-toggle="modal"
+      data-bs-target="#playlistModal"
+      id="open-playlist-modal"
+    >
+      ✅ プレイリストを作成する
+    </button>
+  </div>
+<% end %>
 
-<!-- プレイリストrender -->
-<div class="container mt-4">
-  <% if @bookmark_page.present? %>
-    <%= render "emotion_logs/playlist_partial", emotion_logs: @emotion_logs %>
-  <% end %>
-</div>
 
 
-  <% if user_signed_in? %>
+  <<% if user_signed_in? %>
   <br><br><br><br>
 
-<%= render 'super_search' %>
+  <% if @bookmark_page.present? || @mypage_title.present? %>
+    <%= render 'emotion_logs/playlist_sidebar', playlists: current_user.playlists.includes(:playlist_items, :emotion_logs) %>
+  <% else %>
+    <%= render 'super_search' %>
+  <% end %>
 <% end %>
+
 
 <%= turbo_frame_tag "logs_list" do %> <!-- ← ← ← これがTurboの枠 -->
   <div class="row justify-content-center">
@@ -56,6 +68,16 @@
       <div id="<%= dom_id(log) %>" class="col-md-8 mb-4">
         <div class="card">
           <div class="card-header d-flex justify-content-between align-items-center">
+
+            <% if @bookmark_page.present? %>
+          <input
+            type="checkbox"
+            name="selected_logs[]"
+            value="<%= log.id %>"
+            class="playlist-check me-3"
+            style="width: 2.2rem; height: 2.2rem; accent-color: #e800ff; box-shadow: 0 0 8px #fff6, 0 0 3px #e800ff;"
+          >
+        <% end %>
             <div>
               <strong><%= log.created_at.in_time_zone('Tokyo').strftime('%Y/%m/%d %H:%M') %></strong>
 
@@ -127,3 +149,28 @@
     <%= link_to "今日の気持ちを記録する", new_emotion_log_path(format: :turbo_stream), id: "record-button", data: { controller: "record-btn", action: "click->record-btn#hide", turbo_prefetch: false }, class: "btn btn-primary floating-btn" %>
   <% end %>
 </div>
+
+
+<%= render 'emotion_logs/playlist_modal' %>
+
+
+<% content_for :javascript do %>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const modalButton = document.getElementById("open-playlist-modal");
+    const playlistForm = document.querySelector("#playlistModal form");
+    const selectedLogContainer = document.getElementById("selected-log-ids");
+
+    modalButton.addEventListener("click", function () {
+      selectedLogContainer.innerHTML = "";
+      document.querySelectorAll("input.playlist-check:checked").forEach(function (checkbox) {
+        const hidden = document.createElement("input");
+        hidden.type = "hidden";
+        hidden.name = "selected_logs[]";
+        hidden.value = checkbox.value;
+        selectedLogContainer.appendChild(hidden);
+      });
+    });
+  });
+</script>
+<% end %>

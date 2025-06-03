@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_05_15_090457) do
+ActiveRecord::Schema[7.2].define(version: 2025_06_03_072625) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -105,6 +105,23 @@ ActiveRecord::Schema[7.2].define(version: 2025_05_15_090457) do
     t.index ["user_id"], name: "index_identities_on_user_id"
   end
 
+  create_table "playlist_items", force: :cascade do |t|
+    t.bigint "playlist_id", null: false
+    t.bigint "emotion_log_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["emotion_log_id"], name: "index_playlist_items_on_emotion_log_id"
+    t.index ["playlist_id"], name: "index_playlist_items_on_playlist_id"
+  end
+
+  create_table "playlists", force: :cascade do |t|
+    t.string "name"
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_playlists_on_user_id"
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.string "session_id", null: false
     t.text "data"
@@ -156,4 +173,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_05_15_090457) do
   add_foreign_key "emotion_log_tags", "tags"
   add_foreign_key "emotion_logs", "users"
   add_foreign_key "identities", "users"
+  add_foreign_key "playlist_items", "emotion_logs"
+  add_foreign_key "playlist_items", "playlists"
+  add_foreign_key "playlists", "users"
 end
