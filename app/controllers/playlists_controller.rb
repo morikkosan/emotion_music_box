@@ -23,13 +23,8 @@ end
   end
   respond_to do |format|
     format.turbo_stream {
-      render turbo_stream: [
-        turbo_stream.remove("modal-container"),
-        turbo_stream.append(
-          "comment-container", # body直下や必ず存在するidにする
-          partial: "shared/save_toast_trigger"
-        )
-      ]
+      # モーダルだけ閉じるだけ！JSはコントローラ側で発火
+      render turbo_stream: turbo_stream.remove("modal-container")
     }
     format.html { redirect_to playlists_path, notice: "プレイリストを作成しました！" }
   end

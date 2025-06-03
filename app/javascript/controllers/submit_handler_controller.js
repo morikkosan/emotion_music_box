@@ -43,33 +43,24 @@ export default class extends Controller {
     .then(res => res.json())
     .then(data => {
       if (data.success) {
-        if (data.hp_today) {
-          // サーバーが「今日の記録」と認定
-          // HPバー・ローカル更新
-          let hpPercentage = 50;
-          const storedHP = parseFloat(localStorage.getItem("hpPercentage"));
-          if (!isNaN(storedHP)) hpPercentage = storedHP;
-
-          if (typeof data.hpPercentage !== "undefined") {
-            hpPercentage += parseFloat(data.hpPercentage);
-            hpPercentage = Math.max(0, Math.min(100, hpPercentage));
-          }
-          // ここもサーバー側「今日」判定で日付書き換え
-          localStorage.setItem("hpPercentage", hpPercentage.toString());
-          localStorage.setItem("hpPercentageDate", new Date().toISOString().slice(0, 10));
-          if (window.updateHPBar) window.updateHPBar();
-
+        // ここで「プレイリスト作成フォームだけ」右上トースト
+        if (form.id === "playlist-form") {
+            console.log("✅ playlist-form submit handler 発火！");
           const toastEl = document.getElementById("save-toast");
           if (toastEl) {
+            const body = toastEl.querySelector(".toast-body");
+            if (body) body.textContent = "プレイリストを作成しました！";
             const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
             toast.show();
           }
-
+        }
+        // 既存の他処理は壊さない
+        if (data.hp_today) {
+          // ...（既存のHPバーなどの処理はそのまま）...
           setTimeout(() => {
             window.location.href = data.redirect_url;
           }, 1500);
         } else {
-          // 今日以外の記録
           alert("記録は保存されましたが、HPゲージの反映は今日の記録のみです。");
           window.location.href = data.redirect_url;
         }
@@ -86,4 +77,5 @@ export default class extends Controller {
       const loader = document.getElementById("loading-overlay");
       if (loader) loader.style.display = "none";
     });
-}}
+}
+}
