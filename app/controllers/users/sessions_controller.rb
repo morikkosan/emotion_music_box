@@ -1,5 +1,13 @@
 class Users::SessionsController < Devise::SessionsController
-  def destroy
+   def destroy
+    if current_user
+      current_user.update(
+        soundcloud_token: nil,
+        soundcloud_refresh_token: nil,
+        soundcloud_token_expires_at: nil
+      )
+      Rails.logger.info "🟢 SoundCloudトークンを初期化しました user_id: #{current_user.id}"
+    end
     Rails.logger.info "current_user: #{current_user.inspect}"
     super
     Rails.logger.info "AFTER super: flash: #{flash.inspect}"
