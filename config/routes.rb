@@ -31,6 +31,9 @@ Rails.application.routes.draw do
     collection { post :toggle }   # POST /bookmarks/toggle二連打防止
   end
 
+
+  resources :playlists, only: [:create, :index, :show, :edit, :update]
+
   get :my_emotion_logs,          to: 'emotion_logs#my_emotion_logs'
   get 'jamendo/search',          to: 'jamendo#search'
   get '/soundcloud_client_id',   to: 'sound_cloud#client_id'
