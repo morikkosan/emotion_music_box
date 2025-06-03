@@ -19,6 +19,8 @@ class SoundCloudClient
         soundcloud_refresh_token: response.parsed_response["refresh_token"],
         soundcloud_token_expires_at: Time.current + response.parsed_response["expires_in"].to_i.seconds
       )
+        Rails.logger.info "✅ SoundCloudトークンリフレッシュ成功 user_id: #{user.id} expires_at: #{user.soundcloud_token_expires_at}"
+
       return true
     else
       Rails.logger.error "❌ リフレッシュ失敗: #{response.body}"

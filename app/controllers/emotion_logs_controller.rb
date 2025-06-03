@@ -151,6 +151,11 @@ class EmotionLogsController < ApplicationController
     @emotion_logs = apply_sort_and_period_filters(logs).page(params[:page]).per(7)
     @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
     @bookmark_page = "♡お気に入りリスト♡"
+    
+    if @emotion_logs.blank?
+      redirect_to emotion_logs_path(view: params[:view]), alert: "まだお気に入り投稿がありません。"
+      return
+    end
 
     render (params[:view] == "mobile" || mobile_device?) ? :mobile_index : :index
   end
