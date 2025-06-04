@@ -10,6 +10,7 @@ import TagInputController from "./tag_input_controller";
 import TagAutocompleteController from "./tag_autocomplete_controller";
 import ViewSwitcherController from "./view_switcher_controller"; //
 import MobileSuperSearchController from "./mobile_super_search_controller"; // ← 追加
+import PlaylistModalController from "./playlist_modal_controller"; // ← 追加
 
 const application = Application.start(); // ← 最初に application を定義！
 
@@ -24,3 +25,4 @@ application.register("tag-autocomplete", TagAutocompleteController);   // ← �
 application.register("view-switcher", ViewSwitcherController); // ← 追加
 application.register("record-btn", RecordBtnController); // ← 追加
 application.register("mobile-super-search", MobileSuperSearchController); // ← 追加
+application.register("playlist-modal", PlaylistModalController); // ← 追加
