@@ -1,38 +1,51 @@
-// app/javascript/controllers/modal_controller.js
 import { Controller } from "@hotwired/stimulus"
 import * as bootstrap from "bootstrap"
+
+document.addEventListener("turbo:before-stream-render", (event) => {
+  const action = event.target.getAttribute("action");
+  const target = event.target.getAttribute("target");
+
+  if ((action === "remove" || action === "update" || action === "replace") && target === "modal-container") {
+    const arr = Array.from(document.querySelectorAll('body > .modal-backdrop'));
+    const latest = arr[arr.length - 1];
+    if (latest) latest.remove();
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = "";
+  }
+});
 
 export default class extends Controller {
   connect() {
     console.log("▶▶▶ generic modal controller connected")
 
-    // ▼ Bootstrap が最後に追加したバックドロップだけを消す
+    // ▼ バックドロップ処理
     const arr = Array.from(document.querySelectorAll('body > .modal-backdrop'));
     const latest = arr[arr.length - 1];
     if (latest) latest.remove();
     document.body.classList.remove('modal-open')
     document.body.style.overflow = ""
 
-    // ▼ モーダルを show させる
+    // ▼ チェック済みのログIDを hidden input に変換してモーダル内に挿入
+    const selectedLogContainer = this.element.querySelector("#selected-log-ids")
+    if (selectedLogContainer) {
+      selectedLogContainer.innerHTML = ""
+      const checkedLogs = document.querySelectorAll("input.playlist-check:checked")
+      checkedLogs.forEach((checkbox) => {
+        const hidden = document.createElement("input")
+        hidden.type = "hidden"
+        hidden.name = "selected_logs[]"
+        hidden.value = checkbox.value
+        selectedLogContainer.appendChild(hidden)
+      })
+    }
+
+    // ▼ モーダルを表示
     const bsModal = bootstrap.Modal.getOrCreateInstance(this.element)
     bsModal.show()
 
-    // ▼ モーダルが閉じられたら、自分自身を DOM から remove() して後片付け
+    // ▼ モーダルが閉じられたら自分をDOMから削除
     this.element.addEventListener('hidden.bs.modal', () => {
       this.element.remove()
     });
   }
 }
-
-// Turbo Stream で「modal-container」を更新するときにもバックドロップを最新の1つだけ消す
-document.addEventListener("turbo:before-stream-render", (event) => {
-  const action = event.target.getAttribute("action")
-  const target = event.target.getAttribute("target")
-  if ((action === "update" || action === "remove" || action === "replace") && target === "modal-container") {
-    const arr = Array.from(document.querySelectorAll('body > .modal-backdrop'));
-    const latest = arr[arr.length - 1];
-    if (latest) latest.remove();
-    document.body.classList.remove('modal-open')
-    document.body.style.overflow = ""
-  }
-})
