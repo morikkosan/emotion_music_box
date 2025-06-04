@@ -1,5 +1,5 @@
+# app/controllers/playlists_controller.rb
 class PlaylistsController < ApplicationController
-
   def new
     @playlist = Playlist.new
     respond_to do |format|
@@ -15,27 +15,51 @@ class PlaylistsController < ApplicationController
   end
 
   def create
-    @playlist = current_user.playlists.create!(playlist_params)
-    (params[:selected_logs] || []).each do |log_id|
+  @playlist = current_user.playlists.new(playlist_params)
+  selected = Array(params[:selected_logs]) # nil対策で Array に変換
+
+  if @playlist.save && selected.any?
+    # ✅ 正常時の処理
+    selected.each do |log_id|
       @playlist.playlist_items.create!(emotion_log_id: log_id)
     end
 
+    flash[:notice] = "プレイリストを作成しました！"
+
     respond_to do |format|
-      format.turbo_stream {
-        # モーダル本体（中身）だけを空にして閉じる
-        render turbo_stream: turbo_stream.update("modal-container", "")
-      }
+      format.turbo_stream do
+        close_modal = turbo_stream.update("modal-container", "")
+        show_flash = turbo_stream.append("flash", partial: "shared/flash_container")
+        render turbo_stream: [close_modal, show_flash]
+      end
       format.html { redirect_to playlists_path, notice: "プレイリストを作成しました！" }
     end
-  end
 
-  def index
-    @playlists = current_user.playlists.includes(:playlist_items)
-  end
+  else
+    # ❌ エラーパターン（バリデーション or チェックなし）
+    if !selected.any?
+      flash[:alert] = "チェックマークが1つも選択されていません"
+    elsif @playlist.errors.any?
+      flash[:alert] = @playlist.errors.full_messages.join("、")
+    else
+      flash[:alert] = "プレイリストの作成に失敗しました"
+    end
 
-  def show
-    @playlist = current_user.playlists.find(params[:id])
+    respond_to do |format|
+      format.turbo_stream do
+        retry_modal = turbo_stream.update(
+          "modal-container",
+          partial: "emotion_logs/playlist_modal",
+          locals: { playlist: @playlist }
+        )
+        show_flash = turbo_stream.append("flash", partial: "shared/flash_container")
+        render turbo_stream: [retry_modal, show_flash]
+      end
+      format.html { render :new, status: :unprocessable_entity }
+    end
   end
+end
+
 
   private
 

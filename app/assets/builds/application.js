@@ -14746,6 +14746,17 @@ var mobile_super_search_controller_default = class extends Controller {
 };
 
 // app/javascript/controllers/playlist_modal_controller.js
+document.addEventListener("turbo:before-stream-render", (event) => {
+  const action = event.target.getAttribute("action");
+  const target = event.target.getAttribute("target");
+  if ((action === "remove" || action === "update" || action === "replace") && target === "modal-container") {
+    const arr = Array.from(document.querySelectorAll("body > .modal-backdrop"));
+    const latest = arr[arr.length - 1];
+    if (latest) latest.remove();
+    document.body.classList.remove("modal-open");
+    document.body.style.overflow = "";
+  }
+});
 var playlist_modal_controller_default = class extends Controller {
   connect() {
     console.log("\u25B6\u25B6\u25B6 generic modal controller connected");
@@ -14754,6 +14765,18 @@ var playlist_modal_controller_default = class extends Controller {
     if (latest) latest.remove();
     document.body.classList.remove("modal-open");
     document.body.style.overflow = "";
+    const selectedLogContainer = this.element.querySelector("#selected-log-ids");
+    if (selectedLogContainer) {
+      selectedLogContainer.innerHTML = "";
+      const checkedLogs = document.querySelectorAll("input.playlist-check:checked");
+      checkedLogs.forEach((checkbox) => {
+        const hidden = document.createElement("input");
+        hidden.type = "hidden";
+        hidden.name = "selected_logs[]";
+        hidden.value = checkbox.value;
+        selectedLogContainer.appendChild(hidden);
+      });
+    }
     const bsModal = Modal.getOrCreateInstance(this.element);
     bsModal.show();
     this.element.addEventListener("hidden.bs.modal", () => {
@@ -14761,17 +14784,6 @@ var playlist_modal_controller_default = class extends Controller {
     });
   }
 };
-document.addEventListener("turbo:before-stream-render", (event) => {
-  const action = event.target.getAttribute("action");
-  const target = event.target.getAttribute("target");
-  if ((action === "update" || action === "remove" || action === "replace") && target === "modal-container") {
-    const arr = Array.from(document.querySelectorAll("body > .modal-backdrop"));
-    const latest = arr[arr.length - 1];
-    if (latest) latest.remove();
-    document.body.classList.remove("modal-open");
-    document.body.style.overflow = "";
-  }
-});
 
 // app/javascript/controllers/index.js
 var application = Application.start();
