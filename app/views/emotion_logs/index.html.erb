@@ -149,25 +149,3 @@
   <% end %>
 </div>
 
-
-
-<% content_for :javascript do %>
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const modalButton = document.getElementById("open-playlist-modal");
-    const playlistForm = document.querySelector("#playlistModal form");
-    const selectedLogContainer = document.getElementById("selected-log-ids");
-
-    modalButton.addEventListener("click", function () {
-      selectedLogContainer.innerHTML = "";
-      document.querySelectorAll("input.playlist-check:checked").forEach(function (checkbox) {
-        const hidden = document.createElement("input");
-        hidden.type = "hidden";
-        hidden.name = "selected_logs[]";
-        hidden.value = checkbox.value;
-        selectedLogContainer.appendChild(hidden);
-      });
-    });
-  });
-</script>
-<% end %>
