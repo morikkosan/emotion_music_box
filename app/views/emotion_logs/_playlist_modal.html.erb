@@ -1,25 +1,27 @@
-<div class="modal fade show"
-     id="modal-container"
-     tabindex="-1"
-     style="display:block;"
-     data-controller="modal">
-  <div class="modal-dialog">
-    <div class="modal-content">
-<%= form_with model: Playlist.new, url: playlists_path, html: { id: "playlist-form" } do |f| %>
-        <div class="modal-header">
-          <h5 class="modal-title">プレイリスト名を入力</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
-        </div>
-        <div class="modal-body">
-          <%= f.label :name, "プレイリスト名" %>
-          <%= f.text_field :name, class: "form-control" %>
-        </div>
-        <div id="selected-log-ids"></div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-          <%= f.submit "作成", class: "btn btn-primary" %>
-        </div>
-      <% end %>
+<!-- app/views/emotion_logs/_playlist_modal.html.erb -->
+<%= turbo_stream.update "modal-container" do %>
+  <div class="modal fade show"
+       id="playlist-modal"                  <!-- ID は playlist-modal のまま -->
+       tabindex="-1"
+       style="display: block;"
+       data-controller="playlist-modal">    <!-- ここを変更 -->
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <%= form_with model: playlist, url: playlists_path, html: { id: "playlist-form" } do |f| %>
+          <div class="modal-header">
+            <h5 class="modal-title">プレイリスト名を入力</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+          </div>
+          <div class="modal-body">
+            <%= f.label :name, "プレイリスト名" %>
+            <%= f.text_field :name, class: "form-control" %>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+            <%= f.submit "作成", class: "btn btn-primary" %>
+          </div>
+        <% end %>
+      </div>
     </div>
   </div>
-</div>
+<% end %>
