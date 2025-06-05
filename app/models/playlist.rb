@@ -6,4 +6,15 @@ class Playlist < ApplicationRecord
   validates :name,
             presence: { message: "を入力してください" },
             length:   { maximum: 15, message: "は15文字以内で入力してください" }
+
+  validate :playlist_count_within_limit, on: :create
+
+  private
+
+  def playlist_count_within_limit
+    # 新規作成時に user.playlists がすでに12個あるときはエラー
+    if user.playlists.count >= 12
+      errors.add(:base, "プレイリストは12個までしか作成できません")
+    end
+  end
 end
