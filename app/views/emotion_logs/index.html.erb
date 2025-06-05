@@ -37,12 +37,18 @@
 
 <% if @bookmark_page.present? %>
   <div class="text-end mb-3">
+  <% if current_user.playlists.count < 12 %>
     <%= button_to "✅ プレイリストを作成する",
-        new_playlist_path(format: :turbo_stream),
-        method: :get,
-        form: { data: { turbo_frame: "playlist-modal-container" } },
-        class: "btn btn-success" %>
-  </div>
+          new_playlist_path(format: :turbo_stream),
+          method: :get,
+          form: { data: { turbo_frame: "playlist-modal-container" } },
+          class: "btn btn-success" %>
+  <% else %>
+    <button class="btn btn-secondary" disabled>
+      プレイリストは12個まで作成可能です
+    </button>
+  <% end %>
+</div>
 <% end %>
 
 
