@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import * as bootstrap from "bootstrap"
-
+// 下手に触らない新しく作るならこれから違うファイルへ違うモーダルidへ
 export default class extends Controller {
   connect () {
     //console.log("🟢 modal_controller connected")
