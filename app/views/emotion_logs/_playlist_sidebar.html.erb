@@ -4,7 +4,18 @@
 
     <% playlists.each do |playlist| %>
       <div class="mb-3">
-        <strong><%= playlist.name %></strong>
+        <!-- プレイリスト名をリンクにする -->
+        <strong>
+          <%= link_to playlist.name,
+                      playlist_path(playlist),
+                      class: "text-decoration-none text-dark" %>
+        </strong>
+
+        <!--
+          以下の曲リストは show ページで表示する場合は不要なので、
+          ブロック丸ごとコメントアウトしています。
+        -->
+        <!--
         <ul class="list-unstyled mt-2">
           <% playlist.playlist_items.each do |item| %>
             <% log = item.emotion_log %>
@@ -23,6 +34,7 @@
             </li>
           <% end %>
         </ul>
+        -->
       </div>
     <% end %>
   </div>

@@ -14749,7 +14749,12 @@ var mobile_super_search_controller_default = class extends Controller {
 document.addEventListener("turbo:before-stream-render", (event) => {
   const action = event.target.getAttribute("action");
   const target = event.target.getAttribute("target");
-  if ((action === "remove" || action === "update" || action === "replace") && target === "modal-container") {
+  if ((action === "remove" || action === "update" || action === "replace") && (target === "modal-container" || target === "playlist-modal-container")) {
+    const playlistModalEl = document.getElementById("playlist-modal");
+    if (playlistModalEl) {
+      const bs = Modal.getInstance(playlistModalEl) || Modal.getOrCreateInstance(playlistModalEl);
+      bs.hide();
+    }
     const arr = Array.from(document.querySelectorAll("body > .modal-backdrop"));
     const latest = arr[arr.length - 1];
     if (latest) latest.remove();
