@@ -1,30 +1,93 @@
-<div class="container mt-4">
-  <h3>📜 プレイリスト: <%= @playlist.name %></h3>
+<% if @playlist.playlist_items.empty? %>
+  <p>まだ曲が追加されていません。</p>
+<% else %>
+  <!-- ① UL に最大幅を与え、中央寄せできるように d-flex と align-items-center を追加 -->
+  <ul class="list-unstyled mt-3 d-flex flex-column align-items-center" id="<%= dom_id(@playlist, :contents) %>">
+    <% @playlist.playlist_items.includes(:emotion_log).each do |item| %>
+      <% log = item.emotion_log %>
 
-  <% if @playlist.playlist_items.empty? %>
-    <p>まだ曲が追加されていません。</p>
-  <% else %>
-    <ul class="list-unstyled mt-3">
-      <% @playlist.playlist_items.includes(:emotion_log).each do |item| %>
-        <% log = item.emotion_log %>
-        <li class="mb-4">
-          <strong>🎵 <%= log.track_name %></strong>
-          <% if log.music_url.include?("soundcloud.com") %>
-            <iframe
-              width="100%"
-              height="66"
-              scrolling="no"
-              frameborder="no"
-              allow="autoplay"
-              src="https://w.soundcloud.com/player/?url=<%= CGI.escape(log.music_url) %>&auto_play=false&visual=false&show_user=false&show_comments=false">
-            </iframe>
-          <% else %>
-            <p class="text-muted">SoundCloud URL が正しくありません。</p>
-          <% end %>
-        </li>
-      <% end %>
-    </ul>
-  <% end %>
+      <li class="mb-4 w-100">
+        <!-- justify-content-center に変更 -->
+        <div class="d-flex justify-content-center align-items-start mx-auto pmx_playlist_row">
+          <!-- 左側ブロック：曲タイトル＋プレーヤー -->
+          <div class="pmx_song_info">
+            <strong>🎵 <%= log.track_name %></strong>
+            <% if log.music_url.include?("soundcloud.com") %>
+              <iframe
+                class="pmx_soundcloud_player mt-2"
+                src="https://w.soundcloud.com/player/?url=<%= CGI.escape(log.music_url) %>&auto_play=false&visual=false&show_user=false&show_comments=false"
+                allow="autoplay"
+                frameborder="no"
+                scrolling="no"
+                height="66">
+              </iframe>
+            <% else %>
+              <p class="text-muted mt-2">SoundCloud URL が正しくありません。</p>
+            <% end %>
+          </div>
 
-  <%= link_to "← プレイリスト一覧に戻る", playlists_path, class: "btn btn-secondary mt-3" %>
-</div>
+          <!-- 右側ブロック：削除ボタン -->
+          <div class="pmx_remove_button">
+            <%= button_to "削除",
+                  playlist_playlist_item_path(@playlist, item),
+                  method: :delete,
+                  data: {
+                    turbo_confirm: "本当にこの曲をプレイリストから削除しますか？",
+                    turbo_frame: dom_id(@playlist, :contents)
+                  },
+                  class: "btn btn-danger btn-sm" %>
+          </div>
+        </div>
+      </li>
+
+    <% end %>
+   
+  </ul>
+<% end %>
+  <%= link_to "← プレイリスト一覧に戻る",
+              bookmarks_emotion_logs_path(view: 'mobile'),
+              class: "btn btn-secondary mt-3" %>
+
+<%= button_to "プレイリストを削除する",
+      playlist_path(@playlist),
+      method: :delete,
+      data: { turbo: false },
+      onclick: "return confirm('本当にこのプレイリストを削除しますか？');",
+      class: "btn btn-danger mt-3" %>
+
+
+
+<style>
+/* ユニークなプレフィックス pmx_ を付与して、他のクラスと衝突しないようにします */
+
+.pmx_song_info {
+  /* Flex の親要素内で「絶対に縮まない（flex-shrink:0）かつ 600px を基本幅（flex-basis）として使う」 */
+  flex: 0 0 600px;       /* flex-grow:0, flex-shrink:0, flex-basis:600px */
+  max-width: 100%;       /* ただし、親要素幅＜600px の場合には幅100% まで縮める */
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;           /* 曲タイトルと iframe のあいだに余白を作る */
+}
+
+/* iframe を親の pmx_song_info 幅いっぱいにするが、600px を超えないように制限 */
+.pmx_soundcloud_player {
+  width: 100% !important;  /* 親要素(.pmx_song_info) に合わせて幅を100% に */
+  max-width: 600px;        /* 600px 以上には伸びない */
+  display: block;          /* インライン余白を消す */
+}
+
+/* プレイリスト内行全体のレイアウト調整用 */
+.pmx_playlist_row {
+  /* justify-content-center で左右ブロックをまとめて中央に寄せる */
+  justify-content: center;
+  /* gap でブロック間のスペースを確保 */
+  gap: 1rem;
+  /* 画面幅が狭い場合に折り返しを許可 */
+  flex-wrap: wrap;
+}
+
+/* 削除ボタン用のラッパー */
+.pmx_remove_button {
+  /* 必要に応じて余白やサイズ調整をここに記述できます */
+}
+</style>

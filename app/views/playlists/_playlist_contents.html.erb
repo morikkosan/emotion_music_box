@@ -1,0 +1,75 @@
+<%# ────────────────────────────────────── %>
+<%# パーシャル: プレイリスト内の曲一覧を表示する %>
+<%# 呼び出し元からは「playlist」というローカル変数を受け取る %>
+<%# ────────────────────────────────────── %>
+
+<% if playlist.playlist_items.empty? %>
+  <p class="text-center mt-4">まだ曲が追加されていません。</p>
+<% else %>
+  <ul class="list-unstyled mt-3 d-flex flex-column align-items-center" id="<%= dom_id(playlist, :contents) %>">
+    <% playlist.playlist_items.includes(:emotion_log).each do |item| %>
+      <% log = item.emotion_log %>
+
+      <li class="mb-4 w-100">
+        <div class="d-flex justify-content-center align-items-start mx-auto pmx_playlist_row">
+          <!-- 左側ブロック：曲タイトル＋プレーヤー -->
+          <div class="pmx_song_info">
+            <strong>🎵 <%= log.track_name %></strong>
+            <% if log.music_url&.include?("soundcloud.com") %>
+              <iframe
+                class="pmx_soundcloud_player mt-2"
+                src="https://w.soundcloud.com/player/?url=<%= CGI.escape(log.music_url) %>&auto_play=false&visual=false&show_user=false&show_comments=false"
+                allow="autoplay"
+                frameborder="no"
+                scrolling="no"
+                height="66">
+              </iframe>
+            <% else %>
+              <p class="text-muted mt-2">SoundCloud URL が正しくありません。</p>
+            <% end %>
+          </div>
+
+          <!-- 右側ブロック：削除ボタン -->
+          <div class="pmx_remove_button">
+            <%= button_to "削除",
+                  playlist_playlist_item_path(playlist, item),
+                  method: :delete,
+                  data: {
+                    turbo_confirm: "本当にこの曲をプレイリストから削除しますか？",
+                    turbo_frame: dom_id(playlist, :contents)
+                  },
+                  class: "btn btn-danger btn-sm" %>
+          </div>
+        </div>
+      </li>
+      
+    <% end %>
+  </ul>
+<% end %>
+
+<style>
+  /* ここに pmx_ プレフィックス付きのスタイルを置いてもかまいません */
+  .pmx_song_info {
+    flex: 0 0 600px;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .pmx_soundcloud_player {
+    width: 100% !important;
+    max-width: 600px;
+    display: block;
+  }
+
+  .pmx_playlist_row {
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .pmx_remove_button {
+    /* ボタン周りの余白調整があればここに */
+  }
+</style>
