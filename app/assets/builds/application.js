@@ -14797,8 +14797,11 @@ var playlist_modal_controller_default = class extends Controller {
 
 // app/javascript/controllers/global-player_controller.js
 var global_player_controller_default = class extends Controller {
+  // 以下のように `data-track-image-target` と `data-play-icon-target` を使うためには
+  // HTML 側で image と icon に適切な属性を付ける必要があります。
   static targets = ["trackImage", "playIcon"];
   connect() {
+    console.log("GlobalPlayerController connected");
     this.iframeElement = document.getElementById("hidden-sc-player");
     this.bottomPlayer = document.getElementById("bottom-player");
     this.playPauseIcon = document.getElementById("play-pause-icon");
@@ -14826,16 +14829,21 @@ var global_player_controller_default = class extends Controller {
     this.seekBar?.addEventListener("input", (e) => this.seek(e));
     document.getElementById("play-pause-button")?.addEventListener("click", (e) => this.togglePlayPause(e));
   }
+  // 「カード上の再生アイコン」をクリックしたときに読み込んで再生する
   loadAndPlay(event) {
     event.stopPropagation();
     const icon = event.currentTarget;
-    const trackId = icon.dataset.trackId;
-    const img = this.trackImageTargets.find((t) => t.dataset.trackId === trackId);
+    const newTrackId = icon.dataset.trackId;
+    const img = this.trackImageTargets.find((t) => t.dataset.trackId === newTrackId);
     const trackUrl = img?.dataset.playUrl;
     if (!trackUrl) return;
+    this.playIconTargets.forEach((icn) => {
+      icn.classList.add("fa-play");
+      icn.classList.remove("fa-pause");
+    });
     this.bottomPlayer.classList.remove("d-none");
-    this.updateTrackIcon(trackId, true);
-    this.currentTrackId = trackId;
+    this.updateTrackIcon(newTrackId, true);
+    this.currentTrackId = newTrackId;
     const title = img?.closest(".card-body")?.querySelector(".button")?.textContent?.trim() || "\u30BF\u30A4\u30C8\u30EB\u4E0D\u660E";
     const artist = img?.closest(".card")?.querySelector(".card-header strong")?.textContent?.trim() || "unknown";
     this.trackTitleEl.textContent = title;
@@ -14853,6 +14861,7 @@ var global_player_controller_default = class extends Controller {
       });
     };
   }
+  // 下部プレーヤーの再生/停止アイコンをクリックしたとき
   togglePlayPause(event) {
     event?.stopPropagation();
     if (!this.widget) return;
@@ -14864,6 +14873,7 @@ var global_player_controller_default = class extends Controller {
       }
     });
   }
+  // シークバーを動かしたとき
   seek(event) {
     if (!this.widget) return;
     const percent = event.target.value;
@@ -14873,11 +14883,15 @@ var global_player_controller_default = class extends Controller {
       this.widget.seekTo(newTime);
     });
   }
+  // 音量バーを動かしたとき
   changeVolume(event) {
     if (!this.widget) return;
     const volume = event.target.value / 100;
     this.widget.setVolume(volume * 100);
   }
+  // ————————————————————————————————
+  // SoundCloud Widget の各種イベントハンドラ
+  // ————————————————————————————————
   onPlay = () => {
     this.playPauseIcon.classList.add("fa-pause");
     this.playPauseIcon.classList.remove("fa-play");
@@ -14894,13 +14908,19 @@ var global_player_controller_default = class extends Controller {
     this.bottomPlayer.classList.add("d-none");
     clearInterval(this.progressInterval);
   };
+  // カード上のアイコン状態を切り替える（再生中は ⏸、停止中は ▶）
   updateTrackIcon(trackId, playing) {
+    this.playIconTargets.forEach((icn) => {
+      icn.classList.add("fa-play");
+      icn.classList.remove("fa-pause");
+    });
     const icon = this.playIconTargets.find((i) => i.dataset.trackId === trackId);
     if (icon) {
       icon.classList.toggle("fa-play", !playing);
       icon.classList.toggle("fa-pause", playing);
     }
   }
+  // Widget イベントに再度バインド（PLAY, PAUSE, FINISH）
   bindWidgetEvents() {
     if (!this.widget) return;
     this.widget.unbind(SC.Widget.Events.PLAY);
@@ -14910,6 +14930,7 @@ var global_player_controller_default = class extends Controller {
     this.widget.bind(SC.Widget.Events.PAUSE, this.onPause);
     this.widget.bind(SC.Widget.Events.FINISH, this.onFinish);
   }
+  // 再生中の進捗を定期的に取得してシークバー・時間表示を更新
   startProgressTracking() {
     clearInterval(this.progressInterval);
     this.progressInterval = setInterval(() => {
@@ -14924,12 +14945,13 @@ var global_player_controller_default = class extends Controller {
       });
     }, 500);
   }
+  // ミリ秒を "M:SS" 形式に
   formatTime(ms) {
     if (!ms) return "0:00";
     const sec = Math.floor(ms / 1e3);
     const min2 = Math.floor(sec / 60);
-    const remainingSec = sec % 60;
-    return `${min2}:${remainingSec.toString().padStart(2, "0")}`;
+    const rem = sec % 60;
+    return `${min2}:${rem.toString().padStart(2, "0")}`;
   }
 };
 
