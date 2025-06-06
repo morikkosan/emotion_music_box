@@ -29,21 +29,25 @@ document.addEventListener("turbo:before-stream-render", (event) => {
 })
 
 export default class extends Controller {
-  connect() {
-    console.log("▶▶▶ generic modal controller connected")
+ connect() {
+  console.log("▶▶▶ generic modal controller connected")
 
-    // ▼ ページロード時に残っているバックドロップを消す
-    const arr = Array.from(document.querySelectorAll("body > .modal-backdrop"))
-    const latest = arr[arr.length - 1]
-    if (latest) latest.remove()
-    document.body.classList.remove("modal-open")
-    document.body.style.overflow = ""
+  // ▼ ページロード時に残っているバックドロップを消す
+  const arr = Array.from(document.querySelectorAll("body > .modal-backdrop"))
+  const latest = arr[arr.length - 1]
+  if (latest) latest.remove()
+  document.body.classList.remove("modal-open")
+  document.body.style.overflow = ""
 
-    // ▼ チェック済みのログIDを hidden input に変換してモーダル内に挿入
+  // ▼ ✅ このsetTimeoutで囲むのがポイント
+  setTimeout(() => {
     const selectedLogContainer = this.element.querySelector("#selected-log-ids")
     if (selectedLogContainer) {
       selectedLogContainer.innerHTML = ""
       const checkedLogs = document.querySelectorAll("input.playlist-check:checked")
+      if (checkedLogs.length === 0) {
+        console.warn("⚠️ チェックされたログが見つかりません")
+      }
       checkedLogs.forEach((checkbox) => {
         const hidden = document.createElement("input")
         hidden.type = "hidden"
@@ -52,14 +56,15 @@ export default class extends Controller {
         selectedLogContainer.appendChild(hidden)
       })
     }
+  }, 50) // ← ここでちょっと待つことで安定します
 
-    // ▼ モーダルを表示
-    const bsModal = bootstrap.Modal.getOrCreateInstance(this.element)
-    bsModal.show()
+  // ▼ モーダルを表示
+  const bsModal = bootstrap.Modal.getOrCreateInstance(this.element)
+  bsModal.show()
 
-    // ▼ モーダルが閉じられたら自分を DOM から削除
-    this.element.addEventListener("hidden.bs.modal", () => {
-      this.element.remove()
-    })
-  }
+  // ▼ モーダルが閉じられたら自分を DOM から削除
+  this.element.addEventListener("hidden.bs.modal", () => {
+    this.element.remove()
+  })
+}
 }
