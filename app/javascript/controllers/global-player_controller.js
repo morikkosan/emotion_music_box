@@ -13,22 +13,39 @@ export default class extends Controller {
     this.currentTimeEl = document.getElementById("current-time")
     this.durationEl = document.getElementById("duration")
     this.volumeBar = document.getElementById("volume-bar")
-
     this.currentTrackId = null
-    this.widget = null  // ←初期化はここではしない
+    this.widget = null
     this.progressInterval = null
+    this.isSeeking = false
+
+    // seekバー操作
+    this.seekBar?.addEventListener("mousedown", () => {
+      this.isSeeking = true
+      clearInterval(this.progressInterval)
+    })
+    document.addEventListener("mouseup", () => {
+      if (this.isSeeking) {
+        this.isSeeking = false
+        this.startProgressTracking()
+      }
+    })
+    // 音量バー
+    this.volumeBar?.addEventListener("input", (e) => this.changeVolume(e))
+    // シークバー
+    this.seekBar?.addEventListener("input", (e) => this.seek(e))
+    // 再生/停止ボタン
+    document.getElementById("play-pause-button")?.addEventListener("click", (e) => this.togglePlayPause(e))
   }
 
   loadAndPlay(event) {
     event.stopPropagation()
-
     const icon = event.currentTarget
     const trackId = icon.dataset.trackId
     const img = this.trackImageTargets.find(t => t.dataset.trackId === trackId)
     const trackUrl = img?.dataset.playUrl
     if (!trackUrl) return
 
-    // ここでUI先に更新（見た目の遅延防止）
+    // UI更新
     this.bottomPlayer.classList.remove("d-none")
     this.updateTrackIcon(trackId, true)
     this.currentTrackId = trackId
@@ -37,7 +54,11 @@ export default class extends Controller {
     this.trackTitleEl.textContent = title
     this.trackArtistEl.textContent = artist
 
-    // ★一番大事！iframeのonload＋SC.Widget.READYで「全部再セット」
+    // 既存intervalを絶対クリア
+    clearInterval(this.progressInterval)
+    this.progressInterval = null
+
+    // ---- Widget初期化は「onload→READY」まで絶対待つ！ ----
     this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&auto_play=true`
     this.iframeElement.onload = () => {
       this.widget = SC.Widget(this.iframeElement)
@@ -45,6 +66,8 @@ export default class extends Controller {
         this.bindWidgetEvents()
         this.widget.play()
         this.startProgressTracking()
+        // ボリューム反映
+        this.changeVolume({target: this.volumeBar})
       })
     }
   }
@@ -53,7 +76,11 @@ export default class extends Controller {
     event?.stopPropagation()
     if (!this.widget) return
     this.widget.isPaused(paused => {
-      paused ? this.widget.play() : this.widget.pause()
+      if (paused) {
+        this.widget.play()
+      } else {
+        this.widget.pause()
+      }
     })
   }
 
@@ -68,8 +95,9 @@ export default class extends Controller {
   }
 
   changeVolume(event) {
+    if (!this.widget) return
     const volume = event.target.value / 100
-    if (this.widget) this.widget.setVolume(volume * 100)
+    this.widget.setVolume(volume * 100)
   }
 
   onPlay = () => {
@@ -108,7 +136,7 @@ export default class extends Controller {
   startProgressTracking() {
     clearInterval(this.progressInterval)
     this.progressInterval = setInterval(() => {
-      if (!this.widget) return
+      if (!this.widget || this.isSeeking) return
       this.widget.getPosition(position => {
         this.widget.getDuration(duration => {
           if (!duration || duration === 0) return
