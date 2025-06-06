@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_06_03_072625) do
+ActiveRecord::Schema[7.2].define(version: 2025_06_06_112201) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -93,6 +93,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_06_03_072625) do
     t.bigint "user_id", null: false
     t.string "track_name"
     t.integer "comments_count", default: 0, null: false
+    t.string "music_art_url"
     t.index ["user_id"], name: "index_emotion_logs_on_user_id"
   end
 
