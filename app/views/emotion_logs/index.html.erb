@@ -42,7 +42,8 @@
   <br><br><br><br>
   <% if @bookmark_page.present? || @mypage_title.present? %>
     <div id="playlist-sidebar">
-      <%= render 'emotion_logs/playlist_sidebar', playlists: current_user.playlists.includes(:playlist_items, :emotion_logs) %>
+      <%= render 'emotion_logs/playlist_sidebar',
+                 playlists: current_user.playlists.includes(:playlist_items, :emotion_logs) %>
     </div>
   <% else %>
     <%= render 'super_search' %>
@@ -60,18 +61,21 @@
                      name="selected_logs[]"
                      value="<%= log.id %>"
                      class="playlist-check me-3"
-                     style="width: 2.2rem; height: 2.2rem; accent-color: #e800ff; box-shadow: 0 0 8px #fff6, 0 0 3px #e800ff;">
+                     style="width:2.2rem; height:2.2rem; accent-color:#e800ff;
+                            box-shadow:0 0 8px #fff6, 0 0 3px #e800ff;">
             <% end %>
 
             <div>
-              <strong><%= log.created_at.in_time_zone('Tokyo').strftime('%Y/%m/%d %H:%M') %></strong>
+              <strong><%= log.created_at.in_time_zone('Tokyo')
+                         .strftime('%Y/%m/%d %H:%M') %></strong>
               <% log.tags.each do |tag| %>
                 <% if user_signed_in? %>
                   <%= link_to tag.name,
                               emotion_logs_path(genre: tag.name),
                               class: "badge bg-primary text-light me-1" %>
                 <% else %>
-                  <span class="badge bg-primary text-light me-1" title="ログインすると使えます"><%= tag.name %></span>
+                  <span class="badge bg-primary text-light me-1"
+                        title="ログインすると使えます"><%= tag.name %></span>
                 <% end %>
               <% end %>
             </div>
@@ -80,7 +84,8 @@
               <% if current_user == log.user %>
                 <%= form_with url: emotion_log_path(log),
                               method: :delete,
-                              data: { turbo_confirm: '本当に削除しますか？', turbo_stream: true },
+                              data: { turbo_confirm: '本当に削除しますか？',
+                                      turbo_stream: true },
                               class: 'd-inline' do %>
                   <%= submit_tag '削除', class: 'btn btn-danger btn-sm' %>
                 <% end %>
@@ -88,7 +93,7 @@
                 <%= render 'bookmark_buttons', emotion_log: log %>
               <% end %>
 
-              <div class="d-flex align-items-center" style="gap: 4px;">
+              <div class="d-flex align-items-center" style="gap:4px;">
                 <span class="fw-bold" style="font-size:1rem;"><%= log.comments_count %></span>
                 <%= image_tag 'comment_icon.png',
                               alt: 'コメント数',
@@ -98,25 +103,40 @@
           </div>
 
           <div class="card-body">
-  <div class="d-flex align-items-start" data-controller="global-player">
+            <div class="d-flex align-items-start" data-controller="global-player">
               <div class="me-3 position-relative" style="width:80px;">
+                <!-- ▼ ここが修正ポイント！ -->
                 <%= image_tag log.music_art_url || "placeholder.png",
                               alt: "ジャケット画像",
                               class: "music-art-img",
                               style: "width:80px; height:auto; display:block;",
-                              data: { "play-url": log.music_url, "global-player-target": "trackImage", "track-id": log.id } %>
+                              data: {
+                                "play-url"             => log.music_url,
+                                "global-player-target" => "trackImage",
+                                "track-id"             => log.id
+                              } %>
 
                 <i class="fa fa-play play-overlay-icon"
                    data-action="click->global-player#loadAndPlay"
-                   data-action="global-player#loadAndPlay"
                    data-global-player-target="playIcon"
                    data-track-id="<%= log.id %>"
-                   style="position:absolute; top:50%; left:50%; transform: translate(-50%, -50%); font-size:24px; color: rgba(255,255,255,0.9); cursor: pointer;"></i>
+                   style="
+                     position: absolute;
+                     top: 50%;
+                     left: 50%;
+                     transform: translate(-50%, -50%);
+                     font-size: 24px;
+                     color: rgba(255,255,255,0.9);
+                     cursor: pointer;
+                   "></i>
               </div>
 
               <div class="d-flex align-items-center">
                 <div>
-                  <%= link_to log.emotion, emotion_log_path(log), class: "button", data: { turbo: false } %>
+                  <%= link_to log.emotion,
+                              emotion_log_path(log),
+                              class: "button",
+                              data: { turbo: false } %>
                 </div>
                 <div class="ms-3">
                   <p class="mb-0" style="color:white; font-size:1.1rem;">
@@ -137,5 +157,7 @@
 <%= link_to "今日の気持ちを記録する",
             new_emotion_log_path(format: :turbo_stream),
             id: "record-button",
-            data: { controller: "record-btn", action: "click->record-btn#hide", turbo_prefetch: false },
+            data: { controller: "record-btn",
+                    action: "click->record-btn#hide",
+                    turbo_prefetch: false },
             class: "btn btn-primary floating-btn" %>
