@@ -1,5 +1,16 @@
 
-  .mypage-item {
+.main-menu {
+  position: relative;   /* まずは position を指定 */
+  z-index: 1000;        /* 他の要素よりも高い値を設定 */
+}
+
+.music-art-img {
+  max-width: 300px;   /* お好みの幅に変更してください */
+  height: auto;
+  display: block;     /* ブロック表示にすると余白の調整がしやすいです */
+  /* もし丸くしたい場合は例えば border-radius: 8px; などを追加してもOK */
+}
+.mypage-item {
     width: 160px;
     height: 160px;
     background: rgba(0, 0, 0, 0.6);

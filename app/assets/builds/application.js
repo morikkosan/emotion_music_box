@@ -14770,23 +14770,142 @@ var playlist_modal_controller_default = class extends Controller {
     if (latest) latest.remove();
     document.body.classList.remove("modal-open");
     document.body.style.overflow = "";
-    const selectedLogContainer = this.element.querySelector("#selected-log-ids");
-    if (selectedLogContainer) {
-      selectedLogContainer.innerHTML = "";
-      const checkedLogs = document.querySelectorAll("input.playlist-check:checked");
-      checkedLogs.forEach((checkbox) => {
-        const hidden = document.createElement("input");
-        hidden.type = "hidden";
-        hidden.name = "selected_logs[]";
-        hidden.value = checkbox.value;
-        selectedLogContainer.appendChild(hidden);
-      });
-    }
+    setTimeout(() => {
+      const selectedLogContainer = this.element.querySelector("#selected-log-ids");
+      if (selectedLogContainer) {
+        selectedLogContainer.innerHTML = "";
+        const checkedLogs = document.querySelectorAll("input.playlist-check:checked");
+        if (checkedLogs.length === 0) {
+          console.warn("\u26A0\uFE0F \u30C1\u30A7\u30C3\u30AF\u3055\u308C\u305F\u30ED\u30B0\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093");
+        }
+        checkedLogs.forEach((checkbox) => {
+          const hidden = document.createElement("input");
+          hidden.type = "hidden";
+          hidden.name = "selected_logs[]";
+          hidden.value = checkbox.value;
+          selectedLogContainer.appendChild(hidden);
+        });
+      }
+    }, 50);
     const bsModal = Modal.getOrCreateInstance(this.element);
     bsModal.show();
     this.element.addEventListener("hidden.bs.modal", () => {
       this.element.remove();
     });
+  }
+};
+
+// app/javascript/controllers/global-player_controller.js
+var global_player_controller_default = class extends Controller {
+  static targets = ["trackImage", "playIcon"];
+  connect() {
+    this.iframeElement = document.getElementById("hidden-sc-player");
+    this.bottomPlayer = document.getElementById("bottom-player");
+    this.playPauseIcon = document.getElementById("play-pause-icon");
+    this.trackTitleEl = document.getElementById("track-title");
+    this.trackArtistEl = document.getElementById("track-artist");
+    this.seekBar = document.getElementById("seek-bar");
+    this.currentTimeEl = document.getElementById("current-time");
+    this.durationEl = document.getElementById("duration");
+    this.volumeBar = document.getElementById("volume-bar");
+    this.currentTrackId = null;
+    this.widget = null;
+    this.progressInterval = null;
+  }
+  loadAndPlay(event) {
+    event.stopPropagation();
+    const icon = event.currentTarget;
+    const trackId = icon.dataset.trackId;
+    const img = this.trackImageTargets.find((t) => t.dataset.trackId === trackId);
+    const trackUrl = img?.dataset.playUrl;
+    if (!trackUrl) return;
+    this.bottomPlayer.classList.remove("d-none");
+    this.updateTrackIcon(trackId, true);
+    this.currentTrackId = trackId;
+    const title = img?.closest(".card-body")?.querySelector(".button")?.textContent?.trim() || "\u30BF\u30A4\u30C8\u30EB\u4E0D\u660E";
+    const artist = img?.closest(".card")?.querySelector(".card-header strong")?.textContent?.trim() || "unknown";
+    this.trackTitleEl.textContent = title;
+    this.trackArtistEl.textContent = artist;
+    this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&auto_play=true`;
+    this.iframeElement.onload = () => {
+      this.widget = SC.Widget(this.iframeElement);
+      this.widget.bind(SC.Widget.Events.READY, () => {
+        this.bindWidgetEvents();
+        this.widget.play();
+        this.startProgressTracking();
+      });
+    };
+  }
+  togglePlayPause(event) {
+    event?.stopPropagation();
+    if (!this.widget) return;
+    this.widget.isPaused((paused) => {
+      paused ? this.widget.play() : this.widget.pause();
+    });
+  }
+  seek(event) {
+    if (!this.widget) return;
+    const percent = event.target.value;
+    this.widget.getDuration((duration) => {
+      if (!duration) return;
+      const newTime = percent / 100 * duration;
+      this.widget.seekTo(newTime);
+    });
+  }
+  changeVolume(event) {
+    const volume = event.target.value / 100;
+    if (this.widget) this.widget.setVolume(volume * 100);
+  }
+  onPlay = () => {
+    this.playPauseIcon.classList.replace("fa-play", "fa-pause");
+    this.updateTrackIcon(this.currentTrackId, true);
+  };
+  onPause = () => {
+    this.playPauseIcon.classList.replace("fa-pause", "fa-play");
+    this.updateTrackIcon(this.currentTrackId, false);
+  };
+  onFinish = () => {
+    this.playPauseIcon.classList.replace("fa-pause", "fa-play");
+    this.updateTrackIcon(this.currentTrackId, false);
+    this.bottomPlayer.classList.add("d-none");
+    clearInterval(this.progressInterval);
+  };
+  updateTrackIcon(trackId, playing) {
+    const icon = this.playIconTargets.find((i) => i.dataset.trackId === trackId);
+    if (icon) {
+      icon.classList.toggle("fa-play", !playing);
+      icon.classList.toggle("fa-pause", playing);
+    }
+  }
+  bindWidgetEvents() {
+    if (!this.widget) return;
+    this.widget.unbind(SC.Widget.Events.PLAY);
+    this.widget.unbind(SC.Widget.Events.PAUSE);
+    this.widget.unbind(SC.Widget.Events.FINISH);
+    this.widget.bind(SC.Widget.Events.PLAY, this.onPlay);
+    this.widget.bind(SC.Widget.Events.PAUSE, this.onPause);
+    this.widget.bind(SC.Widget.Events.FINISH, this.onFinish);
+  }
+  startProgressTracking() {
+    clearInterval(this.progressInterval);
+    this.progressInterval = setInterval(() => {
+      if (!this.widget) return;
+      this.widget.getPosition((position) => {
+        this.widget.getDuration((duration) => {
+          if (!duration || duration === 0) return;
+          this.seekBar.value = position / duration * 100;
+          this.currentTimeEl.textContent = this.formatTime(position);
+          this.durationEl.textContent = this.formatTime(duration);
+        });
+      });
+    }, 500);
+  }
+  formatTime(ms) {
+    if (!ms) return "0:00";
+    const sec = Math.floor(ms / 1e3);
+    const min2 = Math.floor(sec / 60);
+    const remainingSec = sec % 60;
+    return `${min2}:${remainingSec.toString().padStart(2, "0")}`;
   }
 };
 
@@ -14804,6 +14923,7 @@ application.register("view-switcher", view_switcher_controller_default);
 application.register("record-btn", record_btn_controller_default);
 application.register("mobile-super-search", mobile_super_search_controller_default);
 application.register("playlist-modal", playlist_modal_controller_default);
+application.register("global-player", global_player_controller_default);
 
 // app/javascript/custom/comments.js
 document.addEventListener("DOMContentLoaded", function() {
