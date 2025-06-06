@@ -101,13 +101,15 @@ export default class extends Controller {
   }
 
   onPlay = () => {
-    this.playPauseIcon.classList.replace("fa-play", "fa-pause")
-    this.updateTrackIcon(this.currentTrackId, true)
-  }
-  onPause = () => {
-    this.playPauseIcon.classList.replace("fa-pause", "fa-play")
-    this.updateTrackIcon(this.currentTrackId, false)
-  }
+  this.playPauseIcon.classList.add("fa-pause")
+  this.playPauseIcon.classList.remove("fa-play")
+  this.updateTrackIcon(this.currentTrackId, true)
+}
+onPause = () => {
+  this.playPauseIcon.classList.add("fa-play")
+  this.playPauseIcon.classList.remove("fa-pause")
+  this.updateTrackIcon(this.currentTrackId, false)
+}
   onFinish = () => {
     this.playPauseIcon.classList.replace("fa-pause", "fa-play")
     this.updateTrackIcon(this.currentTrackId, false)
