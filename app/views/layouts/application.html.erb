@@ -42,7 +42,7 @@
   <%= yield :head %>
 </head>
 
-<body data-controller="view-switcher" data-flash-notice="<%= j flash[:notice] %>"
+<body data-controller="view-switcher global-player" data-flash-notice="<%= j flash[:notice] %>"
       data-flash-alert="<%= j flash[:alert] %>">
   <!-- ──────────── ローディング画面（省略せず全体を載せます） ──────────── -->
   <div id="screen-cover-loading" aria-live="polite" aria-label="ローディング画面">
@@ -65,7 +65,6 @@
   <%= render "shared/flash_container" %>
 
   <!-- ──────────── ヘッダー & コンテンツ ──────────── -->
-  <%= render 'shared/header' %>
   <%= yield %>
   <%= render 'shared/footer' %>
 
@@ -96,8 +95,7 @@
          align-items: center;
          padding: 8px 16px;
          z-index: 1000;
-       "
-       data-controller="global-player">
+       ">
     <!-- 再生／停止ボタン -->
     <button id="play-pause-button"
             class="btn btn-link text-white me-3"
