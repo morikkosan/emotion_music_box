@@ -20,6 +20,18 @@
   <meta name="twitter:image" content="<%= og_image %>">
   <meta name="twitter:url" content="https://moriappli-emotion.com">
 
+  <!-- ① DNS ルックアップを先行 -->
+<link rel="dns-prefetch" href="https://w.soundcloud.com">
+<link rel="dns-prefetch" href="https://api.soundcloud.com">
+
+<!-- ② TLS ハンドシェイクも先行 -->
+<link rel="preconnect" href="https://w.soundcloud.com" crossorigin>
+<link rel="preconnect" href="https://api.soundcloud.com" crossorigin>
+
+<!-- ③ Widget API スクリプト自体を最優先でプリロード -->
+<link rel="preload" as="script" href="https://w.soundcloud.com/player/api.js">
+
+
   <!-- ──────────────── 1. SoundCloud Widget API を最優先で読み込む（deferなし） ──────────────── -->
   <script src="https://w.soundcloud.com/player/api.js"></script>
 
@@ -33,6 +45,8 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+  
   <!-- GSAP, SweetAlert2, Axios, Bootstrap Icons（すべて defer で読み込む） -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
