@@ -8,7 +8,7 @@ export default class extends Controller {
   static targets = ["submit"];
 
   connect() {
-    //console.log("📝 submit-handler connected");
+    console.log("📝 submit-handler connected");
 
     if (this.hasSubmitTarget) this.submitTarget.disabled = false;
 
@@ -18,7 +18,7 @@ export default class extends Controller {
       if (dateInput) {
         dateInput.addEventListener("change", (e) => {
           const val = e.target.value;
-          //console.log("📌 遅延bind: カレンダーchangeイベント:", val);
+          console.log("📌 遅延bind: カレンダーchangeイベント:", val);
           e.target.value = val; // 再代入で安定させる
         });
       }
