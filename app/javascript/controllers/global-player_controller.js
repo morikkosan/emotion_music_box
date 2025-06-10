@@ -18,6 +18,7 @@ export default class extends Controller {
     this.widget           = null
     this.progressInterval = null
     this.isSeeking        = false
+    this.cachedDuration   = null
 
     // seekバーの操作
     this.seekBar?.addEventListener("mousedown", () => {
@@ -52,6 +53,7 @@ export default class extends Controller {
     })
     this.playPauseIcon?.classList.add("fa-play")
     this.playPauseIcon?.classList.remove("fa-pause")
+    this.cachedDuration = null  // ← ここで毎回リセット
   }
 
   // 追記: iframe差し替えヘルパー
@@ -122,6 +124,9 @@ export default class extends Controller {
           const trySetTitle = (retry = 0) => {
             this.widget.getCurrentSound((sound) => {
               console.log(`[getCurrentSound][リトライ${retry}] sound=`, sound)
+              // ★ duration をキャッシュ
+              if (sound?.duration) this.cachedDuration = sound.duration;
+
               if (sound) {
                 console.log("    sound.title:", sound.title)
                 console.log("    sound.user:", sound.user)
@@ -172,11 +177,19 @@ export default class extends Controller {
       return
     }
     const percent = event.target.value
-    this.widget.getDuration(duration => {
-      if (!duration) return
-      this.widget.seekTo((percent / 100) * duration)
-      console.log("[seek] シーク:", percent, duration)
-    })
+    // ここだけは現在のdurationを使う（キャッシュなければAPI呼ぶ）
+    const dur = this.cachedDuration;
+    if (!dur) {
+      // 念の為fallback（ごく稀なケースだけ）
+      this.widget.getDuration(duration => {
+        if (!duration) return
+        this.widget.seekTo((percent / 100) * duration)
+        console.log("[seek] シーク:", percent, duration)
+      })
+      return
+    }
+    this.widget.seekTo((percent / 100) * dur)
+    console.log("[seek] シーク:", percent, dur)
   }
 
   changeVolume(event) {
@@ -237,6 +250,7 @@ export default class extends Controller {
     this.widget.unbind(SC.Widget.Events.FINISH)
     this.widget.bind(SC.Widget.Events.PLAY, this.onPlay)
     this.widget.bind(SC.Widget.Events.PAUSE, this.onPause)
+
     this.widget.bind(SC.Widget.Events.FINISH, this.onFinish)
     console.log("[bindWidgetEvents] イベントバインド完了")
   }

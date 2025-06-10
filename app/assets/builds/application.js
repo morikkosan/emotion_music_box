@@ -14368,12 +14368,14 @@ var search_music_controller_default = class extends Controller {
 var submit_handler_controller_default = class extends Controller {
   static targets = ["submit"];
   connect() {
+    console.log("\u{1F4DD} submit-handler connected");
     if (this.hasSubmitTarget) this.submitTarget.disabled = false;
     setTimeout(() => {
       const dateInput = this.element.querySelector('input[type="date"]');
       if (dateInput) {
         dateInput.addEventListener("change", (e) => {
           const val = e.target.value;
+          console.log("\u{1F4CC} \u9045\u5EF6bind: \u30AB\u30EC\u30F3\u30C0\u30FCchange\u30A4\u30D9\u30F3\u30C8:", val);
           e.target.value = val;
         });
       }
@@ -14812,6 +14814,7 @@ var global_player_controller_default = class extends Controller {
     this.widget = null;
     this.progressInterval = null;
     this.isSeeking = false;
+    this.cachedDuration = null;
     this.seekBar?.addEventListener("mousedown", () => {
       this.isSeeking = true;
       clearInterval(this.progressInterval);
@@ -14841,6 +14844,7 @@ var global_player_controller_default = class extends Controller {
     });
     this.playPauseIcon?.classList.add("fa-play");
     this.playPauseIcon?.classList.remove("fa-pause");
+    this.cachedDuration = null;
   }
   // 追記: iframe差し替えヘルパー
   replaceIframeWithNew() {
@@ -14900,6 +14904,7 @@ var global_player_controller_default = class extends Controller {
           const trySetTitle = (retry = 0) => {
             this.widget.getCurrentSound((sound) => {
               console.log(`[getCurrentSound][\u30EA\u30C8\u30E9\u30A4${retry}] sound=`, sound);
+              if (sound?.duration) this.cachedDuration = sound.duration;
               if (sound) {
                 console.log("    sound.title:", sound.title);
                 console.log("    sound.user:", sound.user);
@@ -14948,11 +14953,17 @@ var global_player_controller_default = class extends Controller {
       return;
     }
     const percent = event.target.value;
-    this.widget.getDuration((duration) => {
-      if (!duration) return;
-      this.widget.seekTo(percent / 100 * duration);
-      console.log("[seek] \u30B7\u30FC\u30AF:", percent, duration);
-    });
+    const dur = this.cachedDuration;
+    if (!dur) {
+      this.widget.getDuration((duration) => {
+        if (!duration) return;
+        this.widget.seekTo(percent / 100 * duration);
+        console.log("[seek] \u30B7\u30FC\u30AF:", percent, duration);
+      });
+      return;
+    }
+    this.widget.seekTo(percent / 100 * dur);
+    console.log("[seek] \u30B7\u30FC\u30AF:", percent, dur);
   }
   changeVolume(event) {
     if (!this.widget) {
