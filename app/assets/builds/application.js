@@ -14810,11 +14810,12 @@ var global_player_controller_default = class extends Controller {
     this.currentTimeEl = document.getElementById("current-time");
     this.durationEl = document.getElementById("duration");
     this.volumeBar = document.getElementById("volume-bar");
+    this.loadingArea = document.getElementById("loading-spinner");
+    this.neonCharacter = document.querySelector(".neon-character-spinbox");
     this.currentTrackId = null;
     this.widget = null;
     this.progressInterval = null;
     this.isSeeking = false;
-    this.cachedDuration = null;
     this.seekBar?.addEventListener("mousedown", () => {
       this.isSeeking = true;
       clearInterval(this.progressInterval);
@@ -14830,23 +14831,51 @@ var global_player_controller_default = class extends Controller {
     document.getElementById("play-pause-button")?.addEventListener("click", (e) => this.togglePlayPause(e));
     console.log("[connect] global-player\u30B3\u30F3\u30C8\u30ED\u30FC\u30E9\u521D\u671F\u5316\u5B8C\u4E86");
   }
-  // 全UIをリセット
+  // ローディングUI切り替え
+  showLoadingUI() {
+    if (this.playPauseIcon) this.playPauseIcon.style.display = "none";
+    if (this.loadingArea) this.loadingArea.style.display = "inline-flex";
+    if (this.neonCharacter) this.neonCharacter.style.display = "inline-block";
+    if (this.trackTitleEl) {
+      this.trackTitleEl.innerHTML = `
+        <span class="neon-wave">
+          <span>N</span><span>O</span><span>W</span>
+          <span>&nbsp;</span>
+          <span>L</span><span>O</span><span>A</span><span>D</span><span>I</span><span>N</span><span>G</span>
+          <span>.</span><span>.</span><span>.</span>
+        </span>
+      `;
+      this.trackTitleEl.style.display = "block";
+    }
+    if (this.trackArtistEl) {
+      this.trackArtistEl.textContent = "";
+      this.trackArtistEl.style.display = "none";
+    }
+  }
+  hideLoadingUI() {
+    if (this.playPauseIcon) this.playPauseIcon.style.display = "";
+    if (this.loadingArea) this.loadingArea.style.display = "none";
+    if (this.neonCharacter) this.neonCharacter.style.display = "none";
+    if (this.trackTitleEl) this.trackTitleEl.style.display = "";
+    if (this.trackArtistEl) this.trackArtistEl.style.display = "";
+  }
+  // 全UIリセット＋ローディング表示
   resetPlayerUI() {
     console.log("[resetPlayerUI] UI\u521D\u671F\u5316\u3057\u307E\u3059");
-    this.trackTitleEl.textContent = "Now Loading...";
-    this.trackArtistEl.textContent = "";
-    this.currentTimeEl.textContent = "0:00";
-    this.durationEl.textContent = "0:00";
-    this.seekBar.value = 0;
-    this.playIconTargets.forEach((icn) => {
-      icn.classList.add("fa-play");
-      icn.classList.remove("fa-pause");
-    });
+    if (this.currentTimeEl) this.currentTimeEl.textContent = "0:00";
+    if (this.durationEl) this.durationEl.textContent = "0:00";
+    if (this.seekBar) this.seekBar.value = 0;
+    if (this.hasPlayIconTarget) {
+      this.playIconTargets.forEach((icn) => {
+        icn.classList.add("fa-play");
+        icn.classList.remove("fa-pause");
+      });
+    }
     this.playPauseIcon?.classList.add("fa-play");
     this.playPauseIcon?.classList.remove("fa-pause");
-    this.cachedDuration = null;
+    this.showLoadingUI();
   }
-  // 追記: iframe差し替えヘルパー
+  // iframe差し替え
   replaceIframeWithNew() {
     const oldIframe = document.getElementById("hidden-sc-player");
     if (oldIframe) {
@@ -14870,16 +14899,14 @@ var global_player_controller_default = class extends Controller {
     const newTrackId = icon.dataset.trackId;
     const img = this.trackImageTargets.find((t) => t.dataset.trackId == newTrackId);
     const trackUrl = img?.dataset.playUrl;
-    console.log("[loadAndPlay] \u30AF\u30EA\u30C3\u30AF:", { newTrackId, trackUrl, img });
     if (!trackUrl) {
       console.warn("[loadAndPlay] trackUrl\u304C\u3042\u308A\u307E\u305B\u3093\uFF01", { img });
       return;
     }
     this.resetPlayerUI();
-    this.bottomPlayer.classList.remove("d-none");
+    this.bottomPlayer?.classList.remove("d-none");
     this.currentTrackId = newTrackId;
     if (this.widget) {
-      console.log("[loadAndPlay] \u65E2\u5B58Widget\u89E3\u9664");
       this.widget.unbind(SC.Widget.Events.PLAY);
       this.widget.unbind(SC.Widget.Events.PAUSE);
       this.widget.unbind(SC.Widget.Events.FINISH);
@@ -14892,35 +14919,24 @@ var global_player_controller_default = class extends Controller {
       return;
     }
     const playerUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&auto_play=true`;
-    console.log("[loadAndPlay] iframe\u30EA\u30ED\u30FC\u30C9: ", playerUrl);
     this.iframeElement.src = playerUrl;
     this.iframeElement.onload = () => {
-      console.log("[iframe.onload] fired!");
       setTimeout(() => {
         this.widget = SC.Widget(this.iframeElement);
-        console.log("[iframe.onload] Widget\u751F\u6210", this.widget);
         this.widget.bind(SC.Widget.Events.READY, () => {
-          console.log("[Widget READY!]");
           const trySetTitle = (retry = 0) => {
             this.widget.getCurrentSound((sound) => {
-              console.log(`[getCurrentSound][\u30EA\u30C8\u30E9\u30A4${retry}] sound=`, sound);
-              if (sound?.duration) this.cachedDuration = sound.duration;
-              if (sound) {
-                console.log("    sound.title:", sound.title);
-                console.log("    sound.user:", sound.user);
-              }
-              if (sound?.title) {
-                console.log("[getCurrentSound] \u30BF\u30A4\u30C8\u30EB\u53D6\u5F97\u6210\u529F:", sound.title);
+              if (sound && sound.title) {
                 this.trackTitleEl.textContent = sound.title;
                 this.trackArtistEl.textContent = sound.user?.username ? `\u2014 ${sound.user.username}` : "";
+                this.hideLoadingUI();
               } else {
                 if (retry < 5) {
-                  console.warn(`[getCurrentSound] \u30BF\u30A4\u30C8\u30EB\u672A\u53D6\u5F97\u3001\u30EA\u30C8\u30E9\u30A4 ${retry + 1} ...`);
                   setTimeout(() => trySetTitle(retry + 1), 250);
                 } else {
-                  console.error("[getCurrentSound] \u30BF\u30A4\u30C8\u30EB\u53D6\u5F97\u3067\u304D\u307E\u305B\u3093: sound=", sound);
                   this.trackTitleEl.textContent = "\u30BF\u30A4\u30C8\u30EB\u4E0D\u660E";
                   this.trackArtistEl.textContent = "";
+                  this.hideLoadingUI();
                 }
               }
             });
@@ -14932,78 +14948,57 @@ var global_player_controller_default = class extends Controller {
           this.changeVolume({ target: this.volumeBar });
           this.updateTrackIcon(this.currentTrackId, true);
         });
-      }, 300);
+      }, 100);
     };
   }
   togglePlayPause(event) {
     event?.stopPropagation();
-    if (!this.widget) {
-      console.warn("[togglePlayPause] widget\u306A\u3057");
-      return;
-    }
+    if (!this.widget) return;
     this.widget.isPaused((paused) => {
-      console.log("[togglePlayPause]", paused ? "\u518D\u751F\u958B\u59CB" : "\u4E00\u6642\u505C\u6B62");
       if (paused) this.widget.play();
       else this.widget.pause();
     });
   }
   seek(event) {
-    if (!this.widget) {
-      console.warn("[seek] widget\u306A\u3057");
-      return;
-    }
+    if (!this.widget) return;
     const percent = event.target.value;
-    const dur = this.cachedDuration;
-    if (!dur) {
-      this.widget.getDuration((duration) => {
-        if (!duration) return;
-        this.widget.seekTo(percent / 100 * duration);
-        console.log("[seek] \u30B7\u30FC\u30AF:", percent, duration);
-      });
-      return;
-    }
-    this.widget.seekTo(percent / 100 * dur);
-    console.log("[seek] \u30B7\u30FC\u30AF:", percent, dur);
+    this.widget.getDuration((duration) => {
+      if (!duration) return;
+      this.widget.seekTo(percent / 100 * duration);
+    });
   }
   changeVolume(event) {
-    if (!this.widget) {
-      console.warn("[changeVolume] widget\u306A\u3057");
-      return;
-    }
+    if (!this.widget) return;
     const vol = event.target.value / 100;
     this.widget.setVolume(vol * 100);
-    console.log("[changeVolume] volume=", vol);
   }
   onPlay = () => {
-    this.playPauseIcon.classList.replace("fa-play", "fa-pause");
+    this.playPauseIcon?.classList.replace("fa-play", "fa-pause");
     this.updateTrackIcon(this.currentTrackId, true);
     this.widget.getCurrentSound((sound) => {
-      console.log("[onPlay][\u518D\u53D6\u5F97]", sound);
-      if (sound?.title && this.trackTitleEl.textContent === "Now Loading...") {
+      if (sound?.title && !this.trackTitleEl.textContent) {
         this.trackTitleEl.textContent = sound.title;
         this.trackArtistEl.textContent = sound.user?.username ? `\u2014 ${sound.user.username}` : "";
-        console.log("[onPlay] \u30BF\u30A4\u30C8\u30EB\u518D\u53D6\u5F97OK:", sound.title);
+        this.hideLoadingUI();
       }
     });
   };
   onPause = () => {
-    this.playPauseIcon.classList.replace("fa-pause", "fa-play");
+    this.playPauseIcon?.classList.replace("fa-pause", "fa-play");
     this.updateTrackIcon(this.currentTrackId, false);
-    console.log("[onPause]");
   };
   onFinish = () => {
-    this.playPauseIcon.classList.replace("fa-pause", "fa-play");
+    this.playPauseIcon?.classList.replace("fa-pause", "fa-play");
     this.updateTrackIcon(this.currentTrackId, false);
-    this.bottomPlayer.classList.add("d-none");
+    this.bottomPlayer?.classList.add("d-none");
     clearInterval(this.progressInterval);
-    console.log("[onFinish] \u518D\u751F\u7D42\u4E86");
   };
   updateTrackIcon(trackId, playing) {
+    if (!this.hasPlayIconTarget) return;
     this.playIconTargets.forEach((icn) => {
       if (icn.dataset.trackId == trackId) {
         icn.classList.toggle("fa-play", !playing);
         icn.classList.toggle("fa-pause", playing);
-        console.log(`[updateTrackIcon] trackId=${trackId} \u2192 playing=${playing}`);
       } else {
         icn.classList.add("fa-play");
         icn.classList.remove("fa-pause");
@@ -15011,17 +15006,13 @@ var global_player_controller_default = class extends Controller {
     });
   }
   bindWidgetEvents() {
-    if (!this.widget) {
-      console.warn("[bindWidgetEvents] widget\u306A\u3057");
-      return;
-    }
+    if (!this.widget) return;
     this.widget.unbind(SC.Widget.Events.PLAY);
     this.widget.unbind(SC.Widget.Events.PAUSE);
     this.widget.unbind(SC.Widget.Events.FINISH);
     this.widget.bind(SC.Widget.Events.PLAY, this.onPlay);
     this.widget.bind(SC.Widget.Events.PAUSE, this.onPause);
     this.widget.bind(SC.Widget.Events.FINISH, this.onFinish);
-    console.log("[bindWidgetEvents] \u30A4\u30D9\u30F3\u30C8\u30D0\u30A4\u30F3\u30C9\u5B8C\u4E86");
   }
   startProgressTracking() {
     clearInterval(this.progressInterval);
@@ -15030,9 +15021,9 @@ var global_player_controller_default = class extends Controller {
       this.widget.getPosition((pos) => {
         this.widget.getDuration((dur) => {
           if (!dur) return;
-          this.seekBar.value = pos / dur * 100;
-          this.currentTimeEl.textContent = this.formatTime(pos);
-          this.durationEl.textContent = this.formatTime(dur);
+          if (this.seekBar) this.seekBar.value = pos / dur * 100;
+          if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(pos);
+          if (this.durationEl) this.durationEl.textContent = this.formatTime(dur);
         });
       });
     }, 500);

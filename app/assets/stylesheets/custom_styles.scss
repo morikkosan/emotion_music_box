@@ -748,3 +748,51 @@ h1 i.bi bi-heart-pulse {
   filter: invert(1); /* 白ボタン向け */
 }
 
+
+.neon-wave span {
+  color: #18f0ff;
+  text-shadow: 0 0 8px #19fff7, 0 0 16px #56e8ff;
+  animation: waveMove 1.2s infinite;
+  display: inline-block;
+}
+.neon-wave span:nth-child(1) { animation-delay: 0.00s; }
+.neon-wave span:nth-child(2) { animation-delay: 0.08s; }
+.neon-wave span:nth-child(3) { animation-delay: 0.16s; }
+.neon-wave span:nth-child(4) { animation-delay: 0.24s; }
+.neon-wave span:nth-child(5) { animation-delay: 0.32s; }
+.neon-wave span:nth-child(6) { animation-delay: 0.40s; }
+.neon-wave span:nth-child(7) { animation-delay: 0.48s; }
+.neon-wave span:nth-child(8) { animation-delay: 0.56s; }
+.neon-wave span:nth-child(9) { animation-delay: 0.64s; }
+.neon-wave span:nth-child(10){ animation-delay: 0.72s; }
+.neon-wave span:nth-child(11){ animation-delay: 0.80s; }
+.neon-wave span:nth-child(12){ animation-delay: 0.88s; }
+.neon-wave span:nth-child(13){ animation-delay: 0.96s; }
+.neon-wave span:nth-child(14){ animation-delay: 1.04s; }
+@keyframes waveMove {
+  0%,100% { transform: translateY(0);}
+  50%     { transform: translateY(-8px) scale(1.2);}
+}
+
+.neon-wave {
+  display: inline-block;
+  padding-left: 4px;   /* ←ココ追加 */
+  padding-right: 4px;  /* 任意 */
+}
+
+
+/* シンプルな水色ネオンぐるぐる */
+.loading-spinner-inline {
+  display: inline-block;
+  width: 24px; height: 24px;
+  border: 3px solid #22d9ff;
+  border-top: 3px solid #fff;
+  border-radius: 50%;
+  animation: spin-cyber 0.8s linear infinite;
+  box-shadow: 0 0 8px #1af9ff, 0 0 16px #39e3ff;
+  vertical-align: middle;
+}
+@keyframes spin-cyber {
+  0% { transform: rotate(0deg);}
+  100% { transform: rotate(360deg);}
+}
