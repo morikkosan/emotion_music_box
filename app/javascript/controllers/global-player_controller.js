@@ -4,7 +4,6 @@ export default class extends Controller {
   static targets = ["trackImage", "playIcon"]
 
   connect() {
-    // 初期キャッシュ
     this.iframeElement    = document.getElementById("hidden-sc-player")
     this.bottomPlayer     = document.getElementById("bottom-player")
     this.playPauseIcon    = document.getElementById("play-pause-icon")
@@ -14,13 +13,13 @@ export default class extends Controller {
     this.currentTimeEl    = document.getElementById("current-time")
     this.durationEl       = document.getElementById("duration")
     this.volumeBar        = document.getElementById("volume-bar")
+    this.loadingArea      = document.getElementById("loading-spinner")
+    this.neonCharacter    = document.querySelector(".neon-character-spinbox")
     this.currentTrackId   = null
     this.widget           = null
     this.progressInterval = null
     this.isSeeking        = false
-    this.cachedDuration   = null
 
-    // seekバーの操作
     this.seekBar?.addEventListener("mousedown", () => {
       this.isSeeking = true
       clearInterval(this.progressInterval)
@@ -36,27 +35,60 @@ export default class extends Controller {
     document.getElementById("play-pause-button")
       ?.addEventListener("click", (e) => this.togglePlayPause(e))
 
+    // 最初はキャラクターを表示しておく（必要なら下記をコメントアウト）
+    // if (this.neonCharacter) this.neonCharacter.style.display = "inline-block"
+
     console.log("[connect] global-playerコントローラ初期化完了")
   }
 
-  // 全UIをリセット
-  resetPlayerUI() {
-    console.log("[resetPlayerUI] UI初期化します")
-    this.trackTitleEl.textContent = "Now Loading..."
-    this.trackArtistEl.textContent = ""
-    this.currentTimeEl.textContent = "0:00"
-    this.durationEl.textContent = "0:00"
-    this.seekBar.value = 0
-    this.playIconTargets.forEach(icn => {
-      icn.classList.add("fa-play")
-      icn.classList.remove("fa-pause")
-    })
-    this.playPauseIcon?.classList.add("fa-play")
-    this.playPauseIcon?.classList.remove("fa-pause")
-    this.cachedDuration = null  // ← ここで毎回リセット
+  // ローディングUI切り替え
+  showLoadingUI() {
+    if (this.playPauseIcon) this.playPauseIcon.style.display = "none";
+    if (this.loadingArea)   this.loadingArea.style.display = "inline-flex";
+    if (this.neonCharacter) this.neonCharacter.style.display = "inline-block";
+    if (this.trackTitleEl)  {
+      this.trackTitleEl.innerHTML = `
+        <span class="neon-wave">
+          <span>N</span><span>O</span><span>W</span>
+          <span>&nbsp;</span>
+          <span>L</span><span>O</span><span>A</span><span>D</span><span>I</span><span>N</span><span>G</span>
+          <span>.</span><span>.</span><span>.</span>
+        </span>
+      `
+      this.trackTitleEl.style.display = "block"
+    }
+    if (this.trackArtistEl) {
+      this.trackArtistEl.textContent = ""
+      this.trackArtistEl.style.display = "none"
+    }
   }
 
-  // 追記: iframe差し替えヘルパー
+  hideLoadingUI() {
+    if (this.playPauseIcon)  this.playPauseIcon.style.display = "";
+    if (this.loadingArea)    this.loadingArea.style.display = "none";
+    if (this.neonCharacter)  this.neonCharacter.style.display = "none";
+    if (this.trackTitleEl)   this.trackTitleEl.style.display = "";
+    if (this.trackArtistEl)  this.trackArtistEl.style.display = "";
+  }
+
+  // 全UIリセット＋ローディング表示
+  resetPlayerUI() {
+    console.log("[resetPlayerUI] UI初期化します")
+    if (this.currentTimeEl) this.currentTimeEl.textContent = "0:00"
+    if (this.durationEl)    this.durationEl.textContent = "0:00"
+    if (this.seekBar)       this.seekBar.value = 0
+    if (this.hasPlayIconTarget) {
+      this.playIconTargets.forEach(icn => {
+        icn.classList.add("fa-play")
+        icn.classList.remove("fa-pause")
+      })
+    }
+    this.playPauseIcon?.classList.add("fa-play")
+    this.playPauseIcon?.classList.remove("fa-pause")
+    this.showLoadingUI()
+  }
+
+  // iframe差し替え
   replaceIframeWithNew() {
     const oldIframe = document.getElementById("hidden-sc-player")
     if (oldIframe) {
@@ -79,21 +111,19 @@ export default class extends Controller {
     event.stopPropagation()
     const icon       = event.currentTarget
     const newTrackId = icon.dataset.trackId
-    const img = this.trackImageTargets.find(t => t.dataset.trackId == newTrackId)
-    const trackUrl = img?.dataset.playUrl
-    console.log("[loadAndPlay] クリック:", { newTrackId, trackUrl, img })
+    const img        = this.trackImageTargets.find(t => t.dataset.trackId == newTrackId)
+    const trackUrl   = img?.dataset.playUrl
     if (!trackUrl) {
       console.warn("[loadAndPlay] trackUrlがありません！", { img })
       return
     }
 
     this.resetPlayerUI()
-    this.bottomPlayer.classList.remove("d-none")
+    this.bottomPlayer?.classList.remove("d-none")
     this.currentTrackId = newTrackId
 
-    // 既存Widget完全解除
+    // 既存Widget解除
     if (this.widget) {
-      console.log("[loadAndPlay] 既存Widget解除")
       this.widget.unbind(SC.Widget.Events.PLAY)
       this.widget.unbind(SC.Widget.Events.PAUSE)
       this.widget.unbind(SC.Widget.Events.FINISH)
@@ -101,48 +131,33 @@ export default class extends Controller {
       this.widget = null
     }
 
-    // 追加: ここでiframe自体を完全に作り直す！
+    // iframe差し替え
     this.iframeElement = this.replaceIframeWithNew()
     if (!this.iframeElement) {
       alert("iframe生成に失敗しました")
       return
     }
 
-    // [4] iframeリロード
     const playerUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&auto_play=true`
-    console.log("[loadAndPlay] iframeリロード: ", playerUrl)
     this.iframeElement.src = playerUrl
 
-    // [5] onload後にWidget初期化＋タイトル取得
     this.iframeElement.onload = () => {
-      console.log("[iframe.onload] fired!")
       setTimeout(() => {
         this.widget = SC.Widget(this.iframeElement)
-        console.log("[iframe.onload] Widget生成", this.widget)
         this.widget.bind(SC.Widget.Events.READY, () => {
-          console.log("[Widget READY!]")
           const trySetTitle = (retry = 0) => {
             this.widget.getCurrentSound((sound) => {
-              console.log(`[getCurrentSound][リトライ${retry}] sound=`, sound)
-              // ★ duration をキャッシュ
-              if (sound?.duration) this.cachedDuration = sound.duration;
-
-              if (sound) {
-                console.log("    sound.title:", sound.title)
-                console.log("    sound.user:", sound.user)
-              }
-              if (sound?.title) {
-                console.log("[getCurrentSound] タイトル取得成功:", sound.title)
+              if (sound && sound.title) {
                 this.trackTitleEl.textContent  = sound.title
                 this.trackArtistEl.textContent = sound.user?.username ? `— ${sound.user.username}` : ""
+                this.hideLoadingUI()
               } else {
                 if (retry < 5) {
-                  console.warn(`[getCurrentSound] タイトル未取得、リトライ ${retry + 1} ...`)
                   setTimeout(() => trySetTitle(retry + 1), 250)
                 } else {
-                  console.error("[getCurrentSound] タイトル取得できません: sound=", sound)
                   this.trackTitleEl.textContent  = "タイトル不明"
                   this.trackArtistEl.textContent = ""
+                  this.hideLoadingUI()
                 }
               }
             })
@@ -154,85 +169,62 @@ export default class extends Controller {
           this.changeVolume({ target: this.volumeBar })
           this.updateTrackIcon(this.currentTrackId, true)
         })
-      }, 300)
+      }, 100)
     }
   }
 
   togglePlayPause(event) {
     event?.stopPropagation()
-    if (!this.widget) {
-      console.warn("[togglePlayPause] widgetなし")
-      return
-    }
+    if (!this.widget) return
     this.widget.isPaused(paused => {
-      console.log("[togglePlayPause]", paused ? "再生開始" : "一時停止")
       if (paused) this.widget.play()
       else        this.widget.pause()
     })
   }
 
   seek(event) {
-    if (!this.widget) {
-      console.warn("[seek] widgetなし")
-      return
-    }
+    if (!this.widget) return
     const percent = event.target.value
-    // ここだけは現在のdurationを使う（キャッシュなければAPI呼ぶ）
-    const dur = this.cachedDuration;
-    if (!dur) {
-      // 念の為fallback（ごく稀なケースだけ）
-      this.widget.getDuration(duration => {
-        if (!duration) return
-        this.widget.seekTo((percent / 100) * duration)
-        console.log("[seek] シーク:", percent, duration)
-      })
-      return
-    }
-    this.widget.seekTo((percent / 100) * dur)
-    console.log("[seek] シーク:", percent, dur)
+    this.widget.getDuration(duration => {
+      if (!duration) return
+      this.widget.seekTo((percent / 100) * duration)
+    })
   }
 
   changeVolume(event) {
-    if (!this.widget) {
-      console.warn("[changeVolume] widgetなし")
-      return
-    }
+    if (!this.widget) return
     const vol = event.target.value / 100
     this.widget.setVolume(vol * 100)
-    console.log("[changeVolume] volume=", vol)
   }
 
   onPlay = () => {
-    this.playPauseIcon.classList.replace("fa-play", "fa-pause")
+    this.playPauseIcon?.classList.replace("fa-play", "fa-pause")
     this.updateTrackIcon(this.currentTrackId, true)
     this.widget.getCurrentSound((sound) => {
-      console.log("[onPlay][再取得]", sound)
-      if (sound?.title && this.trackTitleEl.textContent === "Now Loading...") {
+      if (sound?.title && !this.trackTitleEl.textContent) {
         this.trackTitleEl.textContent  = sound.title
         this.trackArtistEl.textContent = sound.user?.username ? `— ${sound.user.username}` : ""
-        console.log("[onPlay] タイトル再取得OK:", sound.title)
+        this.hideLoadingUI()
       }
     })
   }
   onPause = () => {
-    this.playPauseIcon.classList.replace("fa-pause", "fa-play")
+    this.playPauseIcon?.classList.replace("fa-pause", "fa-play")
     this.updateTrackIcon(this.currentTrackId, false)
-    console.log("[onPause]")
   }
   onFinish = () => {
-    this.playPauseIcon.classList.replace("fa-pause", "fa-play")
+    this.playPauseIcon?.classList.replace("fa-pause", "fa-play")
     this.updateTrackIcon(this.currentTrackId, false)
-    this.bottomPlayer.classList.add("d-none")
+    this.bottomPlayer?.classList.add("d-none")
     clearInterval(this.progressInterval)
-    console.log("[onFinish] 再生終了")
   }
 
   updateTrackIcon(trackId, playing) {
+    if (!this.hasPlayIconTarget) return
     this.playIconTargets.forEach(icn => {
       if (icn.dataset.trackId == trackId) {
         icn.classList.toggle("fa-play", !playing)
         icn.classList.toggle("fa-pause", playing)
-        console.log(`[updateTrackIcon] trackId=${trackId} → playing=${playing}`)
       } else {
         icn.classList.add("fa-play")
         icn.classList.remove("fa-pause")
@@ -241,18 +233,13 @@ export default class extends Controller {
   }
 
   bindWidgetEvents() {
-    if (!this.widget) {
-      console.warn("[bindWidgetEvents] widgetなし")
-      return
-    }
+    if (!this.widget) return
     this.widget.unbind(SC.Widget.Events.PLAY)
     this.widget.unbind(SC.Widget.Events.PAUSE)
     this.widget.unbind(SC.Widget.Events.FINISH)
     this.widget.bind(SC.Widget.Events.PLAY, this.onPlay)
     this.widget.bind(SC.Widget.Events.PAUSE, this.onPause)
-
     this.widget.bind(SC.Widget.Events.FINISH, this.onFinish)
-    console.log("[bindWidgetEvents] イベントバインド完了")
   }
 
   startProgressTracking() {
@@ -262,9 +249,9 @@ export default class extends Controller {
       this.widget.getPosition(pos => {
         this.widget.getDuration(dur => {
           if (!dur) return
-          this.seekBar.value             = (pos / dur) * 100
-          this.currentTimeEl.textContent = this.formatTime(pos)
-          this.durationEl.textContent    = this.formatTime(dur)
+          if (this.seekBar) this.seekBar.value = (pos / dur) * 100
+          if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(pos)
+          if (this.durationEl)    this.durationEl.textContent    = this.formatTime(dur)
         })
       })
     }, 500)
