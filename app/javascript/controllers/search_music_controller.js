@@ -60,7 +60,27 @@ export default class extends Controller {
       const div = document.createElement("div");
       div.classList.add("track-result", "mb-3");
       div.innerHTML = `
-        <div class=\"d-flex align-items-center\">\n          <img src=\"${track.artwork_url || "https://placehold.jp/100x100.png"}\" class=\"img-thumbnail me-3\" style=\"width:100px;height:100px;\">\n          <div>\n            <p><strong>${track.title}</strong><br>${track.user.username}</p>\n            <a href=\"${track.permalink_url}\" class=\"btn btn-info btn-sm\" target=\"_blank\">SoundCloudで再生</a>\n            <button type=\"button\" class=\"btn btn-success btn-sm\" data-action=\"search-music#select\" data-audio=\"${track.permalink_url}\" data-name=\"${track.title}\" data-artist=\"${track.user.username}\">選択or視聴</button>\n          </div>\n        </div>\n        <div class=\"player-slot mt-2\"></div><hr/>`;
+        <div class="d-flex align-items-center">
+          <img src="${track.artwork_url || "https://placehold.jp/100x100.png"}" class="img-thumbnail me-3" style="width:100px;height:100px;">
+          <div>
+            <p><strong>${track.title}</strong><br>${track.user.username}</p>
+            <a href="${track.permalink_url}" class="btn btn-info btn-sm"
+               style="min-width:100px;font-size:13px;padding:0.25em 0.7em;" target="_blank">
+              SoundCloudで再生
+            </a>
+            <button type="button"
+              class="btn btn-success btn-lg"
+              style="font-size: 1.1rem; min-width:140px; margin-left: 8px;"
+              data-action="search-music#select"
+              data-audio="${track.permalink_url}"
+              data-name="${track.title}"
+              data-artist="${track.user.username}"
+              data-track-id="${track.id}">
+              選択or視聴
+            </button>
+          </div>
+        </div>
+        <div class="player-slot mt-2"></div><hr/>`;
       this.resultsTarget.appendChild(div);
     });
 
@@ -93,16 +113,25 @@ export default class extends Controller {
   nextPage () { if (this.currentPage * 10 < this.searchResults.length) { this.currentPage++; this.renderPage(); } }
 
   /* =============================
-   * 曲選択 → プレイヤー表示
+   * 曲選択 → プレイヤー表示＋下部プレーヤー再生
    * ===========================*/
-  select (e) {
+  select(e) {
     const { audio, name, artist } = e.target.dataset;
     this.audioTarget.value  = audio;
     this.trackTarget.value  = `${name} - ${artist}`;
     document.querySelectorAll(".player-slot").forEach(s => s.innerHTML = "");
 
+    // 🎵 カスタムイベントをwindowに投げる
+    window.dispatchEvent(new CustomEvent("play-from-search", {
+      detail: {
+        trackId: audio,   // 一意ならaudio（URL）で充分
+        playUrl: audio
+      }
+    }));
+
+    // 必要なら「この曲にする」ボタンだけ出す
     const slot = e.target.closest(".track-result").querySelector(".player-slot");
-    slot.innerHTML = `<iframe width=\"100%\" height=\"166\" scrolling=\"no\" frameborder=\"no\" allow=\"autoplay\" src=\"https://w.soundcloud.com/player/?url=${encodeURIComponent(audio)}&auto_play=true\"></iframe><button type=\"button\" class=\"btn btn-primary mt-2\" data-action=\"search-music#confirm\">この曲にする</button>`;
+    slot.innerHTML = `<button type="button" class="btn btn-primary mt-2 btn-lg" style="min-width:120px;" data-action="search-music#confirm">この曲にする</button>`;
     slot.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 

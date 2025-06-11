@@ -19,6 +19,7 @@ export default class extends Controller {
     this.widget           = null
     this.progressInterval = null
     this.isSeeking        = false
+    this.playStartedAt = null;
 
     this.seekBar?.addEventListener("mousedown", () => {
       this.isSeeking = true
@@ -38,8 +39,15 @@ export default class extends Controller {
     // 最初はキャラクターを表示しておく（必要なら下記をコメントアウト）
     // if (this.neonCharacter) this.neonCharacter.style.display = "inline-block"
 
+     window.addEventListener("play-from-search", (e) => {
+    const { playUrl } = e.detail
+    // 下部プレーヤーを新しい曲で再生！
+    this.playFromExternal(playUrl)
+  })
+
     console.log("[connect] global-playerコントローラ初期化完了")
   }
+  
 
   // ローディングUI切り替え
   showLoadingUI() {
@@ -198,26 +206,50 @@ export default class extends Controller {
   }
 
   onPlay = () => {
-    this.playPauseIcon?.classList.replace("fa-play", "fa-pause")
-    this.updateTrackIcon(this.currentTrackId, true)
-    this.widget.getCurrentSound((sound) => {
-      if (sound?.title && !this.trackTitleEl.textContent) {
-        this.trackTitleEl.textContent  = sound.title
-        this.trackArtistEl.textContent = sound.user?.username ? `— ${sound.user.username}` : ""
-        this.hideLoadingUI()
-      }
-    })
-  }
+  this.playPauseIcon?.classList.replace("fa-play", "fa-pause")
+  this.updateTrackIcon(this.currentTrackId, true)
+  // ★再生開始時刻
+  this.playStartedAt = Date.now();
+  this.widget.getCurrentSound((sound) => {
+    if (sound?.title && !this.trackTitleEl.textContent) {
+      this.trackTitleEl.textContent  = sound.title
+      this.trackArtistEl.textContent = sound.user?.username ? `— ${sound.user.username}` : ""
+      this.hideLoadingUI()
+    }
+  })
+}
   onPause = () => {
     this.playPauseIcon?.classList.replace("fa-pause", "fa-play")
     this.updateTrackIcon(this.currentTrackId, false)
   }
   onFinish = () => {
-    this.playPauseIcon?.classList.replace("fa-pause", "fa-play")
-    this.updateTrackIcon(this.currentTrackId, false)
-    this.bottomPlayer?.classList.add("d-none")
-    clearInterval(this.progressInterval)
+  // ★再生終了時の時刻
+  const finishedAt = Date.now();
+  // ★再生時間を計算
+  const playedMs = this.playStartedAt ? finishedAt - this.playStartedAt : 0;
+  console.log(`[onFinish] playedMs: ${playedMs} ms`);
+
+  if (playedMs < 32000 && playedMs > 5000) { // 5秒未満はノイズ防止
+    if (window.Swal) {
+      Swal.fire({
+        icon: 'info',
+        title: '試聴終了',
+        text: 'この曲の視聴は30秒までです（権利制限）',
+        confirmButtonText: 'OK'
+      });
+    } else {
+      alert("この曲の視聴は30秒までです（権利制限）");
+    }
   }
+
+  this.playPauseIcon?.classList.replace("fa-pause", "fa-play")
+  this.updateTrackIcon(this.currentTrackId, false)
+  this.bottomPlayer?.classList.add("d-none")
+  clearInterval(this.progressInterval)
+  this.playStartedAt = null; // リセット
+}
+
+
 
   updateTrackIcon(trackId, playing) {
     if (!this.hasPlayIconTarget) return
@@ -264,4 +296,7 @@ export default class extends Controller {
     const rem = sec % 60
     return `${min}:${rem.toString().padStart(2, "0")}`
   }
+
+  
 }
+
