@@ -188,22 +188,38 @@
     </div>
 
     <!-- 音量スライダー -->
-    <div style="display: flex; align-items: center; gap: 8px; margin-left: 16px;">
-      <i class="fa fa-volume-up" style="color: #fff;"></i>
-      <input id="volume-bar"
-             type="range"
-             min="0" max="100" value="100"
-             style="
-               width: 80px;
-               appearance: none;
-               height: 4px;
-               background: #555;
-               border-radius: 2px;
-               outline: none;
-             "
-             data-action="input->global-player#changeVolume"
-      >
-    </div>
+    <<div style="display: flex; align-items: center; gap: 8px; margin-left: 16px;">
+  <!-- リピートボタン -->
+  <button id="repeat-button"
+          class="btn btn-link text-white px-2"
+          data-action="click->global-player#toggleRepeat"
+          title="リピート">
+    <i class="fa fa-repeat"></i>
+  </button>
+  <!-- シャッフルボタン -->
+  <button id="shuffle-button"
+          class="btn btn-link text-white px-2"
+          data-action="click->global-player#toggleShuffle"
+          title="シャッフル">
+    <i class="fa fa-random"></i>
+  </button>
+  <!-- 音量アイコン -->
+  <i class="fa fa-volume-up" style="color: #fff;"></i>
+  <!-- 音量スライダー -->
+  <input id="volume-bar"
+         type="range"
+         min="0" max="100" value="100"
+         style="
+           width: 80px;
+           appearance: none;
+           height: 4px;
+           background: #555;
+           border-radius: 2px;
+           outline: none;
+         "
+         data-action="input->global-player#changeVolume"
+  >
+</div>
   </div>
 </body>
 </html>
@@ -296,4 +312,16 @@
   padding-left: 2px; /* ほんの少し余白を足す */
   box-sizing: content-box;
 }
+
+#repeat-button.active, #shuffle-button.active {
+  color: #00ffe0 !important;
+  background: #222b;
+  border-radius: 50%;
+  box-shadow: 0 0 8px 2px #00ffe0bb;
+  transition: all 0.15s;
+}
+#repeat-button.active i, #shuffle-button.active i {
+  color: #00ffe0 !important;
+}
+
 </style>
