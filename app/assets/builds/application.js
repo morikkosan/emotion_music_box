@@ -14836,6 +14836,9 @@ var global_player_controller_default = class extends Controller {
     this.progressInterval = null;
     this.isSeeking = false;
     this.playStartedAt = null;
+    this.isRepeat = false;
+    this.isShuffle = false;
+    this.updatePlaylistOrder();
     this.seekBar?.addEventListener("mousedown", () => {
       this.isSeeking = true;
       clearInterval(this.progressInterval);
@@ -14848,12 +14851,38 @@ var global_player_controller_default = class extends Controller {
     });
     this.volumeBar?.addEventListener("input", (e) => this.changeVolume(e));
     this.seekBar?.addEventListener("input", (e) => this.seek(e));
-    document.getElementById("play-pause-button")?.addEventListener("click", (e) => this.togglePlayPause(e));
     window.addEventListener("play-from-search", (e) => {
       const { playUrl } = e.detail;
       this.playFromExternal(playUrl);
     });
     console.log("[connect] global-player\u30B3\u30F3\u30C8\u30ED\u30FC\u30E9\u521D\u671F\u5316\u5B8C\u4E86");
+  }
+  // ---【ここだけStimulus actionで呼ばれる】---
+  // HTML側: <button ... data-action="click->global-player#toggleShuffle" ...>
+  toggleShuffle(e) {
+    this.isShuffle = !this.isShuffle;
+    const btn = document.getElementById("shuffle-button");
+    if (btn) btn.classList.toggle("active", this.isShuffle);
+    this.updatePlaylistOrder();
+    console.log("[toggleShuffle]", this.isShuffle);
+  }
+  // HTML側: <button ... data-action="click->global-player#toggleRepeat" ...>
+  toggleRepeat(e) {
+    this.isRepeat = !this.isRepeat;
+    const btn = document.getElementById("repeat-button");
+    if (btn) btn.classList.toggle("active", this.isRepeat);
+    console.log("[toggleRepeat]", this.isRepeat);
+  }
+  // 曲順リスト取得
+  updatePlaylistOrder() {
+    this.playlistOrder = this.trackImageTargets.map((img) => img.dataset.trackId);
+    if (this.isShuffle) this.shufflePlaylistOrder();
+  }
+  shufflePlaylistOrder() {
+    for (let i = this.playlistOrder.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.playlistOrder[i], this.playlistOrder[j]] = [this.playlistOrder[j], this.playlistOrder[i]];
+    }
   }
   // ローディングUI切り替え
   showLoadingUI() {
@@ -14883,7 +14912,6 @@ var global_player_controller_default = class extends Controller {
     if (this.trackTitleEl) this.trackTitleEl.style.display = "";
     if (this.trackArtistEl) this.trackArtistEl.style.display = "";
   }
-  // 全UIリセット＋ローディング表示
   resetPlayerUI() {
     console.log("[resetPlayerUI] UI\u521D\u671F\u5316\u3057\u307E\u3059");
     if (this.currentTimeEl) this.currentTimeEl.textContent = "0:00";
@@ -14899,7 +14927,6 @@ var global_player_controller_default = class extends Controller {
     this.playPauseIcon?.classList.remove("fa-pause");
     this.showLoadingUI();
   }
-  // iframe差し替え
   replaceIframeWithNew() {
     const oldIframe = document.getElementById("hidden-sc-player");
     if (oldIframe) {
@@ -14919,6 +14946,7 @@ var global_player_controller_default = class extends Controller {
   }
   loadAndPlay(event) {
     event.stopPropagation();
+    this.updatePlaylistOrder();
     const icon = event.currentTarget;
     const newTrackId = icon.dataset.trackId;
     const img = this.trackImageTargets.find((t) => t.dataset.trackId == newTrackId);
@@ -15012,6 +15040,7 @@ var global_player_controller_default = class extends Controller {
     this.playPauseIcon?.classList.replace("fa-pause", "fa-play");
     this.updateTrackIcon(this.currentTrackId, false);
   };
+  // ★★★ここが自動再生・リピート・シャッフル本体です！★★★
   onFinish = () => {
     const finishedAt = Date.now();
     const playedMs = this.playStartedAt ? finishedAt - this.playStartedAt : 0;
@@ -15030,9 +15059,27 @@ var global_player_controller_default = class extends Controller {
     }
     this.playPauseIcon?.classList.replace("fa-pause", "fa-play");
     this.updateTrackIcon(this.currentTrackId, false);
-    this.bottomPlayer?.classList.add("d-none");
     clearInterval(this.progressInterval);
     this.playStartedAt = null;
+    if (this.isRepeat) {
+      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == this.currentTrackId);
+      if (icon) {
+        setTimeout(() => this.loadAndPlay({ currentTarget: icon, stopPropagation() {
+        } }), 300);
+        return;
+      }
+    }
+    const currentIndex = this.playlistOrder.indexOf(this.currentTrackId);
+    const nextTrackId = this.playlistOrder[currentIndex + 1];
+    if (nextTrackId) {
+      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == nextTrackId);
+      if (icon) {
+        setTimeout(() => this.loadAndPlay({ currentTarget: icon, stopPropagation() {
+        } }), 300);
+        return;
+      }
+    }
+    this.bottomPlayer?.classList.add("d-none");
   };
   updateTrackIcon(trackId, playing) {
     if (!this.hasPlayIconTarget) return;
