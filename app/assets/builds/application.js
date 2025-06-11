@@ -14257,8 +14257,20 @@ var search_music_controller_default = class extends Controller {
           <img src="${track.artwork_url || "https://placehold.jp/100x100.png"}" class="img-thumbnail me-3" style="width:100px;height:100px;">
           <div>
             <p><strong>${track.title}</strong><br>${track.user.username}</p>
-            <a href="${track.permalink_url}" class="btn btn-info btn-sm" target="_blank">SoundCloud\u3067\u518D\u751F</a>
-            <button type="button" class="btn btn-success btn-sm" data-action="search-music#select" data-audio="${track.permalink_url}" data-name="${track.title}" data-artist="${track.user.username}">\u9078\u629Eor\u8996\u8074</button>
+            <a href="${track.permalink_url}" class="btn btn-info btn-sm"
+               style="min-width:100px;font-size:13px;padding:0.25em 0.7em;" target="_blank">
+              SoundCloud\u3067\u518D\u751F
+            </a>
+            <button type="button"
+              class="btn btn-success btn-lg"
+              style="font-size: 1.1rem; min-width:140px; margin-left: 8px;"
+              data-action="search-music#select"
+              data-audio="${track.permalink_url}"
+              data-name="${track.title}"
+              data-artist="${track.user.username}"
+              data-track-id="${track.id}">
+              \u9078\u629Eor\u8996\u8074
+            </button>
           </div>
         </div>
         <div class="player-slot mt-2"></div><hr/>`;
@@ -14301,15 +14313,22 @@ var search_music_controller_default = class extends Controller {
     }
   }
   /* =============================
-   * 曲選択 → プレイヤー表示
+   * 曲選択 → プレイヤー表示＋下部プレーヤー再生
    * ===========================*/
   select(e) {
     const { audio, name, artist } = e.target.dataset;
     this.audioTarget.value = audio;
     this.trackTarget.value = `${name} - ${artist}`;
     document.querySelectorAll(".player-slot").forEach((s) => s.innerHTML = "");
+    window.dispatchEvent(new CustomEvent("play-from-search", {
+      detail: {
+        trackId: audio,
+        // 一意ならaudio（URL）で充分
+        playUrl: audio
+      }
+    }));
     const slot = e.target.closest(".track-result").querySelector(".player-slot");
-    slot.innerHTML = `<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=${encodeURIComponent(audio)}&auto_play=true"></iframe><button type="button" class="btn btn-primary mt-2" data-action="search-music#confirm">\u3053\u306E\u66F2\u306B\u3059\u308B</button>`;
+    slot.innerHTML = `<button type="button" class="btn btn-primary mt-2 btn-lg" style="min-width:120px;" data-action="search-music#confirm">\u3053\u306E\u66F2\u306B\u3059\u308B</button>`;
     slot.scrollIntoView({ behavior: "smooth", block: "center" });
   }
   /* =============================
@@ -14816,6 +14835,7 @@ var global_player_controller_default = class extends Controller {
     this.widget = null;
     this.progressInterval = null;
     this.isSeeking = false;
+    this.playStartedAt = null;
     this.seekBar?.addEventListener("mousedown", () => {
       this.isSeeking = true;
       clearInterval(this.progressInterval);
@@ -14829,6 +14849,10 @@ var global_player_controller_default = class extends Controller {
     this.volumeBar?.addEventListener("input", (e) => this.changeVolume(e));
     this.seekBar?.addEventListener("input", (e) => this.seek(e));
     document.getElementById("play-pause-button")?.addEventListener("click", (e) => this.togglePlayPause(e));
+    window.addEventListener("play-from-search", (e) => {
+      const { playUrl } = e.detail;
+      this.playFromExternal(playUrl);
+    });
     console.log("[connect] global-player\u30B3\u30F3\u30C8\u30ED\u30FC\u30E9\u521D\u671F\u5316\u5B8C\u4E86");
   }
   // ローディングUI切り替え
@@ -14975,6 +14999,7 @@ var global_player_controller_default = class extends Controller {
   onPlay = () => {
     this.playPauseIcon?.classList.replace("fa-play", "fa-pause");
     this.updateTrackIcon(this.currentTrackId, true);
+    this.playStartedAt = Date.now();
     this.widget.getCurrentSound((sound) => {
       if (sound?.title && !this.trackTitleEl.textContent) {
         this.trackTitleEl.textContent = sound.title;
@@ -14988,10 +15013,26 @@ var global_player_controller_default = class extends Controller {
     this.updateTrackIcon(this.currentTrackId, false);
   };
   onFinish = () => {
+    const finishedAt = Date.now();
+    const playedMs = this.playStartedAt ? finishedAt - this.playStartedAt : 0;
+    console.log(`[onFinish] playedMs: ${playedMs} ms`);
+    if (playedMs < 32e3 && playedMs > 5e3) {
+      if (window.Swal) {
+        Swal.fire({
+          icon: "info",
+          title: "\u8A66\u8074\u7D42\u4E86",
+          text: "\u3053\u306E\u66F2\u306E\u8996\u8074\u306F30\u79D2\u307E\u3067\u3067\u3059\uFF08\u6A29\u5229\u5236\u9650\uFF09",
+          confirmButtonText: "OK"
+        });
+      } else {
+        alert("\u3053\u306E\u66F2\u306E\u8996\u8074\u306F30\u79D2\u307E\u3067\u3067\u3059\uFF08\u6A29\u5229\u5236\u9650\uFF09");
+      }
+    }
     this.playPauseIcon?.classList.replace("fa-pause", "fa-play");
     this.updateTrackIcon(this.currentTrackId, false);
     this.bottomPlayer?.classList.add("d-none");
     clearInterval(this.progressInterval);
+    this.playStartedAt = null;
   };
   updateTrackIcon(trackId, playing) {
     if (!this.hasPlayIconTarget) return;
