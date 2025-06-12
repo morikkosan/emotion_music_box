@@ -15483,27 +15483,32 @@ document.addEventListener("turbo:load", () => {
     inlinePreview.src = dataUrl;
     avatarUrlField.value = "";
     modal.hide();
-    try {
-      inlinePreview.classList.add("loading");
-      const tempImage = new window.Image();
-      tempImage.onload = async () => {
-        const resizedBlob = await resizeImage(tempImage, 300);
-        const fd = new FormData();
-        fd.append("file", resizedBlob, "avatar.jpg");
-        fd.append("upload_preset", window.CLOUDINARY_UPLOAD_PRESET);
-        const res = await axios.post(
-          `https://api.cloudinary.com/v1_1/${window.CLOUDINARY_CLOUD_NAME}/upload`,
-          fd
-        );
-        inlinePreview.src = res.data.secure_url;
-        avatarUrlField.value = res.data.secure_url;
-        if (submitBtn) submitBtn.disabled = false;
+    if (window.CLOUDINARY_CLOUD_NAME && window.CLOUDINARY_UPLOAD_PRESET) {
+      try {
+        inlinePreview.classList.add("loading");
+        const tempImage = new window.Image();
+        tempImage.onload = async () => {
+          const resizedBlob = await resizeImage(tempImage, 300);
+          const fd = new FormData();
+          fd.append("file", resizedBlob, "avatar.jpg");
+          fd.append("upload_preset", window.CLOUDINARY_UPLOAD_PRESET);
+          const res = await axios.post(
+            `https://api.cloudinary.com/v1_1/${window.CLOUDINARY_CLOUD_NAME}/upload`,
+            fd
+          );
+          inlinePreview.src = res.data.secure_url;
+          avatarUrlField.value = res.data.secure_url;
+          if (submitBtn) submitBtn.disabled = false;
+          inlinePreview.classList.remove("loading");
+        };
+        tempImage.src = dataUrl;
+      } catch (err) {
+        console.error("Cloudinary upload failed", err);
         inlinePreview.classList.remove("loading");
-      };
-      tempImage.src = dataUrl;
-    } catch (err) {
-      console.error("Cloudinary upload failed", err);
-      inlinePreview.classList.remove("loading");
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    } else {
+      avatarUrlField.value = dataUrl;
       if (submitBtn) submitBtn.disabled = false;
     }
   });
