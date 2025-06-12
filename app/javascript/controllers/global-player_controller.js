@@ -1,3 +1,4 @@
+// app/javascript/controllers/global_player_controller.js
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
@@ -21,15 +22,16 @@ export default class extends Controller {
     this.isSeeking        = false
     this.playStartedAt    = null
 
-    this.isRepeat = false
+    this.isRepeat  = false
     this.isShuffle = false
 
     this.updatePlaylistOrder()
 
-    this.waveformCanvas = document.getElementById('waveform-anime')
-    this.waveformCtx = this.waveformCanvas?.getContext('2d')
+    this.waveformCanvas   = document.getElementById('waveform-anime')
+    this.waveformCtx      = this.waveformCanvas?.getContext('2d')
     this.waveformAnimating = false
-    // seekバー系だけイベント直書き（ここはStimulus不要）
+
+    // シークバー操作
     this.seekBar?.addEventListener("mousedown", () => {
       this.isSeeking = true
       clearInterval(this.progressInterval)
@@ -43,7 +45,7 @@ export default class extends Controller {
     this.volumeBar?.addEventListener("input", (e) => this.changeVolume(e))
     this.seekBar?.addEventListener("input", (e) => this.seek(e))
 
-    // 検索から再生
+    // 外部検索結果から再生
     window.addEventListener("play-from-search", (e) => {
       const { playUrl } = e.detail
       this.playFromExternal(playUrl)
@@ -52,152 +54,13 @@ export default class extends Controller {
     console.log("[connect] global-playerコントローラ初期化完了")
   }
 
-   startWaveformAnime() {
-    if (!this.waveformCtx) return
-    this.waveformAnimating = true
-    const ctx = this.waveformCtx
-    const W = this.waveformCanvas.width
-    const H = this.waveformCanvas.height
-    let t = 0
-    const animate = () => {
-      if (!this.waveformAnimating) return
-      ctx.clearRect(0, 0, W, H)
-      ctx.save()
-      ctx.strokeStyle = "#10ffec"
-      ctx.lineWidth = 2
-      ctx.beginPath()
-      for (let x = 0; x < W; x += 4) {
-        const y = H/2 + Math.sin((x+t)/7) * (H/2.5) * (0.7+0.3*Math.sin((x/17)+t/13))
-        ctx.lineTo(x, y)
-      }
-      ctx.stroke()
-      ctx.restore()
-      t += 0.7
-      requestAnimationFrame(animate)
-    }
-    animate()
-  }
-  // --- 波形アニメ停止 ---
-  stopWaveformAnime() {
-    this.waveformAnimating = false
-    if (this.waveformCtx) this.waveformCtx.clearRect(0, 0, this.waveformCanvas.width, this.waveformCanvas.height)
-  }
-
-
-  // ---【ここだけStimulus actionで呼ばれる】---
-  // HTML側: <button ... data-action="click->global-player#toggleShuffle" ...>
-  toggleShuffle(e) {
-    this.isShuffle = !this.isShuffle
-    const btn = document.getElementById("shuffle-button")
-    if (btn) btn.classList.toggle("active", this.isShuffle)
-    this.updatePlaylistOrder()
-    console.log("[toggleShuffle]", this.isShuffle)
-  }
-
-  // HTML側: <button ... data-action="click->global-player#toggleRepeat" ...>
-  toggleRepeat(e) {
-    this.isRepeat = !this.isRepeat
-    const btn = document.getElementById("repeat-button")
-    if (btn) btn.classList.toggle("active", this.isRepeat)
-    console.log("[toggleRepeat]", this.isRepeat)
-  }
-
-  // 曲順リスト取得
-  updatePlaylistOrder() {
-    this.playlistOrder = this.trackImageTargets.map(img => img.dataset.trackId)
-    if (this.isShuffle) this.shufflePlaylistOrder()
-  }
-  shufflePlaylistOrder() {
-    for (let i = this.playlistOrder.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[this.playlistOrder[i], this.playlistOrder[j]] = [this.playlistOrder[j], this.playlistOrder[i]]
-    }
-  }
-
-
-
-  // ローディングUI切り替え
-  showLoadingUI() {
-    if (this.playPauseIcon) this.playPauseIcon.style.display = "none";
-    if (this.loadingArea)   this.loadingArea.style.display = "inline-flex";
-    if (this.neonCharacter) this.neonCharacter.style.display = "inline-block";
-    if (this.trackTitleEl)  {
-      this.trackTitleEl.innerHTML = `
-        <span class="neon-wave">
-          <span>N</span><span>O</span><span>W</span>
-          <span>&nbsp;</span>
-          <span>L</span><span>O</span><span>A</span><span>D</span><span>I</span><span>N</span><span>G</span>
-          <span>.</span><span>.</span><span>.</span>
-        </span>
-      `
-      this.trackTitleEl.style.display = "block"
-    }
-    if (this.trackArtistEl) {
-      this.trackArtistEl.textContent = ""
-      this.trackArtistEl.style.display = "none"
-    }
-  }
-
-  hideLoadingUI() {
-    if (this.playPauseIcon)  this.playPauseIcon.style.display = "";
-    if (this.loadingArea)    this.loadingArea.style.display = "none";
-    if (this.neonCharacter)  this.neonCharacter.style.display = "none";
-    if (this.trackTitleEl)   this.trackTitleEl.style.display = "";
-    if (this.trackArtistEl)  this.trackArtistEl.style.display = "";
-  }
-
-  resetPlayerUI() {
-    console.log("[resetPlayerUI] UI初期化します")
-    if (this.currentTimeEl) this.currentTimeEl.textContent = "0:00"
-    if (this.durationEl)    this.durationEl.textContent = "0:00"
-    if (this.seekBar)       this.seekBar.value = 0
-    if (this.hasPlayIconTarget) {
-      this.playIconTargets.forEach(icn => {
-        icn.classList.add("fa-play")
-        icn.classList.remove("fa-pause")
-      })
-    }
-    this.playPauseIcon?.classList.add("fa-play")
-    this.playPauseIcon?.classList.remove("fa-pause")
-    this.showLoadingUI()
-  }
-
-  replaceIframeWithNew() {
-    const oldIframe = document.getElementById("hidden-sc-player")
-    if (oldIframe) {
-      const parent = oldIframe.parentNode
-      const newIframe = document.createElement("iframe")
-      newIframe.id = "hidden-sc-player"
-      newIframe.style.display = "none"
-      newIframe.allow = "autoplay"
-      newIframe.frameBorder = "no"
-      newIframe.scrolling = "no"
-      newIframe.width = "100%"
-      newIframe.height = "166"
-      parent.replaceChild(newIframe, oldIframe)
-      return newIframe
-    }
-    return null
-  }
-
-  loadAndPlay(event) {
-    event.stopPropagation()
-    // ★ 曲順再取得
-    this.updatePlaylistOrder()
-    const icon       = event.currentTarget
-    const newTrackId = icon.dataset.trackId
-    const img        = this.trackImageTargets.find(t => t.dataset.trackId == newTrackId)
-    const trackUrl   = img?.dataset.playUrl
-    if (!trackUrl) {
-      console.warn("[loadAndPlay] trackUrlがありません！", { img })
-      return
-    }
-
-    this.resetPlayerUI()
+  // ─────────────────────────────────────────────────────────────
+  // 「検索結果から再生」用メソッド。ここを追加！
+  playFromExternal(playUrl) {
+    // 下部プレーヤーを表示
     this.bottomPlayer?.classList.remove("d-none")
-    this.currentTrackId = newTrackId
 
-    // 既存Widget解除
+    // 既存Widgetクリア
     if (this.widget) {
       this.widget.unbind(SC.Widget.Events.PLAY)
       this.widget.unbind(SC.Widget.Events.PAUSE)
@@ -213,27 +76,211 @@ export default class extends Controller {
       return
     }
 
-    const playerUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&auto_play=true`
-    this.iframeElement.src = playerUrl
+    // SoundCloudプレイヤーURLセット＆自動再生
+    this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(playUrl)}&auto_play=true`
+
+    // UIリセット＆widgetイベント登録
+    this.resetPlayerUI()
+    this.iframeElement.onload = () => {
+      setTimeout(() => {
+        this.widget = SC.Widget(this.iframeElement)
+        this.widget.bind(SC.Widget.Events.READY, () => {
+          // タイトル取得
+          this.widget.getCurrentSound((sound) => {
+            if (sound && sound.title) {
+              this.trackTitleEl.textContent  = sound.title
+              this.trackArtistEl.textContent = sound.user?.username
+                ? `— ${sound.user.username}` : ""
+            } else {
+              this.trackTitleEl.textContent  = "タイトル不明"
+              this.trackArtistEl.textContent = ""
+            }
+            this.hideLoadingUI()
+          })
+          this.bindWidgetEvents()
+          this.widget.play()
+          this.startProgressTracking()
+          this.changeVolume({ target: this.volumeBar })
+        })
+      }, 100)
+    }
+  }
+  // ─────────────────────────────────────────────────────────────
+
+  startWaveformAnime() {
+    if (!this.waveformCtx) return
+    this.waveformAnimating = true
+    const ctx = this.waveformCtx
+    const W   = this.waveformCanvas.width
+    const H   = this.waveformCanvas.height
+    let t     = 0
+    const animate = () => {
+      if (!this.waveformAnimating) return
+      ctx.clearRect(0, 0, W, H)
+      ctx.save()
+      ctx.strokeStyle = "#10ffec"
+      ctx.lineWidth   = 2
+      ctx.beginPath()
+      for (let x = 0; x < W; x += 4) {
+        const y = H/2 + Math.sin((x+t)/7) * (H/2.5) * (0.7 + 0.3*Math.sin((x/17)+t/13))
+        ctx.lineTo(x, y)
+      }
+      ctx.stroke()
+      ctx.restore()
+      t += 0.7
+      requestAnimationFrame(animate)
+    }
+    animate()
+  }
+
+  stopWaveformAnime() {
+    this.waveformAnimating = false
+    if (this.waveformCtx) {
+      this.waveformCtx.clearRect(0, 0,
+        this.waveformCanvas.width, this.waveformCanvas.height)
+    }
+  }
+
+  toggleShuffle(e) {
+    this.isShuffle = !this.isShuffle
+    document.getElementById("shuffle-button")
+      ?.classList.toggle("active", this.isShuffle)
+    this.updatePlaylistOrder()
+    console.log("[toggleShuffle]", this.isShuffle)
+  }
+
+  toggleRepeat(e) {
+    this.isRepeat = !this.isRepeat
+    document.getElementById("repeat-button")
+      ?.classList.toggle("active", this.isRepeat)
+    console.log("[toggleRepeat]", this.isRepeat)
+  }
+
+  updatePlaylistOrder() {
+    this.playlistOrder = this.trackImageTargets.map(img => img.dataset.trackId)
+    if (this.isShuffle) this.shufflePlaylistOrder()
+  }
+  shufflePlaylistOrder() {
+    for (let i = this.playlistOrder.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[this.playlistOrder[i], this.playlistOrder[j]] =
+        [this.playlistOrder[j], this.playlistOrder[i]]
+    }
+  }
+
+  showLoadingUI() {
+    this.playPauseIcon && (this.playPauseIcon.style.display = "none")
+    this.loadingArea   && (this.loadingArea.style.display   = "inline-flex")
+    this.neonCharacter && (this.neonCharacter.style.display = "inline-block")
+    if (this.trackTitleEl) {
+      this.trackTitleEl.innerHTML = `
+        <span class="neon-wave">
+          <span>N</span><span>O</span><span>W</span>
+          <span>&nbsp;</span>
+          <span>L</span><span>O</span><span>A</span><span>D</span>
+          <span>I</span><span>N</span><span>G</span>
+          <span>.</span><span>.</span><span>.</span>
+        </span>`
+      this.trackTitleEl.style.display = "block"
+    }
+    if (this.trackArtistEl) {
+      this.trackArtistEl.textContent = ""
+      this.trackArtistEl.style.display = "none"
+    }
+  }
+
+  hideLoadingUI() {
+    this.playPauseIcon && (this.playPauseIcon.style.display = "")
+    this.loadingArea   && (this.loadingArea.style.display   = "none")
+    this.neonCharacter && (this.neonCharacter.style.display = "none")
+    this.trackTitleEl  && (this.trackTitleEl.style.display  = "")
+    this.trackArtistEl && (this.trackArtistEl.style.display = "")
+  }
+
+  resetPlayerUI() {
+    console.log("[resetPlayerUI] UI初期化します")
+    this.currentTimeEl && (this.currentTimeEl.textContent = "0:00")
+    this.durationEl    && (this.durationEl.textContent    = "0:00")
+    this.seekBar       && (this.seekBar.value            = 0)
+    if (this.hasPlayIconTarget) {
+      this.playIconTargets.forEach(icn => {
+        icn.classList.add("fa-play")
+        icn.classList.remove("fa-pause")
+      })
+    }
+    this.playPauseIcon?.classList.add("fa-play")
+    this.playPauseIcon?.classList.remove("fa-pause")
+    this.showLoadingUI()
+  }
+
+  replaceIframeWithNew() {
+    const oldIframe = document.getElementById("hidden-sc-player")
+    if (!oldIframe) return null
+    const parent    = oldIframe.parentNode
+    const newIframe = document.createElement("iframe")
+    newIframe.id         = "hidden-sc-player"
+    newIframe.style.display = "none"
+    newIframe.allow      = "autoplay"
+    newIframe.frameBorder= "no"
+    newIframe.scrolling  = "no"
+    newIframe.width      = "100%"
+    newIframe.height     = "166"
+    parent.replaceChild(newIframe, oldIframe)
+    return newIframe
+  }
+
+  loadAndPlay(event) {
+    event.stopPropagation()
+    this.updatePlaylistOrder()
+
+    const icon       = event.currentTarget
+    const newTrackId = icon.dataset.trackId
+    const img        = this.trackImageTargets.find(t => t.dataset.trackId == newTrackId)
+    const trackUrl   = img?.dataset.playUrl
+    if (!trackUrl) {
+      console.warn("[loadAndPlay] trackUrl missing", { img })
+      return
+    }
+
+    this.resetPlayerUI()
+    this.bottomPlayer?.classList.remove("d-none")
+    this.currentTrackId = newTrackId
+
+    // widgetクリア
+    if (this.widget) {
+      this.widget.unbind(SC.Widget.Events.PLAY)
+      this.widget.unbind(SC.Widget.Events.PAUSE)
+      this.widget.unbind(SC.Widget.Events.FINISH)
+      clearInterval(this.progressInterval)
+      this.widget = null
+    }
+
+    // iframe差し替え
+    this.iframeElement = this.replaceIframeWithNew()
+    if (!this.iframeElement) {
+      alert("iframe生成に失敗しました")
+      return
+    }
+
+    this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&auto_play=true`
 
     this.iframeElement.onload = () => {
       setTimeout(() => {
         this.widget = SC.Widget(this.iframeElement)
         this.widget.bind(SC.Widget.Events.READY, () => {
           const trySetTitle = (retry = 0) => {
-            this.widget.getCurrentSound((sound) => {
-              if (sound && sound.title) {
+            this.widget.getCurrentSound(sound => {
+              if (sound?.title) {
                 this.trackTitleEl.textContent  = sound.title
-                this.trackArtistEl.textContent = sound.user?.username ? `— ${sound.user.username}` : ""
+                this.trackArtistEl.textContent = sound.user?.username
+                  ? `— ${sound.user.username}` : ""
                 this.hideLoadingUI()
+              } else if (retry < 5) {
+                setTimeout(() => trySetTitle(retry + 1), 250)
               } else {
-                if (retry < 5) {
-                  setTimeout(() => trySetTitle(retry + 1), 250)
-                } else {
-                  this.trackTitleEl.textContent  = "タイトル不明"
-                  this.trackArtistEl.textContent = ""
-                  this.hideLoadingUI()
-                }
+                this.trackTitleEl.textContent  = "タイトル不明"
+                this.trackArtistEl.textContent = ""
+                this.hideLoadingUI()
               }
             })
           }
@@ -260,9 +307,9 @@ export default class extends Controller {
   seek(event) {
     if (!this.widget) return
     const percent = event.target.value
-    this.widget.getDuration(duration => {
-      if (!duration) return
-      this.widget.seekTo((percent / 100) * duration)
+    this.widget.getDuration(dur => {
+      if (!dur) return
+      this.widget.seekTo((percent / 100) * dur)
     })
   }
 
@@ -275,14 +322,13 @@ export default class extends Controller {
   onPlay = () => {
     this.playPauseIcon?.classList.replace("fa-play", "fa-pause")
     this.updateTrackIcon(this.currentTrackId, true)
-    this.playStartedAt = Date.now();
-
-      this.startWaveformAnime() // ←これ追加！
-
-    this.widget.getCurrentSound((sound) => {
+    this.playStartedAt = Date.now()
+    this.startWaveformAnime()
+    this.widget.getCurrentSound(sound => {
       if (sound?.title && !this.trackTitleEl.textContent) {
         this.trackTitleEl.textContent  = sound.title
-        this.trackArtistEl.textContent = sound.user?.username ? `— ${sound.user.username}` : ""
+        this.trackArtistEl.textContent = sound.user?.username
+          ? `— ${sound.user.username}` : ""
         this.hideLoadingUI()
       }
     })
@@ -291,28 +337,25 @@ export default class extends Controller {
   onPause = () => {
     this.playPauseIcon?.classList.replace("fa-pause", "fa-play")
     this.updateTrackIcon(this.currentTrackId, false)
-        this.stopWaveformAnime() // ★ここ追加
-
+    this.stopWaveformAnime()
   }
 
-  // ★★★ここが自動再生・リピート・シャッフル本体です！★★★
   onFinish = () => {
-    const finishedAt = Date.now();
-    const playedMs = this.playStartedAt ? finishedAt - this.playStartedAt : 0;
-    this.stopWaveformAnime() // ★ここ追加
-
-    console.log(`[onFinish] playedMs: ${playedMs} ms`);
+    const finishedAt = Date.now()
+    const playedMs   = this.playStartedAt
+      ? finishedAt - this.playStartedAt : 0
+    this.stopWaveformAnime()
 
     if (playedMs < 32000 && playedMs > 5000) {
       if (window.Swal) {
         Swal.fire({
           icon: 'info',
           title: '試聴終了',
-          text: 'この曲の視聴は30秒までです（権利制限）',
+          text:  'この曲の視聴は30秒までです（権利制限）',
           confirmButtonText: 'OK'
-        });
+        })
       } else {
-        alert("この曲の視聴は30秒までです（権利制限）");
+        alert("この曲の視聴は30秒までです（権利制限）")
       }
     }
 
@@ -321,32 +364,27 @@ export default class extends Controller {
     clearInterval(this.progressInterval)
     this.playStartedAt = null
 
-    // ★★ ここから自動再生ロジック ★★
-
-    // 1. リピートモードなら同じ曲をもう一度
+    // 自動再生・リピート・シャッフルロジック
     if (this.isRepeat) {
-      const icon = this.playIconTargets.find(icn => icn.dataset.trackId == this.currentTrackId)
+      const icon = this.playIconTargets.find(icn =>
+        icn.dataset.trackId == this.currentTrackId)
       if (icon) {
-        // 小さな遅延を入れて再生（連続再生バグ防止）
-        setTimeout(() => this.loadAndPlay({ currentTarget: icon, stopPropagation(){} }), 300)
-        return
+        return setTimeout(() =>
+          this.loadAndPlay({ currentTarget: icon, stopPropagation() {} }), 300)
       }
     }
 
-    // 2. 次の曲がある場合は自動再生
-    const currentIndex = this.playlistOrder.indexOf(this.currentTrackId)
-    const nextTrackId = this.playlistOrder[currentIndex + 1]
-    if (nextTrackId) {
-      const icon = this.playIconTargets.find(icn => icn.dataset.trackId == nextTrackId)
+    const curIdx = this.playlistOrder.indexOf(this.currentTrackId)
+    const nextId = this.playlistOrder[curIdx + 1]
+    if (nextId) {
+      const icon = this.playIconTargets.find(icn =>
+        icn.dataset.trackId == nextId)
       if (icon) {
-        setTimeout(() => this.loadAndPlay({ currentTarget: icon, stopPropagation(){} }), 300)
-        return
+        return setTimeout(() =>
+          this.loadAndPlay({ currentTarget: icon, stopPropagation() {} }), 300)
       }
     }
 
-
-    
-    // 3. もう次がない場合はプレーヤーを非表示に
     this.bottomPlayer?.classList.add("d-none")
   }
 
@@ -380,70 +418,51 @@ export default class extends Controller {
       this.widget.getPosition(pos => {
         this.widget.getDuration(dur => {
           if (!dur) return
-          if (this.seekBar) this.seekBar.value = (pos / dur) * 100
-          if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(pos)
-          if (this.durationEl)    this.durationEl.textContent    = this.formatTime(dur)
+          this.seekBar       && (this.seekBar.value      = (pos / dur) * 100)
+          this.currentTimeEl && (this.currentTimeEl.textContent = this.formatTime(pos))
+          this.durationEl    && (this.durationEl.textContent    = this.formatTime(dur))
         })
       })
     }, 500)
   }
 
   formatTime(ms) {
-    if (!ms) return "0:00"
-    const sec = Math.floor(ms / 1000)
+    const sec = Math.floor((ms||0) / 1000)
     const min = Math.floor(sec / 60)
     const rem = sec % 60
-    return `${min}:${rem.toString().padStart(2, "0")}`
+    return `${min}:${rem.toString().padStart(2,"0")}`
   }
 
-  // --- 前の曲に戻る ---
-prevTrack(event) {
-  event?.stopPropagation();
-  this.updatePlaylistOrder();
-  if (!this.currentTrackId || !this.playlistOrder?.length) return;
-  const currentIndex = this.playlistOrder.indexOf(this.currentTrackId);
-  if (currentIndex > 0) {
-    const prevTrackId = this.playlistOrder[currentIndex - 1];
-    const icon = this.playIconTargets.find(icn => icn.dataset.trackId == prevTrackId);
-    if (icon) {
-      this.loadAndPlay({ currentTarget: icon, stopPropagation(){} });
+  prevTrack(event) {
+    event?.stopPropagation()
+    this.updatePlaylistOrder()
+    if (!this.currentTrackId || !this.playlistOrder?.length) return
+    const idx = this.playlistOrder.indexOf(this.currentTrackId)
+    if (idx > 0) {
+      const icon = this.playIconTargets.find(icn =>
+        icn.dataset.trackId == this.playlistOrder[idx - 1])
+      icon && this.loadAndPlay({ currentTarget: icon, stopPropagation(){} })
     }
   }
-}
 
-// --- 次の曲に進む ---
-nextTrack(event) {
-  event?.stopPropagation();
-  this.updatePlaylistOrder();
-  if (!this.currentTrackId || !this.playlistOrder?.length) return;
-  const currentIndex = this.playlistOrder.indexOf(this.currentTrackId);
-  if (currentIndex !== -1 && currentIndex < this.playlistOrder.length - 1) {
-    const nextTrackId = this.playlistOrder[currentIndex + 1];
-    const icon = this.playIconTargets.find(icn => icn.dataset.trackId == nextTrackId);
-    if (icon) {
-      this.loadAndPlay({ currentTarget: icon, stopPropagation(){} });
+  nextTrack(event) {
+    event?.stopPropagation()
+    this.updatePlaylistOrder()
+    if (!this.currentTrackId || !this.playlistOrder?.length) return
+    const idx = this.playlistOrder.indexOf(this.currentTrackId)
+    if (idx < this.playlistOrder.length - 1) {
+      const icon = this.playIconTargets.find(icn =>
+        icn.dataset-trackId == this.playlistOrder[idx + 1])
+      icon && this.loadAndPlay({ currentTarget: icon, stopPropagation(){} })
     }
   }
-}
 
-
-// --- プレイリストの1曲目から再生 ---
-playFirstTrack(event) {
-  event?.stopPropagation();
-  this.updatePlaylistOrder();
-  if (!this.playlistOrder?.length) return;
-  const firstTrackId = this.playlistOrder[0];
-  const icon = this.playIconTargets.find(icn => icn.dataset.trackId == firstTrackId);
-  if (icon) {
-    this.loadAndPlay({ currentTarget: icon, stopPropagation(){} });
+  playFirstTrack(event) {
+    event?.stopPropagation()
+    this.updatePlaylistOrder()
+    if (!this.playlistOrder?.length) return
+    const icon = this.playIconTargets.find(icn =>
+      icn.dataset-trackId == this.playlistOrder[0])
+    icon && this.loadAndPlay({ currentTarget: icon, stopPropagation(){} })
   }
-
-
-  
 }
-
-
-
-}
-
-

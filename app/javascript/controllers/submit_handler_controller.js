@@ -1,81 +1,109 @@
 import { Controller } from "@hotwired/stimulus";
-
-function getTodayString() {
-  return new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
-}
+import * as bootstrap from "bootstrap"; // すでに使っているなら OK
 
 export default class extends Controller {
   static targets = ["submit"];
 
   connect() {
     console.log("📝 submit-handler connected");
-
     if (this.hasSubmitTarget) this.submitTarget.disabled = false;
 
-    // 🩹 カレンダー日付のバグ対策：描画が完全に終わったあとにイベントを設定
+    // カレンダー日付バグ対策
     setTimeout(() => {
       const dateInput = this.element.querySelector('input[type="date"]');
       if (dateInput) {
         dateInput.addEventListener("change", (e) => {
-          const val = e.target.value;
-          console.log("📌 遅延bind: カレンダーchangeイベント:", val);
-          e.target.value = val; // 再代入で安定させる
+          e.target.value = e.target.value;
         });
       }
-    }, 100); // ← 必要なら200msに増やしてもOK
+    }, 100);
   }
 
   submit(event) {
-  event.preventDefault();
-  const loader = document.getElementById("loading-overlay");
-  if (loader) loader.style.display = "flex";
+    event.preventDefault();
+    const loader = document.getElementById("loading-overlay");
+    if (loader) loader.style.display = "flex";
+    if (this.hasSubmitTarget) this.submitTarget.disabled = true;
 
-  if (this.hasSubmitTarget) this.submitTarget.disabled = true;
+    const form      = this.element;
+    const formData  = new FormData(form);
 
-  const form = this.element;
-  const formData = new FormData(form);
+    fetch(form.action, {
+      method: "POST",
+      headers: { Accept: "application/json" },
+      body: formData,
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          // SweetAlert2 で成功を表示
+          Swal.fire({
+            title: "成功 🎉",
+            text: data.message,      // Rails 側で返す JSON の 'message'
+            icon: "success",
+            confirmButtonText: "OK",
+            timer: 2000,
+            timerProgressBar: true,
+            background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+            color: "#fff",
+            customClass: { popup: "cyber-popup" }
+          });
 
-  fetch(form.action, {
-    method: "POST",
-    headers: { Accept: "application/json" },
-    body: formData,
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        // ここで「プレイリスト作成フォームだけ」右上トースト
-        if (form.id === "playlist-form") {
-            console.log("✅ playlist-form submit handler 発火！");
-          const toastEl = document.getElementById("save-toast");
-          if (toastEl) {
-            const body = toastEl.querySelector(".toast-body");
-            if (body) body.textContent = "プレイリストを作成しました！";
-            const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
-            toast.show();
+          // 既存の「プレイリスト作成フォームだけ」右上トースト
+          if (form.id === "playlist-form") {
+            const toastEl = document.getElementById("save-toast");
+            if (toastEl) {
+              const body = toastEl.querySelector(".toast-body");
+              if (body) body.textContent = "プレイリストを作成しました！";
+              bootstrap.Toast.getOrCreateInstance(toastEl).show();
+            }
           }
-        }
-        // 既存の他処理は壊さない
-        if (data.hp_today) {
-          // ...（既存のHPバーなどの処理はそのまま）...
-          setTimeout(() => {
-            window.location.href = data.redirect_url;
-          }, 1500);
+
+          // HPバー反映／リダイレクト
+          const redirect = () => { window.location.href = data.redirect_url };
+          if (data.hp_today) {
+            // HPバー更新等のアニメーションが終わってから
+            setTimeout(redirect, 1500);
+          } else {
+            // 今日以外の記録なら警告だけ出して即リダイレクト
+            Swal.fire({
+              title: "完了",
+              text: "記録は保存されましたが、HPゲージの反映は今日の記録のみです。",
+              icon: "info",
+              confirmButtonText: "OK",
+              background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+              color: "#fff",
+              customClass: { popup: "cyber-popup" }
+            }).then(redirect);
+          }
         } else {
-          alert("記録は保存されましたが、HPゲージの反映は今日の記録のみです。");
-          window.location.href = data.redirect_url;
+          // バリデーションエラー
+          Swal.fire({
+            title: "エラー ❌",
+            text: (data.errors || []).join("\n"),
+            icon: "error",
+            confirmButtonText: "閉じる",
+            background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+            color: "#fff",
+            customClass: { popup: "cyber-popup" }
+          });
         }
-      } else {
-        alert("保存に失敗しました: " + (data.errors || []).join("\n"));
-      }
-    })
-    .catch(error => {
-      console.error("送信エラー:", error);
-      alert("予期しないエラーが発生しました");
-    })
-    .finally(() => {
-      if (this.hasSubmitTarget) this.submitTarget.disabled = false;
-      const loader = document.getElementById("loading-overlay");
-      if (loader) loader.style.display = "none";
-    });
-}
+      })
+      .catch(error => {
+        console.error("送信エラー:", error);
+        Swal.fire({
+          title: "送信エラー",
+          text: "予期しないエラーが発生しました",
+          icon: "error",
+          confirmButtonText: "閉じる",
+          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+          color: "#fff",
+          customClass: { popup: "cyber-popup" }
+        });
+      })
+      .finally(() => {
+        if (this.hasSubmitTarget) this.submitTarget.disabled = false;
+        if (loader) loader.style.display = "none";
+      });
+  }
 }
