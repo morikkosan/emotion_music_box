@@ -1,0 +1,41 @@
+<div id="super-search-panel">
+  <div class="filter-box p-3 bg-light rounded shadow">
+    <h5>🎧 プレイリスト一覧</h5>
+
+    <% playlists.each do |playlist| %>
+      <div class="mb-3">
+        <!-- プレイリスト名をリンクにする -->
+        <strong>
+          <%= link_to playlist.name,
+                      playlist_path(playlist),
+                      class: "text-decoration-none text-dark" %>
+        </strong>
+
+        <!--
+          以下の曲リストは show ページで表示する場合は不要なので、
+          ブロック丸ごとコメントアウトしています。
+        -->
+        <!--
+        <ul class="list-unstyled mt-2">
+          <% playlist.playlist_items.each do |item| %>
+            <% log = item.emotion_log %>
+            <li class="mb-2">
+              🎵 <%= log.track_name %>
+              <% if log.music_url.include?("soundcloud.com") %>
+                <iframe
+                  width="100%"
+                  height="50"
+                  scrolling="no"
+                  frameborder="no"
+                  allow="autoplay"
+                  src="https://w.soundcloud.com/player/?url=<%= CGI.escape(log.music_url) %>&auto_play=false&visual=false&show_user=false&show_comments=false">
+                </iframe>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+        -->
+      </div>
+    <% end %>
+  </div>
+</div>

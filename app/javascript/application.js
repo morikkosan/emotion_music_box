@@ -177,33 +177,35 @@ modalFixObserver.observe(document.body, {
   }
 
   confirmBtn.addEventListener("click", async () => {
-    if (submitBtn) submitBtn.disabled = true;
+  if (submitBtn) submitBtn.disabled = true;
 
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    canvas.width = 80;
-    canvas.height = 80;
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  canvas.width = 80;
+  canvas.height = 80;
 
-    const viewWidth = cropContainer.clientWidth;
-    const viewHeight = cropContainer.clientHeight;
-    const scaleX = cropImage.naturalWidth / cropImage.clientWidth;
-    const scaleY = cropImage.naturalHeight / cropImage.clientHeight;
-    const sx = startX * -1 * scaleX;
-    const sy = startY * -1 * scaleY;
+  const viewWidth = cropContainer.clientWidth;
+  const viewHeight = cropContainer.clientHeight;
+  const scaleX = cropImage.naturalWidth / cropImage.clientWidth;
+  const scaleY = cropImage.naturalHeight / cropImage.clientHeight;
+  const sx = startX * -1 * scaleX;
+  const sy = startY * -1 * scaleY;
 
-    ctx.drawImage(
-      cropImage,
-      sx, sy,
-      viewWidth * scaleX, viewHeight * scaleY,
-      0, 0,
-      canvas.width, canvas.height
-    );
+  ctx.drawImage(
+    cropImage,
+    sx, sy,
+    viewWidth * scaleX, viewHeight * scaleY,
+    0, 0,
+    canvas.width, canvas.height
+  );
 
-    const dataUrl = canvas.toDataURL("image/png");
-    inlinePreview.src = dataUrl;
-    avatarUrlField.value = "";
-    modal.hide();
+  const dataUrl = canvas.toDataURL("image/png");
+  inlinePreview.src = dataUrl;
+  avatarUrlField.value = "";
+  modal.hide();
 
+  // ここでCloudinary設定の有無を判定
+  if (window.CLOUDINARY_CLOUD_NAME && window.CLOUDINARY_UPLOAD_PRESET) {
     try {
       inlinePreview.classList.add("loading");
 
@@ -225,13 +227,17 @@ modalFixObserver.observe(document.body, {
         inlinePreview.classList.remove("loading");
       };
       tempImage.src = dataUrl;
-
     } catch (err) {
       console.error("Cloudinary upload failed", err);
       inlinePreview.classList.remove("loading");
       if (submitBtn) submitBtn.disabled = false;
     }
-  });
+  } else {
+    // ←開発時はこちら！アップロードせずcanvasのデータURLだけでOK
+    avatarUrlField.value = dataUrl;
+    if (submitBtn) submitBtn.disabled = false;
+  }
+});
 
   const removeAvatarBtn = document.getElementById("removeAvatarBtn");
   const removeAvatarCheckbox = document.getElementById("removeAvatarCheckbox");

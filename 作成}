@@ -1,0 +1,42 @@
+application.html.erb注意書き
+
+(A) <body data-flash-notice="…" data-flash-alert="…">
+最初のページ読み込み時やTurbo:load イベント時に、JavaScript からすぐに document.body.dataset.flashNotice/flashAlert を読めるようにするための仕組みです。
+
+たとえばページ全体を普通にリロードしたときには、<body> に直接フラッシュ情報が埋め込まれているので、JS（showFlashSwal()）はすぐそれを読むだけでポップアップを出せます。
+
+つまり「純粋にブラウザで最初に表示されたときに、Flash があればモーダルを出す」ための保険的な入れ方です。
+
+(B) <%= render "shared/flash_container" %>
+erb
+コピーする
+編集する
+<!-- app/views/shared/_flash_container.html.erb -->
+<div id="flash-container"
+     data-flash-notice="<%= j flash[:notice] %>"
+     data-flash-alert="<%= j flash[:alert] %>"></div>
+こちらは「Turbo Stream で部分的に(フラッシュを含む)HTML が書き換えられたとき」や「Ajax で flash-container 部分だけが差し替えられたとき」にも、JavaScript が確実に検知できるようにするためのものです。
+
+具体的には、Turbo が部分更新するときに DOM に <div id="flash-container" …> が動的に追加されたり差し替えられたりする場合、JS 側の MutationObserver がそれを検知して showFlashSwal() を呼び出すようになっています。
+
+つまり「部分更新（Turbo Stream）でフラッシュをセットしても、モーダルを表示できるようにする」ための仕組みです。
+
+
+
+2. まとめると
+「最初にページを読み込んだとき」 → <body> に直接埋め込んだ data-flash-notice/alert を JS が拾ってモーダルを出す。
+
+「Turbo Frame や Turbo Stream で部分的にレンダーしたとき」 → 新しく追加された <div id="flash-container" …>（sharedパーシャル）を JS の MutationObserver が拾ってモーダルを出す。
+
+ですので、一見「同じデータを body 属性と flash-container の両方に載せているように見える＝二重」ですが、意図としては「全体再読み込み」「部分更新」の両方で必ずフラッシュを検知できるようにしている、ということになります。
+
+
+はい、そのとおりです。
+
+<body data-flash-notice="…" data-flash-alert="…"> の部分
+→ ページを「普通にリロード」したときに、JavaScript がすぐに document.body.dataset.flashNotice／flashAlert を読んで SweetAlert2 のモーダルを出せるようにするためのものです。
+
+<%= render "shared/flash_container" %> で出力される <div id="flash-container">
+→ Turbo Frame や Turbo Stream で部分的にフラッシュを差し替えたとき（Ajax や Turbo でコンテンツが更新されたとき）にも、MutationObserver がその要素を検知して同じ JavaScript を走らせられるようにするためのものです。
+
+まとめると、

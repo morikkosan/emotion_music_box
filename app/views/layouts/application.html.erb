@@ -4,117 +4,309 @@
   <title><%= content_for(:title) || "EMOTION MUSIC BOX" %></title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="apple-mobile-web-app-capable" content="yes">
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
 
-    <%= favicon_link_tag 'favicon.ico' %>
+  <%= favicon_link_tag 'favicon.ico' %>
+  <% og_image = image_url('ogp.png') %>
+  <meta property="og:title" content="Emotion Music Box (EMOMU)">
+  <meta property="og:description" content="感情と音楽をシェアする新感覚アプリ">
+  <meta property="og:image" content="<%= og_image %>">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://moriappli-emotion.com">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Emotion Music Box (EMOMU)">
+  <meta name="twitter:description" content="感情と音楽をシェアする新感覚アプリ">
+  <meta name="twitter:image" content="<%= og_image %>">
+  <meta name="twitter:url" content="https://moriappli-emotion.com">
+<!-- app/views/layouts/application.html.erb の head 内 -->
+<meta name="soundcloud-client-id"   content="<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>">
+<% if current_user&.soundcloud_token.present? %>
+  <meta name="soundcloud-oauth-token" content="<%= current_user.soundcloud_token %>">
+<% end %>
 
-<% og_image = image_url('ogp.png') %>
-<!-- ✅ OGP / Twitterカード -->
-<meta property="og:title" content="Emotion Music Box (EMOMU)">
-<meta property="og:description" content="感情と音楽をシェアする新感覚アプリ">
-<meta property="og:image" content="<%= og_image %>">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://moriappli-emotion.com">
+  <script src="https://connect.soundcloud.com/sdk/sdk-3.3.2.js"></script>
 
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Emotion Music Box (EMOMU)">
-<meta name="twitter:description" content="感情と音楽をシェアする新感覚アプリ">
-<meta name="twitter:image" content="<%= og_image %>">
-<meta name="twitter:url" content="https://moriappli-emotion.com">
+  <!-- ① DNS ルックアップを先行 -->
+<link rel="dns-prefetch" href="https://w.soundcloud.com">
+<link rel="dns-prefetch" href="https://api.soundcloud.com">
 
-    
-  <%= yield :head %>
+<!-- ② TLS ハンドシェイクも先行 -->
+<link rel="preconnect" href="https://w.soundcloud.com" crossorigin>
+<link rel="preconnect" href="https://api.soundcloud.com" crossorigin>
+
+<!-- ③ Widget API スクリプト自体を最優先でプリロード -->
+<link rel="preload" as="script" href="https://w.soundcloud.com/player/api.js">
 
 
-  <link rel="manifest" href="/manifest.json">
-  <link rel="icon" href="/icon.png" type="image/png">
-  <link rel="icon" href="/icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/icon.png">
+  <!-- ──────────────── 1. SoundCloud Widget API を最優先で読み込む（deferなし） ──────────────── -->
+  <script src="https://w.soundcloud.com/player/api.js"></script>
 
-  <%= stylesheet_link_tag "application", "data-turbo-track": "reload", media: "all" %>
+  <!-- ──────────────── 2. Rails の application.js を読み込む（Stimulus や他の JS） ──────────────── -->
   <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module", defer: true %>
 
-  <!-- 外部ライブラリ -->
+  <!-- ──────────────── 3. CSS & 外部ライブラリ ──────────────── -->
+  <%= stylesheet_link_tag "application", "data-turbo-track": "reload", media: "all" %>
+  <!-- Font Awesome（再生／停止アイコン用など） -->
   <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap"
-        rel="stylesheet">
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script defer src="https://w.soundcloud.com/player/api.js"></script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.8/axios.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 
   
+  <!-- GSAP, SweetAlert2, Axios, Bootstrap Icons（すべて defer で読み込む） -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.8/axios.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+  <%= yield :head %>
 </head>
 
-<body data-controller="view-switcher" data-flash-notice="<%= j flash[:notice] %>"
+<body data-controller="view-switcher global-player" data-flash-notice="<%= j flash[:notice] %>"
       data-flash-alert="<%= j flash[:alert] %>">
+  <!-- ──────────── ローディング画面（省略せず全体を載せます） ──────────── -->
   <div id="screen-cover-loading" aria-live="polite" aria-label="ローディング画面">
-  <div class="pacman-wrapper" aria-hidden="true">
-    <div class="circle-packman-1"></div>
-    <div class="loading-text">Now Loading...</div>
-  </div>
-</div>
-
-
-
-<div id="flash-message" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;padding:1em;background:#333;color:#fff;text-align:center;"></div>
-
-  <turbo-frame id="modal-container"></turbo-frame>
-  <!-- ユーザー用デバック -->
-  <!-- <p>🔍 Debug: <%= current_user.inspect %></p> -->
-
-  <div id="comment-container"></div>
-  <!-- 更新／エラー等のメッセージを出す領域 -->
-  <div id="flash" class="position-fixed top-0 start-50 translate-middle-x mt-4 zindex-tooltip"></div>
-
-  <%= yield %>
-
-<div id="loading-overlay" style="display: none;" aria-live="polite" aria-label="ローディング中">
-  <div class="pacman-wrapper" aria-hidden="true">
-    <div class="circle-packman-1"></div>
-    <div class="loading-text">Now Loading...</div>
-  </div>
-</div>
-<style>
-  #loading-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-  }
-</style>
-
-
-  <!-- ✅ 保存完了トースト(簡易型ポップアップ) -->
-  <div aria-live="polite" aria-atomic="true"
-      class="position-fixed top-0 end-0 p-3" style="z-index:1080;">
-    <div id="save-toast"
-        class="toast align-items-center text-white bg-success border-0"
-        role="alert" aria-live="assertive" aria-atomic="true">
-      <div class="d-flex">
-        <div class="toast-body">emomu を保存しました！</div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto"
-                data-bs-dismiss="toast"></button>
-      </div>
+    <div class="pacman-wrapper" aria-hidden="true">
+      <div class="circle-packman-1"></div>
+      <div class="loading-text">Now Loading...</div>
     </div>
   </div>
 
-  <!-- ✅ グローバル変数 -->
-  <script>
-    window.SOUNDCLOUD_CLIENT_ID = "<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>";
-    window.soundcloudToken      = "<%= ENV['SOUNDCLOUD_OAUTH_TOKEN'] %>";
-      window.CLOUDINARY_CLOUD_NAME = "<%= ENV['CLOUDINARY_CLOUD_NAME'] %>";
-  window.CLOUDINARY_UPLOAD_PRESET = "<%= ENV['CLOUDINARY_UPLOAD_PRESET'] %>";
-  </script>
+  <div id="flash-message" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;padding:1em;background:#333;color:#fff;text-align:center;"></div>
 
-<%= render 'shared/footer' %>
+  <turbo-frame id="modal-container"></turbo-frame>
+  <turbo-frame id="playlist-modal-container"></turbo-frame>
+
+  <!-- デバッグ領域（必要に応じてアンコメント） -->
+  <!-- <p>🔍 Debug: <%= current_user.inspect %></p> -->
+
+  <div id="comment-container"></div>
+  <div id="flash" class="position-fixed top-0 start-50 translate-middle-x mt-4 zindex-tooltip"></div>
+  <%= render "shared/flash_container" %>
+
+  <!-- ──────────── ヘッダー & コンテンツ ──────────── -->
+  <%= yield %>
+  <%= render 'shared/footer' %>
+
+  <!-- ──────────── 下部カスタムプレーヤー & 隠し iframe ──────────── -->
+
+  <!-- 1) SoundCloud の iframe（display: none で隠す） -->
+   <iframe id="hidden-sc-player" src="" style="display: none;" allow="autoplay" frameborder="no" scrolling="no" width="100%" height="166"></iframe>
+
+  <!-- ===== 下部カスタムプレーヤー（前・次だけ上段/他は一切いじらない） ===== -->
+  <div id="bottom-player"
+     class="d-none"
+     style="position: fixed; bottom: 0; left: 0; right: 0; background: #222; color: #fff; display: flex; flex-direction: column; align-items: stretch; padding: 8px 16px; z-index: 1000;">
+
+  <!-- 上段: 前の曲・次の曲ボタン -->
+<div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding-bottom: 4px;">
+<div style="flex:1; display:flex; justify-content:flex-start; align-items:center;">
+    <!-- ここにcanvasを追加！ -->
+<canvas id="waveform-anime" width="450" height="44"
+    style="margin-right:0px; display:block;"></canvas>
+    <button id="prev-track-button"
+      class="btn btn-link text-white"
+      data-action="click->global-player#prevTrack"
+      style="font-size:24px; padding:0 8px; border:none; background:none; width:48px; height:44px;">
+      <i class="fa fa-step-backward"></i>
+    </button>
+  </div>
+  <div style="flex:1.2"></div>
+  <div style="flex:1; display:flex; justify-content:flex-start;">
+    <button id="next-track-button"
+      class="btn btn-link text-white"
+      data-action="click->global-player#nextTrack"
+      style="font-size:24px; padding:0 8px; border:none; background:none; width:48px; height:44px;">
+      <i class="fa fa-step-forward"></i>
+    </button>
+  </div>
+</div>
+
+
+
+
+  <!-- 下段: プレーヤー本体 -->
+  <div style="display: flex; align-items: center;">
+    <!-- 再生／停止ボタン -->
+    <button id="play-pause-button"
+            class="btn btn-link text-white me-3"
+            data-action="click->global-player#togglePlayPause"
+            style="font-size:24px;padding:0;border:none;background:none;position:relative;width:40px;height:40px;">
+      <i id="play-pause-icon" class="fa fa-play"></i>
+      <span id="play-btn-spinner" style="display:none;position:absolute;left:0;top:0;width:40px;height:40px;">
+        <span class="loading-spinner-inline"></span>
+      </span>
+    </button>
+
+    <!-- 曲情報＋NowLoadingアニメも兼用 -->
+    <div id="track-info"
+         style="flex: 1; overflow: hidden; white-space: nowrap; display: flex; align-items: center; padding-left: 12px;">
+      <span class="loading-spinner-inline" id="loading-spinner" style="display: none; width: 24px; height: 24px; margin-right: 8px; vertical-align: middle;"></span>
+      <span id="track-title" style="font-weight: 600;">
+        <span class="neon-wave">
+          <span>N</span><span>O</span><span>W</span>
+          <span>&nbsp;</span>
+          <span>L</span><span>O</span><span>A</span><span>D</span><span>I</span><span>N</span><span>G</span>
+          <span>.</span><span>.</span><span>.</span>
+        </span>
+      </span>
+      <span class="neon-character-spinbox" style="vertical-align: middle; margin-left: 8px;">
+
+        <span class="neon-body">
+          <span class="neon-eye neon-eye-left"></span>
+          <span class="neon-eye neon-eye-right"></span>
+          <span class="neon-arm neon-arm-left"></span>
+          <span class="neon-arm neon-arm-right"></span>
+          <span class="neon-leg neon-leg-left"></span>
+          <span class="neon-leg neon-leg-right"></span>
+        </span>
+      </span>
+      <small id="track-artist" style="color: #bbb; margin-left: 8px;"></small>
+    </div>
+
+    <!-- 時間・シークバー -->
+    <div style="flex: 3; display: flex; align-items: center; gap: 8px; margin-left: 16px;">
+      <span id="current-time" style="min-width: 40px;">0:00</span>
+      <input id="seek-bar"
+             type="range"
+             min="0" max="100" value="0"
+             style="flex: 1; appearance: none; height: 4px; background: #555; border-radius: 2px; outline: none;"
+             data-action="input->global-player#seek">
+      <span id="duration" style="min-width: 40px;">0:00</span>
+    </div>
+
+    <!-- シャッフル・リピート・音量 -->
+    <div style="display: flex; align-items: center; gap: 8px; margin-left: 16px;">
+      <!-- ▼ここから追加 -->
+      <button id="shuffle-button" class="btn btn-link toggle-btn me-1"
+              data-action="click->global-player#toggleShuffle"
+              type="button"
+              style="font-size:20px; color:#fff;">
+        <i class="fa fa-random"></i>
+      </button>
+      <button id="repeat-button" class="btn btn-link toggle-btn me-2"
+              data-action="click->global-player#toggleRepeat"
+              type="button"
+              style="font-size:20px; color:#fff;">
+        <i class="fa fa-repeat"></i>
+      </button>
+      <!-- ▲ここまで追加 -->
+
+      <i class="fa fa-volume-up" style="color: #fff;"></i>
+      <input id="volume-bar"
+             type="range"
+             min="0" max="100" value="100"
+             style="width: 80px; appearance: none; height: 4px; background: #555; border-radius: 2px; outline: none;"
+             data-action="input->global-player#changeVolume">
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
+
+
+<style>
+.neon-character-spinbox {
+  display: inline-block;
+  width: 48px; height: 48px;
+  position: relative;
+}
+.neon-body {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 60% 40%, #10ffec 60%, #073753 100%);
+  box-shadow: 0 0 16px 4px #1efff7;
+  position: absolute;
+  left: 8px; top: 8px;
+  animation: neon-bounce 0.7s cubic-bezier(.5,0,.5,1) infinite alternate;
+}
+@keyframes neon-bounce {
+  0%   { top: 8px;    transform: scaleY(1); }
+  10%  { top: 0px;    transform: scaleY(1.12); }
+  15%  { top: -4px;   transform: scaleY(1.1); }
+  25%  { top: -14px;  transform: scaleY(0.94);}
+  45%  { top: -22px;  transform: scaleY(1);}
+  50%  { top: -24px;  transform: scaleY(1.08);}
+  60%  { top: -12px;  transform: scaleY(0.96);}
+  80%  { top: 0px;    transform: scaleY(1.05);}
+  100% { top: 8px;    transform: scaleY(1);}
+}
+/* 目 */
+.neon-eye {
+  position: absolute;
+  top: 12px;
+  width: 5px; height: 5px;
+  background: #fff;
+  border-radius: 50%;
+  opacity: 0.8;
+  box-shadow: 0 0 4px #0ff;
+}
+.neon-eye-left  { left: 7px; }
+.neon-eye-right { left: 16px; }
+
+/* 手 */
+.neon-arm {
+  position: absolute;
+  top: 16px; width: 10px; height: 4px;
+  background: #00ffe9;
+  border-radius: 4px;
+  box-shadow: 0 0 4px #2fffcf;
+}
+.neon-arm-left  { left: -7px;  transform: rotate(-35deg);}
+.neon-arm-right { right: -7px; transform: rotate(35deg);}
+
+/* 足 */
+.neon-leg {
+  position: absolute;
+  bottom: 0; width: 7px; height: 3px;
+  background: #00ffe9;
+  border-radius: 3px;
+  box-shadow: 0 0 4px #2fffcf;
+  /* 跳ねのタイミングで動かす */
+  animation: leg-run 0.7s linear infinite alternate;
+}
+.neon-leg-left  { left: 6px;  animation-delay: 0s; }
+.neon-leg-right { right: 6px; animation-delay: 0.35s;}
+@keyframes leg-run {
+  0%   { transform: rotate(40deg) translateY(2px);}
+  40%  { transform: rotate(-25deg) translateY(0);}
+  50%  { transform: rotate(-25deg) translateY(2px);}
+  100% { transform: rotate(40deg) translateY(2px);}
+}
+
+.loading-spinner-inline {
+  min-width: 24px;
+  width: 24px;
+  height: 24px;
+  padding-left: 2px; /* ほんの少し余白を足す */
+  box-sizing: content-box;
+}
+
+.toggle-btn.active, .toggle-btn.active i {
+  color: #10ffec !important;
+  text-shadow: 0 0 8px #10ffec, 0 0 16px #19b4f0;
+  transition: all 0.2s;
+}
+
+
+
+
+.neon-character-spinbox {
+  position: relative;  /* ← これを必ず付ける！（relativeでOK） */
+  z-index: 10001;      /* ← これも大きめにしてみる */
+}
+
+/* モーダルより前面に出す */
+/* 通常時は低い値を設定しておけば、ヘッダーやコンテンツの下に隠れます */
+#bottom-player {
+  z-index: 100;  /* 適当なヘッダーよりも下の値 */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+
+</style>

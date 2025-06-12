@@ -10,7 +10,7 @@ class User < ApplicationRecord
   has_many :bookmarked_emotion_logs, through: :bookmarks, source: :emotion_log
   has_many :comment_reactions, dependent: :destroy
   has_many :comments, dependent: :destroy
-
+  has_many :playlists, dependent: :destroy
   # バリデーション
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
   validates :password, length: { minimum: 6 }, allow_nil: true

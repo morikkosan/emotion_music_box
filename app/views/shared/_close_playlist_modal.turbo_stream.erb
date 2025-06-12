@@ -1,0 +1,25 @@
+<turbo-stream action="append" target="body">
+  <template>
+    <script>
+      (() => {
+        const modal = document.getElementById("playlist-modal");
+        if (!modal) return;
+        // Stimulus が attach されていれば close() メソッドを呼ぶ
+        if (modal.controller) {
+          modal.controller.close();
+        } else {
+          // 万が一、Stimulus controller で attach されていなければ
+          const bsModal = bootstrap.Modal.getInstance(modal);
+          if (bsModal) {
+            bsModal.hide();
+            modal.addEventListener('hidden.bs.modal', () => {
+              modal.remove();
+            }, { once: true });
+          } else {
+            modal.remove();
+          }
+        }
+      })();
+    </script>
+  </template>
+</turbo-stream>

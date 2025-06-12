@@ -1,0 +1,9 @@
+<script>
+  const toastEl = document.getElementById("save-toast");
+  if (toastEl) {
+    const body = toastEl.querySelector(".toast-body");
+    if (body) body.textContent = "<%= j message %>";
+    const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+    toast.show();
+  }
+</script>

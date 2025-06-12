@@ -24,3 +24,6 @@ js
   .mobile-only { display: block !important; }
 }
 
+body.modal-open #bottom-player {
+  z-index: 20000 !important;
+}

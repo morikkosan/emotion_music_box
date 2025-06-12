@@ -58,14 +58,14 @@
   <% end %>
 
   <!-- ロゴ -->
-  <div class="text-center mt-4">
-    <%= link_to emotion_logs_path(view: 'mobile') do %>
-      <%= image_tag "logo1.png",
-                    alt: "Emotion List Logo",
-                    class: "img-fluid neon-icon",
-                    style: "max-width:700px; width:100%;" %>
-    <% end %>
-  </div>
+<div class="text-center mt-4">
+  <%= link_to emotion_logs_path(view: 'mobile') do %>
+    <%= image_tag "logo1.png",
+                  alt: "Emotion List Logo",
+                  class: "img-fluid neon-icon",
+                  style: "max-width:400px; width:100%;" %>
+  <% end %>
+</div>
 
   <!-- キャッチコピー -->
   <% unless user_signed_in? %>
@@ -105,8 +105,8 @@
 
   <!-- メインメニュー -->
   <% if user_signed_in? %>
-    <div class="d-flex justify-content-center align-items-stretch flex-wrap mt-4"
-         style="gap: 1.2rem;">
+    <div class="main-menu d-flex justify-content-center align-items-stretch flex-wrap mt-4"
+     style="gap: 1.2rem;">
 
       <!-- ホーム -->
       <div class="mypage-item">
