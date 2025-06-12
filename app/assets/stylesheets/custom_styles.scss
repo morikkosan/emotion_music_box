@@ -730,14 +730,24 @@ h1 i.bi bi-heart-pulse {
     display: none;
   }
 }
-
-#super-search-panel {
+#playlist-sidebar, #super-search-panel {
   position: fixed;
-  top: 270px;
-  left: 20px;
+  top: 160px;      // 仮 ここは「ゲージ下端」の実ピクセルにあわせる
+  left: 0;
   width: 240px;
-  z-index: 200;
+  z-index: 10001;
+  background: #23253c;
+  border-radius: 0 12px 12px 0;
+  box-shadow: 2px 0 8px #0004;
+  padding: 16px 10px 16px 20px;
+  bottom: unset;  // bottom指定は外す
 }
+
+
+
+
+
+
 
 
 
@@ -807,3 +817,5 @@ h1 i.bi bi-heart-pulse {
   0% { transform: rotate(0deg);}
   100% { transform: rotate(360deg);}
 }
+
+
