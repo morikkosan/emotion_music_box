@@ -14839,6 +14839,9 @@ var global_player_controller_default = class extends Controller {
     this.isRepeat = false;
     this.isShuffle = false;
     this.updatePlaylistOrder();
+    this.waveformCanvas = document.getElementById("waveform-anime");
+    this.waveformCtx = this.waveformCanvas?.getContext("2d");
+    this.waveformAnimating = false;
     this.seekBar?.addEventListener("mousedown", () => {
       this.isSeeking = true;
       clearInterval(this.progressInterval);
@@ -14856,6 +14859,36 @@ var global_player_controller_default = class extends Controller {
       this.playFromExternal(playUrl);
     });
     console.log("[connect] global-player\u30B3\u30F3\u30C8\u30ED\u30FC\u30E9\u521D\u671F\u5316\u5B8C\u4E86");
+  }
+  startWaveformAnime() {
+    if (!this.waveformCtx) return;
+    this.waveformAnimating = true;
+    const ctx = this.waveformCtx;
+    const W = this.waveformCanvas.width;
+    const H = this.waveformCanvas.height;
+    let t = 0;
+    const animate = () => {
+      if (!this.waveformAnimating) return;
+      ctx.clearRect(0, 0, W, H);
+      ctx.save();
+      ctx.strokeStyle = "#10ffec";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let x = 0; x < W; x += 4) {
+        const y = H / 2 + Math.sin((x + t) / 7) * (H / 2.5) * (0.7 + 0.3 * Math.sin(x / 17 + t / 13));
+        ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+      t += 0.7;
+      requestAnimationFrame(animate);
+    };
+    animate();
+  }
+  // --- 波形アニメ停止 ---
+  stopWaveformAnime() {
+    this.waveformAnimating = false;
+    if (this.waveformCtx) this.waveformCtx.clearRect(0, 0, this.waveformCanvas.width, this.waveformCanvas.height);
   }
   // ---【ここだけStimulus actionで呼ばれる】---
   // HTML側: <button ... data-action="click->global-player#toggleShuffle" ...>
@@ -15028,6 +15061,7 @@ var global_player_controller_default = class extends Controller {
     this.playPauseIcon?.classList.replace("fa-play", "fa-pause");
     this.updateTrackIcon(this.currentTrackId, true);
     this.playStartedAt = Date.now();
+    this.startWaveformAnime();
     this.widget.getCurrentSound((sound) => {
       if (sound?.title && !this.trackTitleEl.textContent) {
         this.trackTitleEl.textContent = sound.title;
@@ -15039,11 +15073,13 @@ var global_player_controller_default = class extends Controller {
   onPause = () => {
     this.playPauseIcon?.classList.replace("fa-pause", "fa-play");
     this.updateTrackIcon(this.currentTrackId, false);
+    this.stopWaveformAnime();
   };
   // ★★★ここが自動再生・リピート・シャッフル本体です！★★★
   onFinish = () => {
     const finishedAt = Date.now();
     const playedMs = this.playStartedAt ? finishedAt - this.playStartedAt : 0;
+    this.stopWaveformAnime();
     console.log(`[onFinish] playedMs: ${playedMs} ms`);
     if (playedMs < 32e3 && playedMs > 5e3) {
       if (window.Swal) {
@@ -15151,6 +15187,18 @@ var global_player_controller_default = class extends Controller {
         this.loadAndPlay({ currentTarget: icon, stopPropagation() {
         } });
       }
+    }
+  }
+  // --- プレイリストの1曲目から再生 ---
+  playFirstTrack(event) {
+    event?.stopPropagation();
+    this.updatePlaylistOrder();
+    if (!this.playlistOrder?.length) return;
+    const firstTrackId = this.playlistOrder[0];
+    const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == firstTrackId);
+    if (icon) {
+      this.loadAndPlay({ currentTarget: icon, stopPropagation() {
+      } });
     }
   }
 };

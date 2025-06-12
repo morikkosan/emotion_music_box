@@ -100,8 +100,11 @@
      style="position: fixed; bottom: 0; left: 0; right: 0; background: #222; color: #fff; display: flex; flex-direction: column; align-items: stretch; padding: 8px 16px; z-index: 1000;">
 
   <!-- 上段: 前の曲・次の曲ボタン -->
-  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding-bottom: 4px;">
-  <div style="flex:1; display:flex; justify-content:flex-end;">
+<div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding-bottom: 4px;">
+  <div style="flex:1; display:flex; justify-content:flex-strat; align-items:center;">
+    <!-- ここにcanvasを追加！ -->
+<canvas id="waveform-anime" width="450" height="44"
+    style="margin-right:0px; display:block;"></canvas>
     <button id="prev-track-button"
       class="btn btn-link text-white"
       data-action="click->global-player#prevTrack"
@@ -109,7 +112,6 @@
       <i class="fa fa-step-backward"></i>
     </button>
   </div>
-  <!-- 中央の余白を調整（ここをflex:1.2やflex:1.5などに） -->
   <div style="flex:1.2"></div>
   <div style="flex:1; display:flex; justify-content:flex-start;">
     <button id="next-track-button"
@@ -120,6 +122,8 @@
     </button>
   </div>
 </div>
+
+
 
 
   <!-- 下段: プレーヤー本体 -->
