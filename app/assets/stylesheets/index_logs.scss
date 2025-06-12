@@ -115,17 +115,16 @@
     
   }
 
-  .dj-icon-fixed {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    z-index: 2000;
-  }
+
 
   .dj-icon-fixed img {
-    width: 220px;     /* 好みに応じて調整可能 */
+    width: 150px;     /* 好みに応じて調整可能 */
     height: auto;
     display: block;
+    position: absolute;
+    top: 20px;
+    left: 300px;
+    // z-index: 2000;
   }
 
 .mypage-item select.form-control {

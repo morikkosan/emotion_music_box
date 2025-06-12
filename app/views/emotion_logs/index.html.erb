@@ -51,6 +51,8 @@
 <% end %>
 
 <%= turbo_frame_tag "logs_list" do %>
+  <div class="scroll-content">
+
   <div class="row justify-content-center">
     <% @emotion_logs.each do |log| %>
       <div id="<%= dom_id(log) %>" class="col-md-8 mb-4">
@@ -150,6 +152,7 @@
         </div>
       </div>
     <% end %>
+    </div>
   </div>
 <% end %>
 
