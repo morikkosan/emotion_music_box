@@ -15123,6 +15123,36 @@ var global_player_controller_default = class extends Controller {
     const rem = sec % 60;
     return `${min2}:${rem.toString().padStart(2, "0")}`;
   }
+  // --- 前の曲に戻る ---
+  prevTrack(event) {
+    event?.stopPropagation();
+    this.updatePlaylistOrder();
+    if (!this.currentTrackId || !this.playlistOrder?.length) return;
+    const currentIndex = this.playlistOrder.indexOf(this.currentTrackId);
+    if (currentIndex > 0) {
+      const prevTrackId = this.playlistOrder[currentIndex - 1];
+      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == prevTrackId);
+      if (icon) {
+        this.loadAndPlay({ currentTarget: icon, stopPropagation() {
+        } });
+      }
+    }
+  }
+  // --- 次の曲に進む ---
+  nextTrack(event) {
+    event?.stopPropagation();
+    this.updatePlaylistOrder();
+    if (!this.currentTrackId || !this.playlistOrder?.length) return;
+    const currentIndex = this.playlistOrder.indexOf(this.currentTrackId);
+    if (currentIndex !== -1 && currentIndex < this.playlistOrder.length - 1) {
+      const nextTrackId = this.playlistOrder[currentIndex + 1];
+      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == nextTrackId);
+      if (icon) {
+        this.loadAndPlay({ currentTarget: icon, stopPropagation() {
+        } });
+      }
+    }
+  }
 };
 
 // app/javascript/controllers/index.js
