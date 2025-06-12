@@ -589,6 +589,8 @@ h1 i.bi bi-heart-pulse {
     0 0 20px #a100ff,
     0 0 30px #ff00cc !important;
   transition: all 0.3s ease;
+    position: fixed !important;
+  bottom: 2cm !important;
 }
 
 #record-button.btn.btn-primary.floating-btn:hover {
