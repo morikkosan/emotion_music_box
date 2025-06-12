@@ -14393,9 +14393,7 @@ var submit_handler_controller_default = class extends Controller {
       const dateInput = this.element.querySelector('input[type="date"]');
       if (dateInput) {
         dateInput.addEventListener("change", (e) => {
-          const val = e.target.value;
-          console.log("\u{1F4CC} \u9045\u5EF6bind: \u30AB\u30EC\u30F3\u30C0\u30FCchange\u30A4\u30D9\u30F3\u30C8:", val);
-          e.target.value = val;
+          e.target.value = e.target.value;
         });
       }
     }, 100);
@@ -14413,34 +14411,67 @@ var submit_handler_controller_default = class extends Controller {
       body: formData
     }).then((res) => res.json()).then((data) => {
       if (data.success) {
+        Swal.fire({
+          title: "\u6210\u529F \u{1F389}",
+          text: data.message,
+          // Rails 側で返す JSON の 'message'
+          icon: "success",
+          confirmButtonText: "OK",
+          timer: 2e3,
+          timerProgressBar: true,
+          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+          color: "#fff",
+          customClass: { popup: "cyber-popup" }
+        });
         if (form.id === "playlist-form") {
-          console.log("\u2705 playlist-form submit handler \u767A\u706B\uFF01");
           const toastEl = document.getElementById("save-toast");
           if (toastEl) {
             const body = toastEl.querySelector(".toast-body");
             if (body) body.textContent = "\u30D7\u30EC\u30A4\u30EA\u30B9\u30C8\u3092\u4F5C\u6210\u3057\u307E\u3057\u305F\uFF01";
-            const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
-            toast.show();
+            Toast.getOrCreateInstance(toastEl).show();
           }
         }
-        if (data.hp_today) {
-          setTimeout(() => {
-            window.location.href = data.redirect_url;
-          }, 1500);
-        } else {
-          alert("\u8A18\u9332\u306F\u4FDD\u5B58\u3055\u308C\u307E\u3057\u305F\u304C\u3001HP\u30B2\u30FC\u30B8\u306E\u53CD\u6620\u306F\u4ECA\u65E5\u306E\u8A18\u9332\u306E\u307F\u3067\u3059\u3002");
+        const redirect = () => {
           window.location.href = data.redirect_url;
+        };
+        if (data.hp_today) {
+          setTimeout(redirect, 1500);
+        } else {
+          Swal.fire({
+            title: "\u5B8C\u4E86",
+            text: "\u8A18\u9332\u306F\u4FDD\u5B58\u3055\u308C\u307E\u3057\u305F\u304C\u3001HP\u30B2\u30FC\u30B8\u306E\u53CD\u6620\u306F\u4ECA\u65E5\u306E\u8A18\u9332\u306E\u307F\u3067\u3059\u3002",
+            icon: "info",
+            confirmButtonText: "OK",
+            background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+            color: "#fff",
+            customClass: { popup: "cyber-popup" }
+          }).then(redirect);
         }
       } else {
-        alert("\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + (data.errors || []).join("\n"));
+        Swal.fire({
+          title: "\u30A8\u30E9\u30FC \u274C",
+          text: (data.errors || []).join("\n"),
+          icon: "error",
+          confirmButtonText: "\u9589\u3058\u308B",
+          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+          color: "#fff",
+          customClass: { popup: "cyber-popup" }
+        });
       }
     }).catch((error2) => {
       console.error("\u9001\u4FE1\u30A8\u30E9\u30FC:", error2);
-      alert("\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
+      Swal.fire({
+        title: "\u9001\u4FE1\u30A8\u30E9\u30FC",
+        text: "\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F",
+        icon: "error",
+        confirmButtonText: "\u9589\u3058\u308B",
+        background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+        color: "#fff",
+        customClass: { popup: "cyber-popup" }
+      });
     }).finally(() => {
       if (this.hasSubmitTarget) this.submitTarget.disabled = false;
-      const loader2 = document.getElementById("loading-overlay");
-      if (loader2) loader2.style.display = "none";
+      if (loader) loader.style.display = "none";
     });
   }
 };
@@ -14860,6 +14891,47 @@ var global_player_controller_default = class extends Controller {
     });
     console.log("[connect] global-player\u30B3\u30F3\u30C8\u30ED\u30FC\u30E9\u521D\u671F\u5316\u5B8C\u4E86");
   }
+  // ─────────────────────────────────────────────────────────────
+  // 「検索結果から再生」用メソッド。ここを追加！
+  playFromExternal(playUrl) {
+    this.bottomPlayer?.classList.remove("d-none");
+    if (this.widget) {
+      this.widget.unbind(SC.Widget.Events.PLAY);
+      this.widget.unbind(SC.Widget.Events.PAUSE);
+      this.widget.unbind(SC.Widget.Events.FINISH);
+      clearInterval(this.progressInterval);
+      this.widget = null;
+    }
+    this.iframeElement = this.replaceIframeWithNew();
+    if (!this.iframeElement) {
+      alert("iframe\u751F\u6210\u306B\u5931\u6557\u3057\u307E\u3057\u305F");
+      return;
+    }
+    this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(playUrl)}&auto_play=true`;
+    this.resetPlayerUI();
+    this.iframeElement.onload = () => {
+      setTimeout(() => {
+        this.widget = SC.Widget(this.iframeElement);
+        this.widget.bind(SC.Widget.Events.READY, () => {
+          this.widget.getCurrentSound((sound) => {
+            if (sound && sound.title) {
+              this.trackTitleEl.textContent = sound.title;
+              this.trackArtistEl.textContent = sound.user?.username ? `\u2014 ${sound.user.username}` : "";
+            } else {
+              this.trackTitleEl.textContent = "\u30BF\u30A4\u30C8\u30EB\u4E0D\u660E";
+              this.trackArtistEl.textContent = "";
+            }
+            this.hideLoadingUI();
+          });
+          this.bindWidgetEvents();
+          this.widget.play();
+          this.startProgressTracking();
+          this.changeVolume({ target: this.volumeBar });
+        });
+      }, 100);
+    };
+  }
+  // ─────────────────────────────────────────────────────────────
   startWaveformAnime() {
     if (!this.waveformCtx) return;
     this.waveformAnimating = true;
@@ -14885,28 +14957,28 @@ var global_player_controller_default = class extends Controller {
     };
     animate();
   }
-  // --- 波形アニメ停止 ---
   stopWaveformAnime() {
     this.waveformAnimating = false;
-    if (this.waveformCtx) this.waveformCtx.clearRect(0, 0, this.waveformCanvas.width, this.waveformCanvas.height);
+    if (this.waveformCtx) {
+      this.waveformCtx.clearRect(
+        0,
+        0,
+        this.waveformCanvas.width,
+        this.waveformCanvas.height
+      );
+    }
   }
-  // ---【ここだけStimulus actionで呼ばれる】---
-  // HTML側: <button ... data-action="click->global-player#toggleShuffle" ...>
   toggleShuffle(e) {
     this.isShuffle = !this.isShuffle;
-    const btn = document.getElementById("shuffle-button");
-    if (btn) btn.classList.toggle("active", this.isShuffle);
+    document.getElementById("shuffle-button")?.classList.toggle("active", this.isShuffle);
     this.updatePlaylistOrder();
     console.log("[toggleShuffle]", this.isShuffle);
   }
-  // HTML側: <button ... data-action="click->global-player#toggleRepeat" ...>
   toggleRepeat(e) {
     this.isRepeat = !this.isRepeat;
-    const btn = document.getElementById("repeat-button");
-    if (btn) btn.classList.toggle("active", this.isRepeat);
+    document.getElementById("repeat-button")?.classList.toggle("active", this.isRepeat);
     console.log("[toggleRepeat]", this.isRepeat);
   }
-  // 曲順リスト取得
   updatePlaylistOrder() {
     this.playlistOrder = this.trackImageTargets.map((img) => img.dataset.trackId);
     if (this.isShuffle) this.shufflePlaylistOrder();
@@ -14917,20 +14989,19 @@ var global_player_controller_default = class extends Controller {
       [this.playlistOrder[i], this.playlistOrder[j]] = [this.playlistOrder[j], this.playlistOrder[i]];
     }
   }
-  // ローディングUI切り替え
   showLoadingUI() {
-    if (this.playPauseIcon) this.playPauseIcon.style.display = "none";
-    if (this.loadingArea) this.loadingArea.style.display = "inline-flex";
-    if (this.neonCharacter) this.neonCharacter.style.display = "inline-block";
+    this.playPauseIcon && (this.playPauseIcon.style.display = "none");
+    this.loadingArea && (this.loadingArea.style.display = "inline-flex");
+    this.neonCharacter && (this.neonCharacter.style.display = "inline-block");
     if (this.trackTitleEl) {
       this.trackTitleEl.innerHTML = `
         <span class="neon-wave">
           <span>N</span><span>O</span><span>W</span>
           <span>&nbsp;</span>
-          <span>L</span><span>O</span><span>A</span><span>D</span><span>I</span><span>N</span><span>G</span>
+          <span>L</span><span>O</span><span>A</span><span>D</span>
+          <span>I</span><span>N</span><span>G</span>
           <span>.</span><span>.</span><span>.</span>
-        </span>
-      `;
+        </span>`;
       this.trackTitleEl.style.display = "block";
     }
     if (this.trackArtistEl) {
@@ -14939,17 +15010,17 @@ var global_player_controller_default = class extends Controller {
     }
   }
   hideLoadingUI() {
-    if (this.playPauseIcon) this.playPauseIcon.style.display = "";
-    if (this.loadingArea) this.loadingArea.style.display = "none";
-    if (this.neonCharacter) this.neonCharacter.style.display = "none";
-    if (this.trackTitleEl) this.trackTitleEl.style.display = "";
-    if (this.trackArtistEl) this.trackArtistEl.style.display = "";
+    this.playPauseIcon && (this.playPauseIcon.style.display = "");
+    this.loadingArea && (this.loadingArea.style.display = "none");
+    this.neonCharacter && (this.neonCharacter.style.display = "none");
+    this.trackTitleEl && (this.trackTitleEl.style.display = "");
+    this.trackArtistEl && (this.trackArtistEl.style.display = "");
   }
   resetPlayerUI() {
     console.log("[resetPlayerUI] UI\u521D\u671F\u5316\u3057\u307E\u3059");
-    if (this.currentTimeEl) this.currentTimeEl.textContent = "0:00";
-    if (this.durationEl) this.durationEl.textContent = "0:00";
-    if (this.seekBar) this.seekBar.value = 0;
+    this.currentTimeEl && (this.currentTimeEl.textContent = "0:00");
+    this.durationEl && (this.durationEl.textContent = "0:00");
+    this.seekBar && (this.seekBar.value = 0);
     if (this.hasPlayIconTarget) {
       this.playIconTargets.forEach((icn) => {
         icn.classList.add("fa-play");
@@ -14962,20 +15033,18 @@ var global_player_controller_default = class extends Controller {
   }
   replaceIframeWithNew() {
     const oldIframe = document.getElementById("hidden-sc-player");
-    if (oldIframe) {
-      const parent = oldIframe.parentNode;
-      const newIframe = document.createElement("iframe");
-      newIframe.id = "hidden-sc-player";
-      newIframe.style.display = "none";
-      newIframe.allow = "autoplay";
-      newIframe.frameBorder = "no";
-      newIframe.scrolling = "no";
-      newIframe.width = "100%";
-      newIframe.height = "166";
-      parent.replaceChild(newIframe, oldIframe);
-      return newIframe;
-    }
-    return null;
+    if (!oldIframe) return null;
+    const parent = oldIframe.parentNode;
+    const newIframe = document.createElement("iframe");
+    newIframe.id = "hidden-sc-player";
+    newIframe.style.display = "none";
+    newIframe.allow = "autoplay";
+    newIframe.frameBorder = "no";
+    newIframe.scrolling = "no";
+    newIframe.width = "100%";
+    newIframe.height = "166";
+    parent.replaceChild(newIframe, oldIframe);
+    return newIframe;
   }
   loadAndPlay(event) {
     event.stopPropagation();
@@ -14985,7 +15054,7 @@ var global_player_controller_default = class extends Controller {
     const img = this.trackImageTargets.find((t) => t.dataset.trackId == newTrackId);
     const trackUrl = img?.dataset.playUrl;
     if (!trackUrl) {
-      console.warn("[loadAndPlay] trackUrl\u304C\u3042\u308A\u307E\u305B\u3093\uFF01", { img });
+      console.warn("[loadAndPlay] trackUrl missing", { img });
       return;
     }
     this.resetPlayerUI();
@@ -15003,26 +15072,23 @@ var global_player_controller_default = class extends Controller {
       alert("iframe\u751F\u6210\u306B\u5931\u6557\u3057\u307E\u3057\u305F");
       return;
     }
-    const playerUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&auto_play=true`;
-    this.iframeElement.src = playerUrl;
+    this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&auto_play=true`;
     this.iframeElement.onload = () => {
       setTimeout(() => {
         this.widget = SC.Widget(this.iframeElement);
         this.widget.bind(SC.Widget.Events.READY, () => {
           const trySetTitle = (retry = 0) => {
             this.widget.getCurrentSound((sound) => {
-              if (sound && sound.title) {
+              if (sound?.title) {
                 this.trackTitleEl.textContent = sound.title;
                 this.trackArtistEl.textContent = sound.user?.username ? `\u2014 ${sound.user.username}` : "";
                 this.hideLoadingUI();
+              } else if (retry < 5) {
+                setTimeout(() => trySetTitle(retry + 1), 250);
               } else {
-                if (retry < 5) {
-                  setTimeout(() => trySetTitle(retry + 1), 250);
-                } else {
-                  this.trackTitleEl.textContent = "\u30BF\u30A4\u30C8\u30EB\u4E0D\u660E";
-                  this.trackArtistEl.textContent = "";
-                  this.hideLoadingUI();
-                }
+                this.trackTitleEl.textContent = "\u30BF\u30A4\u30C8\u30EB\u4E0D\u660E";
+                this.trackArtistEl.textContent = "";
+                this.hideLoadingUI();
               }
             });
           };
@@ -15047,9 +15113,9 @@ var global_player_controller_default = class extends Controller {
   seek(event) {
     if (!this.widget) return;
     const percent = event.target.value;
-    this.widget.getDuration((duration) => {
-      if (!duration) return;
-      this.widget.seekTo(percent / 100 * duration);
+    this.widget.getDuration((dur) => {
+      if (!dur) return;
+      this.widget.seekTo(percent / 100 * dur);
     });
   }
   changeVolume(event) {
@@ -15075,12 +15141,10 @@ var global_player_controller_default = class extends Controller {
     this.updateTrackIcon(this.currentTrackId, false);
     this.stopWaveformAnime();
   };
-  // ★★★ここが自動再生・リピート・シャッフル本体です！★★★
   onFinish = () => {
     const finishedAt = Date.now();
     const playedMs = this.playStartedAt ? finishedAt - this.playStartedAt : 0;
     this.stopWaveformAnime();
-    console.log(`[onFinish] playedMs: ${playedMs} ms`);
     if (playedMs < 32e3 && playedMs > 5e3) {
       if (window.Swal) {
         Swal.fire({
@@ -15100,27 +15164,25 @@ var global_player_controller_default = class extends Controller {
     if (this.isRepeat) {
       const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == this.currentTrackId);
       if (icon) {
-        setTimeout(() => this.loadAndPlay({ currentTarget: icon, stopPropagation() {
+        return setTimeout(() => this.loadAndPlay({ currentTarget: icon, stopPropagation() {
         } }), 300);
-        return;
       }
     }
-    const currentIndex = this.playlistOrder.indexOf(this.currentTrackId);
-    const nextTrackId = this.playlistOrder[currentIndex + 1];
-    if (nextTrackId) {
-      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == nextTrackId);
+    const curIdx = this.playlistOrder.indexOf(this.currentTrackId);
+    const nextId = this.playlistOrder[curIdx + 1];
+    if (nextId) {
+      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == nextId);
       if (icon) {
-        setTimeout(() => this.loadAndPlay({ currentTarget: icon, stopPropagation() {
+        return setTimeout(() => this.loadAndPlay({ currentTarget: icon, stopPropagation() {
         } }), 300);
-        return;
       }
     }
     this.bottomPlayer?.classList.add("d-none");
   };
-  updateTrackIcon(trackId, playing) {
+  updateTrackIcon(trackId2, playing) {
     if (!this.hasPlayIconTarget) return;
     this.playIconTargets.forEach((icn) => {
-      if (icn.dataset.trackId == trackId) {
+      if (icn.dataset.trackId == trackId2) {
         icn.classList.toggle("fa-play", !playing);
         icn.classList.toggle("fa-pause", playing);
       } else {
@@ -15145,61 +15207,48 @@ var global_player_controller_default = class extends Controller {
       this.widget.getPosition((pos) => {
         this.widget.getDuration((dur) => {
           if (!dur) return;
-          if (this.seekBar) this.seekBar.value = pos / dur * 100;
-          if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(pos);
-          if (this.durationEl) this.durationEl.textContent = this.formatTime(dur);
+          this.seekBar && (this.seekBar.value = pos / dur * 100);
+          this.currentTimeEl && (this.currentTimeEl.textContent = this.formatTime(pos));
+          this.durationEl && (this.durationEl.textContent = this.formatTime(dur));
         });
       });
     }, 500);
   }
   formatTime(ms) {
-    if (!ms) return "0:00";
-    const sec = Math.floor(ms / 1e3);
+    const sec = Math.floor((ms || 0) / 1e3);
     const min2 = Math.floor(sec / 60);
     const rem = sec % 60;
     return `${min2}:${rem.toString().padStart(2, "0")}`;
   }
-  // --- 前の曲に戻る ---
   prevTrack(event) {
     event?.stopPropagation();
     this.updatePlaylistOrder();
     if (!this.currentTrackId || !this.playlistOrder?.length) return;
-    const currentIndex = this.playlistOrder.indexOf(this.currentTrackId);
-    if (currentIndex > 0) {
-      const prevTrackId = this.playlistOrder[currentIndex - 1];
-      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == prevTrackId);
-      if (icon) {
-        this.loadAndPlay({ currentTarget: icon, stopPropagation() {
-        } });
-      }
+    const idx = this.playlistOrder.indexOf(this.currentTrackId);
+    if (idx > 0) {
+      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == this.playlistOrder[idx - 1]);
+      icon && this.loadAndPlay({ currentTarget: icon, stopPropagation() {
+      } });
     }
   }
-  // --- 次の曲に進む ---
   nextTrack(event) {
     event?.stopPropagation();
     this.updatePlaylistOrder();
     if (!this.currentTrackId || !this.playlistOrder?.length) return;
-    const currentIndex = this.playlistOrder.indexOf(this.currentTrackId);
-    if (currentIndex !== -1 && currentIndex < this.playlistOrder.length - 1) {
-      const nextTrackId = this.playlistOrder[currentIndex + 1];
-      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == nextTrackId);
-      if (icon) {
-        this.loadAndPlay({ currentTarget: icon, stopPropagation() {
-        } });
-      }
+    const idx = this.playlistOrder.indexOf(this.currentTrackId);
+    if (idx < this.playlistOrder.length - 1) {
+      const icon = this.playIconTargets.find((icn) => icn.dataset - trackId == this.playlistOrder[idx + 1]);
+      icon && this.loadAndPlay({ currentTarget: icon, stopPropagation() {
+      } });
     }
   }
-  // --- プレイリストの1曲目から再生 ---
   playFirstTrack(event) {
     event?.stopPropagation();
     this.updatePlaylistOrder();
     if (!this.playlistOrder?.length) return;
-    const firstTrackId = this.playlistOrder[0];
-    const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == firstTrackId);
-    if (icon) {
-      this.loadAndPlay({ currentTarget: icon, stopPropagation() {
-      } });
-    }
+    const icon = this.playIconTargets.find((icn) => icn.dataset - trackId == this.playlistOrder[0]);
+    icon && this.loadAndPlay({ currentTarget: icon, stopPropagation() {
+    } });
   }
 };
 

@@ -101,7 +101,7 @@
 
   <!-- 上段: 前の曲・次の曲ボタン -->
 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding-bottom: 4px;">
-  <div style="flex:1; display:flex; justify-content:flex-strat; align-items:center;">
+<div style="flex:1; display:flex; justify-content:flex-start; align-items:center;">
     <!-- ここにcanvasを追加！ -->
 <canvas id="waveform-anime" width="450" height="44"
     style="margin-right:0px; display:block;"></canvas>
@@ -290,15 +290,22 @@
   transition: all 0.2s;
 }
 
-#track-info {
-  height: 60px;  /* キャラがはみ出ない十分な高さ（今は48pxキャラ+余白）*/
-  align-items: center; /* flexならこれで中央寄せ */
-}
+
 
 
 .neon-character-spinbox {
   position: relative;  /* ← これを必ず付ける！（relativeでOK） */
   z-index: 10001;      /* ← これも大きめにしてみる */
+}
+
+/* モーダルより前面に出す */
+/* 通常時は低い値を設定しておけば、ヘッダーやコンテンツの下に隠れます */
+#bottom-player {
+  z-index: 100;  /* 適当なヘッダーよりも下の値 */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
 }
 
 

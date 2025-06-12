@@ -68,23 +68,70 @@ class EmotionLogsController < ApplicationController
     end
   end
 
+  
   def create
-    @emotion_log = current_user.emotion_logs.build(emotion_log_params)
+    @emotion_log  = current_user.emotion_logs.build(emotion_log_params)
     hp_percentage = calculate_hp(@emotion_log.emotion)
-    is_today = @emotion_log.date.to_date == Date.current
+    is_today      = @emotion_log.date.to_date == Date.current
 
     if @emotion_log.save
-      render json: {
-        success: true,
-        message: '記録が保存されました',
-        redirect_url: emotion_logs_path,
-        hpPercentage: hp_percentage,
-        hp_today: is_today
-      }
+      respond_to do |format|
+        # ① JSON リクエストの場合
+        format.json do
+          render json: {
+            success:      true,
+            message:      '記録が保存されました',
+            redirect_url: emotion_logs_path,
+            hpPercentage: hp_percentage,
+            hp_today:     is_today
+          }
+        end
+
+        # ② Turbo Stream リクエストの場合
+        format.turbo_stream do
+          flash.now[:notice] = '記録が保存されました'
+
+          render turbo_stream: [
+            # フラッシュ領域を置き換え
+            turbo_stream.replace(
+              'flash-container',
+              partial: 'shared/flash',
+              locals: { notice: flash.now[:notice], alert: flash.now[:alert] }
+            ),
+            # 一覧ページへリダイレクト
+            turbo_stream.redirect_to(emotion_logs_path)
+          ]
+        end
+
+        # ③ 通常の HTML リクエストの場合
+        format.html do
+          redirect_to emotion_logs_path, notice: '記録が保存されました'
+        end
+      end
     else
-      render json: { success: false, errors: @emotion_log.errors.full_messages }, status: :unprocessable_entity
+      respond_to do |format|
+        format.json do
+          render json: { success: false, errors: @emotion_log.errors.full_messages },
+                status: :unprocessable_entity
+        end
+
+        format.turbo_stream do
+          # バリデーションエラー時はフォーム部分を差し替え
+          render turbo_stream: turbo_stream.replace(
+            'form-container',
+            partial: 'emotion_logs/form',
+            locals: { emotion_log: @emotion_log }
+          ), status: :unprocessable_entity
+        end
+
+        format.html do
+          flash.now[:alert] = @emotion_log.errors.full_messages.join(', ')
+          render :new, status: :unprocessable_entity
+        end
+      end
     end
   end
+
 
   def edit
     @emotion_log = EmotionLog.find(params[:id])
