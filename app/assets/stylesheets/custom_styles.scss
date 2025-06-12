@@ -220,12 +220,21 @@ h1 i.bi bi-heart-pulse {
   }
 }
 /* ページネーションのスタイル */
-/* ページネーション全体のデザイン */
 .pagination {
+  position: fixed;      /* 画面全体で固定 */
+  left:65%;            /* 水平中央を基準 */
+  bottom: 70px;         /* 下部プレーヤーの高さ＋ちょい上 */
+  transform: translateX(120px);  /* 必要に応じて横にズラす */
+  z-index: 11000;       /* 他より高く */
+  background: #222a;
+  border-radius: 16px;
+  padding: 12px 10px;
   display: flex;
-  justify-content: center;
-  padding: 10px 0;
+  box-shadow: 0 2px 8px #0007;
 }
+
+
+
 
 /* 各ページリンクのスタイル */
 .page-item .page-link {
