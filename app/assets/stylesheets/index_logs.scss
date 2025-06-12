@@ -257,3 +257,17 @@
   border-radius: 4px;
   flex-shrink: 0;
 }
+
+#playlist-sidebar {
+  position: sticky;
+  top: 260px; // ←ここの数値だけ合わせればOK！
+  left: 0;
+  width: 240px;
+  z-index: 10001;
+  background: #23253c;
+  border-radius: 0 12px 12px 0;
+  box-shadow: 2px 0 8px #0004;
+  padding: 16px 10px 16px 20px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
