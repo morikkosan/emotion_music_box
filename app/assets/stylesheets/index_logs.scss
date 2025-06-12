@@ -262,7 +262,7 @@
   top: 260px; // ←ここの数値だけ合わせればOK！
   left: 0;
   width: 240px;
-  z-index: 10001;
+  z-index: 10;    /* ページネーションの z-index がデフォルト (auto/0) なら、このくらいで十分 */
   background: #23253c;
   border-radius: 0 12px 12px 0;
   box-shadow: 2px 0 8px #0004;
