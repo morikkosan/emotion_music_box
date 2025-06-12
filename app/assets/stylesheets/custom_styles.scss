@@ -261,7 +261,7 @@ h1 i.bi bi-heart-pulse {
 /* 📌 ネオンマゼンタの未来感デザイン */
 /* 📌 迫力のある白文字＋ネオンマゼンタの未来デザイン */
 .today_mental_text {
-  font-size: 35px; /* 🎯 文字を大きくして迫力UP */
+  font-size: 25px; /* 🎯 文字を大きくして迫力UP */
   font-family: "Orbitron", "Rajdhani", "Bebas Neue", "Michroma", sans-serif; /* 🎯 未来感のあるフォント */
   font-weight: 900; /* 🎯 極太で迫力を出す */
   position: absolute; /* 絶対配置 */
@@ -741,6 +741,16 @@ h1 i.bi bi-heart-pulse {
   box-shadow: 2px 0 8px #0004;
   padding: 16px 10px 16px 20px;
   bottom: unset;  // bottom指定は外す
+}
+
+.scroll-content {
+  height: calc(100vh - 320px); /* ←ヘッダー・ゲージ・フッター分を引く。要微調整！ */
+  overflow-y: auto;
+    padding-bottom: 50px;  // ここを追加
+
+  z-index: 10002;
+  /* 横幅を必要ならwidth: 100%; もOK */
+  /* 背景色や余白など必要に応じて追加 */
 }
 
 
