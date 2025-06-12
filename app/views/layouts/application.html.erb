@@ -96,33 +96,33 @@
 
   <!-- ===== 下部カスタムプレーヤー（前・次だけ上段/他は一切いじらない） ===== -->
   <div id="bottom-player"
-       class="d-none"
-       style="position: fixed; bottom: 0; left: 0; right: 0; background: #222; color: #fff; display: flex; flex-direction: column; align-items: stretch; padding: 8px 16px; z-index: 1000;">
-    <!-- ===== 上段: 前の曲・次の曲ボタンを“中央寄せ”で配置 ===== -->
-  <!-- 上段のボタン配置部分のみ -->
-<div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding-bottom: 4px;">
-  <div style="flex:1; display:flex; justify-content:flex-end;">
-    <button id="prev-track-button"
-      class="btn btn-link text-white"
-      data-action="click->global-player#prevTrack"
-      style="font-size:24px; padding:0 8px; border:none; background:none; width:48px; height:44px;">
-      <i class="fa fa-step-backward"></i>
-    </button>
-  </div>
-  <div style="flex:2"></div> <!-- 真ん中を広めの空白に -->
-  <div style="flex:1; display:flex; justify-content:flex-start;">
-    <button id="next-track-button"
-      class="btn btn-link text-white"
-      data-action="click->global-player#nextTrack"
-      style="font-size:24px; padding:0 8px; border:none; background:none; width:48px; height:44px;">
-      <i class="fa fa-step-forward"></i>
-    </button>
-  </div>
-</div>
+     class="d-none"
+     style="position: fixed; bottom: 0; left: 0; right: 0; background: #222; color: #fff; display: flex; flex-direction: column; align-items: stretch; padding: 8px 16px; z-index: 1000;">
 
-  <!-- ────── 下段：以下は完全にあなたのまま ────── -->
+  <!-- 上段: 前の曲・次の曲ボタン -->
+  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding-bottom: 4px;">
+    <div style="flex:1; display:flex; justify-content:flex-end;">
+      <button id="prev-track-button"
+        class="btn btn-link text-white"
+        data-action="click->global-player#prevTrack"
+        style="font-size:24px; padding:0 8px; border:none; background:none; width:48px; height:44px;">
+        <i class="fa fa-step-backward"></i>
+      </button>
+    </div>
+    <div style="flex:2"></div>
+    <div style="flex:1; display:flex; justify-content:flex-start;">
+      <button id="next-track-button"
+        class="btn btn-link text-white"
+        data-action="click->global-player#nextTrack"
+        style="font-size:24px; padding:0 8px; border:none; background:none; width:48px; height:44px;">
+        <i class="fa fa-step-forward"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- 下段: プレーヤー本体 -->
   <div style="display: flex; align-items: center;">
-    <!-- 再生／停止ボタン（元のまま！） -->
+    <!-- 再生／停止ボタン -->
     <button id="play-pause-button"
             class="btn btn-link text-white me-3"
             data-action="click->global-player#togglePlayPause"
@@ -132,7 +132,8 @@
         <span class="loading-spinner-inline"></span>
       </span>
     </button>
-    <!-- 曲情報・track-info・seek-bar・volume等…は全部そのまま -->
+
+    <!-- 曲情報＋NowLoadingアニメも兼用 -->
     <div id="track-info"
          style="flex: 1; overflow: hidden; white-space: nowrap; display: flex; align-items: center; padding-left: 12px;">
       <span class="loading-spinner-inline" id="loading-spinner" style="display: none; width: 24px; height: 24px; margin-right: 8px; vertical-align: middle;"></span>
@@ -156,6 +157,8 @@
       </span>
       <small id="track-artist" style="color: #bbb; margin-left: 8px;"></small>
     </div>
+
+    <!-- 時間・シークバー -->
     <div style="flex: 3; display: flex; align-items: center; gap: 8px; margin-left: 16px;">
       <span id="current-time" style="min-width: 40px;">0:00</span>
       <input id="seek-bar"
@@ -165,7 +168,24 @@
              data-action="input->global-player#seek">
       <span id="duration" style="min-width: 40px;">0:00</span>
     </div>
+
+    <!-- シャッフル・リピート・音量 -->
     <div style="display: flex; align-items: center; gap: 8px; margin-left: 16px;">
+      <!-- ▼ここから追加 -->
+      <button id="shuffle-button" class="btn btn-link toggle-btn me-1"
+              data-action="click->global-player#toggleShuffle"
+              type="button"
+              style="font-size:20px; color:#fff;">
+        <i class="fa fa-random"></i>
+      </button>
+      <button id="repeat-button" class="btn btn-link toggle-btn me-2"
+              data-action="click->global-player#toggleRepeat"
+              type="button"
+              style="font-size:20px; color:#fff;">
+        <i class="fa fa-repeat"></i>
+      </button>
+      <!-- ▲ここまで追加 -->
+
       <i class="fa fa-volume-up" style="color: #fff;"></i>
       <input id="volume-bar"
              type="range"
@@ -176,94 +196,6 @@
   </div>
 </div>
 
-  <!-- 再生／停止ボタン -->
-<button id="play-pause-button"
-          class="btn btn-link text-white me-3"
-          data-action="click->global-player#togglePlayPause"
-          style="font-size:24px;padding:0;border:none;background:none;position:relative;width:40px;height:40px;">
-    <i id="play-pause-icon" class="fa fa-play"></i>
-    <!-- ローディング時だけ表示 -->
-    <span id="play-btn-spinner" style="display:none;position:absolute;left:0;top:0;width:40px;height:40px;">
-      <!-- ここにぐるぐるスピナーやキャラSVGなどを入れてもOK -->
-      <span class="loading-spinner-inline"></span>
-    </span>
-  </button>
-
-  <!-- 曲情報（タイトル・アーティスト） -->
-  <!-- ↓下部カスタムプレーヤーUIの曲情報部分だけ修正版（ポイントは★印） -->
-<div id="track-info"
-     style="flex: 1; overflow: hidden; white-space: nowrap; display: flex; align-items: center; padding-left: 12px;">
-  <!-- スピナー（左端） -->
-  <span class="loading-spinner-inline" id="loading-spinner" style="display: none; width: 24px; height: 24px; margin-right: 8px; vertical-align: middle;"></span>
-  <!-- Now Loading... -->
-  <span id="track-title" style="font-weight: 600;">
-    <!-- JSで波アニメ文字をinnerHTMLに入れる想定 -->
-    <span class="neon-wave">
-      <span>N</span><span>O</span><span>W</span>
-      <span>&nbsp;</span>
-      <span>L</span><span>O</span><span>A</span><span>D</span><span>I</span><span>N</span><span>G</span>
-      <span>.</span><span>.</span><span>.</span>
-    </span>
-  </span>
-  <!-- キャラクター -->
-  <span class="neon-character-spinbox" style="vertical-align: middle; margin-left: 8px;">
-    <span class="neon-body">
-      <span class="neon-eye neon-eye-left"></span>
-      <span class="neon-eye neon-eye-right"></span>
-      <span class="neon-arm neon-arm-left"></span>
-      <span class="neon-arm neon-arm-right"></span>
-      <span class="neon-leg neon-leg-left"></span>
-      <span class="neon-leg neon-leg-right"></span>
-    </span>
-  </span>
-  <!-- アーティスト名（曲が来た時用） -->
-  <small id="track-artist" style="color: #bbb; margin-left: 8px;"></small>
-</div>
-
-
-
-    <!-- シーク／時間表示 -->
-    <div style="flex: 3; display: flex; align-items: center; gap: 8px; margin-left: 16px;">
-      <!-- 経過時間 -->
-      <span id="current-time" style="min-width: 40px;">0:00</span>
-
-      <!-- シークバー -->
-      <input id="seek-bar"
-             type="range"
-             min="0" max="100" value="0"
-             style="
-               flex: 1;
-               appearance: none;
-               height: 4px;
-               background: #555;
-               border-radius: 2px;
-               outline: none;
-             "
-             data-action="input->global-player#seek"
-      >
-
-      <!-- 総時間 -->
-      <span id="duration" style="min-width: 40px;">0:00</span>
-    </div>
-
-    <!-- 音量スライダー -->
-    <div style="display: flex; align-items: center; gap: 8px; margin-left: 16px;">
-      <i class="fa fa-volume-up" style="color: #fff;"></i>
-      <input id="volume-bar"
-             type="range"
-             min="0" max="100" value="100"
-             style="
-               width: 80px;
-               appearance: none;
-               height: 4px;
-               background: #555;
-               border-radius: 2px;
-               outline: none;
-             "
-             data-action="input->global-player#changeVolume"
-      >
-    </div>
-  </div>
 </body>
 </html>
 
@@ -344,4 +276,11 @@
   padding-left: 2px; /* ほんの少し余白を足す */
   box-sizing: content-box;
 }
+
+.toggle-btn.active, .toggle-btn.active i {
+  color: #10ffec !important;
+  text-shadow: 0 0 8px #10ffec, 0 0 16px #19b4f0;
+  transition: all 0.2s;
+}
+
 </style>
