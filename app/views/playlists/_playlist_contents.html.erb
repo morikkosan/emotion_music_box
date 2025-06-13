@@ -1,75 +1,204 @@
-<%# ────────────────────────────────────── %>
-<%# パーシャル: プレイリスト内の曲一覧を表示する %>
-<%# 呼び出し元からは「playlist」というローカル変数を受け取る %>
-<%# ────────────────────────────────────── %>
-
-<% if playlist.playlist_items.empty? %>
-  <p class="text-center mt-4">まだ曲が追加されていません。</p>
+<% if @playlist.playlist_items.empty? %>
+  <p>まだ曲が追加されていません。</p>
 <% else %>
-  <ul class="list-unstyled mt-3 d-flex flex-column align-items-center" id="<%= dom_id(playlist, :contents) %>">
-    <% playlist.playlist_items.includes(:emotion_log).each do |item| %>
-      <% log = item.emotion_log %>
 
-      <li class="mb-4 w-100">
-        <div class="d-flex justify-content-center align-items-start mx-auto pmx_playlist_row">
-          <!-- 左側ブロック：曲タイトル＋プレーヤー -->
-          <div class="pmx_song_info">
-            <strong>🎵 <%= log.track_name %></strong>
-            <% if log.music_url&.include?("soundcloud.com") %>
-              <iframe
-                class="pmx_soundcloud_player mt-2"
-                src="https://w.soundcloud.com/player/?url=<%= CGI.escape(log.music_url) %>&auto_play=false&visual=false&show_user=false&show_comments=false"
-                allow="autoplay"
-                frameborder="no"
-                scrolling="no"
-                height="66">
-              </iframe>
-            <% else %>
-              <p class="text-muted mt-2">SoundCloud URL が正しくありません。</p>
-            <% end %>
-          </div>
+  <!-- ★ 親要素にコントローラをアタッチ -->
+  <div class="playlist-container" data-controller="global-player">
 
-          <!-- 右側ブロック：削除ボタン -->
-          <div class="pmx_remove_button">
-            <%= button_to "削除",
-                  playlist_playlist_item_path(playlist, item),
-                  method: :delete,
-                  data: {
-                    turbo_confirm: "本当にこの曲をプレイリストから削除しますか？",
-                    turbo_frame: dom_id(playlist, :contents)
-                  },
-                  class: "btn btn-danger btn-sm" %>
+    <!-- ★ 1曲目から再生ボタン（縦中央・左端に固定） -->
+    <div class="playlist-playfirst-fixed">
+      <button
+        type="button"
+        class="btn neon_show neon_show-back"
+        data-action="click->global-player#playFirstTrack"
+        style="display: flex; align-items: center; gap: .7em;">
+        <i class="fa fa-play"></i>
+        1曲目から再生
+      </button>
+    </div>
+
+    <!-- ★ プレイリスト本体 -->
+    <ul
+      id="<%= dom_id(@playlist, :contents) %>"
+      class="list-unstyled mt-3"
+      style="width:100%; max-width:700px; margin:auto;"
+    >
+      <% @playlist.playlist_items.includes(:emotion_log).each do |item| %>
+        <% log = item.emotion_log %>
+        <li class="mb-4" style="max-width:600px; width:100%; margin:0 auto;">
+          <div class="pmx_playlist_row">
+            <div class="pmx_cover_wrapper">
+              <%= image_tag(
+                    log.music_art_url || "placeholder.png",
+                    alt: log.track_name,
+                    class: "rounded shadow pmx_cover_img",
+                    data: {
+                      "global-player-target" => "trackImage",
+                      "track-id"             => log.id,
+                      "play-url"             => log.music_url
+                    }
+                  ) %>
+              <i class="fa fa-play play-overlay-icon"
+                 data-action="click->global-player#loadAndPlay"
+                 data-global-player-target="playIcon"
+                 data-track-id="<%= log.id %>"
+                 data-play-url="<%= log.music_url %>"></i>
+            </div>
+            <div class="pmx_song_info">
+              <div class="fw-bold neon-btn-title" style="font-size:1.1rem;">
+                <%= log.track_name %>
+              </div>
+              <div class="text-muted small mt-1">
+                投稿: <%= log.user&.name || "匿名" %>
+              </div>
+            </div>
+            <div class="pmx_remove_button">
+              <%= button_to "削除",
+                    playlist_playlist_item_path(@playlist, item),
+                    method: :delete,
+                    data: {
+                      turbo_confirm: "本当にこの曲をプレイリストから削除しますか？",
+                      turbo_frame: dom_id(@playlist, :contents)
+                    },
+                    class: "btn btn-danger btn-sm" %>
+            </div>
           </div>
-        </div>
+        </li>
+      <% end %>
+
+      <!-- ★ 戻る＆削除ボタン -->
+      <li style="max-width:600px; width:100%; margin:0 auto; display:flex; justify-content:center; gap:1.3rem; z-index:2000;">
+        <%= link_to "← プレイリスト一覧に戻る",
+                    bookmarks_emotion_logs_path(view: 'mobile'),
+                    class: "neon_show neon_show-back btn" %>
+        <%= button_to raw('<i class="fa fa-trash me-2"></i>プレイリストを削除する'),
+              playlist_path(@playlist),
+              method: :delete,
+              data: { turbo: false },
+              onclick: "return confirm('本当にこのプレイリストを削除しますか？');",
+              class: "neon_show neon_show-delete btn" %>
+
+              <!-- 曲を追加（モーダル起動） -->
+        <button type="button"
+                class="neon_show btn btn-primary"
+                style="margin-left:1rem;"
+                data-bs-toggle="modal"
+                data-bs-target="#addSongsModal">
+          <i class="fa fa-plus-circle me-1"></i> 曲を追加
+        </button>
       </li>
-      
-    <% end %>
-  </ul>
+    </ul>
+  </div>
 <% end %>
 
+<!-- ★ モーダル定義はここに１回だけ ★ -->
+<!-- app/views/playlists/show.html.erb （モーダル定義部分） -->
+<div class="modal fade" id="addSongsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <!-- ヘッダー -->
+      <div class="modal-header">
+        <h5 class="modal-title">ブックマーク済みの曲一覧</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <!-- 動的にパーシャルを差し込むボディ -->
+      <div class="modal-body" id="addSongsModalBody" tabindex="0">
+        <%= render 'playlists/bookmarked_songs', playlist: @playlist %>
+      </div>
+      <!-- フッター -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+      </div>
+    </div> <!-- /.modal-content -->
+  </div>   <!-- /.modal-dialog -->
+</div>     <!-- /.modal -->
+
+
+
+
+
+
 <style>
-  /* ここに pmx_ プレフィックス付きのスタイルを置いてもかまいません */
-  .pmx_song_info {
-    flex: 0 0 600px;
-    max-width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
+/* --- 各曲リスト 横並びで中央寄せ --- */
+.pmx_playlist_row {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  max-width: 600px;
+  margin: 0 auto 1rem;
+  min-height: 90px;
+}
+.pmx_cover_wrapper {
+  position: relative;
+  width: 88px; height: 88px;
+  flex: 0 0 88px;
+}
+.pmx_cover_img { width:88px; height:88px; object-fit:cover; }
+.play-overlay-icon {
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  font-size:2rem; color:#fff!important;
+  opacity:0.98; cursor:pointer;
+}
+.pmx_song_info {
+  flex:1 1 auto; display:flex;
+  flex-direction:column; gap:0.3rem;
+}
+.pmx_remove_button { flex:0 0 auto; margin-left:0.8rem; }
 
-  .pmx_soundcloud_player {
-    width: 100% !important;
-    max-width: 600px;
-    display: block;
-  }
+/* --- 戻る＆削除ボタン共通 --- */
+.neon_show-back, .neon_show-delete {
+  font-weight:bold; border-radius:2rem; border:none;
+  color:#fff!important; display:inline-flex;
+  align-items:center; gap:.5em;
+  transition:transform .13s, box-shadow .13s, filter .16s;
+  position:relative; z-index:2000;
+}
+.neon_show-back {
+  background:linear-gradient(90deg,#2196f3 0%,#0d47a1 100%);
+  font-size:1.10rem; padding:.68rem 2rem;
+  box-shadow:0 2px 8px #1687ce48,0 1px 3px #2221;
+}
+.neon_show-back:hover {
+  filter:brightness(1.08) drop-shadow(0 0 7px #2196f3cc);
+  transform:translateY(-1px) scale(1.04);
+}
+.neon_show-delete {
+  background:linear-gradient(90deg,#b81942 10%,#d93b7b 80%,#c045e8 100%);
+  font-size:.96rem; padding:.45rem 1rem .45rem .82rem;
+  box-shadow:0 1.2px 4px #b8194233; opacity:.89; margin-left:.6rem;
+}
+.neon_show-delete .fa-trash { margin-right:.19em; }
 
-  .pmx_playlist_row {
-    justify-content: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
+/* --- 1曲目から再生ボタン固定 --- */
+.playlist-playfirst-fixed {
+  position:fixed; top:50%; left:350px;
+  transform:translateY(-50%); z-index:1002;
+}
+@media (max-width:700px) {
+  .playlist-playfirst-fixed { left:5px; bottom:17%; top:auto; transform:none; }
+}
+.playlist-playfirst-fixed button {
+  font-size:1.05rem; padding:.68rem 1.6rem;
+  border-radius:2.2rem; opacity:.88;
+  background:linear-gradient(90deg,#2ecbff 50%,#1775d1 100%);
+  box-shadow:0 2px 10px #1bb4ff44;
+  transition:filter .18s, opacity .18s, box-shadow .18s;
+}
+.playlist-playfirst-fixed button:hover {
+  filter:brightness(1.12) drop-shadow(0 0 8px #6fdcff99);
+  box-shadow:0 4px 18px #19d6ff99;
+}
 
-  .pmx_remove_button {
-    /* ボタン周りの余白調整があればここに */
-  }
+/* ◉ 各投稿を囲むボックスの見やすさアップ（高級感） */
+.pmx_playlist_row {
+  background:rgba(0,0,0,0.4)!important;
+  backdrop-filter:blur(8px)!important;
+  border:1px solid rgba(255,255,255,0.15)!important;
+  border-radius:10px!important;
+  padding:1rem!important;
+  color:#fff!important;
+}
+.pmx_playlist_row .neon-btn-title { color:#fff!important; }
+.pmx_playlist_row .text-muted    { color:#ddd!important; font-weight:500!important; }
 </style>

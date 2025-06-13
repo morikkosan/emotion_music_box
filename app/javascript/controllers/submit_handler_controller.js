@@ -101,9 +101,14 @@ export default class extends Controller {
           customClass: { popup: "cyber-popup" }
         });
       })
-      .finally(() => {
-        if (this.hasSubmitTarget) this.submitTarget.disabled = false;
-        if (loader) loader.style.display = "none";
-      });
+     .finally(() => {
+  if (loader) loader.style.display = "none";
+
+  // 成功時だけ送信ボタンを戻す（失敗時はそのまま無効化）
+  if (this.resultSuccess && this.hasSubmitTarget) {
+    this.submitTarget.disabled = false;
+  }
+});
+
   }
 }

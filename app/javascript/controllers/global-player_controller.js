@@ -458,11 +458,14 @@ export default class extends Controller {
   }
 
   playFirstTrack(event) {
-    event?.stopPropagation()
-    this.updatePlaylistOrder()
-    if (!this.playlistOrder?.length) return
-    const icon = this.playIconTargets.find(icn =>
-      icn.dataset-trackId == this.playlistOrder[0])
-    icon && this.loadAndPlay({ currentTarget: icon, stopPropagation(){} })
+  event?.stopPropagation()
+  this.updatePlaylistOrder()
+  if (!this.playlistOrder?.length) return
+  const icon = this.playIconTargets.find(icn =>
+    icn.dataset.trackId == this.playlistOrder[0])  // ←こう書く
+  if (icon) {
+    this.loadAndPlay({ currentTarget: icon, stopPropagation(){} })
   }
+}
+
 }
