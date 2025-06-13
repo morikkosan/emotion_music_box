@@ -4,31 +4,44 @@ class EmotionLogsController < ApplicationController
 
 
   def index
-    Rails.logger.info "📱 UserAgent: #{request.user_agent}"
-    Rails.logger.info "📱 Mobile判定: #{mobile_device?}"
-       Rails.logger.info "📢 FLASH[notice] at index: #{flash[:notice]}"
+  # 📱 デバッグ用の情報出力
+  Rails.logger.info "📱 UserAgent: #{request.user_agent}"
+  Rails.logger.info "📱 Mobile判定: #{mobile_device?}"
+  Rails.logger.info "📢 FLASH[notice] at index: #{flash[:notice]}"
   Rails.logger.info "📢 FLASH[alert]  at index: #{flash[:alert]}"
 
+  # 🎵 EmotionLogを取得（関連するuser, bookmarks, tagsを含めてleft_joins）
   @emotion_logs = EmotionLog.left_joins(:user, :bookmarks, :tags)
 
-
-    if params[:emotion].present?
-      @emotion_logs = @emotion_logs.where(emotion: params[:emotion])
-    elsif params[:hp].present?
-      hp = params[:hp].to_i
-      hp_emotion = calculate_hp_emotion(hp)
-      @emotion_logs = @emotion_logs.where(emotion: hp_emotion) if hp_emotion.present?
-    end
-
-    if params[:genre].present?
-      @emotion_logs = @emotion_logs.joins(:tags).where(tags: { name: params[:genre] })
-    end
-
-    @emotion_logs = apply_sort_and_period_filters(@emotion_logs).page(params[:page]).per(7)
-    @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id) if user_signed_in?
-
-    render (params[:view] == "mobile" || mobile_device?) ? :mobile_index : :index
+  # 🔍 感情（emotion）による絞り込み
+  if params[:emotion].present?
+    @emotion_logs = @emotion_logs.where(emotion: params[:emotion])
+  
+  # 💖 HPゲージから感情を算出し絞り込み
+  elsif params[:hp].present?
+    hp_emotion = calculate_hp_emotion(params[:hp].to_i)
+    @emotion_logs = @emotion_logs.where(emotion: hp_emotion) if hp_emotion.present?
   end
+
+  # 📌 ジャンル（タグ）による絞り込み
+  if params[:genre].present?
+    @emotion_logs = @emotion_logs.joins(:tags).where(tags: { name: params[:genre] })
+  end
+
+  # 📅 並び順と期間のフィルタリングを適用（ページネーションは7件ずつ）
+  @emotion_logs = apply_sort_and_period_filters(@emotion_logs).page(params[:page]).per(7)
+
+  # 🔖 現在ログインユーザーがブックマークしているemotion_logのID一覧
+  @user_bookmark_ids = user_signed_in? ? current_user.bookmarks.pluck(:emotion_log_id) : []
+
+  # 📱 表示するビューを決定（モバイル用とデスクトップ用）
+  if params[:view] == "mobile" || mobile_device?
+    render :mobile_index
+  else
+    render :index
+  end
+end
+
 
   def my_emotion_logs
     logs = current_user.emotion_logs.includes(:user, :bookmarks, :tags)
@@ -191,21 +204,34 @@ class EmotionLogsController < ApplicationController
   end
 
   def bookmarks
-    logs = current_user.bookmarked_emotion_logs.includes(:user, :tags)
-    logs = logs.where(emotion: params[:emotion]) if params[:emotion].present?
-    logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
+  # 通常はブックマークのみ
+  logs = current_user.bookmarked_emotion_logs.includes(:user, :tags)
+  logs = logs.where(emotion: params[:emotion]) if params[:emotion].present?
+  logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
 
-    @emotion_logs = apply_sort_and_period_filters(logs).page(params[:page]).per(7)
-    @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
-    @bookmark_page = "♡お気に入りリスト♡"
-    
-    if @emotion_logs.blank?
-      redirect_to emotion_logs_path(view: params[:view]), alert: "まだお気に入り投稿がありません。"
-      return
-    end
+  # ★ チェックがONなら自分の投稿もマージ
+  if params[:include_my_logs] == "true"
+    my_logs = current_user.emotion_logs.includes(:user, :tags)
+    my_logs = my_logs.where(emotion: params[:emotion]) if params[:emotion].present?
+    my_logs = my_logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
 
-    render (params[:view] == "mobile" || mobile_device?) ? :mobile_index : :index
+    # IDsで重複排除（同じ投稿がブックマークにもある場合）
+    log_ids = logs.pluck(:id) + my_logs.pluck(:id)
+    logs = EmotionLog.where(id: log_ids.uniq).includes(:user, :tags)
   end
+
+  @emotion_logs = apply_sort_and_period_filters(logs).page(params[:page]).per(7)
+  @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
+  @bookmark_page = "♡お気に入りリスト♡"
+  
+  if @emotion_logs.blank?
+    redirect_to emotion_logs_path(view: params[:view]), alert: "まだお気に入り投稿がありません。"
+    return
+  end
+
+  render (params[:view] == "mobile" || mobile_device?) ? :mobile_index : :index
+end
+
 
   def recommended
     hp = params[:hp].to_i.clamp(0, 100)
