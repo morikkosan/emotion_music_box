@@ -5719,7 +5719,7 @@ function setFormMode(mode) {
   );
   config.forms.mode = mode;
 }
-var Turbo = /* @__PURE__ */ Object.freeze({
+var Turbo2 = /* @__PURE__ */ Object.freeze({
   __proto__: null,
   navigator: navigator$1,
   session,
@@ -6427,7 +6427,7 @@ if (customElements.get("turbo-stream-source") === void 0) {
     element = element.parentElement;
   }
 })();
-window.Turbo = { ...Turbo, StreamActions };
+window.Turbo = { ...Turbo2, StreamActions };
 start2();
 
 // node_modules/@hotwired/turbo-rails/app/javascript/turbo/cable.js
@@ -15256,6 +15256,24 @@ var global_player_controller_default = class extends Controller {
   }
 };
 
+// app/javascript/controllers/bookmark_controller.js
+var bookmark_controller_default = class extends Controller {
+  static targets = ["selectedLogsInput", "includeMyLogsCheckbox"];
+  // マイページ投稿表示ON/OFF切替え
+  toggleMyPageLogs(event) {
+    const includeMyLogs = event.target.checked;
+    const url = new URL(window.location);
+    url.searchParams.set("include_my_logs", includeMyLogs);
+    Turbo.visit(url.toString(), { frame: "logs_list" });
+  }
+  // フォーム送信時にチェック済投稿のIDをセット
+  submitPlaylistForm(event) {
+    const checkedBoxes = document.querySelectorAll(".playlist-check:checked");
+    const selectedIds = Array.from(checkedBoxes).map((box) => box.value);
+    this.selectedLogsInputTarget.value = selectedIds.join(",");
+  }
+};
+
 // app/javascript/controllers/index.js
 var application = Application.start();
 application.register("modal", modal_controller_default);
@@ -15272,6 +15290,7 @@ application.register("mobile-super-search", mobile_super_search_controller_defau
 application.register("playlist-modal", playlist_modal_controller_default);
 application.register("global-player", global_player_controller_default);
 application.register("global-player", global_player_controller_default);
+application.register("bookmark", bookmark_controller_default);
 
 // app/javascript/custom/comments.js
 document.addEventListener("DOMContentLoaded", function() {
