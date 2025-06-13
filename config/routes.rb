@@ -33,7 +33,7 @@ Rails.application.routes.draw do
 
 
   resources :playlists, only: [:new, :create, :index, :show, :edit, :update, :destroy] do
-      resources :playlist_items, only: [:destroy]
+      resources :playlist_items, only: [:create, :destroy]
   end
 
   get :my_emotion_logs,          to: 'emotion_logs#my_emotion_logs'

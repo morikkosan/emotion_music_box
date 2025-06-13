@@ -14470,8 +14470,10 @@ var submit_handler_controller_default = class extends Controller {
         customClass: { popup: "cyber-popup" }
       });
     }).finally(() => {
-      if (this.hasSubmitTarget) this.submitTarget.disabled = false;
       if (loader) loader.style.display = "none";
+      if (this.resultSuccess && this.hasSubmitTarget) {
+        this.submitTarget.disabled = false;
+      }
     });
   }
 };
@@ -15246,9 +15248,11 @@ var global_player_controller_default = class extends Controller {
     event?.stopPropagation();
     this.updatePlaylistOrder();
     if (!this.playlistOrder?.length) return;
-    const icon = this.playIconTargets.find((icn) => icn.dataset - trackId == this.playlistOrder[0]);
-    icon && this.loadAndPlay({ currentTarget: icon, stopPropagation() {
-    } });
+    const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == this.playlistOrder[0]);
+    if (icon) {
+      this.loadAndPlay({ currentTarget: icon, stopPropagation() {
+      } });
+    }
   }
 };
 
@@ -15266,6 +15270,7 @@ application.register("view-switcher", view_switcher_controller_default);
 application.register("record-btn", record_btn_controller_default);
 application.register("mobile-super-search", mobile_super_search_controller_default);
 application.register("playlist-modal", playlist_modal_controller_default);
+application.register("global-player", global_player_controller_default);
 application.register("global-player", global_player_controller_default);
 
 // app/javascript/custom/comments.js
