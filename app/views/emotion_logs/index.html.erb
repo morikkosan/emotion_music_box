@@ -25,17 +25,40 @@
 <% end %>
 
 <% if @bookmark_page.present? %>
-  <div class="text-end mb-3">
+  <div data-controller="bookmark" class="text-end mb-3">
     <% if current_user.playlists.count < 12 %>
-      <%= button_to "✅ プレイリストを作成する",
-            new_playlist_path(format: :turbo_stream),
-            method: :get,
-            form: { data: { turbo_frame: "playlist-modal-container" } },
-            class: "btn btn-success" %>
+      <%= form_with url: new_playlist_path(format: :turbo_stream),
+                    method: :get,
+                    data: {
+                      turbo_frame: "playlist-modal-container",
+                      action: "submit->bookmark#submitPlaylistForm"
+                    } do %>
+
+        <!-- マイページの投稿を含めるチェック -->
+        <!-- これだけ残す -->
+<div class="mb-3">
+  <label class="form-check-label">
+    <input type="checkbox"
+           id="mypage-merge-toggle"
+           class="form-check-input"
+           data-action="change->bookmark#toggleMyPageLogs"
+           name="include_my_logs">
+    マイページの投稿も表示・プレイリストに含める
+  </label>
+</div>
+
+
+        <!-- 選択した投稿IDを送信 -->
+        <input type="hidden"
+               name="selected_logs"
+               data-bookmark-target="selectedLogsInput">
+
+        <%= submit_tag "✅ プレイリストを作成する", class: "btn btn-success" %>
+      <% end %>
     <% else %>
       <button class="btn btn-secondary" disabled>プレイリストは12個まで作成可能です</button>
     <% end %>
-  </div>
+
 <% end %>
 
 <% if user_signed_in? %>
