@@ -1,7 +1,8 @@
-<% if @playlist.playlist_items.empty? %>
-  <p>まだ曲が追加されていません。</p>
-<% else %>
+<%# app/views/playlists/show.html.erb %>
 
+<% if @playlist.playlist_items.empty? %>
+  <p class="text-center">まだ曲が追加されていません。</p>
+<% else %>
   <!-- ★ 親要素にコントローラをアタッチ -->
   <div class="playlist-container" data-controller="global-player">
 
@@ -10,8 +11,7 @@
       <button
         type="button"
         class="btn neon_show neon_show-back"
-        data-action="click->global-player#playFirstTrack"
-        style="display: flex; align-items: center; gap: .7em;">
+        data-action="click->global-player#playFirstTrack">
         <i class="fa fa-play"></i>
         1曲目から再生
       </button>
@@ -21,13 +21,15 @@
     <ul
       id="<%= dom_id(@playlist, :contents) %>"
       class="list-unstyled mt-3"
-      style="width:100%; max-width:700px; margin:auto;"
+      style="max-width:700px; margin:auto;"
     >
       <% @playlist.playlist_items.includes(:emotion_log).each do |item| %>
         <% log = item.emotion_log %>
-        <li class="mb-4" style="max-width:600px; width:100%; margin:0 auto;">
-          <div class="pmx_playlist_row">
-            <div class="pmx_cover_wrapper">
+        <li class="mb-4">
+          <div class="pmx_playlist_row d-flex align-items-center">
+
+            <!-- 左：アートワーク＋再生アイコン -->
+            <div class="pmx_cover_wrapper me-3">
               <%= image_tag(
                     log.music_art_url || "placeholder.png",
                     alt: log.track_name,
@@ -44,90 +46,100 @@
                  data-track-id="<%= log.id %>"
                  data-play-url="<%= log.music_url %>"></i>
             </div>
-            <div class="pmx_song_info">
-              <div class="fw-bold neon-btn-title" style="font-size:1.1rem;">
-                <%= log.track_name %>
-              </div>
+
+            <!-- 中央：曲名＋投稿者 -->
+            <div class="pmx_song_info flex-grow-1">
+              <div class="fw-bold neon-btn-title"><%= log.track_name %></div>
               <div class="text-muted small mt-1">
                 投稿: <%= log.user&.name || "匿名" %>
               </div>
             </div>
+
+            <!-- 右：削除ボタン -->
             <div class="pmx_remove_button">
-              <%= button_to "削除",
+              <%= button_to raw('<i class="fa fa-trash"></i>'),
                     playlist_playlist_item_path(@playlist, item),
                     method: :delete,
                     data: {
-                      turbo_confirm: "本当にこの曲をプレイリストから削除しますか？",
+                      turbo_confirm: "本当にこの曲を削除しますか？",
                       turbo_frame: dom_id(@playlist, :contents)
                     },
                     class: "btn btn-danger btn-sm" %>
             </div>
+
           </div>
         </li>
       <% end %>
 
-      <!-- ★ 戻る＆削除ボタン -->
-      <li style="max-width:600px; width:100%; margin:0 auto; display:flex; justify-content:center; gap:1.3rem; z-index:2000;">
+      <!-- ★ 戻る＆プレイリスト削除 -->
+      <li class="d-flex justify-content-center gap-3 mt-4">
         <%= link_to "← プレイリスト一覧に戻る",
                     bookmarks_emotion_logs_path(view: 'mobile'),
                     class: "neon_show neon_show-back btn" %>
-        <%= button_to raw('<i class="fa fa-trash me-2"></i>プレイリストを削除する'),
+        <%= button_to raw('<i class="fa fa-trash me-1"></i>プレイリストを削除'),
               playlist_path(@playlist),
               method: :delete,
               data: { turbo: false },
               onclick: "return confirm('本当にこのプレイリストを削除しますか？');",
               class: "neon_show neon_show-delete btn" %>
-
-              <!-- 曲を追加（モーダル起動） -->
-        <button type="button"
-                class="neon_show btn btn-primary"
-                style="margin-left:1rem;"
-                data-bs-toggle="modal"
-                data-bs-target="#addSongsModal">
-          <i class="fa fa-plus-circle me-1"></i> 曲を追加
-        </button>
       </li>
     </ul>
   </div>
 <% end %>
 
+<!-- ★ 固定ネオン風「曲を追加」ボタン（画面右中央） -->
+<button
+  type="button"
+  class="btn neon_show add-song-floating"
+  data-bs-toggle="modal"
+  data-bs-target="#addSongsModal"
+  aria-label="曲を追加">
+  <i class="fa fa-plus-circle me-1"></i> 曲を追加
+</button>
+
 <!-- ★ モーダル定義はここに１回だけ ★ -->
-<!-- app/views/playlists/show.html.erb （モーダル定義部分） -->
 <div class="modal fade" id="addSongsModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
-      <!-- ヘッダー -->
+
+      <!-- モーダル ヘッダー -->
       <div class="modal-header">
         <h5 class="modal-title">ブックマーク済みの曲一覧</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <!-- 動的にパーシャルを差し込むボディ -->
-      <div class="modal-body" id="addSongsModalBody" tabindex="0">
+
+      <!-- モーダル ボディ -->
+      <div class="modal-body" id="addSongsModalBody">
         <%= render 'playlists/bookmarked_songs', playlist: @playlist %>
       </div>
-      <!-- フッター -->
+
+      <!-- モーダル フッター -->
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          data-bs-dismiss="modal"
+          data-action="click->add-song-modal#reloadPage">
+          閉じる
+        </button>
       </div>
-    </div> <!-- /.modal-content -->
-  </div>   <!-- /.modal-dialog -->
-</div>     <!-- /.modal -->
 
-
-
-
-
+    </div>
+  </div>
+</div>
 
 <style>
-/* --- 各曲リスト 横並びで中央寄せ --- */
+/* --- 各曲リスト 横並び・高級感アップ --- */
 .pmx_playlist_row {
-  display: flex;
-  align-items: center;
-  gap: 1.1rem;
-  max-width: 600px;
-  margin: 0 auto 1rem;
-  min-height: 90px;
+  background: rgba(0,0,0,0.4) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  border-radius: 10px !important;
+  padding: 1rem !important;
+  color: #fff !important;
 }
+
+/* アートワーク */
 .pmx_cover_wrapper {
   position: relative;
   width: 88px; height: 88px;
@@ -137,68 +149,67 @@
 .play-overlay-icon {
   position:absolute; top:50%; left:50%;
   transform:translate(-50%,-50%);
-  font-size:2rem; color:#fff!important;
-  opacity:0.98; cursor:pointer;
+  font-size:2rem; color:rgba(255,255,255,0.9); cursor:pointer;
 }
-.pmx_song_info {
-  flex:1 1 auto; display:flex;
-  flex-direction:column; gap:0.3rem;
-}
-.pmx_remove_button { flex:0 0 auto; margin-left:0.8rem; }
 
-/* --- 戻る＆削除ボタン共通 --- */
+/* 曲情報 */
+.pmx_song_info { display:flex; flex-direction:column; gap:.3rem; }
+.neon-btn-title { font-size:1.1rem; color:#fff !important; }
+
+/* 戻る＆削除ボタン */
 .neon_show-back, .neon_show-delete {
-  font-weight:bold; border-radius:2rem; border:none;
-  color:#fff!important; display:inline-flex;
-  align-items:center; gap:.5em;
-  transition:transform .13s, box-shadow .13s, filter .16s;
-  position:relative; z-index:2000;
+  position: relative;    /* 追加：z-index を有効化 */
+  font-weight: bold;
+  border-radius: 2rem;
+  border: none;
+  color: #fff !important;
+  display: inline-flex;
+  align-items: center;
+  gap: .5em;
+  transition: transform .13s, box-shadow .13s, filter .16s; /* 余分なカンマを削除 */
 }
+
 .neon_show-back {
-  background:linear-gradient(90deg,#2196f3 0%,#0d47a1 100%);
-  font-size:1.10rem; padding:.68rem 2rem;
-  box-shadow:0 2px 8px #1687ce48,0 1px 3px #2221;
+  background: linear-gradient(90deg,#2196f3,#0d47a1);
+  padding: .68rem 2rem;
+  box-shadow: 0 2px 8px rgba(22,135,206,.3);
+  z-index: 1051;
 }
-.neon_show-back:hover {
-  filter:brightness(1.08) drop-shadow(0 0 7px #2196f3cc);
-  transform:translateY(-1px) scale(1.04);
-}
+
 .neon_show-delete {
-  background:linear-gradient(90deg,#b81942 10%,#d93b7b 80%,#c045e8 100%);
-  font-size:.96rem; padding:.45rem 1rem .45rem .82rem;
-  box-shadow:0 1.2px 4px #b8194233; opacity:.89; margin-left:.6rem;
+  background: linear-gradient(90deg,#b81942,#d93b7b);
+  padding: .5rem 1rem;
+  box-shadow: 0 1px 4px rgba(184,25,35,.6);
+  z-index: 1053;
 }
-.neon_show-delete .fa-trash { margin-right:.19em; }
 
-/* --- 1曲目から再生ボタン固定 --- */
+/* 1曲目から再生ボタン */
 .playlist-playfirst-fixed {
-  position:fixed; top:50%; left:350px;
-  transform:translateY(-50%); z-index:1002;
-}
-@media (max-width:700px) {
-  .playlist-playfirst-fixed { left:5px; bottom:17%; top:auto; transform:none; }
-}
-.playlist-playfirst-fixed button {
-  font-size:1.05rem; padding:.68rem 1.6rem;
-  border-radius:2.2rem; opacity:.88;
-  background:linear-gradient(90deg,#2ecbff 50%,#1775d1 100%);
-  box-shadow:0 2px 10px #1bb4ff44;
-  transition:filter .18s, opacity .18s, box-shadow .18s;
-}
-.playlist-playfirst-fixed button:hover {
-  filter:brightness(1.12) drop-shadow(0 0 8px #6fdcff99);
-  box-shadow:0 4px 18px #19d6ff99;
+  position: fixed; top:50%; left:20px;
+  transform: translateY(-50%); z-index:1002;
+  left:400px;
 }
 
-/* ◉ 各投稿を囲むボックスの見やすさアップ（高級感） */
-.pmx_playlist_row {
-  background:rgba(0,0,0,0.4)!important;
-  backdrop-filter:blur(8px)!important;
-  border:1px solid rgba(255,255,255,0.15)!important;
-  border-radius:10px!important;
-  padding:1rem!important;
-  color:#fff!important;
+/* ネオン風 固定「曲を追加」ボタン */
+.add-song-floating {
+  position: fixed;
+  right: 40px; top: 50%;
+  transform: translateY(-50%);
+  border-radius: 2rem;
+  padding: .75rem 1.2rem;
+  font-size: 1rem;
+  display: flex; align-items: center; gap:.4rem;
+  background: linear-gradient(90deg,#ff00ff,#00ffff);
+  color: #fff;
+  text-shadow: 0 0 8px rgba(255,0,255,.8), 0 0 12px rgba(0,255,255,.8);
+  box-shadow: 0 0 16px rgba(255,0,255,.6), 0 0 24px rgba(0,255,255,.6);
+  transition:transform .1s,filter .1s;
+  z-index:1050;
+    right: 400px;
+
 }
-.pmx_playlist_row .neon-btn-title { color:#fff!important; }
-.pmx_playlist_row .text-muted    { color:#ddd!important; font-weight:500!important; }
+.add-song-floating:hover {
+  transform: translateY(-50%) scale(1.05);
+  filter: brightness(1.1);
+}
 </style>
