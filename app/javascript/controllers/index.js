@@ -27,3 +27,4 @@ application.register("record-btn", RecordBtnController); // ← 追加
 application.register("mobile-super-search", MobileSuperSearchController); // ← 追加
 application.register("playlist-modal", PlaylistModalController); // ← 追加
 application.register("global-player", GlobalPlayerController)
+application.register("global-player", GlobalPlayerController); // ← 追加

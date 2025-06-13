@@ -1,0 +1,49 @@
+<!-- app/views/playlists/_bookmarked_songs.html.erb -->
+<div id="addSongsModalBody" data-controller="add-song-modal">
+  <ul class="list-unstyled">
+    <% # まだプレイリストにない曲だけをループ %>
+    <% current_user.bookmarked_emotion_logs
+         .reject { |log| @playlist.emotion_log_ids.include?(log.id) }
+         .each do |log| %>
+      <li
+        data-add-song-modal-target="item"
+        class="d-flex align-items-center mb-2 p-1"
+      >
+        <!-- アートワーク -->
+        <%= image_tag(
+              log.music_art_url.presence || "placeholder.png",
+              size: "50x50",
+              class: "me-2 rounded"
+            ) %>
+
+        <!-- 曲名 -->
+        <div class="flex-grow-1"><%= log.track_name %></div>
+
+        <!-- 追加ボタン。成功時にこの行を消すよう Stimulus イベントをセット -->
+        <%= button_to "追加",
+              playlist_playlist_items_path(playlist_id: @playlist.id),
+              params: { emotion_log_id: log.id },
+              method: :post,
+              form: {
+                data: {
+                  turbo_frame: dom_id(@playlist, :contents),
+                  action: "turbo:submit-end->add-song-modal#hideItem"
+                }
+              },
+              class: "btn btn-sm btn-success" %>
+      </li>
+    <% end %>
+  </ul>
+
+  <!-- 閉じるボタンにも「ページリロード」アクションを追加 -->
+  <!-- <div class="text-end mt-3">
+    <button
+      type="button"
+      class="btn btn-secondary"
+      data-bs-dismiss="modal"
+      data-action="click->add-song-modal#reloadPage"
+    >
+      閉じる
+    </button>
+  </div> -->
+</div>
