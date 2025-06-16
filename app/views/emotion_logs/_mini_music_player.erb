@@ -35,3 +35,10 @@
     <% end %>
   </div>
 <% end %>
+<!-- _mini_music_player.html.erb -->
+<div data-controller="global-player"
+     data-global-player-url-value="<%= log.music_url %>">
+  <button data-action="click->global-player#play" class="btn btn-outline-primary btn-sm">
+    ▶ 再生
+  </button>
+</div>

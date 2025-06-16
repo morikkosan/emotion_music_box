@@ -220,12 +220,21 @@ h1 i.bi bi-heart-pulse {
   }
 }
 /* ページネーションのスタイル */
-/* ページネーション全体のデザイン */
 .pagination {
+  position: fixed;      /* 画面全体で固定 */
+  left:65%;            /* 水平中央を基準 */
+  bottom: 70px;         /* 下部プレーヤーの高さ＋ちょい上 */
+  transform: translateX(120px);  /* 必要に応じて横にズラす */
+  z-index: 1025;       /* 他より高く */
+  background: #222a;
+  border-radius: 16px;
+  padding: 12px 10px;
   display: flex;
-  justify-content: center;
-  padding: 10px 0;
+  box-shadow: 0 2px 8px #0007;
 }
+
+
+
 
 /* 各ページリンクのスタイル */
 .page-item .page-link {
@@ -252,7 +261,7 @@ h1 i.bi bi-heart-pulse {
 /* 📌 ネオンマゼンタの未来感デザイン */
 /* 📌 迫力のある白文字＋ネオンマゼンタの未来デザイン */
 .today_mental_text {
-  font-size: 35px; /* 🎯 文字を大きくして迫力UP */
+  font-size: 25px; /* 🎯 文字を大きくして迫力UP */
   font-family: "Orbitron", "Rajdhani", "Bebas Neue", "Michroma", sans-serif; /* 🎯 未来感のあるフォント */
   font-weight: 900; /* 🎯 極太で迫力を出す */
   position: absolute; /* 絶対配置 */
@@ -589,6 +598,8 @@ h1 i.bi bi-heart-pulse {
     0 0 20px #a100ff,
     0 0 30px #ff00cc !important;
   transition: all 0.3s ease;
+    position: fixed !important;
+  bottom: 2cm !important;
 }
 
 #record-button.btn.btn-primary.floating-btn:hover {
@@ -719,14 +730,43 @@ h1 i.bi bi-heart-pulse {
     display: none;
   }
 }
-
 #super-search-panel {
   position: fixed;
-  top: 270px;
-  left: 20px;
+  top: 160px;      // 仮 ここは「ゲージ下端」の実ピクセルにあわせる
+  left: 0;
   width: 240px;
-  z-index: 200;
+  z-index: 10;
+  background: #23253c;
+  border-radius: 0 12px 12px 0;
+  box-shadow: 2px 0 8px #0004;
+  padding: 16px 10px 16px 20px;
+  bottom: unset;  // bottom指定は外す
 }
+
+#playlist-sidebar {
+  all: unset;
+  display: contents;
+}
+
+
+
+
+
+.scroll-content {
+  height: calc(100vh - 320px); /* ←ヘッダー・ゲージ・フッター分を引く。要微調整！ */
+  overflow-y: auto;
+    padding-bottom: 50px;  // ここを追加
+
+  z-index: 10002;
+  /* 横幅を必要ならwidth: 100%; もOK */
+  /* 背景色や余白など必要に応じて追加 */
+}
+
+
+
+
+
+
 
 
 
@@ -747,4 +787,54 @@ h1 i.bi bi-heart-pulse {
 .btn-close {
   filter: invert(1); /* 白ボタン向け */
 }
+
+
+.neon-wave span {
+  color: #18f0ff;
+  text-shadow: 0 0 8px #19fff7, 0 0 16px #56e8ff;
+  animation: waveMove 1.2s infinite;
+  display: inline-block;
+}
+.neon-wave span:nth-child(1) { animation-delay: 0.00s; }
+.neon-wave span:nth-child(2) { animation-delay: 0.08s; }
+.neon-wave span:nth-child(3) { animation-delay: 0.16s; }
+.neon-wave span:nth-child(4) { animation-delay: 0.24s; }
+.neon-wave span:nth-child(5) { animation-delay: 0.32s; }
+.neon-wave span:nth-child(6) { animation-delay: 0.40s; }
+.neon-wave span:nth-child(7) { animation-delay: 0.48s; }
+.neon-wave span:nth-child(8) { animation-delay: 0.56s; }
+.neon-wave span:nth-child(9) { animation-delay: 0.64s; }
+.neon-wave span:nth-child(10){ animation-delay: 0.72s; }
+.neon-wave span:nth-child(11){ animation-delay: 0.80s; }
+.neon-wave span:nth-child(12){ animation-delay: 0.88s; }
+.neon-wave span:nth-child(13){ animation-delay: 0.96s; }
+.neon-wave span:nth-child(14){ animation-delay: 1.04s; }
+@keyframes waveMove {
+  0%,100% { transform: translateY(0);}
+  50%     { transform: translateY(-8px) scale(1.2);}
+}
+
+.neon-wave {
+  display: inline-block;
+  padding-left: 4px;   /* ←ココ追加 */
+  padding-right: 4px;  /* 任意 */
+}
+
+
+/* シンプルな水色ネオンぐるぐる */
+.loading-spinner-inline {
+  display: inline-block;
+  width: 24px; height: 24px;
+  border: 3px solid #22d9ff;
+  border-top: 3px solid #fff;
+  border-radius: 50%;
+  animation: spin-cyber 0.8s linear infinite;
+  box-shadow: 0 0 8px #1af9ff, 0 0 16px #39e3ff;
+  vertical-align: middle;
+}
+@keyframes spin-cyber {
+  0% { transform: rotate(0deg);}
+  100% { transform: rotate(360deg);}
+}
+
 

@@ -1,5 +1,16 @@
 
-  .mypage-item {
+.main-menu {
+  position: relative;   /* まずは position を指定 */
+  z-index: 1000;        /* 他の要素よりも高い値を設定 */
+}
+
+.music-art-img {
+  max-width: 300px;   /* お好みの幅に変更してください */
+  height: auto;
+  display: block;     /* ブロック表示にすると余白の調整がしやすいです */
+  /* もし丸くしたい場合は例えば border-radius: 8px; などを追加してもOK */
+}
+.mypage-item {
     width: 160px;
     height: 160px;
     background: rgba(0, 0, 0, 0.6);
@@ -104,17 +115,16 @@
     
   }
 
-  .dj-icon-fixed {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    z-index: 2000;
-  }
+
 
   .dj-icon-fixed img {
-    width: 220px;     /* 好みに応じて調整可能 */
+    width: 150px;     /* 好みに応じて調整可能 */
     height: auto;
     display: block;
+    position: absolute;
+    top: 20px;
+    left: 300px;
+    // z-index: 2000;
   }
 
 .mypage-item select.form-control {
@@ -245,4 +255,18 @@
   object-fit: contain;
   border-radius: 4px;
   flex-shrink: 0;
+}
+
+#playlist-sidebar {
+  position: sticky;
+  top: 260px; // ←ここの数値だけ合わせればOK！
+  left: 0;
+  width: 240px;
+  z-index: 10;    /* ページネーションの z-index がデフォルト (auto/0) なら、このくらいで十分 */
+  background: #23253c;
+  border-radius: 0 12px 12px 0;
+  box-shadow: 2px 0 8px #0004;
+  padding: 16px 10px 16px 20px;
+  max-height: 85vh;
+  overflow-y: auto;
 }

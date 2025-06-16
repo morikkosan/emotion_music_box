@@ -1,0 +1,199 @@
+<%# app/views/playlists/show.html.erb %>
+
+<% if @playlist.playlist_items.empty? %>
+  <p class="text-center">まだ曲が追加されていません。</p>
+<% else %>
+  <!-- ★ 親要組織にコントローラをアタッチ -->
+  <div class="playlist-container" data-controller="global-player">
+
+    <!-- ★ 1曲目から再生ボタン -->
+    <div class="playlist-playfirst-fixed">
+      <button
+        type="button"
+        class="btn neon_show neon_show-back"
+        data-action="click->global-player#playFirstTrack">
+        <i class="fa fa-play"></i>
+        1曲目から再生
+      </button>
+    </div>
+
+    <!-- ★ プレイリスト本体 -->
+    <ul
+      id="<%= dom_id(@playlist, :contents) %>"
+      class="list-unstyled mt-3"
+      style="max-width:700px; margin:auto;"
+    >
+      <% @playlist.playlist_items.includes(:emotion_log).each do |item| %>
+        <% log = item.emotion_log %>
+        <li class="mb-4">
+          <div class="pmx_playlist_row d-flex align-items-center">
+
+            <!-- 左：アートワーク＋再生アイコン -->
+            <div class="pmx_cover_wrapper me-3">
+              <%= image_tag(
+                    log.music_art_url || "placeholder.png",
+                    alt: log.track_name,
+                    class: "rounded shadow pmx_cover_img",
+                    data: {
+                      "global-player-target" => "trackImage",
+                      "track-id"             => log.id,
+                      "play-url"             => log.music_url
+                    }
+                  ) %>
+              <i class="fa fa-play play-overlay-icon"
+                 data-action="click->global-player#loadAndPlay"
+                 data-global-player-target="playIcon"
+                 data-track-id="<%= log.id %>"
+                 data-play-url="<%= log.music_url %>"></i>
+            </div>
+
+            <!-- 中央：曲名＋投稿者 -->
+            <div class="pmx_song_info flex-grow-1">
+              <div class="fw-bold neon-btn-title"><%= log.track_name %></div>
+              <div class="text-muted small mt-1">
+                投稿: <%= log.user&.name || "匿名" %>
+              </div>
+            </div>
+
+            <!-- 右：削除ボタン -->
+            <div class="pmx_remove_button">
+              <%= button_to raw('<i class="fa fa-trash"></i>'),
+                    playlist_playlist_item_path(@playlist, item),
+                    method: :delete,
+                    data: {
+                      turbo_confirm: "本当にこの曲を削除しますか？",
+                      turbo_frame: dom_id(@playlist, :contents)
+                    },
+                    class: "btn btn-danger btn-sm" %>
+            </div>
+
+          </div>
+        </li>
+      <% end %>
+
+      <!-- ★ 戻る＆プレイリスト削除 -->
+      <li class="d-flex justify-content-center gap-3 mt-4">
+        <%= link_to "← プレイリスト一覧に戻る",
+                    bookmarks_emotion_logs_path(view: 'mobile'),
+                    class: "neon_show neon_show-back btn" %>
+        <%= button_to raw('<i class="fa fa-trash me-1"></i>プレイリストを削除'),
+              playlist_path(@playlist),
+              method: :delete,
+              data: { turbo: false },
+              onclick: "return confirm('本当にこのプレイリストを削除しますか？');",
+              class: "neon_show neon_show-delete btn" %>
+      </li>
+    </ul>
+  </div>
+<% end %>
+
+<!-- ★ 固定ネオン風「曲を追加」ボタン -->
+<button
+  type="button"
+  class="btn neon_show add-song-floating"
+  data-bs-toggle="modal"
+  data-bs-target="#addSongsModal"
+  aria-label="曲を追加">
+  <i class="fa fa-plus-circle me-1"></i> 曲を追加
+</button>
+
+<!-- ★ モーダル定義 -->
+<div class="modal fade"
+     id="addSongsModal"
+     data-controller="add-song-modal"
+     tabindex="-1"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">ブックマーク済みの曲一覧</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body" id="addSongsModalBody">
+        <%= render 'playlists/bookmarked_songs', playlist: @playlist %>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          data-bs-dismiss="modal">
+          閉じる
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+.pmx_playlist_row {
+  background: rgba(0,0,0,0.4) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  border-radius: 10px !important;
+  padding: 1rem !important;
+  color: #fff !important;
+}
+.pmx_cover_wrapper {
+  position: relative;
+  width: 88px; height: 88px;
+  flex: 0 0 88px;
+}
+.pmx_cover_img { width:88px; height:88px; object-fit:cover; }
+.play-overlay-icon {
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  font-size:2rem; color:rgba(255,255,255,0.9); cursor:pointer;
+}
+.pmx_song_info { display:flex; flex-direction:column; gap:.3rem; }
+.neon-btn-title { font-size:1.1rem; color:#fff !important; }
+.neon_show-back, .neon_show-delete {
+  position: relative;
+  font-weight: bold;
+  border-radius: 2rem;
+  border: none;
+  color: #fff !important;
+  display: inline-flex;
+  align-items: center;
+  gap: .5em;
+  transition: transform .13s, box-shadow .13s, filter .16s;
+}
+.neon_show-back {
+  background: linear-gradient(90deg,#2196f3,#0d47a1);
+  padding: .68rem 2rem;
+  box-shadow: 0 2px 8px rgba(22,135,206,.3);
+  z-index: 1051;
+}
+.neon_show-delete {
+  background: linear-gradient(90deg,#b81942,#d93b7b);
+  padding: .5rem 1rem;
+  box-shadow: 0 1px 4px rgba(184,25,35,.6);
+  z-index: 1053;
+}
+.playlist-playfirst-fixed {
+  position: fixed; top:50%; left:400px;
+  transform: translateY(-50%); z-index:1002;
+}
+.add-song-floating {
+  position: fixed;
+  right: 400px; top: 50%;
+  transform: translateY(-50%);
+  border-radius: 2rem;
+  padding: .75rem 1.2rem;
+  font-size: 1rem;
+  display: flex; align-items: center; gap:.4rem;
+  background: linear-gradient(90deg,#ff00ff,#00ffff);
+  color: #fff;
+  text-shadow: 0 0 8px rgba(255,0,255,.8), 0 0 12px rgba(0,255,255,.8);
+  box-shadow: 0 0 16px rgba(255,0,255,.6), 0 0 24px rgba(0,255,255,.6);
+  transition:transform .1s,filter .1s;
+  z-index:1050;
+}
+.add-song-floating:hover {
+  transform: translateY(-50%) scale(1.05);
+  filter: brightness(1.1);
+}
+</style>
