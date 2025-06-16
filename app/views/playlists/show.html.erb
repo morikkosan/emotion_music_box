@@ -3,10 +3,10 @@
 <% if @playlist.playlist_items.empty? %>
   <p class="text-center">まだ曲が追加されていません。</p>
 <% else %>
-  <!-- ★ 親要素にコントローラをアタッチ -->
+  <!-- ★ 親要組織にコントローラをアタッチ -->
   <div class="playlist-container" data-controller="global-player">
 
-    <!-- ★ 1曲目から再生ボタン（縦中央・左端に固定） -->
+    <!-- ★ 1曲目から再生ボタン -->
     <div class="playlist-playfirst-fixed">
       <button
         type="button"
@@ -87,7 +87,7 @@
   </div>
 <% end %>
 
-<!-- ★ 固定ネオン風「曲を追加」ボタン（画面右中央） -->
+<!-- ★ 固定ネオン風「曲を追加」ボタン -->
 <button
   type="button"
   class="btn neon_show add-song-floating"
@@ -97,29 +97,29 @@
   <i class="fa fa-plus-circle me-1"></i> 曲を追加
 </button>
 
-<!-- ★ モーダル定義はここに１回だけ ★ -->
-<div class="modal fade" id="addSongsModal" tabindex="-1" aria-hidden="true">
+<!-- ★ モーダル定義 -->
+<div class="modal fade"
+     id="addSongsModal"
+     data-controller="add-song-modal"
+     tabindex="-1"
+     aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
 
-      <!-- モーダル ヘッダー -->
       <div class="modal-header">
         <h5 class="modal-title">ブックマーク済みの曲一覧</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      <!-- モーダル ボディ -->
       <div class="modal-body" id="addSongsModalBody">
         <%= render 'playlists/bookmarked_songs', playlist: @playlist %>
       </div>
 
-      <!-- モーダル フッター -->
       <div class="modal-footer">
         <button
           type="button"
           class="btn btn-secondary"
-          data-bs-dismiss="modal"
-          data-action="click->add-song-modal#reloadPage">
+          data-bs-dismiss="modal">
           閉じる
         </button>
       </div>
@@ -129,7 +129,6 @@
 </div>
 
 <style>
-/* --- 各曲リスト 横並び・高級感アップ --- */
 .pmx_playlist_row {
   background: rgba(0,0,0,0.4) !important;
   backdrop-filter: blur(8px) !important;
@@ -138,8 +137,6 @@
   padding: 1rem !important;
   color: #fff !important;
 }
-
-/* アートワーク */
 .pmx_cover_wrapper {
   position: relative;
   width: 88px; height: 88px;
@@ -151,14 +148,10 @@
   transform:translate(-50%,-50%);
   font-size:2rem; color:rgba(255,255,255,0.9); cursor:pointer;
 }
-
-/* 曲情報 */
 .pmx_song_info { display:flex; flex-direction:column; gap:.3rem; }
 .neon-btn-title { font-size:1.1rem; color:#fff !important; }
-
-/* 戻る＆削除ボタン */
 .neon_show-back, .neon_show-delete {
-  position: relative;    /* 追加：z-index を有効化 */
+  position: relative;
   font-weight: bold;
   border-radius: 2rem;
   border: none;
@@ -166,34 +159,27 @@
   display: inline-flex;
   align-items: center;
   gap: .5em;
-  transition: transform .13s, box-shadow .13s, filter .16s; /* 余分なカンマを削除 */
+  transition: transform .13s, box-shadow .13s, filter .16s;
 }
-
 .neon_show-back {
   background: linear-gradient(90deg,#2196f3,#0d47a1);
   padding: .68rem 2rem;
   box-shadow: 0 2px 8px rgba(22,135,206,.3);
   z-index: 1051;
 }
-
 .neon_show-delete {
   background: linear-gradient(90deg,#b81942,#d93b7b);
   padding: .5rem 1rem;
   box-shadow: 0 1px 4px rgba(184,25,35,.6);
   z-index: 1053;
 }
-
-/* 1曲目から再生ボタン */
 .playlist-playfirst-fixed {
-  position: fixed; top:50%; left:20px;
+  position: fixed; top:50%; left:400px;
   transform: translateY(-50%); z-index:1002;
-  left:400px;
 }
-
-/* ネオン風 固定「曲を追加」ボタン */
 .add-song-floating {
   position: fixed;
-  right: 40px; top: 50%;
+  right: 400px; top: 50%;
   transform: translateY(-50%);
   border-radius: 2rem;
   padding: .75rem 1.2rem;
@@ -205,8 +191,6 @@
   box-shadow: 0 0 16px rgba(255,0,255,.6), 0 0 24px rgba(0,255,255,.6);
   transition:transform .1s,filter .1s;
   z-index:1050;
-    right: 400px;
-
 }
 .add-song-floating:hover {
   transform: translateY(-50%) scale(1.05);
