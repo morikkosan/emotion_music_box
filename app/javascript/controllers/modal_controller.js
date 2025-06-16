@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import * as bootstrap from "bootstrap"
-
+// 下手に触らない新しく作るならこれから違うファイルへ違うモーダルidへ
 export default class extends Controller {
   connect () {
     //console.log("🟢 modal_controller connected")
@@ -28,3 +28,18 @@ export default class extends Controller {
 
   }
 }
+
+document.addEventListener("turbo:before-stream-render", (event) => {
+  // Turbo Stream remove/replace で modal-container が対象の時
+  if (
+    event.target.tagName === "TURBO-STREAM" &&
+    ["remove", "replace"].includes(event.target.getAttribute("action")) &&
+    event.target.getAttribute("target") === "modal-container"
+  ) {
+    // 黒いモヤを消す
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove())
+    document.body.classList.remove('modal-open')
+    document.body.style.overflow = ""
+  }
+})
+

@@ -126,3 +126,75 @@
 .dropdown-menu.show {
   display: block;
 }
+
+
+
+/* ▶ チェックボックスラベル：ミント系 */
+.bookmark-merge-toggle-label {
+  background: linear-gradient(135deg, #009688, #4db6ac);
+  background-size: 200% 200%;
+  color: #ffffff;
+  font-weight: 800;             /* さらに太く */
+  text-shadow: 0 0 3px #000;    /* 白文字をくっきり見せる */
+  padding: 1rem 2rem;           /* ボタン大きく */
+  border-radius: 40px;
+  font-size: 1.15rem;           /* フォントサイズUP */
+  box-shadow:
+    0 0 8px rgba(0, 150, 136, 0.6),
+    0 0 14px rgba(77, 182, 172, 0.5);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s ease;
+  animation: bookmarkNeonGlow 6s ease-in-out infinite;
+}
+
+.bookmark-merge-toggle-label:hover {
+  box-shadow:
+    0 0 12px rgba(0, 150, 136, 0.8),
+    0 0 18px rgba(77, 182, 172, 0.7);
+  transform: scale(1.05);
+}
+
+.bookmark-merge-toggle-label input[type="checkbox"] {
+  accent-color: #26a69a;
+  transform: scale(1.4);
+  margin-right: 0.5em;
+}
+
+
+/* ▶ プレイリスト作成ボタン：オレンジ×ピンク系 */
+.bookmark-playlist-create-btn {
+  background: linear-gradient(135deg, #ff7043, #f06292);
+  background-size: 200% 200%;
+  color: #ffffff;
+  font-weight: 800;
+  text-shadow: 0 0 3px #000;
+  padding: 1rem 2.2rem;
+  border: none;
+  border-radius: 40px;
+  font-size: 1.2rem;
+  box-shadow:
+    0 0 10px rgba(255, 112, 67, 0.6),
+    0 0 16px rgba(240, 98, 146, 0.5);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  animation: bookmarkNeonGlow 5s ease-in-out infinite;
+}
+
+.bookmark-playlist-create-btn:hover {
+  background-position: right center;
+  box-shadow:
+    0 0 14px rgba(255, 112, 67, 0.9),
+    0 0 20px rgba(240, 98, 146, 0.8);
+  transform: scale(1.06);
+}
+
+/* 共通アニメーション */
+@keyframes bookmarkNeonGlow {
+  0%   { background-position: left center; }
+  50%  { background-position: right center; }
+  100% { background-position: left center; }
+}

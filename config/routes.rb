@@ -31,6 +31,11 @@ Rails.application.routes.draw do
     collection { post :toggle }   # POST /bookmarks/toggle二連打防止
   end
 
+
+  resources :playlists, only: [:new, :create, :index, :show, :edit, :update, :destroy] do
+      resources :playlist_items, only: [:create, :destroy]
+  end
+
   get :my_emotion_logs,          to: 'emotion_logs#my_emotion_logs'
   get 'jamendo/search',          to: 'jamendo#search'
   get '/soundcloud_client_id',   to: 'sound_cloud#client_id'
@@ -42,8 +47,9 @@ Rails.application.routes.draw do
   get 'up',               to: 'rails/health#show',           as: :rails_health_check
   get 'service-worker',   to: 'rails/pwa#service_worker',    as: :pwa_service_worker
   get 'manifest',         to: 'rails/pwa#manifest',          as: :pwa_manifest
-get '/auth/failure', to: 'users/omniauth_callbacks#redirect_on_failure'
+  get '/auth/failure', to: 'users/omniauth_callbacks#redirect_on_failure'
   get '/sign_in', to: redirect('/')
+  get "/sc_resolve", to: "sound_cloud#resolve"
 
 
 end
