@@ -32,7 +32,7 @@
       return;
     }
 
-    if (flashNotice) {
+    if (flashNotice && !sessionStorage.getItem("flashNoticeShown")) {
       Swal.fire({
         title: "成功 🎉",
         text: flashNotice,
@@ -44,6 +44,7 @@
         timerProgressBar: true,
         customClass: { popup: "cyber-popup" }
       });
+      sessionStorage.setItem("flashNoticeShown", "1"); // ← ここで再表示防止
       document.body.dataset.flashNotice = "";
       flashContainer?.remove();
     }

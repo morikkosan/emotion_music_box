@@ -15345,7 +15345,7 @@ document.addEventListener("DOMContentLoaded", function() {
       flashContainer?.remove();
       return;
     }
-    if (flashNotice) {
+    if (flashNotice && !sessionStorage.getItem("flashNoticeShown")) {
       Swal.fire({
         title: "\u6210\u529F \u{1F389}",
         text: flashNotice,
@@ -15357,6 +15357,7 @@ document.addEventListener("DOMContentLoaded", function() {
         timerProgressBar: true,
         customClass: { popup: "cyber-popup" }
       });
+      sessionStorage.setItem("flashNoticeShown", "1");
       document.body.dataset.flashNotice = "";
       flashContainer?.remove();
     }

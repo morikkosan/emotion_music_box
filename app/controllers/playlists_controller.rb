@@ -77,6 +77,7 @@ end
 
   def show
       @playlist_urls = @playlist.playlist_items.includes(:emotion_log).map { |item| item.emotion_log.music_url }
+        flash.discard(:notice) # ← ここで「作成しました！」を即捨てる
 
     # @playlist は set_playlist でセット済み
   end
