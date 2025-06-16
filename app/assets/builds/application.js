@@ -15274,6 +15274,26 @@ var bookmark_controller_default = class extends Controller {
   }
 };
 
+// app/javascript/controllers/add_song_modal_controller.js
+var add_song_modal_controller_default = class extends Controller {
+  static targets = ["item"];
+  connect() {
+    console.log("\u2705 add-song-modal connected");
+    const modalEl = document.getElementById("addSongsModal");
+    if (!modalEl) return;
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modalEl.addEventListener("hidden.bs.modal", () => {
+      console.log("\u{1F501} \u30E2\u30FC\u30C0\u30EB\u9589\u3058\u305F\u306E\u3067\u30DA\u30FC\u30B8\u3092\u30EA\u30ED\u30FC\u30C9\u3057\u307E\u3059");
+      window.location.reload();
+    });
+  }
+  hideItem(event) {
+    const form = event.target.closest("form");
+    const li = form.closest("li[data-add-song-modal-target='item']");
+    if (li) li.remove();
+  }
+};
+
 // app/javascript/controllers/index.js
 var application = Application.start();
 application.register("modal", modal_controller_default);
@@ -15291,6 +15311,7 @@ application.register("playlist-modal", playlist_modal_controller_default);
 application.register("global-player", global_player_controller_default);
 application.register("global-player", global_player_controller_default);
 application.register("bookmark", bookmark_controller_default);
+application.register("add-song-modal", add_song_modal_controller_default);
 
 // app/javascript/custom/comments.js
 document.addEventListener("DOMContentLoaded", function() {
