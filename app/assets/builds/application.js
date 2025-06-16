@@ -15328,9 +15328,7 @@ document.addEventListener("DOMContentLoaded", function() {
       console.warn("\u26A0\uFE0F SweetAlert2 (Swal) \u304C\u8AAD\u307F\u8FBC\u307E\u308C\u3066\u3044\u307E\u305B\u3093");
       return;
     }
-    if (flashAlert === "\u3059\u3067\u306B\u30ED\u30B0\u30A4\u30F3\u6E08\u307F\u3067\u3059") {
-      return;
-    }
+    if (flashAlert === "\u3059\u3067\u306B\u30ED\u30B0\u30A4\u30F3\u6E08\u307F\u3067\u3059") return;
     if (flashAlert) {
       Swal.fire({
         title: "\u30A8\u30E9\u30FC \u274C",
@@ -15345,19 +15343,22 @@ document.addEventListener("DOMContentLoaded", function() {
       flashContainer?.remove();
       return;
     }
-    if (flashNotice && !sessionStorage.getItem("flashNoticeShown")) {
-      Swal.fire({
-        title: "\u6210\u529F \u{1F389}",
-        text: flashNotice,
-        icon: "success",
-        confirmButtonText: "OK",
-        background: "linear-gradient(135deg, #00b3ff, #ff0088)",
-        color: "#fff",
-        timer: 3e3,
-        timerProgressBar: true,
-        customClass: { popup: "cyber-popup" }
-      });
-      sessionStorage.setItem("flashNoticeShown", "1");
+    if (flashNotice) {
+      const key = `flashNotice:${flashNotice}`;
+      if (!sessionStorage.getItem(key)) {
+        Swal.fire({
+          title: "\u6210\u529F \u{1F389}",
+          text: flashNotice,
+          icon: "success",
+          confirmButtonText: "OK",
+          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+          color: "#fff",
+          timer: 3e3,
+          timerProgressBar: true,
+          customClass: { popup: "cyber-popup" }
+        });
+        sessionStorage.setItem(key, "shown");
+      }
       document.body.dataset.flashNotice = "";
       flashContainer?.remove();
     }
