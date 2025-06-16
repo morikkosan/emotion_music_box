@@ -4,31 +4,44 @@ class EmotionLogsController < ApplicationController
 
 
   def index
-    Rails.logger.info "📱 UserAgent: #{request.user_agent}"
-    Rails.logger.info "📱 Mobile判定: #{mobile_device?}"
-       Rails.logger.info "📢 FLASH[notice] at index: #{flash[:notice]}"
+  # 📱 デバッグ用の情報出力
+  Rails.logger.info "📱 UserAgent: #{request.user_agent}"
+  Rails.logger.info "📱 Mobile判定: #{mobile_device?}"
+  Rails.logger.info "📢 FLASH[notice] at index: #{flash[:notice]}"
   Rails.logger.info "📢 FLASH[alert]  at index: #{flash[:alert]}"
 
+  # 🎵 EmotionLogを取得（関連するuser, bookmarks, tagsを含めてleft_joins）
   @emotion_logs = EmotionLog.left_joins(:user, :bookmarks, :tags)
 
-
-    if params[:emotion].present?
-      @emotion_logs = @emotion_logs.where(emotion: params[:emotion])
-    elsif params[:hp].present?
-      hp = params[:hp].to_i
-      hp_emotion = calculate_hp_emotion(hp)
-      @emotion_logs = @emotion_logs.where(emotion: hp_emotion) if hp_emotion.present?
-    end
-
-    if params[:genre].present?
-      @emotion_logs = @emotion_logs.joins(:tags).where(tags: { name: params[:genre] })
-    end
-
-    @emotion_logs = apply_sort_and_period_filters(@emotion_logs).page(params[:page]).per(7)
-    @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id) if user_signed_in?
-
-    render (params[:view] == "mobile" || mobile_device?) ? :mobile_index : :index
+  # 🔍 感情（emotion）による絞り込み
+  if params[:emotion].present?
+    @emotion_logs = @emotion_logs.where(emotion: params[:emotion])
+  
+  # 💖 HPゲージから感情を算出し絞り込み
+  elsif params[:hp].present?
+    hp_emotion = calculate_hp_emotion(params[:hp].to_i)
+    @emotion_logs = @emotion_logs.where(emotion: hp_emotion) if hp_emotion.present?
   end
+
+  # 📌 ジャンル（タグ）による絞り込み
+  if params[:genre].present?
+    @emotion_logs = @emotion_logs.joins(:tags).where(tags: { name: params[:genre] })
+  end
+
+  # 📅 並び順と期間のフィルタリングを適用（ページネーションは7件ずつ）
+  @emotion_logs = apply_sort_and_period_filters(@emotion_logs).page(params[:page]).per(7)
+
+  # 🔖 現在ログインユーザーがブックマークしているemotion_logのID一覧
+  @user_bookmark_ids = user_signed_in? ? current_user.bookmarks.pluck(:emotion_log_id) : []
+
+  # 📱 表示するビューを決定（モバイル用とデスクトップ用）
+  if params[:view] == "mobile" || mobile_device?
+    render :mobile_index
+  else
+    render :index
+  end
+end
+
 
   def my_emotion_logs
     logs = current_user.emotion_logs.includes(:user, :bookmarks, :tags)
@@ -68,23 +81,70 @@ class EmotionLogsController < ApplicationController
     end
   end
 
+  
   def create
-    @emotion_log = current_user.emotion_logs.build(emotion_log_params)
+    @emotion_log  = current_user.emotion_logs.build(emotion_log_params)
     hp_percentage = calculate_hp(@emotion_log.emotion)
-    is_today = @emotion_log.date.to_date == Date.current
+    is_today      = @emotion_log.date.to_date == Date.current
 
     if @emotion_log.save
-      render json: {
-        success: true,
-        message: '記録が保存されました',
-        redirect_url: emotion_logs_path,
-        hpPercentage: hp_percentage,
-        hp_today: is_today
-      }
+      respond_to do |format|
+        # ① JSON リクエストの場合
+        format.json do
+          render json: {
+            success:      true,
+            message:      '記録が保存されました',
+            redirect_url: emotion_logs_path,
+            hpPercentage: hp_percentage,
+            hp_today:     is_today
+          }
+        end
+
+        # ② Turbo Stream リクエストの場合
+        format.turbo_stream do
+          flash.now[:notice] = '記録が保存されました'
+
+          render turbo_stream: [
+            # フラッシュ領域を置き換え
+            turbo_stream.replace(
+              'flash-container',
+              partial: 'shared/flash',
+              locals: { notice: flash.now[:notice], alert: flash.now[:alert] }
+            ),
+            # 一覧ページへリダイレクト
+            turbo_stream.redirect_to(emotion_logs_path)
+          ]
+        end
+
+        # ③ 通常の HTML リクエストの場合
+        format.html do
+          redirect_to emotion_logs_path, notice: '記録が保存されました'
+        end
+      end
     else
-      render json: { success: false, errors: @emotion_log.errors.full_messages }, status: :unprocessable_entity
+      respond_to do |format|
+        format.json do
+          render json: { success: false, errors: @emotion_log.errors.full_messages },
+                status: :unprocessable_entity
+        end
+
+        format.turbo_stream do
+          # バリデーションエラー時はフォーム部分を差し替え
+          render turbo_stream: turbo_stream.replace(
+            'form-container',
+            partial: 'emotion_logs/form',
+            locals: { emotion_log: @emotion_log }
+          ), status: :unprocessable_entity
+        end
+
+        format.html do
+          flash.now[:alert] = @emotion_log.errors.full_messages.join(', ')
+          render :new, status: :unprocessable_entity
+        end
+      end
     end
   end
+
 
   def edit
     @emotion_log = EmotionLog.find(params[:id])
@@ -144,21 +204,34 @@ class EmotionLogsController < ApplicationController
   end
 
   def bookmarks
-    logs = current_user.bookmarked_emotion_logs.includes(:user, :tags)
-    logs = logs.where(emotion: params[:emotion]) if params[:emotion].present?
-    logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
+  # 通常はブックマークのみ
+  logs = current_user.bookmarked_emotion_logs.includes(:user, :tags)
+  logs = logs.where(emotion: params[:emotion]) if params[:emotion].present?
+  logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
 
-    @emotion_logs = apply_sort_and_period_filters(logs).page(params[:page]).per(7)
-    @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
-    @bookmark_page = "♡お気に入りリスト♡"
-    
-    if @emotion_logs.blank?
-      redirect_to emotion_logs_path(view: params[:view]), alert: "まだお気に入り投稿がありません。"
-      return
-    end
+  # ★ チェックがONなら自分の投稿もマージ
+  if params[:include_my_logs] == "true"
+    my_logs = current_user.emotion_logs.includes(:user, :tags)
+    my_logs = my_logs.where(emotion: params[:emotion]) if params[:emotion].present?
+    my_logs = my_logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
 
-    render (params[:view] == "mobile" || mobile_device?) ? :mobile_index : :index
+    # IDsで重複排除（同じ投稿がブックマークにもある場合）
+    log_ids = logs.pluck(:id) + my_logs.pluck(:id)
+    logs = EmotionLog.where(id: log_ids.uniq).includes(:user, :tags)
   end
+
+  @emotion_logs = apply_sort_and_period_filters(logs).page(params[:page]).per(7)
+  @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
+  @bookmark_page = "♡お気に入りリスト♡"
+  
+  if @emotion_logs.blank?
+    redirect_to emotion_logs_path(view: params[:view]), alert: "まだお気に入り投稿がありません。"
+    return
+  end
+
+  render (params[:view] == "mobile" || mobile_device?) ? :mobile_index : :index
+end
+
 
   def recommended
     hp = params[:hp].to_i.clamp(0, 100)
@@ -169,7 +242,7 @@ class EmotionLogsController < ApplicationController
 
     @emotion_logs = apply_sort_and_period_filters(logs).page(params[:page])
     @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
-    @mypage_title = "おすすめ🔥（#{emotion}）"
+    @recommended_page = "🔥おすすめ🔥（#{emotion}）"
     @recommended_page = "🔥おすすめ🔥"
 
     render (params[:view] == "mobile" || mobile_device?) ? :mobile_index : :index

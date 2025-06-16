@@ -55,9 +55,12 @@
                 aria: { label: "この感情ログを編集" } %>
         <% end %>
 
-        <% if @emotion_log.music_url.present? %>
-          <%= render 'mini_music_player', log: @emotion_log %>
-        <% end %>
+       <% if @emotion_log.music_art_url.present? %>
+  <div class="music-art-wrapper">
+    <%= image_tag @emotion_log.music_art_url, alt: "ジャケット画像", class: "music-art-img" %>
+  </div>
+<% end %>
+
       </div>
     </div>
 

@@ -5719,7 +5719,7 @@ function setFormMode(mode) {
   );
   config.forms.mode = mode;
 }
-var Turbo = /* @__PURE__ */ Object.freeze({
+var Turbo2 = /* @__PURE__ */ Object.freeze({
   __proto__: null,
   navigator: navigator$1,
   session,
@@ -6427,7 +6427,7 @@ if (customElements.get("turbo-stream-source") === void 0) {
     element = element.parentElement;
   }
 })();
-window.Turbo = { ...Turbo, StreamActions };
+window.Turbo = { ...Turbo2, StreamActions };
 start2();
 
 // node_modules/@hotwired/turbo-rails/app/javascript/turbo/cable.js
@@ -14192,6 +14192,13 @@ var modal_controller_default = class extends Controller {
     if (desc) setTimeout(() => desc.focus(), 100);
   }
 };
+document.addEventListener("turbo:before-stream-render", (event) => {
+  if (event.target.tagName === "TURBO-STREAM" && ["remove", "replace"].includes(event.target.getAttribute("action")) && event.target.getAttribute("target") === "modal-container") {
+    document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
+    document.body.classList.remove("modal-open");
+    document.body.style.overflow = "";
+  }
+});
 
 // app/javascript/controllers/search_music_controller.js
 var search_music_controller_default = class extends Controller {
@@ -14250,8 +14257,20 @@ var search_music_controller_default = class extends Controller {
           <img src="${track.artwork_url || "https://placehold.jp/100x100.png"}" class="img-thumbnail me-3" style="width:100px;height:100px;">
           <div>
             <p><strong>${track.title}</strong><br>${track.user.username}</p>
-            <a href="${track.permalink_url}" class="btn btn-info btn-sm" target="_blank">SoundCloud\u3067\u518D\u751F</a>
-            <button type="button" class="btn btn-success btn-sm" data-action="search-music#select" data-audio="${track.permalink_url}" data-name="${track.title}" data-artist="${track.user.username}">\u9078\u629Eor\u8996\u8074</button>
+            <a href="${track.permalink_url}" class="btn btn-info btn-sm"
+               style="min-width:100px;font-size:13px;padding:0.25em 0.7em;" target="_blank">
+              SoundCloud\u3067\u518D\u751F
+            </a>
+            <button type="button"
+              class="btn btn-success btn-lg"
+              style="font-size: 1.1rem; min-width:140px; margin-left: 8px;"
+              data-action="search-music#select"
+              data-audio="${track.permalink_url}"
+              data-name="${track.title}"
+              data-artist="${track.user.username}"
+              data-track-id="${track.id}">
+              \u9078\u629Eor\u8996\u8074
+            </button>
           </div>
         </div>
         <div class="player-slot mt-2"></div><hr/>`;
@@ -14294,15 +14313,22 @@ var search_music_controller_default = class extends Controller {
     }
   }
   /* =============================
-   * 曲選択 → プレイヤー表示
+   * 曲選択 → プレイヤー表示＋下部プレーヤー再生
    * ===========================*/
   select(e) {
     const { audio, name, artist } = e.target.dataset;
     this.audioTarget.value = audio;
     this.trackTarget.value = `${name} - ${artist}`;
     document.querySelectorAll(".player-slot").forEach((s) => s.innerHTML = "");
+    window.dispatchEvent(new CustomEvent("play-from-search", {
+      detail: {
+        trackId: audio,
+        // 一意ならaudio（URL）で充分
+        playUrl: audio
+      }
+    }));
     const slot = e.target.closest(".track-result").querySelector(".player-slot");
-    slot.innerHTML = `<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=${encodeURIComponent(audio)}&auto_play=true"></iframe><button type="button" class="btn btn-primary mt-2" data-action="search-music#confirm">\u3053\u306E\u66F2\u306B\u3059\u308B</button>`;
+    slot.innerHTML = `<button type="button" class="btn btn-primary mt-2 btn-lg" style="min-width:120px;" data-action="search-music#confirm">\u3053\u306E\u66F2\u306B\u3059\u308B</button>`;
     slot.scrollIntoView({ behavior: "smooth", block: "center" });
   }
   /* =============================
@@ -14361,13 +14387,13 @@ var search_music_controller_default = class extends Controller {
 var submit_handler_controller_default = class extends Controller {
   static targets = ["submit"];
   connect() {
+    console.log("\u{1F4DD} submit-handler connected");
     if (this.hasSubmitTarget) this.submitTarget.disabled = false;
     setTimeout(() => {
       const dateInput = this.element.querySelector('input[type="date"]');
       if (dateInput) {
         dateInput.addEventListener("change", (e) => {
-          const val = e.target.value;
-          e.target.value = val;
+          e.target.value = e.target.value;
         });
       }
     }, 100);
@@ -14385,39 +14411,69 @@ var submit_handler_controller_default = class extends Controller {
       body: formData
     }).then((res) => res.json()).then((data) => {
       if (data.success) {
-        if (data.hp_today) {
-          let hpPercentage = 50;
-          const storedHP = parseFloat(localStorage.getItem("hpPercentage"));
-          if (!isNaN(storedHP)) hpPercentage = storedHP;
-          if (typeof data.hpPercentage !== "undefined") {
-            hpPercentage += parseFloat(data.hpPercentage);
-            hpPercentage = Math.max(0, Math.min(100, hpPercentage));
-          }
-          localStorage.setItem("hpPercentage", hpPercentage.toString());
-          localStorage.setItem("hpPercentageDate", (/* @__PURE__ */ new Date()).toISOString().slice(0, 10));
-          if (window.updateHPBar) window.updateHPBar();
+        Swal.fire({
+          title: "\u6210\u529F \u{1F389}",
+          text: data.message,
+          // Rails 側で返す JSON の 'message'
+          icon: "success",
+          confirmButtonText: "OK",
+          timer: 2e3,
+          timerProgressBar: true,
+          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+          color: "#fff",
+          customClass: { popup: "cyber-popup" }
+        });
+        if (form.id === "playlist-form") {
           const toastEl = document.getElementById("save-toast");
           if (toastEl) {
-            const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
-            toast.show();
+            const body = toastEl.querySelector(".toast-body");
+            if (body) body.textContent = "\u30D7\u30EC\u30A4\u30EA\u30B9\u30C8\u3092\u4F5C\u6210\u3057\u307E\u3057\u305F\uFF01";
+            Toast.getOrCreateInstance(toastEl).show();
           }
-          setTimeout(() => {
-            window.location.href = data.redirect_url;
-          }, 1500);
-        } else {
-          alert("\u8A18\u9332\u306F\u4FDD\u5B58\u3055\u308C\u307E\u3057\u305F\u304C\u3001HP\u30B2\u30FC\u30B8\u306E\u53CD\u6620\u306F\u4ECA\u65E5\u306E\u8A18\u9332\u306E\u307F\u3067\u3059\u3002");
+        }
+        const redirect = () => {
           window.location.href = data.redirect_url;
+        };
+        if (data.hp_today) {
+          setTimeout(redirect, 1500);
+        } else {
+          Swal.fire({
+            title: "\u5B8C\u4E86",
+            text: "\u8A18\u9332\u306F\u4FDD\u5B58\u3055\u308C\u307E\u3057\u305F\u304C\u3001HP\u30B2\u30FC\u30B8\u306E\u53CD\u6620\u306F\u4ECA\u65E5\u306E\u8A18\u9332\u306E\u307F\u3067\u3059\u3002",
+            icon: "info",
+            confirmButtonText: "OK",
+            background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+            color: "#fff",
+            customClass: { popup: "cyber-popup" }
+          }).then(redirect);
         }
       } else {
-        alert("\u4FDD\u5B58\u306B\u5931\u6557\u3057\u307E\u3057\u305F: " + (data.errors || []).join("\n"));
+        Swal.fire({
+          title: "\u30A8\u30E9\u30FC \u274C",
+          text: (data.errors || []).join("\n"),
+          icon: "error",
+          confirmButtonText: "\u9589\u3058\u308B",
+          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+          color: "#fff",
+          customClass: { popup: "cyber-popup" }
+        });
       }
     }).catch((error2) => {
       console.error("\u9001\u4FE1\u30A8\u30E9\u30FC:", error2);
-      alert("\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
+      Swal.fire({
+        title: "\u9001\u4FE1\u30A8\u30E9\u30FC",
+        text: "\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F",
+        icon: "error",
+        confirmButtonText: "\u9589\u3058\u308B",
+        background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+        color: "#fff",
+        customClass: { popup: "cyber-popup" }
+      });
     }).finally(() => {
-      if (this.hasSubmitTarget) this.submitTarget.disabled = false;
-      const loader2 = document.getElementById("loading-overlay");
-      if (loader2) loader2.style.display = "none";
+      if (loader) loader.style.display = "none";
+      if (this.resultSuccess && this.hasSubmitTarget) {
+        this.submitTarget.disabled = false;
+      }
     });
   }
 };
@@ -14743,6 +14799,501 @@ var mobile_super_search_controller_default = class extends Controller {
   }
 };
 
+// app/javascript/controllers/playlist_modal_controller.js
+document.addEventListener("turbo:before-stream-render", (event) => {
+  const action = event.target.getAttribute("action");
+  const target = event.target.getAttribute("target");
+  if ((action === "remove" || action === "update" || action === "replace") && (target === "modal-container" || target === "playlist-modal-container")) {
+    const playlistModalEl = document.getElementById("playlist-modal");
+    if (playlistModalEl) {
+      const bs = Modal.getInstance(playlistModalEl) || Modal.getOrCreateInstance(playlistModalEl);
+      bs.hide();
+    }
+    const arr = Array.from(document.querySelectorAll("body > .modal-backdrop"));
+    const latest = arr[arr.length - 1];
+    if (latest) latest.remove();
+    document.body.classList.remove("modal-open");
+    document.body.style.overflow = "";
+  }
+});
+var playlist_modal_controller_default = class extends Controller {
+  connect() {
+    console.log("\u25B6\u25B6\u25B6 generic modal controller connected");
+    const arr = Array.from(document.querySelectorAll("body > .modal-backdrop"));
+    const latest = arr[arr.length - 1];
+    if (latest) latest.remove();
+    document.body.classList.remove("modal-open");
+    document.body.style.overflow = "";
+    setTimeout(() => {
+      const selectedLogContainer = this.element.querySelector("#selected-log-ids");
+      if (selectedLogContainer) {
+        selectedLogContainer.innerHTML = "";
+        const checkedLogs = document.querySelectorAll("input.playlist-check:checked");
+        if (checkedLogs.length === 0) {
+          console.warn("\u26A0\uFE0F \u30C1\u30A7\u30C3\u30AF\u3055\u308C\u305F\u30ED\u30B0\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093");
+        }
+        checkedLogs.forEach((checkbox) => {
+          const hidden = document.createElement("input");
+          hidden.type = "hidden";
+          hidden.name = "selected_logs[]";
+          hidden.value = checkbox.value;
+          selectedLogContainer.appendChild(hidden);
+        });
+      }
+    }, 50);
+    const bsModal = Modal.getOrCreateInstance(this.element);
+    bsModal.show();
+    this.element.addEventListener("hidden.bs.modal", () => {
+      this.element.remove();
+    });
+  }
+};
+
+// app/javascript/controllers/global-player_controller.js
+var global_player_controller_default = class extends Controller {
+  static targets = ["trackImage", "playIcon"];
+  connect() {
+    this.iframeElement = document.getElementById("hidden-sc-player");
+    this.bottomPlayer = document.getElementById("bottom-player");
+    this.playPauseIcon = document.getElementById("play-pause-icon");
+    this.trackTitleEl = document.getElementById("track-title");
+    this.trackArtistEl = document.getElementById("track-artist");
+    this.seekBar = document.getElementById("seek-bar");
+    this.currentTimeEl = document.getElementById("current-time");
+    this.durationEl = document.getElementById("duration");
+    this.volumeBar = document.getElementById("volume-bar");
+    this.loadingArea = document.getElementById("loading-spinner");
+    this.neonCharacter = document.querySelector(".neon-character-spinbox");
+    this.currentTrackId = null;
+    this.widget = null;
+    this.progressInterval = null;
+    this.isSeeking = false;
+    this.playStartedAt = null;
+    this.isRepeat = false;
+    this.isShuffle = false;
+    this.updatePlaylistOrder();
+    this.waveformCanvas = document.getElementById("waveform-anime");
+    this.waveformCtx = this.waveformCanvas?.getContext("2d");
+    this.waveformAnimating = false;
+    this.seekBar?.addEventListener("mousedown", () => {
+      this.isSeeking = true;
+      clearInterval(this.progressInterval);
+    });
+    document.addEventListener("mouseup", () => {
+      if (this.isSeeking) {
+        this.isSeeking = false;
+        this.startProgressTracking();
+      }
+    });
+    this.volumeBar?.addEventListener("input", (e) => this.changeVolume(e));
+    this.seekBar?.addEventListener("input", (e) => this.seek(e));
+    window.addEventListener("play-from-search", (e) => {
+      const { playUrl } = e.detail;
+      this.playFromExternal(playUrl);
+    });
+    console.log("[connect] global-player\u30B3\u30F3\u30C8\u30ED\u30FC\u30E9\u521D\u671F\u5316\u5B8C\u4E86");
+  }
+  // ─────────────────────────────────────────────────────────────
+  // 「検索結果から再生」用メソッド。ここを追加！
+  playFromExternal(playUrl) {
+    this.bottomPlayer?.classList.remove("d-none");
+    if (this.widget) {
+      this.widget.unbind(SC.Widget.Events.PLAY);
+      this.widget.unbind(SC.Widget.Events.PAUSE);
+      this.widget.unbind(SC.Widget.Events.FINISH);
+      clearInterval(this.progressInterval);
+      this.widget = null;
+    }
+    this.iframeElement = this.replaceIframeWithNew();
+    if (!this.iframeElement) {
+      alert("iframe\u751F\u6210\u306B\u5931\u6557\u3057\u307E\u3057\u305F");
+      return;
+    }
+    this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(playUrl)}&auto_play=true`;
+    this.resetPlayerUI();
+    this.iframeElement.onload = () => {
+      setTimeout(() => {
+        this.widget = SC.Widget(this.iframeElement);
+        this.widget.bind(SC.Widget.Events.READY, () => {
+          this.widget.getCurrentSound((sound) => {
+            if (sound && sound.title) {
+              this.trackTitleEl.textContent = sound.title;
+              this.trackArtistEl.textContent = sound.user?.username ? `\u2014 ${sound.user.username}` : "";
+            } else {
+              this.trackTitleEl.textContent = "\u30BF\u30A4\u30C8\u30EB\u4E0D\u660E";
+              this.trackArtistEl.textContent = "";
+            }
+            this.hideLoadingUI();
+          });
+          this.bindWidgetEvents();
+          this.widget.play();
+          this.startProgressTracking();
+          this.changeVolume({ target: this.volumeBar });
+        });
+      }, 100);
+    };
+  }
+  // ─────────────────────────────────────────────────────────────
+  startWaveformAnime() {
+    if (!this.waveformCtx) return;
+    this.waveformAnimating = true;
+    const ctx = this.waveformCtx;
+    const W = this.waveformCanvas.width;
+    const H = this.waveformCanvas.height;
+    let t = 0;
+    const animate = () => {
+      if (!this.waveformAnimating) return;
+      ctx.clearRect(0, 0, W, H);
+      ctx.save();
+      ctx.strokeStyle = "#10ffec";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let x = 0; x < W; x += 4) {
+        const y = H / 2 + Math.sin((x + t) / 7) * (H / 2.5) * (0.7 + 0.3 * Math.sin(x / 17 + t / 13));
+        ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+      t += 0.7;
+      requestAnimationFrame(animate);
+    };
+    animate();
+  }
+  stopWaveformAnime() {
+    this.waveformAnimating = false;
+    if (this.waveformCtx) {
+      this.waveformCtx.clearRect(
+        0,
+        0,
+        this.waveformCanvas.width,
+        this.waveformCanvas.height
+      );
+    }
+  }
+  toggleShuffle(e) {
+    this.isShuffle = !this.isShuffle;
+    document.getElementById("shuffle-button")?.classList.toggle("active", this.isShuffle);
+    this.updatePlaylistOrder();
+    console.log("[toggleShuffle]", this.isShuffle);
+  }
+  toggleRepeat(e) {
+    this.isRepeat = !this.isRepeat;
+    document.getElementById("repeat-button")?.classList.toggle("active", this.isRepeat);
+    console.log("[toggleRepeat]", this.isRepeat);
+  }
+  updatePlaylistOrder() {
+    this.playlistOrder = this.trackImageTargets.map((img) => img.dataset.trackId);
+    if (this.isShuffle) this.shufflePlaylistOrder();
+  }
+  shufflePlaylistOrder() {
+    for (let i = this.playlistOrder.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.playlistOrder[i], this.playlistOrder[j]] = [this.playlistOrder[j], this.playlistOrder[i]];
+    }
+  }
+  showLoadingUI() {
+    this.playPauseIcon && (this.playPauseIcon.style.display = "none");
+    this.loadingArea && (this.loadingArea.style.display = "inline-flex");
+    this.neonCharacter && (this.neonCharacter.style.display = "inline-block");
+    if (this.trackTitleEl) {
+      this.trackTitleEl.innerHTML = `
+        <span class="neon-wave">
+          <span>N</span><span>O</span><span>W</span>
+          <span>&nbsp;</span>
+          <span>L</span><span>O</span><span>A</span><span>D</span>
+          <span>I</span><span>N</span><span>G</span>
+          <span>.</span><span>.</span><span>.</span>
+        </span>`;
+      this.trackTitleEl.style.display = "block";
+    }
+    if (this.trackArtistEl) {
+      this.trackArtistEl.textContent = "";
+      this.trackArtistEl.style.display = "none";
+    }
+  }
+  hideLoadingUI() {
+    this.playPauseIcon && (this.playPauseIcon.style.display = "");
+    this.loadingArea && (this.loadingArea.style.display = "none");
+    this.neonCharacter && (this.neonCharacter.style.display = "none");
+    this.trackTitleEl && (this.trackTitleEl.style.display = "");
+    this.trackArtistEl && (this.trackArtistEl.style.display = "");
+  }
+  resetPlayerUI() {
+    console.log("[resetPlayerUI] UI\u521D\u671F\u5316\u3057\u307E\u3059");
+    this.currentTimeEl && (this.currentTimeEl.textContent = "0:00");
+    this.durationEl && (this.durationEl.textContent = "0:00");
+    this.seekBar && (this.seekBar.value = 0);
+    if (this.hasPlayIconTarget) {
+      this.playIconTargets.forEach((icn) => {
+        icn.classList.add("fa-play");
+        icn.classList.remove("fa-pause");
+      });
+    }
+    this.playPauseIcon?.classList.add("fa-play");
+    this.playPauseIcon?.classList.remove("fa-pause");
+    this.showLoadingUI();
+  }
+  replaceIframeWithNew() {
+    const oldIframe = document.getElementById("hidden-sc-player");
+    if (!oldIframe) return null;
+    const parent = oldIframe.parentNode;
+    const newIframe = document.createElement("iframe");
+    newIframe.id = "hidden-sc-player";
+    newIframe.style.display = "none";
+    newIframe.allow = "autoplay";
+    newIframe.frameBorder = "no";
+    newIframe.scrolling = "no";
+    newIframe.width = "100%";
+    newIframe.height = "166";
+    parent.replaceChild(newIframe, oldIframe);
+    return newIframe;
+  }
+  loadAndPlay(event) {
+    event.stopPropagation();
+    this.updatePlaylistOrder();
+    const icon = event.currentTarget;
+    const newTrackId = icon.dataset.trackId;
+    const img = this.trackImageTargets.find((t) => t.dataset.trackId == newTrackId);
+    const trackUrl = img?.dataset.playUrl;
+    if (!trackUrl) {
+      console.warn("[loadAndPlay] trackUrl missing", { img });
+      return;
+    }
+    this.resetPlayerUI();
+    this.bottomPlayer?.classList.remove("d-none");
+    this.currentTrackId = newTrackId;
+    if (this.widget) {
+      this.widget.unbind(SC.Widget.Events.PLAY);
+      this.widget.unbind(SC.Widget.Events.PAUSE);
+      this.widget.unbind(SC.Widget.Events.FINISH);
+      clearInterval(this.progressInterval);
+      this.widget = null;
+    }
+    this.iframeElement = this.replaceIframeWithNew();
+    if (!this.iframeElement) {
+      alert("iframe\u751F\u6210\u306B\u5931\u6557\u3057\u307E\u3057\u305F");
+      return;
+    }
+    this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&auto_play=true`;
+    this.iframeElement.onload = () => {
+      setTimeout(() => {
+        this.widget = SC.Widget(this.iframeElement);
+        this.widget.bind(SC.Widget.Events.READY, () => {
+          const trySetTitle = (retry = 0) => {
+            this.widget.getCurrentSound((sound) => {
+              if (sound?.title) {
+                this.trackTitleEl.textContent = sound.title;
+                this.trackArtistEl.textContent = sound.user?.username ? `\u2014 ${sound.user.username}` : "";
+                this.hideLoadingUI();
+              } else if (retry < 5) {
+                setTimeout(() => trySetTitle(retry + 1), 250);
+              } else {
+                this.trackTitleEl.textContent = "\u30BF\u30A4\u30C8\u30EB\u4E0D\u660E";
+                this.trackArtistEl.textContent = "";
+                this.hideLoadingUI();
+              }
+            });
+          };
+          trySetTitle();
+          this.bindWidgetEvents();
+          this.widget.play();
+          this.startProgressTracking();
+          this.changeVolume({ target: this.volumeBar });
+          this.updateTrackIcon(this.currentTrackId, true);
+        });
+      }, 100);
+    };
+  }
+  togglePlayPause(event) {
+    event?.stopPropagation();
+    if (!this.widget) return;
+    this.widget.isPaused((paused) => {
+      if (paused) this.widget.play();
+      else this.widget.pause();
+    });
+  }
+  seek(event) {
+    if (!this.widget) return;
+    const percent = event.target.value;
+    this.widget.getDuration((dur) => {
+      if (!dur) return;
+      this.widget.seekTo(percent / 100 * dur);
+    });
+  }
+  changeVolume(event) {
+    if (!this.widget) return;
+    const vol = event.target.value / 100;
+    this.widget.setVolume(vol * 100);
+  }
+  onPlay = () => {
+    this.playPauseIcon?.classList.replace("fa-play", "fa-pause");
+    this.updateTrackIcon(this.currentTrackId, true);
+    this.playStartedAt = Date.now();
+    this.startWaveformAnime();
+    this.widget.getCurrentSound((sound) => {
+      if (sound?.title && !this.trackTitleEl.textContent) {
+        this.trackTitleEl.textContent = sound.title;
+        this.trackArtistEl.textContent = sound.user?.username ? `\u2014 ${sound.user.username}` : "";
+        this.hideLoadingUI();
+      }
+    });
+  };
+  onPause = () => {
+    this.playPauseIcon?.classList.replace("fa-pause", "fa-play");
+    this.updateTrackIcon(this.currentTrackId, false);
+    this.stopWaveformAnime();
+  };
+  onFinish = () => {
+    const finishedAt = Date.now();
+    const playedMs = this.playStartedAt ? finishedAt - this.playStartedAt : 0;
+    this.stopWaveformAnime();
+    if (playedMs < 32e3 && playedMs > 5e3) {
+      if (window.Swal) {
+        Swal.fire({
+          icon: "info",
+          title: "\u8A66\u8074\u7D42\u4E86",
+          text: "\u3053\u306E\u66F2\u306E\u8996\u8074\u306F30\u79D2\u307E\u3067\u3067\u3059\uFF08\u6A29\u5229\u5236\u9650\uFF09",
+          confirmButtonText: "OK"
+        });
+      } else {
+        alert("\u3053\u306E\u66F2\u306E\u8996\u8074\u306F30\u79D2\u307E\u3067\u3067\u3059\uFF08\u6A29\u5229\u5236\u9650\uFF09");
+      }
+    }
+    this.playPauseIcon?.classList.replace("fa-pause", "fa-play");
+    this.updateTrackIcon(this.currentTrackId, false);
+    clearInterval(this.progressInterval);
+    this.playStartedAt = null;
+    if (this.isRepeat) {
+      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == this.currentTrackId);
+      if (icon) {
+        return setTimeout(() => this.loadAndPlay({ currentTarget: icon, stopPropagation() {
+        } }), 300);
+      }
+    }
+    const curIdx = this.playlistOrder.indexOf(this.currentTrackId);
+    const nextId = this.playlistOrder[curIdx + 1];
+    if (nextId) {
+      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == nextId);
+      if (icon) {
+        return setTimeout(() => this.loadAndPlay({ currentTarget: icon, stopPropagation() {
+        } }), 300);
+      }
+    }
+    this.bottomPlayer?.classList.add("d-none");
+  };
+  updateTrackIcon(trackId2, playing) {
+    if (!this.hasPlayIconTarget) return;
+    this.playIconTargets.forEach((icn) => {
+      if (icn.dataset.trackId == trackId2) {
+        icn.classList.toggle("fa-play", !playing);
+        icn.classList.toggle("fa-pause", playing);
+      } else {
+        icn.classList.add("fa-play");
+        icn.classList.remove("fa-pause");
+      }
+    });
+  }
+  bindWidgetEvents() {
+    if (!this.widget) return;
+    this.widget.unbind(SC.Widget.Events.PLAY);
+    this.widget.unbind(SC.Widget.Events.PAUSE);
+    this.widget.unbind(SC.Widget.Events.FINISH);
+    this.widget.bind(SC.Widget.Events.PLAY, this.onPlay);
+    this.widget.bind(SC.Widget.Events.PAUSE, this.onPause);
+    this.widget.bind(SC.Widget.Events.FINISH, this.onFinish);
+  }
+  startProgressTracking() {
+    clearInterval(this.progressInterval);
+    this.progressInterval = setInterval(() => {
+      if (!this.widget || this.isSeeking) return;
+      this.widget.getPosition((pos) => {
+        this.widget.getDuration((dur) => {
+          if (!dur) return;
+          this.seekBar && (this.seekBar.value = pos / dur * 100);
+          this.currentTimeEl && (this.currentTimeEl.textContent = this.formatTime(pos));
+          this.durationEl && (this.durationEl.textContent = this.formatTime(dur));
+        });
+      });
+    }, 500);
+  }
+  formatTime(ms) {
+    const sec = Math.floor((ms || 0) / 1e3);
+    const min2 = Math.floor(sec / 60);
+    const rem = sec % 60;
+    return `${min2}:${rem.toString().padStart(2, "0")}`;
+  }
+  prevTrack(event) {
+    event?.stopPropagation();
+    this.updatePlaylistOrder();
+    if (!this.currentTrackId || !this.playlistOrder?.length) return;
+    const idx = this.playlistOrder.indexOf(this.currentTrackId);
+    if (idx > 0) {
+      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == this.playlistOrder[idx - 1]);
+      icon && this.loadAndPlay({ currentTarget: icon, stopPropagation() {
+      } });
+    }
+  }
+  nextTrack(event) {
+    event?.stopPropagation();
+    this.updatePlaylistOrder();
+    if (!this.currentTrackId || !this.playlistOrder?.length) return;
+    const idx = this.playlistOrder.indexOf(this.currentTrackId);
+    if (idx < this.playlistOrder.length - 1) {
+      const icon = this.playIconTargets.find((icn) => icn.dataset - trackId == this.playlistOrder[idx + 1]);
+      icon && this.loadAndPlay({ currentTarget: icon, stopPropagation() {
+      } });
+    }
+  }
+  playFirstTrack(event) {
+    event?.stopPropagation();
+    this.updatePlaylistOrder();
+    if (!this.playlistOrder?.length) return;
+    const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == this.playlistOrder[0]);
+    if (icon) {
+      this.loadAndPlay({ currentTarget: icon, stopPropagation() {
+      } });
+    }
+  }
+};
+
+// app/javascript/controllers/bookmark_controller.js
+var bookmark_controller_default = class extends Controller {
+  static targets = ["selectedLogsInput", "includeMyLogsCheckbox"];
+  // マイページ投稿表示ON/OFF切替え
+  toggleMyPageLogs(event) {
+    const includeMyLogs = event.target.checked;
+    const url = new URL(window.location);
+    url.searchParams.set("include_my_logs", includeMyLogs);
+    Turbo.visit(url.toString(), { frame: "logs_list" });
+  }
+  // フォーム送信時にチェック済投稿のIDをセット
+  submitPlaylistForm(event) {
+    const checkedBoxes = document.querySelectorAll(".playlist-check:checked");
+    const selectedIds = Array.from(checkedBoxes).map((box) => box.value);
+    this.selectedLogsInputTarget.value = selectedIds.join(",");
+  }
+};
+
+// app/javascript/controllers/add_song_modal_controller.js
+var add_song_modal_controller_default = class extends Controller {
+  static targets = ["item"];
+  connect() {
+    console.log("\u2705 add-song-modal connected");
+    const modalEl = document.getElementById("addSongsModal");
+    if (!modalEl) return;
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modalEl.addEventListener("hidden.bs.modal", () => {
+      console.log("\u{1F501} \u30E2\u30FC\u30C0\u30EB\u9589\u3058\u305F\u306E\u3067\u30DA\u30FC\u30B8\u3092\u30EA\u30ED\u30FC\u30C9\u3057\u307E\u3059");
+      window.location.reload();
+    });
+  }
+  hideItem(event) {
+    const form = event.target.closest("form");
+    const li = form.closest("li[data-add-song-modal-target='item']");
+    if (li) li.remove();
+  }
+};
+
 // app/javascript/controllers/index.js
 var application = Application.start();
 application.register("modal", modal_controller_default);
@@ -14756,6 +15307,11 @@ application.register("tag-autocomplete", tag_autocomplete_controller_default);
 application.register("view-switcher", view_switcher_controller_default);
 application.register("record-btn", record_btn_controller_default);
 application.register("mobile-super-search", mobile_super_search_controller_default);
+application.register("playlist-modal", playlist_modal_controller_default);
+application.register("global-player", global_player_controller_default);
+application.register("global-player", global_player_controller_default);
+application.register("bookmark", bookmark_controller_default);
+application.register("add-song-modal", add_song_modal_controller_default);
 
 // app/javascript/custom/comments.js
 document.addEventListener("DOMContentLoaded", function() {
@@ -14793,9 +15349,7 @@ document.addEventListener("DOMContentLoaded", function() {
       console.warn("\u26A0\uFE0F SweetAlert2 (Swal) \u304C\u8AAD\u307F\u8FBC\u307E\u308C\u3066\u3044\u307E\u305B\u3093");
       return;
     }
-    if (flashAlert === "\u3059\u3067\u306B\u30ED\u30B0\u30A4\u30F3\u6E08\u307F\u3067\u3059") {
-      return;
-    }
+    if (flashAlert === "\u3059\u3067\u306B\u30ED\u30B0\u30A4\u30F3\u6E08\u307F\u3067\u3059") return;
     if (flashAlert) {
       Swal.fire({
         title: "\u30A8\u30E9\u30FC \u274C",
@@ -14811,17 +15365,21 @@ document.addEventListener("DOMContentLoaded", function() {
       return;
     }
     if (flashNotice) {
-      Swal.fire({
-        title: "\u6210\u529F \u{1F389}",
-        text: flashNotice,
-        icon: "success",
-        confirmButtonText: "OK",
-        background: "linear-gradient(135deg, #00b3ff, #ff0088)",
-        color: "#fff",
-        timer: 3e3,
-        timerProgressBar: true,
-        customClass: { popup: "cyber-popup" }
-      });
+      const key = `flashNotice:${flashNotice}`;
+      if (!sessionStorage.getItem(key)) {
+        Swal.fire({
+          title: "\u6210\u529F \u{1F389}",
+          text: flashNotice,
+          icon: "success",
+          confirmButtonText: "OK",
+          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+          color: "#fff",
+          timer: 3e3,
+          timerProgressBar: true,
+          customClass: { popup: "cyber-popup" }
+        });
+        sessionStorage.setItem(key, "shown");
+      }
       document.body.dataset.flashNotice = "";
       flashContainer?.remove();
     }
@@ -15099,27 +15657,32 @@ document.addEventListener("turbo:load", () => {
     inlinePreview.src = dataUrl;
     avatarUrlField.value = "";
     modal.hide();
-    try {
-      inlinePreview.classList.add("loading");
-      const tempImage = new window.Image();
-      tempImage.onload = async () => {
-        const resizedBlob = await resizeImage(tempImage, 300);
-        const fd = new FormData();
-        fd.append("file", resizedBlob, "avatar.jpg");
-        fd.append("upload_preset", window.CLOUDINARY_UPLOAD_PRESET);
-        const res = await axios.post(
-          `https://api.cloudinary.com/v1_1/${window.CLOUDINARY_CLOUD_NAME}/upload`,
-          fd
-        );
-        inlinePreview.src = res.data.secure_url;
-        avatarUrlField.value = res.data.secure_url;
-        if (submitBtn) submitBtn.disabled = false;
+    if (window.CLOUDINARY_CLOUD_NAME && window.CLOUDINARY_UPLOAD_PRESET) {
+      try {
+        inlinePreview.classList.add("loading");
+        const tempImage = new window.Image();
+        tempImage.onload = async () => {
+          const resizedBlob = await resizeImage(tempImage, 300);
+          const fd = new FormData();
+          fd.append("file", resizedBlob, "avatar.jpg");
+          fd.append("upload_preset", window.CLOUDINARY_UPLOAD_PRESET);
+          const res = await axios.post(
+            `https://api.cloudinary.com/v1_1/${window.CLOUDINARY_CLOUD_NAME}/upload`,
+            fd
+          );
+          inlinePreview.src = res.data.secure_url;
+          avatarUrlField.value = res.data.secure_url;
+          if (submitBtn) submitBtn.disabled = false;
+          inlinePreview.classList.remove("loading");
+        };
+        tempImage.src = dataUrl;
+      } catch (err) {
+        console.error("Cloudinary upload failed", err);
         inlinePreview.classList.remove("loading");
-      };
-      tempImage.src = dataUrl;
-    } catch (err) {
-      console.error("Cloudinary upload failed", err);
-      inlinePreview.classList.remove("loading");
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    } else {
+      avatarUrlField.value = dataUrl;
       if (submitBtn) submitBtn.disabled = false;
     }
   });
