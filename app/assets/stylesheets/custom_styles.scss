@@ -730,7 +730,7 @@ h1 i.bi bi-heart-pulse {
     display: none;
   }
 }
-#playlist-sidebar, #super-search-panel {
+#super-search-panel {
   position: fixed;
   top: 160px;      // 仮 ここは「ゲージ下端」の実ピクセルにあわせる
   left: 0;
@@ -742,6 +742,15 @@ h1 i.bi bi-heart-pulse {
   padding: 16px 10px 16px 20px;
   bottom: unset;  // bottom指定は外す
 }
+
+#playlist-sidebar {
+  all: unset;
+  display: contents;
+}
+
+
+
+
 
 .scroll-content {
   height: calc(100vh - 320px); /* ←ヘッダー・ゲージ・フッター分を引く。要微調整！ */
