@@ -1,5 +1,5 @@
 # app/models/emotion_log.rb
-require 'cgi'
+require "cgi"
 
 class EmotionLog < ApplicationRecord
   belongs_to :user
@@ -37,27 +37,27 @@ class EmotionLog < ApplicationRecord
   scope :by_bookmarks, -> {
     left_joins(:bookmarks, :user)
       .select(
-        'emotion_logs.*, ' \
-        'users.id as user_id, ' \
-        'users.name as user_name, ' \
-        'users.avatar_url as user_avatar_url, ' \
-        'COUNT(bookmarks.id) AS bookmarks_count'
+        "emotion_logs.*, " \
+        "users.id as user_id, " \
+        "users.name as user_name, " \
+        "users.avatar_url as user_avatar_url, " \
+        "COUNT(bookmarks.id) AS bookmarks_count"
       )
-      .group('emotion_logs.id, users.id, users.name, users.avatar_url')
-      .order('COUNT(bookmarks.id) DESC')
+      .group("emotion_logs.id, users.id, users.name, users.avatar_url")
+      .order("COUNT(bookmarks.id) DESC")
   }
 
   scope :by_comments, -> {
     left_joins(:comments, :user)
       .select(
-        'emotion_logs.*, ' \
-        'users.id as user_id, ' \
-        'users.name as user_name, ' \
-        'users.avatar_url as user_avatar_url, ' \
-        'COUNT(comments.id) AS comments_count'
+        "emotion_logs.*, " \
+        "users.id as user_id, " \
+        "users.name as user_name, " \
+        "users.avatar_url as user_avatar_url, " \
+        "COUNT(comments.id) AS comments_count"
       )
-      .group('emotion_logs.id, users.id, users.name, users.avatar_url')
-      .order('COUNT(comments.id) DESC')
+      .group("emotion_logs.id, users.id, users.name, users.avatar_url")
+      .order("COUNT(comments.id) DESC")
   }
 
   # ==== モデル内メソッド ====
@@ -129,7 +129,7 @@ class EmotionLog < ApplicationRecord
   def assign_tags
     return if tag_names.blank?
 
-    self.tags = tag_names.split(',').map do |tag_name|
+    self.tags = tag_names.split(",").map do |tag_name|
       Tag.find_or_create_by(name: tag_name.strip)
     end
   end
