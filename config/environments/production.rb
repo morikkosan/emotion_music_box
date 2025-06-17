@@ -24,12 +24,12 @@ Rails.application.configure do
   # 開発用ホストを許可（yourproductiondomain.com を WSLでhosts設定した場合）
   config.hosts << "moriappli-emotion.com"
 
-# デプロイ本番の時は　falseに 開発ではtrue
+  # デプロイ本番の時は　falseに 開発ではtrue
   config.enable_reloading = false
   # デプロイ本番の時は　teureに 開発ではfalse
   config.eager_load = true
   # デプロイ本番の時は　falseに 開発ではtrue
-                # ← 既存設定と合わせてリロード機能を有効化
+  # ← 既存設定と合わせてリロード機能を有効化
   config.consider_all_requests_local = false
   config.server_timing = true
   config.action_controller.perform_caching = true

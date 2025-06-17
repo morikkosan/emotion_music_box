@@ -69,5 +69,4 @@ end
     flash[:alert] = "SoundCloudログインがキャンセルされました。もう一度ログインをするか、ログイン画面先でSign out!を押してください"
     redirect_to root_path
   end
-
 end

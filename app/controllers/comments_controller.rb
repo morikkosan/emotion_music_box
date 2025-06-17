@@ -1,7 +1,7 @@
 class CommentsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_emotion_log, only: [:create]
-  before_action :set_comment,      only: [:edit, :update, :destroy, :toggle_reaction]
+  before_action :set_emotion_log, only: [ :create ]
+  before_action :set_comment,      only: [ :edit, :update, :destroy, :toggle_reaction ]
 
   # POST /emotion_logs/:emotion_log_id/comments
   def create
@@ -18,7 +18,7 @@ class CommentsController < ApplicationController
         format.turbo_stream
         format.html { redirect_to emotion_log_path(@emotion_log) }
       else
-        format.html { redirect_to emotion_log_path(@emotion_log), alert: 'コメントの投稿に失敗しました' }
+        format.html { redirect_to emotion_log_path(@emotion_log), alert: "コメントの投稿に失敗しました" }
       end
     end
   end
@@ -100,7 +100,7 @@ class CommentsController < ApplicationController
           )
         ]
       end
-      format.html { redirect_to emotion_log_path(emotion_log), notice: 'コメントを削除しました' }
+      format.html { redirect_to emotion_log_path(emotion_log), notice: "コメントを削除しました" }
     end
   end
 

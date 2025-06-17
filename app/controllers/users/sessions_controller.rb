@@ -24,10 +24,9 @@ class Users::SessionsController < Devise::SessionsController
   def after_sign_out_path_for(resource_or_scope)
     flash[:notice] = "ログアウトしました。また来てね！"
     if mobile_device?
-      emotion_logs_path(view: 'mobile')
+      emotion_logs_path(view: "mobile")
     else
       emotion_logs_path
     end
   end
 end
-
