@@ -81,13 +81,13 @@ jobs:
       - name: Set up database
         env:
           RAILS_ENV: test
-          DATABASE_URL: postgres://postgres:password@db:5432
+          DATABASE_URL: postgres://postgres:password@db:5432/app_test
         run: bundle exec rails db:create db:schema:load
 
       - name: Run RSpec tests
         env:
           RAILS_ENV: test
-          DATABASE_URL: postgres://postgres:password@db:5432
+          DATABASE_URL: postgres://postgres:password@db:5432/app_test
         run: bundle exec rspec
 
       - name: Keep screenshots from failed system tests
