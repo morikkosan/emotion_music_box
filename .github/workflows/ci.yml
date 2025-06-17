@@ -25,6 +25,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -78,6 +79,9 @@ jobs:
           done
 
       - name: Set up database
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: postgres://postgres:password@db:5432
         run: bundle exec rails db:create db:schema:load
 
       - name: Run RSpec tests
