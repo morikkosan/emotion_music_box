@@ -23,8 +23,6 @@ jobs:
       - name: Scan for common Rails security vulnerabilities using static analysis
         run: bin/brakeman --no-pager || true
 
-
-
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -44,14 +42,18 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      postgres:
+      db:  # ← ★ 修正: サービス名を database.yml に合わせて db に変更
         image: postgres
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: password  # ← ★ 修正: database.ymlに合わせて password に変更
         ports:
           - 5432:5432
-        options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
+        options: >-
+          --health-cmd="pg_isready"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
 
     steps:
       - name: Install packages
@@ -72,7 +74,7 @@ jobs:
       - name: Run RSpec tests
         env:
           RAILS_ENV: test
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432
+          DATABASE_URL: postgres://postgres:password@db:5432  # ← ★ 修正: localhost → db, passwordも一致
         run: bundle exec rspec
 
       - name: Keep screenshots from failed system tests
