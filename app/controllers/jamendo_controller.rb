@@ -1,5 +1,5 @@
 class JamendoController < ApplicationController
-  require 'httparty'
+  require "httparty"
 
   def search
     query = params[:q].to_s.strip.presence || "relax"  # デフォルトは "relax"
@@ -9,7 +9,7 @@ class JamendoController < ApplicationController
 
     begin
       response = HTTParty.get(url)
-      
+
       if response.success?
         json_data = JSON.parse(response.body)
         @tracks = json_data["results"] || []

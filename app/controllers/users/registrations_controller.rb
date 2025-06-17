@@ -1,6 +1,6 @@
 class Users::RegistrationsController < Devise::RegistrationsController
-  before_action :ensure_current_user, only: [:edit, :update]
-  before_action :skip_current_password_validation, only: [:update]
+  before_action :ensure_current_user, only: [ :edit, :update ]
+  before_action :skip_current_password_validation, only: [ :update ]
 
   def update
     self.resource = resource_class.to_adapter.get!(send(:"current_#{resource_name}").to_key)
@@ -28,9 +28,9 @@ class Users::RegistrationsController < Devise::RegistrationsController
     if params[:cropped_avatar_data].present?
       data = params.delete(:cropped_avatar_data)
       if data =~ /^data:(.*?);base64,(.*)$/
-        ext = $1.split('/').last
+        ext = $1.split("/").last
         decoded = Base64.decode64($2)
-        tempfile = Tempfile.new(["avatar", ".#{ext}"], binmode: true)
+        tempfile = Tempfile.new([ "avatar", ".#{ext}" ], binmode: true)
         tempfile.write(decoded)
         tempfile.rewind
         resource.avatar.attach(io: tempfile, filename: "avatar.#{ext}")

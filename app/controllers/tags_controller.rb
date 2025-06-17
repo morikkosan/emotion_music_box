@@ -1,5 +1,4 @@
 class TagsController < ApplicationController
-
   def index
     if params[:q].present?
       tags = Tag.where("name ILIKE ?", "#{params[:q]}%").limit(10)
