@@ -1,26 +1,16 @@
-name: DB Connectivity Check
+name: Debug Info
 
 on: [push]
 
 jobs:
-  test:
+  debug:
     runs-on: ubuntu-latest
-
-    services:
-      db:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password
-        ports:
-          - 5432:5432
-
     steps:
-      - name: Wait for Postgres
+      - name: Echo debug info
         run: |
-          for i in {1..10}; do
-            nc -z db 5432 && echo "Postgres is up!" && exit 0
-            echo "Waiting for Postgres... ($i)"
-            sleep 2
-          done
-          echo "Postgres never came up" && exit 1
+          echo "==== Working Directory ===="
+          pwd
+          echo "==== Directory List ===="
+          ls -l
+          echo "==== Workflow File Check ===="
+          ls -l .github/workflows/
