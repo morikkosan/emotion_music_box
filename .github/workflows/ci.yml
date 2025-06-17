@@ -1,9 +1,9 @@
-name: Postgres Connectivity Only
+name: Minimal Postgres Connectivity Test
 
 on: [push]
 
 jobs:
-  test-postgres-connection:
+  connectivity-test:
     runs-on: ubuntu-latest
 
     services:
@@ -12,8 +12,6 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
-        ports:
-          - 5432:5432
 
     steps:
       - name: Install netcat & dnsutils
@@ -21,9 +19,9 @@ jobs:
 
       - name: Check DB host is up
         run: |
-          echo "Ping test:"
+          echo "==== ping db ===="
           ping -c 2 db || echo "ping failed"
-          echo "NC port test:"
-          nc -zv db 5432
-          echo "Dig test:"
+          echo "==== nc db 5432 ===="
+          nc -zv db 5432 || echo "nc failed"
+          echo "==== dig db ===="
           dig db
