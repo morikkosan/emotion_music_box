@@ -61,4 +61,3 @@ jobs:
         env:
           RAILS_ENV: test
         run: bundle exec rspec
-gi
