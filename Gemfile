@@ -34,21 +34,21 @@ gem "tzinfo-data", platforms: %i[ruby jruby]
 gem "bootsnap", require: false
 gem "bootstrap", "~> 5.3.0"
 gem "sassc-rails"
-gem 'groupdate'
-gem 'httparty'
+gem "groupdate"
+gem "httparty"
 gem "kaminari"
 gem "bootstrap5-kaminari-views"
-gem 'devise'
-gem 'omniauth'
-gem 'rails-i18n', '~> 7.0'
-gem 'omniauth-google-oauth2'
-gem 'omniauth-github'
+gem "devise"
+gem "omniauth"
+gem "rails-i18n", "~> 7.0"
+gem "omniauth-google-oauth2"
+gem "omniauth-github"
 # gem 'omniauth-apple'
-gem 'omniauth-facebook'
-gem 'omniauth-rails_csrf_protection'
-gem 'omniauth-oauth2-generic'
-gem 'oauth2', '~> 2.0'
-gem 'omniauth-oauth2'
+gem "omniauth-facebook"
+gem "omniauth-rails_csrf_protection"
+gem "omniauth-oauth2-generic"
+gem "oauth2", "~> 2.0"
+gem "omniauth-oauth2"
 
 gem "image_processing", "~> 1.2"
 
@@ -57,15 +57,15 @@ gem "image_processing", "~> 1.2"
 # ローカルcloudinary確認用
 gem "cloudinary", "~> 2.3"
 gem "activestorage-cloudinary-service", "~> 0.2.3"
-gem 'listen', '~> 3.7'
+gem "listen", "~> 3.7"
 
 
 
 
 
-gem 'dotenv-rails'
+gem "dotenv-rails"
 # gem 'redis-rails'
-gem 'redis-session-store'
+gem "redis-session-store"
 
 
 
