@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Install system packages
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y build-essential git libpq-dev libyaml-dev pkg-config google-chrome-stable
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y build-essential git libpq-dev libyaml-dev pkg-config google-chrome-stable dnsutils
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,6 +34,9 @@ jobs:
 
       - name: Install gems
         run: bundle install
+
+      - name: Check DB hostname resolution
+        run: dig db
 
       - name: Set up database
         env:
