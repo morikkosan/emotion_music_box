@@ -38,9 +38,9 @@ jobs:
       - name: Set up database
         env:
           RAILS_ENV: test
-        run: echo "This is a DB connection test."
+        run: bundle exec rails db:create db:schema:load
 
       - name: Run RSpec tests
         env:
           RAILS_ENV: test
-        run: echo "This is a test run."
+        run: bundle exec rspec
