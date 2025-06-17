@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [ main ]
-  workflow_dispatch:  # ← GitHub上から手動実行を可能にする
+  workflow_dispatch:
 
 jobs:
   scan_ruby:
@@ -55,6 +55,7 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
+          --network-alias=db # ← 追加ここ！
 
     steps:
       - name: Install packages
@@ -71,24 +72,24 @@ jobs:
 
       - name: Wait for PostgreSQL hostname to resolve
         run: |
-          echo "🔁 Waiting for hostname 'db' to resolve..."
+          echo "Waiting for hostname 'db' to resolve..."
           for i in {1..15}; do
-            getent hosts db && echo "✅ Hostname resolved!" && exit 0
-            echo "⏳ Still resolving..."
+            getent hosts db && echo "Hostname resolved!" && exit 0
+            echo "Still resolving..."
             sleep 2
           done
-          echo "❌ Hostname 'db' could not be resolved."
+          echo "Hostname 'db' could not be resolved."
           exit 1
 
       - name: Wait for PostgreSQL to be ready
         run: |
-          echo "🔁 Waiting for PostgreSQL service to be ready..."
+          echo "Waiting for PostgreSQL service to be ready..."
           for i in {1..15}; do
-            pg_isready -h db -p 5432 && echo "✅ PostgreSQL is ready!" && exit 0
-            echo "⏳ Still waiting for service..."
+            pg_isready -h db -p 5432 && echo "PostgreSQL is ready!" && exit 0
+            echo "Still waiting for service..."
             sleep 2
           done
-          echo "❌ PostgreSQL service not ready."
+          echo "PostgreSQL service not ready."
           exit 1
 
       - name: Set up database
