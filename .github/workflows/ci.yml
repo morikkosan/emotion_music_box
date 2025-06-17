@@ -1,6 +1,6 @@
 name: Minimal Postgres Connectivity Test
 
-on: [push]
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
   connectivity-test:
@@ -25,3 +25,35 @@ jobs:
           nc -zv db 5432 || echo "nc failed"
           echo "==== dig db ===="
           dig db
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'       # .ruby-versionに合わせて！
+
+      - name: Install dependencies (bundler)
+        run: bundle install
+
+      - name: Wait for Postgres
+        run: |
+          for i in {1..20}; do
+            nc -z db 5432 && echo "Postgres is up!" && exit 0
+            echo "Waiting for Postgres... ($i)"
+            sleep 2
+          done
+          echo "Postgres never came up" && exit 1
+
+      - name: Prepare database
+        env:
+          RAILS_ENV: test
+        run: |
+          bundle exec rails db:create
+          bundle exec rails db:schema:load
+
+      - name: Run RSpec tests
+        env:
+          RAILS_ENV: test
+        run: bundle exec rspec
