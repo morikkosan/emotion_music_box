@@ -1,23 +1,24 @@
-name: Minimal Postgres Connectivity Test
+name: Minimal Postgres Rails CI
 
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
-  connectivity-test:
+  test:
     runs-on: ubuntu-latest
-
     services:
       db:
         image: postgres:15
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
 
     steps:
       - name: Install netcat & dnsutils
         run: sudo apt-get update && sudo apt-get install -y netcat-openbsd dnsutils
 
-      - name: Check DB host is up
+      - name: Check DB host
         run: |
           echo "==== ping db ===="
           ping -c 2 db || echo "ping failed"
@@ -32,7 +33,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.2'       # .ruby-versionに合わせて！
+          ruby-version: '3.2'
 
       - name: Install dependencies (bundler)
         run: bundle install
