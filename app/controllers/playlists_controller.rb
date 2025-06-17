@@ -1,7 +1,7 @@
 # app/controllers/playlists_controller.rb
 class PlaylistsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_playlist, only: [:show, :destroy]
+  before_action :set_playlist, only: [ :show, :destroy ]
 
   def index
     @playlists = current_user.playlists.includes(playlist_items: :emotion_log)
@@ -44,7 +44,7 @@ class PlaylistsController < ApplicationController
               playlists: current_user.playlists.includes(playlist_items: :emotion_log)
             }
           )
-          render turbo_stream: [close_modal, show_flash, replace_sidebar]
+          render turbo_stream: [ close_modal, show_flash, replace_sidebar ]
         end
         format.html { redirect_to playlists_path, notice: "プレイリストを作成しました！" }
       end
@@ -58,7 +58,7 @@ class PlaylistsController < ApplicationController
             locals: { playlist: @playlist }
           )
           show_flash  = turbo_stream.append("flash", partial: "shared/flash_container")
-          render turbo_stream: [retry_modal, show_flash]
+          render turbo_stream: [ retry_modal, show_flash ]
         end
         format.html { render :new, status: :unprocessable_entity }
       end
@@ -75,7 +75,7 @@ class PlaylistsController < ApplicationController
           locals: { playlist: @playlist }
         )
         show_flash  = turbo_stream.append("flash", partial: "shared/flash_container")
-        render turbo_stream: [retry_modal, show_flash]
+        render turbo_stream: [ retry_modal, show_flash ]
       end
       format.html { render :new, status: :unprocessable_entity }
     end

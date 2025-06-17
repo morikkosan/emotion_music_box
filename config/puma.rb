@@ -6,7 +6,7 @@ threads threads_count, threads_count
 # ✅ 環境変数でSSLバインドの有無を切り替え
 if ENV["SSL_BIND"] == "true"
   puts "🔒 SSLバインドを有効にしています"
-  ssl_bind '0.0.0.0', '3002', {
+  ssl_bind "0.0.0.0", "3002", {
     key: "/etc/ssl/private/moriappli-emotion.com-key.pem",
     cert: "/etc/ssl/certs/moriappli-emotion.com.pem"
   }
