@@ -42,11 +42,11 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      db:  # ← ★ 修正: サービス名を database.yml に合わせて db に変更
+      db:
         image: postgres
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password  # ← ★ 修正: database.ymlに合わせて password に変更
+          POSTGRES_PASSWORD: password
         ports:
           - 5432:5432
         options: >-
@@ -68,13 +68,22 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
 
+      - name: Wait for Postgres to be ready
+        run: |
+          echo "🔁 Waiting for PostgreSQL to be ready..."
+          for i in {1..15}; do
+            pg_isready -h db -p 5432 && echo "✅ PostgreSQL is ready!" && break
+            echo "⏳ Still waiting..."
+            sleep 2
+          done
+
       - name: Set up database
         run: bundle exec rails db:create db:schema:load
 
       - name: Run RSpec tests
         env:
           RAILS_ENV: test
-          DATABASE_URL: postgres://postgres:password@db:5432  # ← ★ 修正: localhost → db, passwordも一致
+          DATABASE_URL: postgres://postgres:password@db:5432
         run: bundle exec rspec
 
       - name: Keep screenshots from failed system tests
