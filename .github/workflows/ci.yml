@@ -16,8 +16,6 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
-        # ports設定は不要です
-
     steps:
       - name: Install tools for connectivity checks
         run: |
@@ -50,12 +48,27 @@ jobs:
       - name: Install gems
         run: bundle install --jobs 4 --retry 3
 
-      - name: Prepare database
+      - name: Prepare database (retry on localhost if failed)
         env:
           RAILS_ENV: test
         run: |
-          bundle exec rails db:create
-          bundle exec rails db:schema:load
+          set -e
+          echo "🎲 db(サービス名)で db:create 実行"
+          if bundle exec rails db:create; then
+            echo "✅ db(サービス名)で成功"
+          else
+            echo "❗ db(サービス名)で失敗 → localhost で再実行します"
+            export PGHOST=localhost
+            bundle exec rails db:create
+          fi
+          echo "🎲 db(サービス名)で schema:load 実行"
+          if bundle exec rails db:schema:load; then
+            echo "✅ db(サービス名)で成功"
+          else
+            echo "❗ db(サービス名)で失敗 → localhost で再実行します"
+            export PGHOST=localhost
+            bundle exec rails db:schema:load
+          fi
 
       - name: Run RSpec tests
         env:
