@@ -3,7 +3,6 @@
 ![ER図](https://i.gyazo.com/61026d2bc54eaf1947f83289763d18b1.png)
 
 
-
 # **EMOTION MUSIC BOX**
 音楽と感情のアプリ
 ## **■ サービス概要**
