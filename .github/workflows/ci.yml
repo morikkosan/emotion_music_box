@@ -16,10 +16,13 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
+        # ports設定は不要です
 
     steps:
-      - name: Install tools
-        run: sudo apt-get update && sudo apt-get install -y netcat-openbsd dnsutils
+      - name: Install tools for connectivity checks
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y netcat-openbsd dnsutils
 
       - name: Wait for Postgres to be ready
         run: |
@@ -30,9 +33,9 @@ jobs:
           done
           echo "❌ Postgres never came up" && exit 1
 
-      - name: Check DB hostname
+      - name: Check DB hostname resolution
         run: |
-          echo "dig db:"
+          echo "==== dig db ===="
           dig db
 
       - name: Checkout code
@@ -54,7 +57,8 @@ jobs:
           bundle exec rails db:create
           bundle exec rails db:schema:load
 
-      - name: Run specs
+      - name: Run RSpec tests
         env:
           RAILS_ENV: test
         run: bundle exec rspec
+gi
