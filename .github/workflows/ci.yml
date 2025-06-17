@@ -54,11 +54,11 @@ jobs:
           --health-cmd="pg_isready"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=3
+          --health-retries=5
 
     steps:
       - name: Install packages
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y build-essential git libpq-dev libyaml-dev pkg-config google-chrome-stable
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y build-essential git libpq-dev libyaml-dev pkg-config google-chrome-stable net-tools
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -69,25 +69,38 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
 
-      - name: Wait for Postgres to be ready
+      - name: Wait for PostgreSQL hostname to resolve
         run: |
-          echo "🔁 Waiting for PostgreSQL to be ready..."
+          echo "🔁 Waiting for hostname 'db' to resolve..."
           for i in {1..15}; do
-            pg_isready -h db -p 5432 && echo "✅ PostgreSQL is ready!" && break
-            echo "⏳ Still waiting..."
+            getent hosts db && echo "✅ Hostname resolved!" && exit 0
+            echo "⏳ Still resolving..."
             sleep 2
           done
+          echo "❌ Hostname 'db' could not be resolved."
+          exit 1
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          echo "🔁 Waiting for PostgreSQL service to be ready..."
+          for i in {1..15}; do
+            pg_isready -h db -p 5432 && echo "✅ PostgreSQL is ready!" && exit 0
+            echo "⏳ Still waiting for service..."
+            sleep 2
+          done
+          echo "❌ PostgreSQL service not ready."
+          exit 1
 
       - name: Set up database
         env:
           RAILS_ENV: test
-          DATABASE_URL: postgres://postgres:password@db:5432
+          DATABASE_URL: postgres://postgres:password@db:5432/app_test
         run: bundle exec rails db:create db:schema:load
 
       - name: Run RSpec tests
         env:
           RAILS_ENV: test
-          DATABASE_URL: postgres://postgres:password@db:5432
+          DATABASE_URL: postgres://postgres:password@db:5432/app_test
         run: bundle exec rspec
 
       - name: Keep screenshots from failed system tests
