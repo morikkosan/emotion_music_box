@@ -4,7 +4,7 @@ class Comment < ApplicationRecord
   has_many :comment_reactions, dependent: :destroy
   validates :body, presence: true
 
-# app/models/comment.rb
+  # app/models/comment.rb
   # ✅ N+1対策済みの形（includesで先読みしていれば有効）
   def preloaded_reactions
     @preloaded_reactions ||= (
@@ -19,6 +19,4 @@ class Comment < ApplicationRecord
   def reacted_by?(user, kind)
     preloaded_reactions.any? { |r| r.user_id == user.id && r.kind.to_s == kind.to_s }
   end
-
 end
-

@@ -1,10 +1,10 @@
 class User < ApplicationRecord
   # devise関連
   devise :database_authenticatable, :registerable, :recoverable,
-         :rememberable, :omniauthable, omniauth_providers: [:soundcloud, :google_oauth2]
+         :rememberable, :omniauthable, omniauth_providers: [ :soundcloud, :google_oauth2 ]
 
   # 関連
-  has_many :emotion_logs, dependent: :destroy        
+  has_many :emotion_logs, dependent: :destroy
   has_many :identities, dependent: :destroy
   has_many :bookmarks, dependent: :destroy
   has_many :bookmarked_emotion_logs, through: :bookmarks, source: :emotion_log

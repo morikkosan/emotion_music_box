@@ -1,14 +1,14 @@
 Rails.application.routes.draw do
   devise_for :users,
     controllers: {
-      omniauth_callbacks: 'users/omniauth_callbacks',
-      registrations:      'users/registrations',
-        sessions: 'users/sessions'
+      omniauth_callbacks: "users/omniauth_callbacks",
+      registrations:      "users/registrations",
+        sessions: "users/sessions"
 
     },
-    path: ''
+    path: ""
 
-  root 'emotion_logs#index'
+  root "emotion_logs#index"
 
   resources :emotion_logs do
     collection do
@@ -17,7 +17,6 @@ Rails.application.routes.draw do
       get :form
       get :form_switch
       get :recommended
-
     end
 
     resources :comments, only: %i[create update destroy edit], shallow: true do
@@ -32,24 +31,22 @@ Rails.application.routes.draw do
   end
 
 
-  resources :playlists, only: [:new, :create, :index, :show, :edit, :update, :destroy] do
-      resources :playlist_items, only: [:create, :destroy]
+  resources :playlists, only: [ :new, :create, :index, :show, :edit, :update, :destroy ] do
+      resources :playlist_items, only: [ :create, :destroy ]
   end
 
-  get :my_emotion_logs,          to: 'emotion_logs#my_emotion_logs'
-  get 'jamendo/search',          to: 'jamendo#search'
-  get '/soundcloud_client_id',   to: 'sound_cloud#client_id'
-  get '/soundcloud/search',      to: 'sound_cloud#search'
+  get :my_emotion_logs,          to: "emotion_logs#my_emotion_logs"
+  get "jamendo/search",          to: "jamendo#search"
+  get "/soundcloud_client_id",   to: "sound_cloud#client_id"
+  get "/soundcloud/search",      to: "sound_cloud#search"
   get "tags/search", to: "tags#search"
   get "/terms", to: "pages#terms", as: :terms
 
   # PWA／ヘルスチェック
-  get 'up',               to: 'rails/health#show',           as: :rails_health_check
-  get 'service-worker',   to: 'rails/pwa#service_worker',    as: :pwa_service_worker
-  get 'manifest',         to: 'rails/pwa#manifest',          as: :pwa_manifest
-  get '/auth/failure', to: 'users/omniauth_callbacks#redirect_on_failure'
-  get '/sign_in', to: redirect('/')
+  get "up",               to: "rails/health#show",           as: :rails_health_check
+  get "service-worker",   to: "rails/pwa#service_worker",    as: :pwa_service_worker
+  get "manifest",         to: "rails/pwa#manifest",          as: :pwa_manifest
+  get "/auth/failure", to: "users/omniauth_callbacks#redirect_on_failure"
+  get "/sign_in", to: redirect("/")
   get "/sc_resolve", to: "sound_cloud#resolve"
-
-
 end

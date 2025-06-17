@@ -31,10 +31,10 @@ class BookmarksController < ApplicationController
     @toggled = if bookmark
                  bookmark.destroy
                  false
-               else
+    else
                  current_user.bookmarks.create!(emotion_log: @emotion_log)
                  true
-               end
+    end
 
     respond_to do |format|
       format.turbo_stream      # toggle.turbo_stream.erb

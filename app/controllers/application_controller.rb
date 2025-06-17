@@ -8,10 +8,10 @@ class ApplicationController < ActionController::Base
   before_action :set_locale
   before_action :configure_permitted_parameters, if: :devise_controller?
 
-  # # Devise コントローラーには適用しない
-  # before_action :ensure_soundcloud_authenticated, unless: :devise_controller?
+# # Devise コントローラーには適用しない
+# before_action :ensure_soundcloud_authenticated, unless: :devise_controller?
 
-  # サウンドクラウド認証で失敗して戻ってきたとき
+# サウンドクラウド認証で失敗して戻ってきたとき
 def after_omniauth_failure_path_for(scope)
   flash[:alert] = "SoundCloudログインがキャンセルされました。もう一度ログインをしてください"
   root_path
@@ -39,8 +39,8 @@ end
   protected
 
   def configure_permitted_parameters
-    devise_parameter_sanitizer.permit(:sign_up, keys: [:name, :gender, :age])
-    devise_parameter_sanitizer.permit(:account_update, keys: [:name, :gender, :age])
+    devise_parameter_sanitizer.permit(:sign_up, keys: [ :name, :gender, :age ])
+    devise_parameter_sanitizer.permit(:account_update, keys: [ :name, :gender, :age ])
   end
 
   private
@@ -60,7 +60,7 @@ end
       Rails.logger.error "❌ トークンリフレッシュ失敗 user_id: #{current_user.id}"
       sign_out current_user
       redirect_to new_user_session_path, alert: "SoundCloud認証が切れたため再ログインしてください"
-      return
+      nil
     end
   else
     Rails.logger.info "✅ トークン有効期限内 user_id: #{current_user.id}"
@@ -86,14 +86,14 @@ end
 
     def force_mobile_view
   # --- /auth/ 系のURLでは絶対リダイレクト・パラメータ追加をしない ---
-  return if request.path.start_with?('/auth/')
-  return if params[:view] == 'mobile'
+  return if request.path.start_with?("/auth/")
+  return if params[:view] == "mobile"
 
   # モバイル端末からのアクセスかを判定
   if request.user_agent =~ /Mobile|Android|iPhone/ && !request.xhr?
     # GETリクエスト時だけリダイレクトで?view=mobileを付与（POSTは避ける）
     if request.get?
-      redirect_to url_for(params.permit!.to_h.merge(view: 'mobile')), allow_other_host: false
+      redirect_to url_for(params.permit!.to_h.merge(view: "mobile")), allow_other_host: false
     end
   end
 end

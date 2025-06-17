@@ -1,6 +1,6 @@
 # app/controllers/sound_cloud_controller.rb
 class SoundCloudController < ApplicationController
-  require 'httparty'
+  require "httparty"
   # 認証不要にする場合は before_action を外すかコメントアウトしてください。
   # before_action :authenticate_user!, only: [:resolve, :search]
 

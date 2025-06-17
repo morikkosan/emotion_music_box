@@ -1,6 +1,6 @@
 class EmotionLogsController < ApplicationController
   before_action :authenticate_user!, except: %i[index show]
-  before_action :ensure_owner, only: [:edit, :update, :destroy]
+  before_action :ensure_owner, only: [ :edit, :update, :destroy ]
 
 
   def index
@@ -16,7 +16,7 @@ class EmotionLogsController < ApplicationController
   # 🔍 感情（emotion）による絞り込み
   if params[:emotion].present?
     @emotion_logs = @emotion_logs.where(emotion: params[:emotion])
-  
+
   # 💖 HPゲージから感情を算出し絞り込み
   elsif params[:hp].present?
     hp_emotion = calculate_hp_emotion(params[:hp].to_i)
@@ -81,7 +81,7 @@ end
     end
   end
 
-  
+
   def create
     @emotion_log  = current_user.emotion_logs.build(emotion_log_params)
     hp_percentage = calculate_hp(@emotion_log.emotion)
@@ -93,7 +93,7 @@ end
         format.json do
           render json: {
             success:      true,
-            message:      '記録が保存されました',
+            message:      "記録が保存されました",
             redirect_url: emotion_logs_path,
             hpPercentage: hp_percentage,
             hp_today:     is_today
@@ -102,13 +102,13 @@ end
 
         # ② Turbo Stream リクエストの場合
         format.turbo_stream do
-          flash.now[:notice] = '記録が保存されました'
+          flash.now[:notice] = "記録が保存されました"
 
           render turbo_stream: [
             # フラッシュ領域を置き換え
             turbo_stream.replace(
-              'flash-container',
-              partial: 'shared/flash',
+              "flash-container",
+              partial: "shared/flash",
               locals: { notice: flash.now[:notice], alert: flash.now[:alert] }
             ),
             # 一覧ページへリダイレクト
@@ -118,7 +118,7 @@ end
 
         # ③ 通常の HTML リクエストの場合
         format.html do
-          redirect_to emotion_logs_path, notice: '記録が保存されました'
+          redirect_to emotion_logs_path, notice: "記録が保存されました"
         end
       end
     else
@@ -131,14 +131,14 @@ end
         format.turbo_stream do
           # バリデーションエラー時はフォーム部分を差し替え
           render turbo_stream: turbo_stream.replace(
-            'form-container',
-            partial: 'emotion_logs/form',
+            "form-container",
+            partial: "emotion_logs/form",
             locals: { emotion_log: @emotion_log }
           ), status: :unprocessable_entity
         end
 
         format.html do
-          flash.now[:alert] = @emotion_log.errors.full_messages.join(', ')
+          flash.now[:alert] = @emotion_log.errors.full_messages.join(", ")
           render :new, status: :unprocessable_entity
         end
       end
@@ -160,7 +160,7 @@ end
 
       render json: {
         success: true,
-        message: '記録が更新されました',
+        message: "記録が更新されました",
         redirect_url: emotion_logs_path,
         hpPercentage: hp_percentage,
         hp_today: is_today
@@ -192,7 +192,7 @@ end
     @emotion_log = EmotionLog.new(music_url: params[:music_url], track_name: params[:track_name])
 
     respond_to do |format|
-      format.turbo_stream { render turbo_stream: turbo_stream.replace('modal-content', partial: 'emotion_logs/form', locals: { emotion_log: @emotion_log }) }
+      format.turbo_stream { render turbo_stream: turbo_stream.replace("modal-content", partial: "emotion_logs/form", locals: { emotion_log: @emotion_log }) }
       format.html { redirect_to emotion_logs_path }
     end
   end
@@ -223,7 +223,7 @@ end
   @emotion_logs = apply_sort_and_period_filters(logs).page(params[:page]).per(7)
   @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
   @bookmark_page = "♡お気に入りリスト♡"
-  
+
   if @emotion_logs.blank?
     redirect_to emotion_logs_path(view: params[:view]), alert: "まだお気に入り投稿がありません。"
     return
@@ -268,12 +268,12 @@ end
   def apply_sort_and_period_filters(logs)
     sort_param = params[:sort].presence || "new"
     logs = case sort_param
-           when "new"      then logs.newest
-           when "old"      then logs.oldest
-           when "likes"    then logs.by_bookmarks
-           when "comments" then logs.by_comments
-           else logs
-           end
+    when "new"      then logs.newest
+    when "old"      then logs.oldest
+    when "likes"    then logs.by_bookmarks
+    when "comments" then logs.by_comments
+    else logs
+    end
 
     case params[:period]
     when "today"    then logs.for_today
@@ -294,7 +294,7 @@ end
   end
 
   def calculate_hp(emotion)
-    { '最高' => 50, '気分良い' => 30, 'いつも通り' => 0, 'イライラ' => -30, '限界' => -50 }[emotion] || 0
+    { "最高" => 50, "気分良い" => 30, "いつも通り" => 0, "イライラ" => -30, "限界" => -50 }[emotion] || 0
   end
 
   def ensure_owner
