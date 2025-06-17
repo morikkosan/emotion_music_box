@@ -1,29 +1,40 @@
-name: Minimal Postgres Rails CI
+name: Rails CI with Postgres
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
     services:
       db:
         image: postgres:15
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
-        ports:
-          - 5432:5432
+        # ports設定は不要です
 
     steps:
-      - name: Install netcat & dnsutils
-        run: sudo apt-get update && sudo apt-get install -y netcat-openbsd dnsutils
-
-      - name: Check DB host
+      - name: Install tools for connectivity checks
         run: |
-          echo "==== ping db ===="
-          ping -c 2 db || echo "ping failed"
-          echo "==== nc db 5432 ===="
-          nc -zv db 5432 || echo "nc failed"
+          sudo apt-get update
+          sudo apt-get install -y netcat-openbsd dnsutils
+
+      - name: Wait for Postgres to be ready
+        run: |
+          for i in {1..20}; do
+            nc -z db 5432 && echo "🎉 Postgres is up!" && exit 0
+            echo "Waiting for Postgres... ($i)"
+            sleep 2
+          done
+          echo "❌ Postgres never came up" && exit 1
+
+      - name: Check DB hostname resolution
+        run: |
           echo "==== dig db ===="
           dig db
 
@@ -34,18 +45,10 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2'
+          bundler-cache: true
 
-      - name: Install dependencies (bundler)
-        run: bundle install
-
-      - name: Wait for Postgres
-        run: |
-          for i in {1..20}; do
-            nc -z db 5432 && echo "Postgres is up!" && exit 0
-            echo "Waiting for Postgres... ($i)"
-            sleep 2
-          done
-          echo "Postgres never came up" && exit 1
+      - name: Install gems
+        run: bundle install --jobs 4 --retry 3
 
       - name: Prepare database
         env:
@@ -58,3 +61,4 @@ jobs:
         env:
           RAILS_ENV: test
         run: bundle exec rspec
+gi
