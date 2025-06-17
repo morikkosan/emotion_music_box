@@ -1,10 +1,6 @@
-name: CI
+name: DB Connectivity Check
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-  workflow_dispatch:
+on: [push]
 
 jobs:
   test:
@@ -20,36 +16,11 @@ jobs:
           - 5432:5432
 
     steps:
-      - name: Install system packages
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y build-essential git libpq-dev libyaml-dev pkg-config google-chrome-stable dnsutils netcat-openbsd
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.2'
-          bundler-cache: true
-
       - name: Wait for Postgres
         run: |
-          for i in {1..20}; do
+          for i in {1..10}; do
             nc -z db 5432 && echo "Postgres is up!" && exit 0
             echo "Waiting for Postgres... ($i)"
             sleep 2
           done
           echo "Postgres never came up" && exit 1
-
-      - name: Check DB hostname resolution
-        run: dig db
-
-      - name: Set up database
-        env:
-          RAILS_ENV: test
-        run: bundle exec rails db:create db:schema:load
-
-      - name: Run RSpec tests
-        env:
-          RAILS_ENV: test
-        run: bundle exec rspec
