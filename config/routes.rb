@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  get "contacts/new"
+  get "contacts/create"
   devise_for :users,
     controllers: {
       omniauth_callbacks: "users/omniauth_callbacks",
@@ -34,6 +36,8 @@ Rails.application.routes.draw do
   resources :playlists, only: [ :new, :create, :index, :show, :edit, :update, :destroy ] do
       resources :playlist_items, only: [ :create, :destroy ]
   end
+
+  resource :contact, only: [:new, :create], controller: :contacts
 
   get :my_emotion_logs,          to: "emotion_logs#my_emotion_logs"
   get "jamendo/search",          to: "jamendo#search"

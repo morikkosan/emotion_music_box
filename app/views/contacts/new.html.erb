@@ -1,0 +1,28 @@
+<h1>お問い合わせ</h1>
+
+<%= form_with model: @contact, url: contact_path, local: true do |f| %>
+  <% if @contact.errors.any? %>
+    <div class="errors">
+      <ul>
+        <% @contact.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+  <div>
+    <%= f.label :name, "お名前" %>
+    <%= f.text_field :name %>
+  </div>
+  <div>
+    <%= f.label :email, "メールアドレス" %>
+    <%= f.email_field :email %>
+  </div>
+  <div>
+    <%= f.label :message, "お問い合わせ内容" %>
+    <%= f.text_area :message %>
+  </div>
+  <div>
+    <%= f.submit "送信" %>
+  </div>
+<% end %>
