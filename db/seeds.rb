@@ -8,7 +8,7 @@ end
 
 tag = Tag.find_or_create_by!(name: "happy")
 
-emotion_log = EmotionLog.find_or_create_by!(user: user, emotion: "happy", date: Date.today) do |log|
+emotion_log = EmotionLog.find_or_create_by!(user: user, emotion: "気分良い", date: Date.today) do |log|
   log.description = "CI用のテスト投稿"
   log.track_name = "Test Song"
   log.music_url = "https://example.com/art.jpg"
@@ -25,3 +25,5 @@ playlist = Playlist.find_or_create_by!(user: user, name: "Test Playlist")
 PlaylistItem.find_or_create_by!(playlist: playlist, emotion_log: emotion_log)
 
 Bookmark.find_or_create_by!(user: user, emotion_log: emotion_log)
+
+puts "✅ seeds.rb 完了"
