@@ -41,7 +41,7 @@ Rails.application.configure do
   config.action_mailer.perform_caching = false
   config.action_mailer.smtp_settings = {
   user_name: 'apikey',
-  password: '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',
+  password: ENV['SENDGRID_API_KEY'] ,
   domain: 'moriappli-emotion.com', # ←ここを統一
   address: 'smtp.sendgrid.net',
   port: 587,
