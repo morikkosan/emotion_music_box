@@ -2,6 +2,7 @@
   "name": "app",
   "private": true,
   "devDependencies": {
+    "@fullhuman/postcss-purgecss": "^7.0.2",
     "concurrently": "^9.1.2",
     "esbuild": "^0.25.0"
   },

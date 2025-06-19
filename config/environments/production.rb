@@ -7,6 +7,11 @@ Rails.application.configure do
   config.cache_classes = true
   config.reload_classes_only_on_change = true
   config.file_watcher = ActiveSupport::EventedFileUpdateChecker
+
+  config.assets.css_compressor = :sass      # CSSを圧縮
+  config.assets.compile = false             # プリコンパイルしたファイルだけ使う
+  config.assets.digest = true               # キャッシュ防止のためファイル名にハッシュをつける
+
   # ----------------------------------------
 
   # メールURLやルーティングのホストを変更

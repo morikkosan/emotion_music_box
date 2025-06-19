@@ -44,5 +44,6 @@ module Myapp
       require "dotenv/load"
       ENV["SOUNDCLOUD_CLIENT_ID"] ||= Rails.application.credentials.dig(:soundcloud, :client_id)
     end
+    config.middleware.insert_after ActionDispatch::Static, Rack::Deflater
   end
 end
