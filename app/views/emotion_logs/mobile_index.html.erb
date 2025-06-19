@@ -11,17 +11,17 @@
         </div>
         <div class="dropdown-menu">
           <%= link_to destroy_user_session_path, method: :delete, data: { turbo: false }, id: "logout-link", class: "dropdown-item d-flex align-items-center text-danger" do %>
-            <%= image_tag "log_out.png", class: "dropdown-icon me-2", alt: "ログアウト" %> ログアウト
+            <%= image_tag "log_out.webp", class: "dropdown-icon me-2", alt: "ログアウト" %> ログアウト
           <% end %>
           <div class="dropdown-divider"></div>
           <%= link_to edit_user_registration_path, class: "dropdown-item d-flex align-items-center" do %>
-            <%= image_tag "profile_edit.png", class: "dropdown-icon me-2", alt: "プロフィール編集" %> プロフィール編集
+            <%= image_tag "profile_edit.webp", class: "dropdown-icon me-2", alt: "プロフィール編集" %> プロフィール編集
           <% end %>
           <%= link_to my_emotion_logs_path, class: "dropdown-item d-flex align-items-center" do %>
-            <%= image_tag "test1.png", class: "dropdown-icon me-2", alt: "マイページ" %> マイページ
+            <%= image_tag "test1.webp", class: "dropdown-icon me-2", alt: "マイページ" %> マイページ
           <% end %>
           <%= link_to "#", class: "dropdown-item d-flex align-items-center" do %>
-            <%= image_tag "form_contact.png", class: "dropdown-icon me-2", alt: "お問い合わせ" %> お問い合わせ
+            <%= image_tag "form_contact.webp", class: "dropdown-icon me-2", alt: "お問い合わせ" %> お問い合わせ
           <% end %>
         </div>
       </div>
@@ -31,7 +31,7 @@
   <!-- ✅ ロゴ表示 -->
   <div class="text-start mt-2 px-3">
     <%= link_to emotion_logs_path do %>
-      <%= image_tag "logo1.png", alt: "Emotion List Logo", class: "img-fluid neon-icon", style: "max-width:150px; width:100%;" %>
+      <%= image_tag "logo1.webp", alt: "Emotion List Logo", class: "img-fluid neon-icon", style: "max-width:150px; width:100%;" %>
     <% end %>
   </div>
   <br><br>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
   <title><%= content_for(:title) || "EMOTION MUSIC BOX" %></title>
   <meta charset="utf-8">
@@ -19,68 +19,73 @@
   <meta name="twitter:description" content="感情と音楽をシェアする新感覚アプリ">
   <meta name="twitter:image" content="<%= og_image %>">
   <meta name="twitter:url" content="https://moriappli-emotion.com">
-<!-- app/views/layouts/application.html.erb の head 内 -->
-<meta name="soundcloud-client-id"   content="<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>">
-<% if current_user&.soundcloud_token.present? %>
-  <meta name="soundcloud-oauth-token" content="<%= current_user.soundcloud_token %>">
-<% end %>
 
+  <!-- SoundCloudメタ -->
+  <meta name="soundcloud-client-id" content="<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>">
+  <% if current_user&.soundcloud_token.present? %>
+    <meta name="soundcloud-oauth-token" content="<%= current_user.soundcloud_token %>">
+  <% end %>
+
+  <!-- SoundCloud SDK（必須ならこのまま） -->
   <script src="https://connect.soundcloud.com/sdk/sdk-3.3.2.js"></script>
 
-  <!-- ① DNS ルックアップを先行 -->
-<link rel="dns-prefetch" href="https://w.soundcloud.com">
-<link rel="dns-prefetch" href="https://api.soundcloud.com">
-
-<!-- ② TLS ハンドシェイクも先行 -->
-<link rel="preconnect" href="https://w.soundcloud.com" crossorigin>
-<link rel="preconnect" href="https://api.soundcloud.com" crossorigin>
-
-<!-- ③ Widget API スクリプト自体を最優先でプリロード -->
-<link rel="preload" as="script" href="https://w.soundcloud.com/player/api.js">
-
-
-  <!-- ──────────────── 1. SoundCloud Widget API を最優先で読み込む（deferなし） ──────────────── -->
+  <!-- SoundCloud Player API の最適化 -->
+  <link rel="dns-prefetch" href="https://w.soundcloud.com">
+  <link rel="dns-prefetch" href="https://api.soundcloud.com">
+  <link rel="preconnect" href="https://w.soundcloud.com" crossorigin>
+  <link rel="preconnect" href="https://api.soundcloud.com" crossorigin>
+  <link rel="preload" as="script" href="https://w.soundcloud.com/player/api.js">
   <script src="https://w.soundcloud.com/player/api.js"></script>
 
-  <!-- ──────────────── 2. Rails の application.js を読み込む（Stimulus や他の JS） ──────────────── -->
+  <!-- Railsのapplication.js（defer必須！） -->
   <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module", defer: true %>
 
-  <!-- ──────────────── 3. CSS & 外部ライブラリ ──────────────── -->
+  <!-- RailsのCSS -->
   <%= stylesheet_link_tag "application", "data-turbo-track": "reload", media: "all" %>
-  <!-- Font Awesome（再生／停止アイコン用など） -->
-  <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 
-  
-  <!-- GSAP, SweetAlert2, Axios, Bootstrap Icons（すべて defer で読み込む） -->
+  <!-- Font Awesome（最適化）-->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+        media="print" onload="this.media='all'">
+  <noscript>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  </noscript>
+
+  <!-- Google Fonts 最適化 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" onload="this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+  </noscript>
+
+  <!-- Bootstrap Icons（最適化）-->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+        media="print" onload="this.media='all'">
+  <noscript>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  </noscript>
+
+  <!-- GSAP, SweetAlert2, Axios（deferで安全） -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.8/axios.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
   <%= yield :head %>
 </head>
-
 <body data-controller="view-switcher global-player" data-flash-notice="<%= j flash[:notice] %>"
       data-flash-alert="<%= j flash[:alert] %>">
-  <!-- ──────────── ローディング画面（省略せず全体を載せます） ──────────── -->
+  <!-- ここから下は元の内容を**絶対に壊さずそのまま**にしてください -->
   <div id="screen-cover-loading" aria-live="polite" aria-label="ローディング画面">
     <div class="pacman-wrapper" aria-hidden="true">
       <div class="circle-packman-1"></div>
       <div class="loading-text">Now Loading...</div>
     </div>
   </div>
-
   <div id="flash-message" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;padding:1em;background:#333;color:#fff;text-align:center;"></div>
-
   <turbo-frame id="modal-container"></turbo-frame>
   <turbo-frame id="playlist-modal-container"></turbo-frame>
-
-  <!-- デバッグ領域（必要に応じてアンコメント） -->
-  <!-- <p>🔍 Debug: <%= current_user.inspect %></p> -->
-
   <div id="comment-container"></div>
   <div id="flash" class="position-fixed top-0 start-50 translate-middle-x mt-4 zindex-tooltip"></div>
   <%= render "shared/flash_container" %>

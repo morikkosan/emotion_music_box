@@ -76,7 +76,7 @@
   <input type="file" id="avatarInput" class="form-control-file" />
 
   <%= f.hidden_field :cropped_avatar_data, id: "croppedAvatarData" %>
-<%= f.hidden_field :avatar_url, id: "avatarUrlField", value: resource.avatar_url.presence || asset_path("default_stick_figure.png") %>
+<%= f.hidden_field :avatar_url, id: "avatarUrlField", value: resource.avatar_url.presence || asset_path("default_stick_figure.webp") %>
 </div>
 
 

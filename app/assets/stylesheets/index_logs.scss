@@ -270,3 +270,12 @@
   max-height: 85vh;
   overflow-y: auto;
 }
+
+
+// バッジの色
+.badge.bg-primary.text-light {
+  background-color: #084298 !important; /* Bootstrap5の濃い青 */
+  color: #fff !important; /* 白 */
+  /* もしこれでもNGなら色をさらに濃くするか、 */
+  /* 逆に文字色を黒にしてみる */
+}

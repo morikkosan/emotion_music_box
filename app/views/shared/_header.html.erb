@@ -1,7 +1,7 @@
 <div class="container mt-5 position-relative">
 
   <div class="dj-icon-fixed">
-    <%= image_tag "dj_robot_icon.png", alt: "DJ Robot" %>
+    <%= image_tag "dj_robot_icon.webp", alt: "DJ Robot" %>
   </div>
 
   <% if user_signed_in? %>
@@ -21,9 +21,9 @@
                       data: { turbo: false },
                       id: "logout-link",
                       class: "dropdown-item d-flex align-items-center text-danger" do %>
-            <%= image_tag "log_out.png",
+            <%= image_tag "log_out.webp",
                           class: "dropdown-icon me-2",
-                          alt: "ログアウト" %>
+                          alt: "" %>
             ログアウト
           <% end %>
 
@@ -31,25 +31,25 @@
 
           <%= link_to edit_user_registration_path(view: 'mobile'),
                       class: "dropdown-item d-flex align-items-center" do %>
-            <%= image_tag "profile_edit.png",
+            <%= image_tag "profile_edit.webp",
                           class: "dropdown-icon me-2",
-                          alt: "プロフィール編集" %>
+                          alt: "" %>
             プロフィール編集
           <% end %>
 
           <%= link_to my_emotion_logs_path(view: 'mobile'),
                       class: "dropdown-item d-flex align-items-center" do %>
-            <%= image_tag "test1.png",
+            <%= image_tag "test1.webp",
                           class: "dropdown-icon me-2",
-                          alt: "マイページ" %>
+                          alt: "" %>
             マイページ
           <% end %>
 
           <%= link_to new_contact_path,
                       class: "dropdown-item d-flex align-items-center" do %>
-            <%= image_tag "form_contact.png",
+            <%= image_tag "form_contact.webp",
                           class: "dropdown-icon me-2",
-                          alt: "お問い合わせ" %>
+                          alt: "" %>
             お問い合わせ
           <% end %>
         </div>
@@ -60,7 +60,7 @@
   <!-- ロゴ -->
 <div class="text-center mt-4">
   <%= link_to emotion_logs_path(view: 'mobile') do %>
-    <%= image_tag "logo1.png",
+    <%= image_tag "logo1.webp",
                   alt: "Emotion List Logo",
                   class: "img-fluid neon-icon",
                   style: "max-width:400px; width:100%;" %>
@@ -112,8 +112,8 @@
       <div class="mypage-item">
         <%= link_to emotion_logs_path(view: 'mobile'),
                     class: 'mypage-icon-link' do %>
-          <%= image_tag 'home.png',
-                        alt: 'ホーム',
+          <%= image_tag 'home.webp',
+                        alt: '',
                         class: 'mypage-icon' %>
           <div class='mypage-text'>ホーム</div>
         <% end %>
@@ -124,8 +124,8 @@
         <%= link_to "#",
                     class: "mypage-icon-link",
                     onclick: "goToRecommended()" do %>
-          <%= image_tag 'hot.png',
-                        alt: 'おすすめ',
+          <%= image_tag 'hot.webp',
+                        alt: '',
                         class: 'mypage-icon' %>
           <div class='mypage-text'>おすすめ🔥</div>
         <% end %>
@@ -195,8 +195,8 @@
       <div class="mypage-item">
         <%= link_to my_emotion_logs_path(view: 'mobile'),
                     class: 'mypage-icon-link' do %>
-          <%= image_tag 'mypage_logo.png',
-                        alt: 'マイページ',
+          <%= image_tag 'mypage_logo.webp',
+                        alt: '',
                         class: 'mypage-icon' %>
           <div class='mypage-text'>マイページ</div>
         <% end %>
@@ -206,8 +206,8 @@
       <div class="mypage-item">
         <%= link_to bookmarks_emotion_logs_path(view: 'mobile'),
                     class: 'mypage-icon-link' do %>
-          <%= image_tag 'favorite.png',
-                        alt: 'お気に入りリスト',
+          <%= image_tag 'favorite.webp',
+                        alt: '',
                         class: 'mypage-icon' %>
           <div class='mypage-text'>お気に入りリスト</div>
         <% end %>
