@@ -50,7 +50,7 @@
     position: absolute;
     top: 20px;
     right: 20px;
-    z-index: 1000;
+    z-index: 10000;
   }
 
   .user-dropdown {
@@ -269,4 +269,13 @@
   padding: 16px 10px 16px 20px;
   max-height: 85vh;
   overflow-y: auto;
+}
+
+
+// バッジの色
+.badge.bg-primary.text-light {
+  background-color: #084298 !important; /* Bootstrap5の濃い青 */
+  color: #fff !important; /* 白 */
+  /* もしこれでもNGなら色をさらに濃くするか、 */
+  /* 逆に文字色を黒にしてみる */
 }

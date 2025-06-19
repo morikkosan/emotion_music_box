@@ -52,6 +52,7 @@ gem "omniauth-oauth2"
 
 gem "image_processing", "~> 1.2"
 
+gem 'uglifier'
 
 
 # ローカルcloudinary確認用

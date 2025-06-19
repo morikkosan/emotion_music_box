@@ -21,7 +21,7 @@ class User < ApplicationRecord
 
   # プロフィール画像URLを返す（Cloudinary無ければデフォルト画像）
   def profile_avatar_url
-    avatar_url.presence || "default_stick_figure.png"
+    avatar_url.presence || "default_stick_figure.webp"
   end
 
   # --- ここから下は既存のロジックを残してOK ---
