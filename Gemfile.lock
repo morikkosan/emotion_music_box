@@ -457,6 +457,7 @@ DEPENDENCIES
   cssbundling-rails
   devise
   dotenv-rails
+  faraday
   groupdate
   httparty
   image_processing (~> 1.2)
