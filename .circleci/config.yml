@@ -1,0 +1,30 @@
+version: 2.1
+
+executors:
+  ruby-executor:
+    docker:
+      - image: cimg/ruby:3.2
+      - image: cimg/postgres:15.5
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+
+jobs:
+  test:
+    executor: ruby-executor
+    steps:
+      - checkout
+      - run: gem install bundler
+      - run: bundle install --jobs=4 --retry=3
+      - run: |
+          cp config/database.yml config/database.yml.bak
+          sed -i -e 's/host:.*$/host: 127.0.0.1/' config/database.yml
+          cat config/database.yml
+      - run: bundle exec rails db:create db:schema:load
+      - run: bundle exec rspec
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test
