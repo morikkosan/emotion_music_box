@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      postgres:                 # ← サービス名はpostgres！
+      postgres:
         image: postgres:15
         env:
           POSTGRES_USER: postgres
@@ -33,16 +33,11 @@ jobs:
       - name: Wait for Postgres to be ready
         run: |
           for i in {1..20}; do
-            nc -z postgres 5432 && echo "🎉 Postgres is up!" && exit 0
+            nc -z 127.0.0.1 5432 && echo "🎉 Postgres is up!" && exit 0
             echo "Waiting for Postgres... ($i)"
             sleep 2
           done
           echo "❌ Postgres never came up" && exit 1
-
-      - name: Check DB hostname resolution
-        run: |
-          echo "==== dig postgres ===="
-          dig postgres
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -59,32 +54,13 @@ jobs:
       - name: Show current database.yml
         run: cat config/database.yml
 
-      - name: Prepare database (retry on localhost if failed)
+      - name: Prepare database
         env:
           RAILS_ENV: test
         run: |
-          set -e
-          echo "🎲 postgres(サービス名)で db:create 実行"
-          export PGHOST=postgres
-          if bundle exec rails db:create; then
-            echo "✅ postgres(サービス名)で成功"
-          else
-            echo "❗ postgres(サービス名)で失敗 → localhost で再実行します"
-            export PGHOST=localhost
-            bundle exec rails db:create
-          fi
-          echo "🎲 postgres(サービス名)で schema:load 実行"
-          export PGHOST=postgres
-          if bundle exec rails db:schema:load; then
-            echo "✅ postgres(サービス名)で成功"
-          else
-            echo "❗ postgres(サービス名)で失敗 → localhost で再実行します"
-            export PGHOST=localhost
-            bundle exec rails db:schema:load
-          fi
+          bundle exec rails db:create db:schema:load
 
       - name: Run RSpec tests
         env:
           RAILS_ENV: test
-          PGHOST: postgres
         run: bundle exec rspec
