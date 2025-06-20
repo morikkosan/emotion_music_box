@@ -8,14 +8,14 @@ development:
   database: app_development
   username: postgres
   password: password
-  host: postgres   # ← db → postgres
+  host: postgres
 
 test:
   <<: *default
   database: app_test
   username: postgres
   password: password
-  host: postgres   # ← db → postgres
+  host: postgres
 
 production:
   <<: *default
