@@ -11,11 +11,12 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      db:
+      postgres:    # ← ここをdbからpostgresに変更！
         image: postgres:15
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
+
     steps:
       - name: Install tools for connectivity checks
         run: |
@@ -25,7 +26,7 @@ jobs:
       - name: Wait for Postgres to be ready
         run: |
           for i in {1..20}; do
-            nc -z db 5432 && echo "🎉 Postgres is up!" && exit 0
+            nc -z postgres 5432 && echo "🎉 Postgres is up!" && exit 0
             echo "Waiting for Postgres... ($i)"
             sleep 2
           done
@@ -33,8 +34,8 @@ jobs:
 
       - name: Check DB hostname resolution
         run: |
-          echo "==== dig db ===="
-          dig db
+          echo "==== dig postgres ===="
+          dig postgres
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -53,19 +54,21 @@ jobs:
           RAILS_ENV: test
         run: |
           set -e
-          echo "🎲 db(サービス名)で db:create 実行"
+          echo "🎲 postgres(サービス名)で db:create 実行"
+          export PGHOST=postgres  # ← 明示
           if bundle exec rails db:create; then
-            echo "✅ db(サービス名)で成功"
+            echo "✅ postgres(サービス名)で成功"
           else
-            echo "❗ db(サービス名)で失敗 → localhost で再実行します"
+            echo "❗ postgres(サービス名)で失敗 → localhost で再実行します"
             export PGHOST=localhost
             bundle exec rails db:create
           fi
-          echo "🎲 db(サービス名)で schema:load 実行"
+          echo "🎲 postgres(サービス名)で schema:load 実行"
+          export PGHOST=postgres
           if bundle exec rails db:schema:load; then
-            echo "✅ db(サービス名)で成功"
+            echo "✅ postgres(サービス名)で成功"
           else
-            echo "❗ db(サービス名)で失敗 → localhost で再実行します"
+            echo "❗ postgres(サービス名)で失敗 → localhost で再実行します"
             export PGHOST=localhost
             bundle exec rails db:schema:load
           fi
@@ -73,4 +76,5 @@ jobs:
       - name: Run RSpec tests
         env:
           RAILS_ENV: test
+          PGHOST: postgres  # ← これも忘れずに
         run: bundle exec rspec
