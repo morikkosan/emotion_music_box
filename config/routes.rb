@@ -45,6 +45,9 @@ Rails.application.routes.draw do
   get "/soundcloud/search",      to: "sound_cloud#search"
   get "tags/search", to: "tags#search"
   get "/terms", to: "pages#terms", as: :terms
+  post '/line_bot/callback', to: 'line_bot#callback'
+  post 'toggle_line_notification', to: 'users#toggle_line_notification'
+
 
   # PWA／ヘルスチェック
   get "up",               to: "rails/health#show",           as: :rails_health_check

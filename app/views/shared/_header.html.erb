@@ -37,13 +37,13 @@
             プロフィール編集
           <% end %>
 
-          <%= link_to my_emotion_logs_path(view: 'mobile'),
-                      class: "dropdown-item d-flex align-items-center" do %>
-            <%= image_tag "test1.webp",
-                          class: "dropdown-icon me-2",
-                          alt: "" %>
-            マイページ
-          <% end %>
+          <%= form_with url: toggle_line_notification_path, method: :post, local: true, html: { class: "dropdown-item d-flex align-items-center p-0" } do %>
+  <%= submit_tag current_user.line_notification_enabled ? "通知をOFFにする" : "通知をONにする",
+      class: "btn btn-link dropdown-item m-0 p-0 text-start" %>
+  <%= image_tag "LINE_APP_Android.png", class: "dropdown-icon ms-2", alt: "LINE" %>
+<% end %>
+
+
 
           <%= link_to new_contact_path,
                       class: "dropdown-item d-flex align-items-center" do %>
