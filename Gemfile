@@ -51,7 +51,6 @@ gem "oauth2", "~> 2.0"
 gem "omniauth-oauth2"
 gem 'rqrcode'
 gem 'rqrcode_svg'
-gem 'line-bot-api'
 
 
 
@@ -105,3 +104,5 @@ group :test do
 end
 
 # gem "activerecord-session_store", "~> 2.1"
+
+gem "line-bot-api", "~> 1.20"
