@@ -9,7 +9,7 @@ Rails.application.configure do
   config.file_watcher = ActiveSupport::EventedFileUpdateChecker
 
   config.assets.css_compressor = :sass      # CSSを圧縮
-  config.assets.compile = false             # プリコンパイルしたファイルだけ使う
+  config.assets.compile = true          # プリコンパイルしたファイルだけ使う
   config.assets.digest = true               # キャッシュ防止のためファイル名にハッシュをつける
 
   # ----------------------------------------
