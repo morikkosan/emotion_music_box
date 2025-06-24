@@ -47,6 +47,7 @@ Rails.application.routes.draw do
   get "/terms", to: "pages#terms", as: :terms
   post '/line_bot/callback', to: 'line_bot#callback'
   get '/line_add_friends', to: 'line_bot#add_friends', as: 'line_add_friends'
+  get '/line_link', to: 'line_link#link'
 
   # PWA／ヘルスチェック
   get "up",               to: "rails/health#show",           as: :rails_health_check
