@@ -56,4 +56,6 @@ Rails.application.routes.draw do
   get "/auth/failure", to: "users/omniauth_callbacks#redirect_on_failure"
   get "/sign_in", to: redirect("/")
   get "/sc_resolve", to: "sound_cloud#resolve"
+  get '/line_notify_test', to: 'line_bot#test_notify'
+
 end
