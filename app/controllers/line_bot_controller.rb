@@ -105,6 +105,17 @@ class LineBotController < ApplicationController
     )
   end
 
+  def test_notify
+  user = User.find_by(email: "test@example.com") # テスト用ユーザーのメールに合わせて変更
+  if user&.line_notify_token.present?
+    LineNotifyService.new(user).send("🎧 LINE Notify テストメッセージ 🎉")
+    render plain: "✅ 通知を送信しました！"
+  else
+    render plain: "⚠️ トークンが登録されていません"
+  end
+end
+
+
   private
 
   def validate_signature(body, signature)
