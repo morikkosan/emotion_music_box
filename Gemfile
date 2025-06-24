@@ -49,8 +49,14 @@ gem "omniauth-rails_csrf_protection"
 gem "omniauth-oauth2-generic"
 gem "oauth2", "~> 2.0"
 gem "omniauth-oauth2"
+gem 'rqrcode'
+gem 'rqrcode_svg'
+gem 'line-bot-api'
+
+
 
 gem "image_processing", "~> 1.2"
+
 
 gem 'uglifier'
 gem 'faraday'
