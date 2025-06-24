@@ -37,13 +37,13 @@
             プロフィール編集
           <% end %>
 
-          <%= link_to my_emotion_logs_path(view: 'mobile'),
-                      class: "dropdown-item d-flex align-items-center" do %>
-            <%= image_tag "test1.webp",
-                          class: "dropdown-icon me-2",
-                          alt: "" %>
-            マイページ
-          <% end %>
+        <%= link_to line_add_friends_path, class: "dropdown-item d-flex align-items-center" do %>
+  <%= image_tag "LINE_APP_Android.png", class: "dropdown-icon me-2", alt: "LINE" %>
+  友だち追加
+<% end %>
+
+
+
 
           <%= link_to new_contact_path,
                       class: "dropdown-item d-flex align-items-center" do %>

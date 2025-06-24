@@ -49,10 +49,16 @@ gem "omniauth-rails_csrf_protection"
 gem "omniauth-oauth2-generic"
 gem "oauth2", "~> 2.0"
 gem "omniauth-oauth2"
+gem 'rqrcode'
+gem 'rqrcode_svg'
+
+
 
 gem "image_processing", "~> 1.2"
 
+
 gem 'uglifier'
+gem 'faraday'
 
 
 
@@ -98,3 +104,5 @@ group :test do
 end
 
 # gem "activerecord-session_store", "~> 2.1"
+
+gem "line-bot-api", "~> 1.20"
