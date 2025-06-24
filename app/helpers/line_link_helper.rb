@@ -1,0 +1,2 @@
+module LineLinkHelper
+end

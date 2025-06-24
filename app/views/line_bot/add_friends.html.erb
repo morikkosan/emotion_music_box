@@ -1,0 +1,108 @@
+<div class="line-qr-container">
+  <h2 class="line-qr-title">🎧 LINEとつながって音楽を楽しもう 🎶</h2>
+
+  <div class="line-qr-wrapper">
+    <div class="line-qr-box">
+      <%= raw @svg %>
+    </div>
+  </div>
+
+  <div class="line-qr-url-box">
+    <span class="line-qr-url">またはURLから友だち追加 ↓
+    <%= link_to "https://lin.ee/wEGjqmK9",
+    "https://lin.ee/wEGjqmK9",
+    target: "blank",
+    rel: "noopener",
+    style: "color: #00e5ff; text-decoration: underline;" %></span>
+
+    <br>
+    <br>
+    <%= link_to "LINEで友だち追加", "https://lin.ee/wEGjqmK9", target: "_blank", rel: "noopener", class: "line-qr-btn" %>
+  </div>
+<div style="margin-top: 60px;">
+  
+              <%= link_to "トップに戻る",
+              emotion_logs_path,
+              class: 'neon-btn',
+              style: 'font-size: 1.8rem',
+              target:"_self" %>
+    </div>
+  </div>
+
+
+<style>
+.line-qr-container {
+  background: radial-gradient(circle at center, #1a1a2e, #16213e);
+  padding: 40px;
+  text-align: center;
+  border-radius: 16px;
+  box-shadow: 0 0 25px rgba(0, 229, 255, 0.8), 0 0 50px rgba(0, 229, 255, 0.6);
+  color: white;
+  max-width: 500px;
+  margin: 40px auto;
+}
+
+.line-qr-title {
+  font-size: 2rem;
+  color: #fff;
+  text-shadow: 0 0 10px #00e5ff, 0 0 20px #00e5ff, 0 0 30px #00e5ff;
+  margin-bottom: 20px;
+}
+
+.line-qr-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.line-qr-box {
+  background: #fff;
+  padding: 0;
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.8);
+  line-height: 0;
+  width: 242px;
+  height: 242px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.line-qr-box svg {
+  display: block;
+  width: 220px;
+  height: 220px;
+  margin: 0;
+  padding: 0;
+  background: #fff;
+}
+
+.line-qr-url-box {
+  margin-top: 20px;
+  font-size: 1.1rem;
+}
+
+.line-qr-url {
+  text-shadow: 0 0 8px #00e5ff;
+}
+
+.line-qr-btn {
+  display: inline-block;
+  background: linear-gradient(90deg, #00e5ff, #00b8ff);
+  color: #16213e;
+  font-weight: bold;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  box-shadow: 0 0 10px #00e5ff, 0 0 20px #00b8ff;
+  transition: transform 0.3s, box-shadow 0.3s;
+  margin-left: 10px;
+}
+
+.line-qr-btn:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0 20px #00e5ff, 0 0 30px #00b8ff, 0 0 40px #00e5ff;
+}
+</style>
