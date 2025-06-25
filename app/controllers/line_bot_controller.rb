@@ -124,8 +124,14 @@ class LineBotController < ApplicationController
 
   def debug_tokens
   tokens = LineLinkToken.where(used: false).order(created_at: :desc).limit(3)
-  render plain: tokens.map { |t| "#{t.token} - used: #{t.used} - created: #{t.created_at}" }.join("\n")
+
+  if tokens.empty?
+    render plain: "❌ 未使用トークンが存在しません"
+  else
+    render plain: tokens.map { |t| "#{t.token} - used: #{t.used} - created: #{t.created_at}" }.join("\n")
+  end
 end
+
 
 def debug_push
   line_user_id = params[:line_user_id]
