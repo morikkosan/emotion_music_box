@@ -31,7 +31,7 @@ class UsersController < ApplicationController
     LineLinkToken.create!(user: current_user, token: token, used: false)
 
     # 連携用URLを生成（ドメインは環境に応じて調整）
-    link_url = "https://moriappli-emotion.com/line_link?token=#{token}"
+  link_url = "https://moriappli-emotion.com/line_link?token=#{token}&line_user_id=#{current_user.line_user_id}"
 
     # LINEに送信
     if current_user.line_user_id.present?
