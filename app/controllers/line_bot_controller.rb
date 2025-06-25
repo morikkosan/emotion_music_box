@@ -30,45 +30,43 @@ class LineBotController < ApplicationController
   end
 
   # LINE BotのWebhook受信
- def callback
-  Rails.logger.debug "🔥 Webhook 受信！"
+  def callback
+    Rails.logger.debug "🔥 Webhook 受信！"
 
-  body = request.body.read
-  signature = request.env['HTTP_X_LINE_SIGNATURE']
+    body = request.body.read
+    signature = request.env['HTTP_X_LINE_SIGNATURE']
+    return head :bad_request unless validate_signature(body, signature)
 
-  return head :bad_request unless validate_signature(body, signature)
+    events = JSON.parse(body)['events']
+    events.each do |event|
+      if event['type'] == 'follow'
+        line_user_id = event['source']['userId']
+        Rails.logger.debug "LINE USER ID: #{line_user_id}"
 
-  events = JSON.parse(body)['events']
-  events.each do |event|
-    if event['type'] == 'follow'
-      line_user_id = event['source']['userId']
-      Rails.logger.debug "LINE USER ID: #{line_user_id}"
+        # セッション使わず、未使用トークンを1件取得（最新のもの）
+        link_token = LineLinkToken.where(used: false).order(created_at: :desc).first
 
-      # Webhook時に発行された一時トークンを持つログインユーザーを特定
-      link_token = LineLinkToken.find_by(token: session[:line_link_token], used: false)
+        if link_token.present?
+          # トークン付きURLを送信
+          link_url = "https://moriappli-emotion.com/line_link?token=#{link_token.token}&line_user_id=#{line_user_id}"
 
-      if link_token.present?
-        # tokenを含む連携用URLを送信
-        link_url = "https://moriappli-emotion.com/line_link?token=#{link_token.token}&line_user_id=#{line_user_id}"
+          welcome_message = <<~MSG
+            エモミュへようこそ！🎧
+            LINE連携ありがとうございます！
 
-        welcome_message = <<~MSG
-          エモミュへようこそ！🎧
-          LINE連携ありがとうございます！
+            下のリンクを押すと、エモミュとLINEが連携されます👇
+            #{link_url}
+          MSG
 
-          下のリンクを押すと、エモミュとLINEが連携されます👇
-          #{link_url}
-        MSG
-
-        send_raw_message(line_user_id, welcome_message)
-      else
-        Rails.logger.warn("トークンが見つかりませんでした。")
+          send_raw_message(line_user_id, welcome_message)
+        else
+          Rails.logger.warn("トークンが見つかりませんでした。")
+        end
       end
     end
+
+    head :ok
   end
-
-  head :ok
-end
-
 
   # 実際の送信処理（共通化）
   def send_line_message(user, message)
@@ -115,15 +113,14 @@ end
   end
 
   def test_notify
-  user = User.find_by(email: "test@example.com") # テスト用ユーザーのメールに合わせて変更
-  if user&.line_notify_token.present?
-    LineNotifyService.new(user).send("🎧 LINE Notify テストメッセージ 🎉")
-    render plain: "✅ 通知を送信しました！"
-  else
-    render plain: "⚠️ トークンが登録されていません"
+    user = User.find_by(email: "test@example.com")
+    if user&.line_notify_token.present?
+      LineNotifyService.new(user).send("🎧 LINE Notify テストメッセージ 🎉")
+      render plain: "✅ 通知を送信しました！"
+    else
+      render plain: "⚠️ トークンが登録されていません"
+    end
   end
-end
-
 
   private
 
