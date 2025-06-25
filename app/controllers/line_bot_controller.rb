@@ -26,8 +26,17 @@ class LineBotController < ApplicationController
 
   # お知らせ通知
   def send_news(user)
-    send_line_message(user, LINE_NOTIFY_NEWS)
-  end
+  latest_news = News.order(created_at: :desc).first
+  return unless latest_news && user.line_user_id.present?
+
+  message = <<~MSG
+    📢 #{latest_news.title}
+
+    #{latest_news.body}
+  MSG
+
++ send_raw_message(user.line_user_id, message)
+end
 
   # LINE BotのWebhook受信
   def callback
@@ -179,6 +188,35 @@ def debug_push
     render plain: "❌ LINEメッセージ送信失敗"
   end
 end
+
+def debug_emotion
+  user = User.find_by(email: "test@example.com") # ←本番でline_user_id入ってるユーザー
+  send_emotion_log(user,
+    emotion: "嬉しい",
+    track_name: "Lemon",
+    artist_name: "米津玄師",
+    hp: 90
+  )
+  render plain: "✅ emotion通知送信テスト完了"
+end
+
+def debug_reaction
+  user = User.find_by(email: "test@example.com")
+  send_reaction(user,
+    user_name: "ソル",
+    bookmark: "「最高だった！」",
+    comment_reaction: "いいね👍"
+  )
+  render plain: "✅ reaction通知送信テスト完了"
+end
+
+def debug_news
+  user = User.find_by(email: "test@example.com")
+  send_news(user)
+  render plain: "✅ news通知送信テスト完了"
+end
+
+
 
   private
 
