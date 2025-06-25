@@ -43,6 +43,7 @@ class UsersController < ApplicationController
     else
       redirect_to root_path, alert: "LINEユーザーIDが登録されていません。"
     end
+  end
 
    def toggle_line_notification
     current_user.update(line_notification_enabled: !current_user.line_notification_enabled)
