@@ -48,6 +48,7 @@ Rails.application.routes.draw do
   post '/line_bot/callback', to: 'line_bot#callback'
   get '/line_add_friends', to: 'line_bot#add_friends', as: 'line_add_friends'
   get '/line_link', to: 'line_link#link'
+  post '/users/create_line_link', to: 'users#create_line_link', as: :create_line_link
 
   # PWA／ヘルスチェック
   get "up",               to: "rails/health#show",           as: :rails_health_check
