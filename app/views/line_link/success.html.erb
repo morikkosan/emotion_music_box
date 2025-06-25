@@ -1,0 +1,41 @@
+<div class="line-link-complete">
+  <h1>🎉 LINE連携が完了しました！</h1>
+  <p>エモミュからのお知らせをこれからLINEで受け取れます。</p>
+  <p>アプリを引き続きお楽しみください。</p>
+
+  <button onclick="closeWindow()" class="close-button">このページを閉じる</button>
+</div>
+
+<script>
+  function closeWindow() {
+    // LINE内部ブラウザでも動くように工夫
+    if (window.LineIt) {
+      window.LineIt.closeWindow?.();
+    } else {
+      window.open('', '_self').close(); // 通常ブラウザ
+    }
+  }
+</script>
+
+<style>
+.line-link-complete {
+  text-align: center;
+  margin-top: 80px;
+  font-family: sans-serif;
+}
+
+.close-button {
+  background-color: #00e5ff;
+  color: #000;
+  border: none;
+  padding: 12px 24px;
+  font-size: 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 30px;
+}
+
+.close-button:hover {
+  background-color: #00bcd4;
+}
+</style>
