@@ -26,26 +26,31 @@ class UsersController < ApplicationController
     end
   end
 
-   def create_line_link
-    token = SecureRandom.uuid
-    LineLinkToken.create!(user: current_user, token: token, used: false)
+  # LINE連携用の一時トークン作成
+  def create_line_link
+  token = SecureRandom.uuid
+  LineLinkToken.create!(user: current_user, token: token, used: false)
 
-    # 連携用URLを生成（ドメインは環境に応じて調整）
-  link_url = "https://moriappli-emotion.com/line_link?token=#{token}&line_user_id=#{current_user.line_user_id}"
+  if current_user.line_user_id.present?
+    # 正しいIDがあるならURLにも含める
+    link_url = "https://moriappli-emotion.com/line_link?token=#{token}&line_user_id=#{current_user.line_user_id}"
 
-    # LINEに送信
-    if current_user.line_user_id.present?
-      LineBotNotifier.push_message(
-        to: current_user.line_user_id,
-        message: "以下のURLをタップしてLINE連携を完了してください！\n#{link_url}"
-      )
-      redirect_to root_path, notice: "LINEにメッセージを送りました！"
-    else
-      redirect_to root_path, alert: "LINEユーザーIDが登録されていません。"
-    end
+    LineBotNotifier.push_message(
+      to: current_user.line_user_id,
+      message: "以下のURLをタップしてLINE連携を完了してください！\n#{link_url}"
+    )
+    redirect_to root_path, notice: "LINEにメッセージを送りました！"
+  else
+    # LINE IDが未登録なら ID なしで生成し、後の Webhook で差し替え予定
+    link_url = "https://moriappli-emotion.com/line_link?token=#{token}"
+
+    redirect_to root_path, notice: "LINE連携用リンクを発行しました：#{link_url}"
   end
+end
 
-   def toggle_line_notification
+
+  # LINE通知オン/オフ切り替え
+  def toggle_line_notification
     current_user.update(line_notification_enabled: !current_user.line_notification_enabled)
     redirect_back(fallback_location: root_path, notice: "通知設定を更新しました")
   end
