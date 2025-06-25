@@ -122,6 +122,37 @@ class LineBotController < ApplicationController
     end
   end
 
+  def debug_tokens
+  tokens = LineLinkToken.where(used: false).order(created_at: :desc).limit(3)
+  render plain: tokens.map { |t| "#{t.token} - used: #{t.used} - created: #{t.created_at}" }.join("\n")
+end
+
+def debug_push
+  line_user_id = params[:line_user_id]
+  token = LineLinkToken.where(used: false).order(created_at: :desc).first
+
+  if token.nil?
+    render plain: "❌ 未使用トークンがありません"
+    return
+  end
+
+  message = <<~MSG
+    エモミュへようこそ！🎧
+    LINE連携ありがとうございます！
+
+    下のリンクを押すと、エモミュとLINEが連携されます👇
+    https://moriappli-emotion.com/line_link?token=#{token.token}&line_user_id=#{line_user_id}
+  MSG
+
+  success = LineBotNotifier.push_message(to: line_user_id, message: message)
+
+  if success
+    render plain: "✅ LINEメッセージ送信成功"
+  else
+    render plain: "❌ LINEメッセージ送信失敗"
+  end
+end
+
   private
 
   def validate_signature(body, signature)
@@ -129,4 +160,6 @@ class LineBotController < ApplicationController
     hash = OpenSSL::HMAC.digest(OpenSSL::Digest::SHA256.new, channel_secret, body)
     Base64.strict_encode64(hash) == signature
   end
+
+  
 end
