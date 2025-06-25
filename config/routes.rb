@@ -58,5 +58,7 @@ Rails.application.routes.draw do
   get "/sign_in", to: redirect("/")
   get "/sc_resolve", to: "sound_cloud#resolve"
   get '/line_notify_test', to: 'line_bot#test_notify'
-
+  get "/debug/line_tokens", to: "line_bot#debug_tokens"
+  get "/debug/line_tokens", to: "line_bot#debug_tokens"
+  get "/debug/push_message", to: "line_bot#debug_push"
 end
