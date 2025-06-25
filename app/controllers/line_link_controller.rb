@@ -1,5 +1,5 @@
 class LineLinkController < ApplicationController
-  before_action :authenticate_user!
+  skip_before_action :authenticate_user!, only: [:link]
 
   def link
     token = params[:token]
