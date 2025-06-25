@@ -16,5 +16,3 @@ class LineLinkController < ApplicationController
     end
   end
 end
-
-
