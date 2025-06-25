@@ -106,26 +106,37 @@ class CommentsController < ApplicationController
 
   # POST /comments/:id/toggle_reaction
   def toggle_reaction
-    kind = params[:kind].to_sym
-    comment = @comment
+  kind = params[:kind].to_sym
+  comment = @comment
 
-    reaction = comment.comment_reactions.find_by(user: current_user, kind: kind)
-    if reaction
-      reaction.destroy
-      action = "removed"
-    else
-      comment.comment_reactions.create!(user: current_user, kind: kind)
-      action = "added"
+  reaction = comment.comment_reactions.find_by(user: current_user, kind: kind)
+  if reaction
+    reaction.destroy
+    action = "removed"
+  else
+    comment.comment_reactions.create!(user: current_user, kind: kind)
+    action = "added"
+
+    # ✅ LINE通知：自分以外の投稿者に送る
+    if comment.user != current_user && comment.user.line_user_id.present?
+      LineBotController.new.send_reaction(
+        comment.user,
+        user_name: current_user.name,
+        bookmark: comment.emotion_log&.track_name || "あなたの投稿",
+        comment_reaction: kind.to_s
+      )
     end
-
-    current_kind = comment.comment_reactions.find_by(user: current_user)&.kind
-
-    render json: {
-      status: "ok",
-      action: action,
-      current_reaction_kind: current_kind
-    }
   end
+
+  current_kind = comment.comment_reactions.find_by(user: current_user)&.kind
+
+  render json: {
+    status: "ok",
+    action: action,
+    current_reaction_kind: current_kind
+  }
+end
+
 
   private
 
