@@ -4,6 +4,7 @@ class LineLinkController < ApplicationController
   def link
     token = params[:token]
     line_user_id = params[:line_user_id]
+
     link_token = LineLinkToken.find_by(token: token, used: false)
 
     if link_token.present? && line_user_id.present?
