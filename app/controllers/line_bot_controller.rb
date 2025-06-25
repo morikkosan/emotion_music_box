@@ -30,36 +30,45 @@ class LineBotController < ApplicationController
   end
 
   # LINE BotのWebhook受信
-  def callback
-    Rails.logger.debug "🔥 Webhook 受信！"
+ def callback
+  Rails.logger.debug "🔥 Webhook 受信！"
 
-    body = request.body.read
-    signature = request.env['HTTP_X_LINE_SIGNATURE']
+  body = request.body.read
+  signature = request.env['HTTP_X_LINE_SIGNATURE']
 
-    return head :bad_request unless validate_signature(body, signature)
+  return head :bad_request unless validate_signature(body, signature)
 
-    events = JSON.parse(body)['events']
-    events.each do |event|
-      if event['type'] == 'follow'
-        line_user_id = event['source']['userId']
-        Rails.logger.debug "LINE USER ID: #{line_user_id}"
+  events = JSON.parse(body)['events']
+  events.each do |event|
+    if event['type'] == 'follow'
+      line_user_id = event['source']['userId']
+      Rails.logger.debug "LINE USER ID: #{line_user_id}"
 
-        link_url = "https://moriappli-emotion.com/line_link?line_user_id=#{line_user_id}"
+      # Webhook時に発行された一時トークンを持つログインユーザーを特定
+      link_token = LineLinkToken.find_by(token: session[:line_link_token], used: false)
+
+      if link_token.present?
+        # tokenを含む連携用URLを送信
+        link_url = "https://moriappli-emotion.com/line_link?token=#{link_token.token}&line_user_id=#{line_user_id}"
 
         welcome_message = <<~MSG
           エモミュへようこそ！🎧
           LINE連携ありがとうございます！
 
-          下のリンクを押すと、エモミュから嬉しい通知が届くようになります👇
+          下のリンクを押すと、エモミュとLINEが連携されます👇
           #{link_url}
         MSG
 
         send_raw_message(line_user_id, welcome_message)
+      else
+        Rails.logger.warn("トークンが見つかりませんでした。")
       end
     end
-
-    head :ok
   end
+
+  head :ok
+end
+
 
   # 実際の送信処理（共通化）
   def send_line_message(user, message)
