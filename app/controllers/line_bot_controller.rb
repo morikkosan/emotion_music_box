@@ -100,17 +100,38 @@ class LineBotController < ApplicationController
 
   # 友だち追加ページ（QRコード表示用）
   def add_friends
-    url = 'https://lin.ee/wEGjqmK9'
-    qrcode = RQRCode::QRCode.new(url)
-    @svg = qrcode.as_svg(
-      offset: 0,
-      color: '000000',
-      shape_rendering: 'crispEdges',
-      module_size: 11,
-      standalone: true,
-      use_viewbox: true
-    )
+      Rails.logger.info("✅ add_friends アクション開始")
+
+  url = 'https://lin.ee/wEGjqmK9'
+  qrcode = RQRCode::QRCode.new(url)
+  @svg = qrcode.as_svg(
+    offset: 0,
+    color: '000000',
+    shape_rendering: 'crispEdges',
+    module_size: 11,
+    standalone: true,
+    use_viewbox: true
+  )
+
+  # ✅ トークンがまだなければ作成
+  if user_signed_in?
+        Rails.logger.info("✅ ログイン済み: user_id=#{current_user.id}")
+
+    unless current_user.line_link_tokens.where(used: false).exists?
+      LineLinkToken.create!(
+        user: current_user,
+        token: SecureRandom.uuid,
+        used: false
+      )
+      Rails.logger.info("✅ LINEリンクトークンを新規発行しました (user_id=#{current_user.id})")
+    else
+      Rails.logger.info("ℹ️ 既に未使用のトークンがあります (user_id=#{current_user.id})")
+    end
+  else
+    Rails.logger.warn("⚠️ ログインしていないユーザーがLINE追加ページを開きました")
   end
+end
+
 
   def test_notify
     user = User.find_by(email: "test@example.com")
