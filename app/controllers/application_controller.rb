@@ -1,7 +1,7 @@
 class ApplicationController < ActionController::Base
   protect_from_forgery with: :exception
   before_action :force_mobile_view
-  before_action :refresh_soundcloud_token_if_needed, if: :user_signed_in?
+before_action :refresh_soundcloud_token_if_needed
 
   # before_action :log_session_info
   # before_action :debug_session_state
@@ -46,6 +46,9 @@ end
   private
 
       def refresh_soundcloud_token_if_needed
+
+    return unless user_signed_in? # ← これを最初に！
+
   Rails.logger.info "▶️ SoundCloudトークン有効期限チェック開始 user_id: #{current_user.id}"
 
   return unless current_user.soundcloud_token_expires_at.present?
