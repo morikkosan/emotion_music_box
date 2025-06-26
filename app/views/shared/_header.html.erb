@@ -37,23 +37,25 @@
             プロフィール編集
           <% end %>
 
-        <% if current_user.push_enabled? %>
-  <%= link_to disable_push_notifications_path,
-              method: :patch,
-              class: "dropdown-item d-flex align-items-center text-warning",
-              data: { turbo_method: :patch } do %>
-    <%= image_tag "bell_off.webp", class: "dropdown-icon me-2", alt: "" %>
-    通知をオフにする
+        <turbo-frame id="notification-toggle">
+  <% if current_user.push_enabled? %>
+    <%= link_to disable_push_notifications_path,
+                method: :patch,
+                data: { turbo_method: :patch },
+                class: "dropdown-item d-flex align-items-center text-warning" do %>
+      <%= image_tag "bell_on.webp", class: "dropdown-icon me-2", alt: "" %>
+      通知をオフにする
+    <% end %>
+  <% else %>
+    <%= link_to enable_push_notifications_path,
+                method: :patch,
+                data: { turbo_method: :patch },
+                class: "dropdown-item d-flex align-items-center text-primary" do %>
+      <%= image_tag "bell_off.webp", class: "dropdown-icon me-2", alt: "" %>
+      通知をオンにする
+    <% end %>
   <% end %>
-<% else %>
-  <%= link_to enable_push_notifications_path,
-              method: :patch,
-              class: "dropdown-item d-flex align-items-center text-primary",
-              data: { turbo_method: :patch } do %>
-    <%= image_tag "bell_on.webp", class: "dropdown-icon me-2", alt: "" %>
-    通知をオンにする
-  <% end %>
-<% end %>
+</turbo-frame>
 
 
 
