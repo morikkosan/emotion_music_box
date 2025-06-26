@@ -42,7 +42,7 @@
               method: :patch,
               class: "dropdown-item d-flex align-items-center text-warning",
               data: { turbo_method: :patch } do %>
-    <%= image_tag "notification_off.webp", class: "dropdown-icon me-2", alt: "" %>
+    <%= image_tag "bell_off.webp", class: "dropdown-icon me-2", alt: "" %>
     通知をオフにする
   <% end %>
 <% else %>
@@ -50,7 +50,7 @@
               method: :patch,
               class: "dropdown-item d-flex align-items-center text-primary",
               data: { turbo_method: :patch } do %>
-    <%= image_tag "notification_on.webp", class: "dropdown-icon me-2", alt: "" %>
+    <%= image_tag "bell_on.webp", class: "dropdown-icon me-2", alt: "" %>
     通知をオンにする
   <% end %>
 <% end %>
