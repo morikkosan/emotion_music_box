@@ -12,6 +12,7 @@ class User < ApplicationRecord
   has_many :comments, dependent: :destroy
   has_many :playlists, dependent: :destroy
   has_many :line_link_tokens
+  has_one :push_subscription, dependent: :destroy
 
   # バリデーション
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true

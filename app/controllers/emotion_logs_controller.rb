@@ -88,13 +88,15 @@ end
     is_today      = @emotion_log.date.to_date == Date.current
 
     if @emotion_log.save
-      LineBotController.new.send_emotion_log(
+  PushNotificationController.new.send_emotion_log(
     current_user,
     emotion:      @emotion_log.emotion,
     track_name:   @emotion_log.track_name,
     artist_name:  @emotion_log.description.presence || "アーティスト不明",
     hp:           hp_percentage
   )
+
+
       respond_to do |format|
         # ① JSON リクエストの場合
         format.json do

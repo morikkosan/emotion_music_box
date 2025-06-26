@@ -57,6 +57,14 @@ Rails.application.routes.draw do
   get "/auth/failure", to: "users/omniauth_callbacks#redirect_on_failure"
   get "/sign_in", to: redirect("/")
   get "/sc_resolve", to: "sound_cloud#resolve"
+  post 'push/emotion', to: 'push_notification#send_emotion_log'
+  post '/push_subscription', to: 'push_subscriptions#create'
+  patch 'enable_push_notifications', to: 'users#enable_push_notifications'
+  patch 'disable_push_notifications', to: 'users#disable_push_notifications'
+
+
+
+
   get '/line_notify_test', to: 'line_bot#test_notify'
   get "/debug/line_tokens", to: "line_bot#debug_tokens"
   get "/debug/line_tokens", to: "line_bot#debug_tokens"

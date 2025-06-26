@@ -143,6 +143,7 @@ GEM
     groupdate (6.5.1)
       activesupport (>= 7)
     hashie (5.0.0)
+    hkdf (0.3.0)
     httparty (0.23.1)
       csv
       mini_mime (>= 1.0.0)
@@ -444,6 +445,9 @@ GEM
       activemodel (>= 6.0.0)
       bindex (>= 0.4.0)
       railties (>= 6.0.0)
+    webpush (1.1.0)
+      hkdf (~> 0.2)
+      jwt (~> 2.0)
     websocket (1.2.11)
     websocket-driver (0.7.7)
       base64
@@ -501,6 +505,7 @@ DEPENDENCIES
   tzinfo-data
   uglifier
   web-console
+  webpush
 
 BUNDLED WITH
    2.4.19
