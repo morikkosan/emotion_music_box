@@ -28,13 +28,20 @@ class UsersController < ApplicationController
 
   def enable_push_notifications
   current_user.update!(push_enabled: true)
-  redirect_back fallback_location: root_path, notice: "通知をオンにしました"
+  respond_to do |format|
+    format.turbo_stream
+    format.html { redirect_back fallback_location: root_path, notice: "通知をオンにしました" }
+  end
 end
 
 def disable_push_notifications
   current_user.update!(push_enabled: false)
-  redirect_back fallback_location: root_path, notice: "通知をオフにしました"
+  respond_to do |format|
+    format.turbo_stream
+    format.html { redirect_back fallback_location: root_path, notice: "通知をオフにしました" }
+  end
 end
+
 
 
 
