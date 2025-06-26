@@ -26,23 +26,33 @@ class BookmarksController < ApplicationController
 
   # POST /bookmarks/toggle    （link_to … turbo_method: :post）
   def toggle
-    bookmark = current_user.bookmarks.find_by(emotion_log: @emotion_log)
+  bookmark = current_user.bookmarks.find_by(emotion_log: @emotion_log)
 
-    @toggled = if bookmark
-                 bookmark.destroy
-                 false
-    else
-                 current_user.bookmarks.create!(emotion_log: @emotion_log)
-                 true
-    end
+  @toggled = if bookmark
+              bookmark.destroy
+              false
+            else
+              current_user.bookmarks.create!(emotion_log: @emotion_log)
 
-    respond_to do |format|
-      format.turbo_stream      # toggle.turbo_stream.erb
-      format.html { redirect_back fallback_location: root_path }
-    end
-  rescue ActiveRecord::RecordNotUnique
-    retry                     # まれに競合したとき用
+            # ✅ 投稿者が自分でない場合のみ通知
+            if @emotion_log.user != current_user && @emotion_log.user.line_user_id.present?
+              LineBotController.new.send_bookmark_notification(
+                  @emotion_log.user,
+                  by_user_name: current_user.name,
+                  track_name: @emotion_log.track_name || "あなたの投稿"
+                )
+              end
+
+              true
+            end
+
+  respond_to do |format|
+    format.turbo_stream
+    format.html { redirect_back fallback_location: root_path }
   end
+rescue ActiveRecord::RecordNotUnique
+  retry
+end
 
   private
 
