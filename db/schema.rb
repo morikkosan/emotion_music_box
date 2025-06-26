@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_06_25_170011) do
+ActiveRecord::Schema[7.2].define(version: 2025_06_26_163232) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -140,6 +140,16 @@ ActiveRecord::Schema[7.2].define(version: 2025_06_25_170011) do
     t.index ["user_id"], name: "index_playlists_on_user_id"
   end
 
+  create_table "push_subscriptions", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.text "endpoint"
+    t.string "key_p256dh"
+    t.string "key_auth"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_push_subscriptions_on_user_id"
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.string "session_id", null: false
     t.text "data"
@@ -178,6 +188,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_06_25_170011) do
     t.string "line_notify_token"
     t.string "line_user_id"
     t.boolean "line_notification_enabled"
+    t.boolean "push_enabled", default: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
@@ -198,4 +209,5 @@ ActiveRecord::Schema[7.2].define(version: 2025_06_25_170011) do
   add_foreign_key "playlist_items", "emotion_logs"
   add_foreign_key "playlist_items", "playlists"
   add_foreign_key "playlists", "users"
+  add_foreign_key "push_subscriptions", "users"
 end
