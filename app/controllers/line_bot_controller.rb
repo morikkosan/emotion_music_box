@@ -14,15 +14,31 @@ class LineBotController < ApplicationController
     send_line_message(user, message)
   end
 
-  # リアクション通知
-  def send_reaction(user, user_name:, bookmark:, comment_reaction:)
-    message = format(LINE_NOTIFY_REACTION,
-      user_name: user_name,
-      bookmark: bookmark,
-      comment_reaction: comment_reaction
-    )
-    send_line_message(user, message)
-  end
+  # コメント通知
+ def send_comment_notification(user, commenter_name:, comment_body:)
+  message = <<~MSG
+    💬 新しいコメントが届きました！
+
+    投稿者: #{commenter_name}
+    コメント: 「#{comment_body}」
+  MSG
+
+  send_line_message(user, message)
+end
+
+# ブックマーク通知
+def send_bookmark_notification(user, by_user_name:, track_name:)
+  message = <<~MSG
+     🔖 #{by_user_name}さんが
+  あなたの「#{track_name}」をブックマークしました！
+
+  仲間が見つかって嬉しいね 🎶
+  MSG
+
+  send_line_message(user, message)
+end
+
+
 
   # お知らせ通知
   def send_news(user)
@@ -35,7 +51,7 @@ class LineBotController < ApplicationController
     #{latest_news.body}
   MSG
 
-+ send_raw_message(user.line_user_id, message)
+send_raw_message(user.line_user_id, message)
 end
 
   # LINE BotのWebhook受信
@@ -200,15 +216,15 @@ def debug_emotion
   render plain: "✅ emotion通知送信テスト完了"
 end
 
-def debug_reaction
+def debug_comment
   user = User.find_by(email: "test@example.com")
-  send_reaction(user,
-    user_name: "ソル",
-    bookmark: "「最高だった！」",
-    comment_reaction: "いいね👍"
+  send_comment_notification(user,
+    commenter_name: "ソル",
+    comment_body: "今日の投稿すごく良かったです！"
   )
-  render plain: "✅ reaction通知送信テスト完了"
+  render plain: "✅ コメント通知送信テスト完了"
 end
+
 
 def debug_news
   user = User.find_by(email: "test@example.com")
