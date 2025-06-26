@@ -106,3 +106,5 @@ end
 # gem "activerecord-session_store", "~> 2.1"
 
 gem "line-bot-api", "~> 1.20"
+
+gem 'webpush'
