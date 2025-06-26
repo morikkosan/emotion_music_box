@@ -1,0 +1,43 @@
+const CACHE_NAME = 'emomu-cache-v1';
+const urlsToCache = [
+  '/',                   // トップページ
+  '/offline.html',       // オフライン用ページ（あれば）
+  '/favicon.png',        // アイコン
+  '/manifest.json',      // PWAマニフェスト
+  // 必要に応じてCSS/JSもここに追加できます
+];
+
+self.addEventListener('install', (event) => {
+  console.log('[ServiceWorker] Installed');
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(urlsToCache);
+    })
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  console.log('[ServiceWorker] Activated');
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((name) => {
+          if (name !== CACHE_NAME) {
+            return caches.delete(name);
+          }
+        })
+      );
+    })
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request).catch(() => {
+        // ネットワークに失敗したときオフラインページを返す（存在すれば）
+        return caches.match('/offline.html');
+      });
+    })
+  );
+});
