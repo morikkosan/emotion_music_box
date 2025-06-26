@@ -5,6 +5,7 @@ import "./controllers";
 import "./custom/comments";
 import "./custom/flash_messages";
 import "./custom/gages_test";
+import "./custom/push_subscription";
 
 //console.log("🔥 application.js 読み込み開始", Date.now());
 
@@ -16,6 +17,7 @@ document.addEventListener("turbo:visit", () => {
   const loader = document.getElementById("loading-overlay");
   if (loader) loader.style.display = "flex";
 });
+  subscribeToPushNotifications();
 
 document.addEventListener("turbo:load", () => {
   const loader = document.getElementById("loading-overlay");

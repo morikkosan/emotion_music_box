@@ -6,9 +6,9 @@ class BookmarksController < ApplicationController
   def create
   current_user.bookmarks.find_or_create_by!(emotion_log: @emotion_log)
 
-  # ✅ 投稿者が自分以外 & LINE連携済みなら通知を送る
-  if @emotion_log.user != current_user && @emotion_log.user.line_user_id.present?
-    LineBotController.new.send_bookmark_notification(
+  # 投稿者が自分以外 & WebPush購読済みならWeb Push通知を送る
+  if @emotion_log.user != current_user && @emotion_log.user.push_subscription.present?
+    PushNotificationController.new.send_bookmark_notification(
       @emotion_log.user,
       by_user_name: current_user.name,
       track_name: @emotion_log.track_name || "あなたの投稿"
@@ -16,10 +16,11 @@ class BookmarksController < ApplicationController
   end
 
   respond_to do |format|
-    format.turbo_stream      # create.turbo_stream.erb
+    format.turbo_stream
     format.html { redirect_to emotion_logs_path, notice: "ブックマークしました" }
   end
 end
+
 
 
   # DELETE /bookmarks/:id
