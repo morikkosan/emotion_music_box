@@ -5,23 +5,34 @@ class CommentsController < ApplicationController
 
   # POST /emotion_logs/:emotion_log_id/comments
   def create
-    @comment = @emotion_log.comments.build(
-      body: params[:body],
-      user: current_user
-    )
+  @comment = @emotion_log.comments.build(
+    body: params[:body],
+    user: current_user
+  )
 
-    respond_to do |format|
-      if @comment.save
-        # ← 🔧 ここで再取得して関連も読み込む（特に comment_reactions）
-        @comment = Comment.includes(:user, :comment_reactions).find(@comment.id)
+  respond_to do |format|
+    if @comment.save
+      # ← 🔧 ここで再取得して関連も読み込む（特に comment_reactions）
+      @comment = Comment.includes(:user, :comment_reactions).find(@comment.id)
 
-        format.turbo_stream
-        format.html { redirect_to emotion_log_path(@emotion_log) }
-      else
-        format.html { redirect_to emotion_log_path(@emotion_log), alert: "コメントの投稿に失敗しました" }
+      # ✅ コメントされた投稿の所有者が自分以外 & LINE連携済みなら通知
+      log_owner = @emotion_log.user
+      if log_owner != current_user && log_owner.line_user_id.present?
+        LineBotController.new.send_comment_notification(
+          log_owner,
+          commenter_name: current_user.name,
+          comment_body: @comment.body
+        )
       end
+
+      format.turbo_stream
+      format.html { redirect_to emotion_log_path(@emotion_log) }
+    else
+      format.html { redirect_to emotion_log_path(@emotion_log), alert: "コメントの投稿に失敗しました" }
     end
   end
+end
+
 
   # GET /comments/:id/edit
   def edit
