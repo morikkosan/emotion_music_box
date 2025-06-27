@@ -1,0 +1,26 @@
+<turbo-frame id="notification-toggle">
+  <% if current_user.push_enabled? %>
+    <%= link_to disable_push_notifications_path,
+                method: :patch,
+                data: { turbo_method: :patch },
+                class: "dropdown-item d-flex align-items-center text-warning" do %>
+      <%= image_tag "bell_on.webp", class: "dropdown-icon me-2", alt: "" %>
+      通知をオフにする
+    <% end %>
+
+    <%= link_to debug_emotion_notifications_path,
+                class: "dropdown-item d-flex align-items-center text-success",
+                data: { turbo: false } do %>
+      <%= image_tag "bell_on.webp", class: "dropdown-icon me-2", alt: "" %>
+      通知テストを送信
+    <% end %>
+  <% else %>
+    <%= link_to enable_push_notifications_path,
+                method: :patch,
+                data: { turbo_method: :patch },
+                class: "dropdown-item d-flex align-items-center text-primary" do %>
+      <%= image_tag "bell_off.webp", class: "dropdown-icon me-2", alt: "" %>
+      通知をオンにする
+    <% end %>
+  <% end %>
+</turbo-frame>
