@@ -107,4 +107,4 @@ end
 
 gem "line-bot-api", "~> 1.20"
 
-gem 'webpush'
+gem 'webpush', '~> 1.1.0'
