@@ -15294,6 +15294,41 @@ var add_song_modal_controller_default = class extends Controller {
   }
 };
 
+// app/javascript/controllers/push_controller.js
+var push_controller_default = class extends Controller {
+  async connect() {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    const registration = await navigator.serviceWorker.register("/service-worker.js");
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") return;
+    const vapidPublicKey = document.querySelector('meta[name="vapid-public-key"]').content;
+    const convertedKey = this._urlBase64ToUint8Array(vapidPublicKey);
+    const existingSubscription = await registration.pushManager.getSubscription();
+    if (existingSubscription) {
+      await existingSubscription.unsubscribe();
+    }
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: convertedKey
+    });
+    const csrfToken2 = document.querySelector('meta[name="csrf-token"]').content;
+    await fetch("/push_subscription", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken2
+      },
+      body: JSON.stringify({ subscription })
+    });
+  }
+  _urlBase64ToUint8Array(base64String) {
+    const padding = "=".repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const rawData = window.atob(base64);
+    return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
+  }
+};
+
 // app/javascript/controllers/index.js
 var application = Application.start();
 application.register("modal", modal_controller_default);
@@ -15312,6 +15347,7 @@ application.register("global-player", global_player_controller_default);
 application.register("global-player", global_player_controller_default);
 application.register("bookmark", bookmark_controller_default);
 application.register("add-song-modal", add_song_modal_controller_default);
+application.register("push", push_controller_default);
 
 // app/javascript/custom/comments.js
 document.addEventListener("DOMContentLoaded", function() {
@@ -15501,6 +15537,7 @@ document.addEventListener("turbo:visit", () => {
   const loader = document.getElementById("loading-overlay");
   if (loader) loader.style.display = "flex";
 });
+subscribeToPushNotifications();
 document.addEventListener("turbo:load", () => {
   const loader = document.getElementById("loading-overlay");
   if (loader) loader.style.display = "none";
