@@ -15321,6 +15321,7 @@ var push_controller_default = class extends Controller {
       body: JSON.stringify({ subscription })
     });
   }
+  // Base64文字列をUint8Arrayに変換する関数
   _urlBase64ToUint8Array(base64String) {
     const padding = "=".repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
