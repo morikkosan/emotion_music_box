@@ -1,28 +1,33 @@
-// Web Push 通知受信
 self.addEventListener("push", async (event) => {
-  const { title, options } = await event.data.json();
-  event.waitUntil(
-    self.registration.showNotification(title, options)
-  );
-});
+  console.log("[Service Worker] push event received");
 
-// 通知クリック時の動作（オプション）
-self.addEventListener("notificationclick", function(event) {
-  event.notification.close();
-  event.waitUntil(
-    clients.matchAll({ type: "window" }).then((clientList) => {
-      for (let i = 0; i < clientList.length; i++) {
-        let client = clientList[i];
-        let clientPath = (new URL(client.url)).pathname;
+  // ここに好きなログやalert（※）を入れる
+  // alert("通知がきました！");  // Service Worker ではalertは動きません
+  // 代わりに
+  clients.matchAll({type: "window"}).then(clientsArr => {
+    clientsArr.forEach(windowClient => {
+      windowClient.postMessage("Push通知が届いたよ！");
+    });
+  });
 
-        if (clientPath == event.notification.data.path && "focus" in client) {
-          return client.focus();
-        }
-      }
+  try {
+    let data;
+    try {
+      data = event.data ? event.data.json() : {};
+    } catch (jsonError) {
+      data = {
+        title: await event.data.text(),
+        options: {}
+      };
+    }
 
-      if (clients.openWindow) {
-        return clients.openWindow(event.notification.data.path);
-      }
-    })
-  );
+    console.log("[Service Worker] Push data:", data);
+
+    const { title, options } = data;
+    event.waitUntil(
+      self.registration.showNotification(title, options)
+    );
+  } catch (error) {
+    console.error("[Service Worker] Push event error:", error);
+  }
 });
