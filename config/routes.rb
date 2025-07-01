@@ -61,12 +61,14 @@ Rails.application.routes.draw do
   post '/push_subscription', to: 'push_subscriptions#create'
   patch 'enable_push_notifications', to: 'users#enable_push_notifications'
   patch 'disable_push_notifications', to: 'users#disable_push_notifications'
+  get "notifications/test/:id", to: "notifications#test"
+  get "/notifications/test", to: "push_notification#debug_emotion", as: :debug_emotion_notifications
+  get "notifications/public_key", to: "notifications#public_key"
 
 
 
 
   get '/line_notify_test', to: 'line_bot#test_notify'
-  get "/debug/line_tokens", to: "line_bot#debug_tokens"
   get "/debug/line_tokens", to: "line_bot#debug_tokens"
   get "/debug/push_message", to: "line_bot#debug_push"
 
