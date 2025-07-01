@@ -11,7 +11,7 @@ class PushNotifier
 
     Rails.logger.info("Push通知送信開始 user_id=#{user.id} endpoint=#{user.push_subscription.endpoint}")
 
-    Webpush.payload_send(
+    WebPush.payload_send(
       endpoint: user.push_subscription.endpoint,
       message: JSON.generate({ title: title, body: body }),
       p256dh: user.push_subscription.key_p256dh,
