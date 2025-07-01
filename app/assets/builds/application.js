@@ -15294,6 +15294,49 @@ var add_song_modal_controller_default = class extends Controller {
   }
 };
 
+// app/javascript/controllers/push_controller.js
+var push_controller_default = class extends Controller {
+  async connect() {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    try {
+      const registration = await navigator.serviceWorker.register("/service-worker.js");
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") return;
+      const vapidPublicKey = document.querySelector('meta[name="vapid-public-key"]').content;
+      const convertedKey = this._urlBase64ToUint8Array(vapidPublicKey);
+      const existingSubscription = await registration.pushManager.getSubscription();
+      if (existingSubscription) {
+        try {
+          await existingSubscription.unsubscribe();
+        } catch (error2) {
+          console.warn("Push subscription unsubscribe failed:", error2);
+        }
+      }
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: convertedKey
+      });
+      const csrfToken2 = document.querySelector('meta[name="csrf-token"]').content;
+      await fetch("/push_subscription", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken2
+        },
+        body: JSON.stringify({ subscription })
+      });
+    } catch (error2) {
+      console.error("Push subscription failed:", error2);
+    }
+  }
+  _urlBase64ToUint8Array(base64String) {
+    const padding = "=".repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const rawData = window.atob(base64);
+    return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
+  }
+};
+
 // app/javascript/controllers/index.js
 var application = Application.start();
 application.register("modal", modal_controller_default);
@@ -15312,6 +15355,7 @@ application.register("global-player", global_player_controller_default);
 application.register("global-player", global_player_controller_default);
 application.register("bookmark", bookmark_controller_default);
 application.register("add-song-modal", add_song_modal_controller_default);
+application.register("push", push_controller_default);
 
 // app/javascript/custom/comments.js
 document.addEventListener("DOMContentLoaded", function() {
@@ -15494,6 +15538,42 @@ document.addEventListener("turbo:load", () => {
   window.updateHPBar();
 });
 
+// app/javascript/custom/push_subscription.js
+async function subscribeToPushNotifications() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    console.warn("PWA\u901A\u77E5\u306F\u3053\u306E\u30D6\u30E9\u30A6\u30B6\u3067\u30B5\u30DD\u30FC\u30C8\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002");
+    return;
+  }
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+    const res = await fetch("/push_subscription", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+      },
+      body: JSON.stringify({ subscription })
+    });
+    if (res.ok) {
+      console.log("\u2705 Push\u901A\u77E5\u306E\u8CFC\u8AAD\u306B\u6210\u529F\u3057\u307E\u3057\u305F");
+    } else {
+      console.warn("\u26A0\uFE0F \u8CFC\u8AAD\u30C7\u30FC\u30BF\u306E\u9001\u4FE1\u306B\u5931\u6557\u3057\u307E\u3057\u305F");
+    }
+  } catch (err) {
+    console.error("Push\u901A\u77E5\u306E\u8CFC\u8AAD\u30A8\u30E9\u30FC:", err);
+  }
+}
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/\-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+}
+
 // app/javascript/application.js
 Rails.start();
 window.bootstrap = bootstrap_esm_exports;
@@ -15504,6 +15584,9 @@ document.addEventListener("turbo:visit", () => {
 document.addEventListener("turbo:load", () => {
   const loader = document.getElementById("loading-overlay");
   if (loader) loader.style.display = "none";
+  subscribeToPushNotifications().catch((err) => {
+    console.error("Push\u901A\u77E5\u767B\u9332\u30A8\u30E9\u30FC:", err);
+  });
   const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
   const savedDate = localStorage.getItem("hpDate");
   if (savedDate !== today) {

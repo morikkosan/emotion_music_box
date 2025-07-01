@@ -1,5 +1,8 @@
 require_relative "boot"
 
+# ✅ 追加: .env を早期に読み込む
+require "dotenv/load"
+
 require "rails/all"
 
 Bundler.require(*Rails.groups)
@@ -14,7 +17,6 @@ module Myapp
     config.assets.paths << Rails.root.join("app", "assets", "builds")
 
     config.i18n.load_path += Dir[Rails.root.join("config", "locales", "**", "*.{rb,yml}")]
-
     config.i18n.default_locale = :ja
 
     config.eager_load_paths << Rails.root.join("lib")
@@ -24,7 +26,6 @@ module Myapp
       #{config.root}/lib
       #{config.root}/app/strategies
     ]
-
     config.eager_load_paths += %W[
       #{config.root}/app/strategies
     ]
@@ -39,11 +40,9 @@ module Myapp
       domain: ".moriappli-emotion.com",
       path: "/"
 
-    # SoundCloud の環境変数をロード
-    config.before_configuration do
-      require "dotenv/load"
-      ENV["SOUNDCLOUD_CLIENT_ID"] ||= Rails.application.credentials.dig(:soundcloud, :client_id)
-    end
+    # ✅ 環境変数が存在しなければ credentials から補完
+    ENV["SOUNDCLOUD_CLIENT_ID"] ||= Rails.application.credentials.dig(:soundcloud, :client_id)
+
     config.middleware.insert_after ActionDispatch::Static, Rack::Deflater
   end
 end

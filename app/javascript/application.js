@@ -5,7 +5,7 @@ import "./controllers";
 import "./custom/comments";
 import "./custom/flash_messages";
 import "./custom/gages_test";
-import "./custom/push_subscription";
+import { subscribeToPushNotifications } from "./custom/push_subscription";  // ← ここを修正
 
 //console.log("🔥 application.js 読み込み開始", Date.now());
 
@@ -17,11 +17,14 @@ document.addEventListener("turbo:visit", () => {
   const loader = document.getElementById("loading-overlay");
   if (loader) loader.style.display = "flex";
 });
-  subscribeToPushNotifications();
 
 document.addEventListener("turbo:load", () => {
   const loader = document.getElementById("loading-overlay");
   if (loader) loader.style.display = "none";
+  // 非同期関数はここで呼び出す（awaitは使えないので then か IIFEで処理）
+  subscribeToPushNotifications().catch(err => {
+    console.error("Push通知登録エラー:", err);
+  });
 
   // 🌱 初期HPと日付の保存処理（ここに移動して確実にDOM読み込み後に実行）
   const today = new Date().toISOString().slice(0, 10);
