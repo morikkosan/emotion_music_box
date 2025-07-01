@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 ARG RUBY_VERSION=3.2.3
-FROM ruby:$RUBY_VERSION-bookworm AS base
+FROM ruby:${RUBY_VERSION}-bullseye AS base
 WORKDIR /rails
 
 # Install base packages
