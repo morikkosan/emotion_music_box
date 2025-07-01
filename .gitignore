@@ -39,3 +39,6 @@ node_modules/
 
 # ✅ Ignore Windows security metadata
 *:Zone.Identifier
+
+/vendor/
+/vendor/
