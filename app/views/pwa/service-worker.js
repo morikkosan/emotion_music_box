@@ -20,16 +20,24 @@ self.addEventListener("push", async (event) => {
 
     console.log("[Service Worker] Push data:", data);
 
-    // ここを修正↓↓
     let title, options;
     if ("options" in data) {
-      // { title, options } 形式の場合（今まで通り）
       ({ title, options } = data);
     } else {
-      // { title, body }形式の時（Railsから送信された形）
       title = data.title || "通知";
       options = { body: data.body };
     }
+
+    // **ここでoptionsにicon/badge等を強制的に追加**
+    options = {
+      ...options,
+      icon: "/icon-192.png", // パスはあなたのアプリのアイコンファイルに合わせて！
+      badge: "/badge.png",   // これも（無ければiconだけでもOK）
+      tag: "push",           // 任意のタグ
+      renotify: true         // 同じtagでも通知する
+    };
+
+    console.log("[Service Worker] showNotification args", title, options);
 
     event.waitUntil(
       self.registration.showNotification(title, options)
