@@ -54,19 +54,35 @@
       </div>
     <% end %>
     <div class="text-start flex-grow-1" style="min-width: 180px;">
-      <p style="font-size: 1.8rem; font-weight:bold; margin-bottom: 0.4em; line-height: 1.2;">
-        <strong>感情:</strong> <%= @emotion_log.emotion %>
-      </p>
-      <p style="font-size: 1.2rem; margin-bottom: 1em; word-break: break-all;">
-        <strong>日記:</strong> <%= @emotion_log.description %>
-      </p>
-      <% if current_user == @emotion_log.user %>
-        <%= link_to '編集',
-          edit_emotion_log_path(@emotion_log, format: :turbo_stream),
-          data: { turbo_frame: "modal-container", turbo_prefetch: false },
-          class: 'btn btn-danger btn-sm',
-          aria: { label: "この感情ログを編集" } %>
-      <% end %>
+  <p style="font-size: 1.8rem; font-weight:bold; margin-bottom: 0.4em; line-height: 1.2;">
+    <strong>感情:</strong> <%= @emotion_log.emotion %>
+  </p>
+  <p style="font-size: 1.2rem; margin-bottom: 1em; word-break: break-all;">
+    <strong>日記:</strong> <%= @emotion_log.description %>
+  </p>
+  <div class="d-flex align-items-center gap-2 mt-2">
+    <% if current_user == @emotion_log.user %>
+      <%= link_to '編集',
+        edit_emotion_log_path(@emotion_log, format: :turbo_stream),
+        data: { turbo_frame: "modal-container", turbo_prefetch: false },
+        class: 'btn btn-danger btn-sm',
+        aria: { label: "この感情ログを編集" } %>
+    <% end %>
+
+    <%# ▼ シェア用テキストとURL作成（140字制限付き） %>
+    <% page_url = request.original_url %>
+<% tweet_text = "今日の感情は #{@emotion_log.emotion}！！ この気分できいた曲は #{@emotion_log.track_name}！" %>
+<% hashtag = " #EmotionMusicBox" %>
+<% share_text = "#{tweet_text}#{hashtag}" %>
+<% tweet_url = "https://twitter.com/intent/tweet?text=#{CGI.escape(share_text)}&url=#{CGI.escape(page_url)}" %>
+
+<%= link_to tweet_url, target: "_blank", rel: "noopener",
+    class: "btn btn-dark btn-sm d-flex align-items-center gap-1",
+    id: "tweet-share-btn", style: "background: #000; border-color: #111;" do %>
+  <i class="bi bi-twitter-x" style="font-size:1.3em;"></i>
+  この曲をシェアする
+<% end %>
+
   </div>
 </div>
 
