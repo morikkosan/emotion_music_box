@@ -36,10 +36,10 @@ export default class extends Controller {
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          // SweetAlert2 で成功を表示
+          // --- 成功時 ---
           Swal.fire({
             title: "成功 🎉",
-            text: data.message,      // Rails 側で返す JSON の 'message'
+            text: data.message,
             icon: "success",
             confirmButtonText: "OK",
             timer: 2000,
@@ -49,7 +49,7 @@ export default class extends Controller {
             customClass: { popup: "cyber-popup" }
           });
 
-          // 既存の「プレイリスト作成フォームだけ」右上トースト
+          // 「プレイリスト作成フォームだけ」右上トースト
           if (form.id === "playlist-form") {
             const toastEl = document.getElementById("save-toast");
             if (toastEl) {
@@ -62,10 +62,9 @@ export default class extends Controller {
           // HPバー反映／リダイレクト
           const redirect = () => { window.location.href = data.redirect_url };
           if (data.hp_today) {
-            // HPバー更新等のアニメーションが終わってから
-            setTimeout(redirect, 1500);
+            setTimeout(redirect, 1500); // HPバー更新後に遷移
           } else {
-            // 今日以外の記録なら警告だけ出して即リダイレクト
+            // 今日以外の記録は警告を出して即リダイレクト
             Swal.fire({
               title: "完了",
               text: "記録は保存されましたが、HPゲージの反映は今日の記録のみです。",
@@ -76,8 +75,10 @@ export default class extends Controller {
               customClass: { popup: "cyber-popup" }
             }).then(redirect);
           }
+
         } else {
-          // バリデーションエラー
+          // --- バリデーションエラーなど失敗時 ---
+          if (this.hasSubmitTarget) this.submitTarget.disabled = false; // 再度押せるように
           Swal.fire({
             title: "エラー ❌",
             text: (data.errors || []).join("\n"),
@@ -90,7 +91,9 @@ export default class extends Controller {
         }
       })
       .catch(error => {
+        // --- 通信エラー時 ---
         console.error("送信エラー:", error);
+        if (this.hasSubmitTarget) this.submitTarget.disabled = false; // 再度押せるように
         Swal.fire({
           title: "送信エラー",
           text: "予期しないエラーが発生しました",
@@ -101,14 +104,9 @@ export default class extends Controller {
           customClass: { popup: "cyber-popup" }
         });
       })
-     .finally(() => {
-  if (loader) loader.style.display = "none";
-
-  // 成功時だけ送信ボタンを戻す（失敗時はそのまま無効化）
-  if (this.resultSuccess && this.hasSubmitTarget) {
-    this.submitTarget.disabled = false;
-  }
-});
-
+      .finally(() => {
+        if (loader) loader.style.display = "none";
+        // 成功時はボタンを戻さず、失敗時はthen/catch内で制御
+      });
   }
 }

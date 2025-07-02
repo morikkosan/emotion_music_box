@@ -14414,7 +14414,6 @@ var submit_handler_controller_default = class extends Controller {
         Swal.fire({
           title: "\u6210\u529F \u{1F389}",
           text: data.message,
-          // Rails 側で返す JSON の 'message'
           icon: "success",
           confirmButtonText: "OK",
           timer: 2e3,
@@ -14448,6 +14447,7 @@ var submit_handler_controller_default = class extends Controller {
           }).then(redirect);
         }
       } else {
+        if (this.hasSubmitTarget) this.submitTarget.disabled = false;
         Swal.fire({
           title: "\u30A8\u30E9\u30FC \u274C",
           text: (data.errors || []).join("\n"),
@@ -14460,6 +14460,7 @@ var submit_handler_controller_default = class extends Controller {
       }
     }).catch((error2) => {
       console.error("\u9001\u4FE1\u30A8\u30E9\u30FC:", error2);
+      if (this.hasSubmitTarget) this.submitTarget.disabled = false;
       Swal.fire({
         title: "\u9001\u4FE1\u30A8\u30E9\u30FC",
         text: "\u4E88\u671F\u3057\u306A\u3044\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F",
@@ -14471,9 +14472,6 @@ var submit_handler_controller_default = class extends Controller {
       });
     }).finally(() => {
       if (loader) loader.style.display = "none";
-      if (this.resultSuccess && this.hasSubmitTarget) {
-        this.submitTarget.disabled = false;
-      }
     });
   }
 };
