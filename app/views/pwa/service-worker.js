@@ -1,9 +1,6 @@
 self.addEventListener("push", async (event) => {
   console.log("[Service Worker] push event received");
 
-  // ここに好きなログやalert（※）を入れる
-  // alert("通知がきました！");  // Service Worker ではalertは動きません
-  // 代わりに
   clients.matchAll({type: "window"}).then(clientsArr => {
     clientsArr.forEach(windowClient => {
       windowClient.postMessage("Push通知が届いたよ！");
@@ -23,7 +20,17 @@ self.addEventListener("push", async (event) => {
 
     console.log("[Service Worker] Push data:", data);
 
-    const { title, options } = data;
+    // ここを修正↓↓
+    let title, options;
+    if ("options" in data) {
+      // { title, options } 形式の場合（今まで通り）
+      ({ title, options } = data);
+    } else {
+      // { title, body }形式の時（Railsから送信された形）
+      title = data.title || "通知";
+      options = { body: data.body };
+    }
+
     event.waitUntil(
       self.registration.showNotification(title, options)
     );
