@@ -1,3 +1,4 @@
+
 <% content_for :title, "感情詳細コメントページ" %>
 
 <% if params[:view] == "mobile" %>
@@ -13,53 +14,79 @@
     </h1>
 
     <!-- レコードの情報を表示する部分 -->
-    <div class="card mb-4">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-2">
-          <% if @emotion_log.user.avatar_url.present? %>
-            <%= image_tag @emotion_log.user.avatar_url,
-                          alt: "#{@emotion_log.user.name} さんのプロフィール画像",
-                          width: 70, height: 70,
-                          class: "rounded-circle" %>
-          <% else %>
-            <%= image_tag "default_stick_figure.webp",
-                          alt: "デフォルトプロフィール画像",
-                          width: 60, height: 60,
-                          class: "rounded-circle" %>
+<div class="card mb-4" style="max-width: 780px; margin: 0 auto;">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center gap-2">
+      <% if @emotion_log.user.avatar_url.present? %>
+        <%= image_tag @emotion_log.user.avatar_url,
+                      alt: "#{@emotion_log.user.name} さんのプロフィール画像",
+                      width: 70, height: 70,
+                      class: "rounded-circle" %>
+      <% else %>
+        <%= image_tag "default_stick_figure.webp",
+                      alt: "デフォルトプロフィール画像",
+                      width: 60, height: 60,
+                      class: "rounded-circle" %>
+      <% end %>
+      <span class="fw-bold"><%= @emotion_log.user.name %></span>
+    </div>
+    <div>
+      <strong>記録日時:</strong>
+      <time datetime="<%= @emotion_log.created_at.iso8601 %>">
+        <%= @emotion_log.created_at.strftime('%Y-%m-%d %H:%M:%S') %>
+      </time>
+      <% if @emotion_log.tags.any? %>
+        <span class="ms-3">
+          <% @emotion_log.tags.each do |tag| %>
+            <span class="badge bg-secondary me-1"><%= tag.name %></span>
           <% end %>
-          <span class="fw-bold"><%= @emotion_log.user.name %></span>
-        </div>
-        <div>
-          <strong>記録日時:</strong>
-          <time datetime="<%= @emotion_log.created_at.iso8601 %>">
-            <%= @emotion_log.created_at.strftime('%Y-%m-%d %H:%M:%S') %>
-          </time>
-          <% if @emotion_log.tags.any? %>
-            <span class="ms-3">
-              <% @emotion_log.tags.each do |tag| %>
-                <span class="badge bg-secondary me-1"><%= tag.name %></span>
-              <% end %>
-            </span>
-          <% end %>
-        </div>
-      </div>
-      <div class="card-body text-center">
-        <p><strong>感情:</strong> <%= @emotion_log.emotion %></p>
-        <p><strong>日記:</strong> <%= @emotion_log.description %></p>
-
-        <% if current_user == @emotion_log.user %>
-          <%= button_to edit_emotion_log_path(@emotion_log, format: :turbo_stream),
-                method: :get,
-                form: { data: { turbo_frame: "modal-container" } },
-                class: 'btn btn-danger btn-sm',
-                aria: { label: "この感情ログを編集" } %>
-        <% end %>
-
-       <% if @emotion_log.music_art_url.present? %>
-  <div class="music-art-wrapper">
-    <%= image_tag @emotion_log.music_art_url, alt: "ジャケット画像", class: "music-art-img" %>
+        </span>
+      <% end %>
+    </div>
   </div>
+  <div class="card-body d-flex align-items-center" style="gap: 28px;">
+    <% if @emotion_log.music_art_url.present? %>
+      <div class="music-art-wrapper">
+        <%= image_tag @emotion_log.music_art_url, alt: "ジャケット画像",
+              class: "music-art-img",
+              width: 160, height: 160,
+              style: "object-fit: cover; border-radius: 10px; box-shadow: 0 2px 10px #0005;" %>
+      </div>
+    <% end %>
+    <div class="text-start flex-grow-1" style="min-width: 180px;">
+  <p style="font-size: 1.8rem; font-weight:bold; margin-bottom: 0.4em; line-height: 1.2;">
+    <strong>感情:</strong> <%= @emotion_log.emotion %>
+  </p>
+  <p style="font-size: 1.2rem; margin-bottom: 1em; word-break: break-all;">
+    <strong>日記:</strong> <%= @emotion_log.description %>
+  </p>
+  <div class="d-flex align-items-center gap-2 mt-2">
+    <% if current_user == @emotion_log.user %>
+      <%= link_to '編集',
+        edit_emotion_log_path(@emotion_log, format: :turbo_stream),
+        data: { turbo_frame: "modal-container", turbo_prefetch: false },
+        class: 'btn btn-danger btn-sm',
+        aria: { label: "この感情ログを編集" } %>
+    <% end %>
+
+    <%# ▼ シェア用テキストとURL作成（140字制限付き） %>
+    <% page_url = request.original_url %>
+<% tweet_text = "今日の感情は #{@emotion_log.emotion}！！ この気分できいた曲は #{@emotion_log.track_name}！" %>
+<% hashtag = " #EmotionMusicBox #エモミュ" %>
+<% share_text = "#{tweet_text}#{hashtag}" %>
+<% tweet_url = "https://twitter.com/intent/tweet?text=#{CGI.escape(share_text)}&url=#{CGI.escape(page_url)}" %>
+
+<%= link_to tweet_url, target: "_blank", rel: "noopener",
+    class: "btn btn-dark btn-sm d-flex align-items-center gap-1",
+    id: "tweet-share-btn", style: "background: #000; border-color: #111;" do %>
+  <i class="bi bi-twitter-x" style="font-size:1.3em;"></i>
+  この曲をシェアする
 <% end %>
+
+  </div>
+</div>
+
+
 
       </div>
     </div>
