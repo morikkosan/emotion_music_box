@@ -1,6 +1,6 @@
 class ApplicationController < ActionController::Base
   protect_from_forgery with: :exception
-  before_action :force_mobile_view
+  # before_action :force_mobile_view
 before_action :refresh_soundcloud_token_if_needed
 
   # before_action :log_session_info
@@ -87,19 +87,20 @@ end
       I18n.locale = :ja
     end
 
-    def force_mobile_view
-  # --- /auth/ 系のURLでは絶対リダイレクト・パラメータ追加をしない ---
-  return if request.path.start_with?("/auth/")
-  return if params[:view] == "mobile"
+#     def force_mobile_view
+#   return if request.path.start_with?("/auth/")
+#   return unless request.get?
+#   return if request.xhr? || request.format.turbo_stream?
 
-  # モバイル端末からのアクセスかを判定
-  if request.user_agent =~ /Mobile|Android|iPhone/ && !request.xhr?
-    # GETリクエスト時だけリダイレクトで?view=mobileを付与（POSTは避ける）
-    if request.get?
-      redirect_to url_for(params.permit!.to_h.merge(view: "mobile")), allow_other_host: false
-    end
-  end
-end
+#   if request.user_agent =~ /Mobile|Android|iPhone/ && params[:view] != "mobile"
+#     redirect_to url_for(params.permit!.to_h.merge(view: "mobile")), allow_other_host: false and return
+#   end
+
+#   if !(request.user_agent =~ /Mobile|Android|iPhone/) && params[:view] == "mobile"
+#     redirect_to url_for(params.permit!.to_h.except(:view)), allow_other_host: false and return
+#   end
+# end
+
 
   # def debug_session_state
   #   Rails.logger.info "🟢 Current session['omniauth.state']: #{session['omniauth.state']}"
