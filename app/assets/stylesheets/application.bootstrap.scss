@@ -9,6 +9,10 @@
 @use "index_logs";
 @use "modal_styles";
 @use "mobile_apps";
+@use "application_index";
+@use "new_html";
+@use "playlist_music";
+@use "show_html";
 // 外部CSSのみはそのあと
 @import url("https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/cyborg/bootstrap.min.css");
 
