@@ -76,15 +76,16 @@ si<% end %>
 
   <div class="row justify-content-center">
     <% @emotion_logs.each do |log| %>
+        <% cache log do %>
       <div id="<%= dom_id(log) %>" class="col-md-8 mb-4">
         <div class="card">
           <div class="card-header d-flex justify-content-between align-items-center">
             <% if @bookmark_page.present? %>
               <input type="checkbox"
-                     name="selected_logs[]"
-                     value="<%= log.id %>"
-                     class="playlist-check me-3"
-                     style="width:2.2rem; height:2.2rem; accent-color:#e800ff;
+                    name="selected_logs[]"
+                    value="<%= log.id %>"
+                    class="playlist-check me-3"
+                    style="width:2.2rem; height:2.2rem; accent-color:#e800ff;
                             box-shadow:0 0 8px #fff6, 0 0 3px #e800ff;">
             <% end %>
 
@@ -101,6 +102,7 @@ si<% end %>
                         title="ログインすると使えます"><%= tag.name %></span>
                 <% end %>
               <% end %>
+            <% end %>
             </div>
 
             <div class="d-flex align-items-center gap-3">
