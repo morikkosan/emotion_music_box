@@ -5,11 +5,14 @@ import "./controllers";
 import "./custom/comments";
 import "./custom/flash_messages";
 import "./custom/gages_test";
+import "./custom/inline_handlers";
 import { subscribeToPushNotifications } from "./custom/push_subscription";  // ← ここを修正
 
 //console.log("🔥 application.js 読み込み開始", Date.now());
 
 Rails.start();
+console.log("🔥 Rails UJS is loaded!", Rails);
+
 window.bootstrap = bootstrap;
 
 // ✅ Turboローディング制御まとめ
