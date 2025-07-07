@@ -104,9 +104,9 @@
     <%= link_to emotion_logs_path, class: "text-center text-white small" do %>
       <i class="bi bi-house fs-4"></i><br>ホーム
     <% end %>
-    <%= link_to "#", onclick: "goToRecommended()", class: "text-center text-white small" do %>
-      <i class="bi bi-fire fs-4"></i><br>おすすめ🔥
-    <% end %>
+    <%= link_to "#", class: "text-center text-white small go-to-recommended-btn" do %>
+    <i class="bi bi-fire fs-4"></i><br>おすすめ🔥
+  <% end %>
 
     <%= link_to "#", class: "text-center text-white small",
   data: { controller: "mobile-super-search", action: "click->mobile-super-search#open" } do %>
