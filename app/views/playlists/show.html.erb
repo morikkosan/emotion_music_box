@@ -76,12 +76,11 @@
         <%= link_to "← プレイリスト一覧に戻る",
                     bookmarks_emotion_logs_path(view: 'mobile'),
                     class: "neon_show neon_show-back btn" %>
-        <%= button_to raw('<i class="fa fa-trash me-1"></i>プレイリストを削除'),
-              playlist_path(@playlist),
-              method: :delete,
-              data: { turbo: false },
-              onclick: "return confirm('本当にこのプレイリストを削除しますか？');",
-              class: "neon_show neon_show-delete btn" %>
+       <%= link_to raw('<i class="fa fa-trash me-1"></i>プレイリストを削除'),
+    playlist_path(@playlist),
+    method: :delete,
+    data: { confirm: "本当にこのプレイリストを削除しますか？" },
+    class: "neon_show neon_show-delete btn" %>
       </li>
     </ul>
   </div>
@@ -128,6 +127,8 @@
   </div>
 </div>
 
+
+<!--
 <style>
 .pmx_playlist_row {
   background: rgba(0,0,0,0.4) !important;
@@ -196,4 +197,4 @@
   transform: translateY(-50%) scale(1.05);
   filter: brightness(1.1);
 }
-</style>
+</style> -->

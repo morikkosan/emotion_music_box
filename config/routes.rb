@@ -68,12 +68,12 @@ Rails.application.routes.draw do
 
 
 
-  get '/line_notify_test', to: 'line_bot#test_notify'
-  get "/debug/line_tokens", to: "line_bot#debug_tokens"
-  get "/debug/push_message", to: "line_bot#debug_push"
+#   get '/line_notify_test', to: 'line_bot#test_notify'
+#   get "/debug/line_tokens", to: "line_bot#debug_tokens"
+#   get "/debug/push_message", to: "line_bot#debug_push"
 
-  get "/debug/emotion", to: "line_bot#debug_emotion"
-get "/debug/reaction", to: "line_bot#debug_reaction"
-get "/debug/news", to: "line_bot#debug_news"
+#   get "/debug/emotion", to: "line_bot#debug_emotion"
+# get "/debug/reaction", to: "line_bot#debug_reaction"
+# get "/debug/news", to: "line_bot#debug_news"
 
 end
