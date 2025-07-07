@@ -16,7 +16,7 @@
         </div>
 
         <div class="dropdown-menu">
-          <%= link_to destroy_user_session_path(view: 'mobile'),
+          <%= link_to destroy_user_session_path(view: (mobile_device? ? 'mobile' : nil)),
                       method: :delete,
                       data: { turbo: false },
                       id: "logout-link",
@@ -29,7 +29,7 @@
 
           <div class="dropdown-divider"></div>
 
-          <%= link_to edit_user_registration_path(view: 'mobile'),
+          <%= link_to edit_user_registration_path(view: (mobile_device? ? 'mobile' : nil)),
                       class: "dropdown-item d-flex align-items-center" do %>
             <%= image_tag "profile_edit.webp",
                           class: "dropdown-icon me-2",
@@ -37,12 +37,7 @@
             プロフィール編集
           <% end %>
 
-        <%= render partial: "shared/notification_toggle" %>
-
-
-
-
-
+          <%= render partial: "shared/notification_toggle" %>
 
           <%= link_to new_contact_path,
                       class: "dropdown-item d-flex align-items-center" do %>
@@ -57,20 +52,19 @@
   <% end %>
 
   <!-- ロゴ -->
-<div class="text-center mt-4">
-  <%= link_to emotion_logs_path(view: 'mobile') do %>
-    <%= image_tag "logo1.webp",
-                  alt: "Emotion List Logo",
-                  class: "img-fluid neon-icon",
-                  style: "max-width:400px; width:100%;" %>
-  <% end %>
-</div>
+  <div class="text-center mt-4">
+    <%= link_to emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)) do %>
+      <%= image_tag "logo1.webp",
+                    alt: "Emotion List Logo",
+                    class: "img-fluid neon-icon",
+                    style: "max-width:400px; width:100%;" %>
+    <% end %>
+  </div>
 
   <!-- キャッチコピー -->
   <% unless user_signed_in? %>
     <div class="text-center mt-5 mb-4">
-      <h1 style="font-size:3rem; font-weight:bold; color:rgb(215,205,216);
-                 text-shadow:0 0 10px,#1ee4da;">
+      <h1 style="font-size:3rem; font-weight:bold; color:rgb(215,205,216); text-shadow:0 0 10px,#1ee4da;">
         音楽とストレスを支配する
       </h1>
     </div>
@@ -81,14 +75,14 @@
                   target: "_blank",
                   rel: "noopener",
                   class: "neon-btn btn-neon-xl me-3" do %>
-        <div class="neon-btn-title">新規作成</div>
+        <div class="neon-main-btn-title">新規作成</div>
         <div class="neon-btn-sub">(SoundCloudアカウントも簡単作成)</div>
       <% end %>
 
       <%= link_to user_soundcloud_omniauth_authorize_path,
                   class: "neon-btn btn-neon-xl",
                   data: { turbo: false } do %>
-        <div class="neon-btn-title">ログインして始める</div>
+        <div class="neon-main-btn-title">ログインして始める</div>
       <% end %>
     </div>
 
@@ -105,42 +99,36 @@
   <!-- メインメニュー -->
   <% if user_signed_in? %>
     <div class="main-menu d-flex justify-content-center align-items-stretch flex-wrap mt-4"
-     style="gap: 1.2rem;">
+      style="gap: 1.2rem;">
 
       <!-- ホーム -->
       <div class="mypage-item">
-        <%= link_to emotion_logs_path(view: 'mobile'),
+        <%= link_to emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
                     class: 'mypage-icon-link' do %>
-          <%= image_tag 'home.webp',
-                        alt: '',
-                        class: 'mypage-icon' %>
+          <%= image_tag 'home.webp', alt: '', class: 'mypage-icon' %>
           <div class='mypage-text'>ホーム</div>
         <% end %>
       </div>
 
       <!-- おすすめ🔥 -->
       <div class="mypage-item">
-        <%= link_to "#",
-                    class: "mypage-icon-link",
-                    onclick: "goToRecommended()" do %>
-          <%= image_tag 'hot.webp',
-                        alt: '',
-                        class: 'mypage-icon' %>
-          <div class='mypage-text'>おすすめ🔥</div>
-        <% end %>
-      </div>
+  <%= link_to "#",
+              class: "mypage-icon-link go-to-recommended-btn" do %>
+    <%= image_tag 'hot.webp', alt: '', class: 'mypage-icon' %>
+    <div class='mypage-text'>おすすめ🔥</div>
+  <% end %>
+</div>
+
 
       <!-- EMOTION -->
       <div class="mypage-item search-item wide">
-        <div style="color: magenta; font-weight: bold; font-size: 1rem;
-                    margin-bottom: 0.3rem; text-align: center;">
+        <div style="color: magenta; font-weight: bold; font-size: 1rem; margin-bottom: 0.3rem; text-align: center;">
           EMOTION
         </div>
-        <%= form_with url: emotion_logs_path(view: 'mobile'),
+        <%= form_with url: emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
                       method: :get,
                       data: { turbo_frame: "logs_list" },
-                      html: { class: "w-100 h-100 d-flex flex-column
-                                    justify-content-center align-items-center" } do %>
+                      html: { class: "w-100 h-100 d-flex flex-column justify-content-center align-items-center" } do %>
           <label for="emotion_select" class="visually-hidden">感情を選択</label>
           <%= select_tag :emotion,
                          options_for_select(
@@ -160,15 +148,13 @@
       <div class="mypage-item search-item wide"
            data-controller="tag-autocomplete"
            style="position: relative;">
-        <div style="color: #00aaff; font-weight: bold; font-size: 1rem;
-                    margin-bottom: 0.3rem; text-align: center;">
+        <div style="color: #00aaff; font-weight: bold; font-size: 1rem; margin-bottom: 0.3rem; text-align: center;">
           TAG
         </div>
-        <%= form_with url: emotion_logs_path(view: 'mobile'),
+        <%= form_with url: emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
                       method: :get,
                       data: { turbo_frame: "logs_list" },
-                      html: { class: "w-100 h-100 d-flex flex-column
-                                    justify-content-center align-items-center" } do |f| %>
+                      html: { class: "w-100 h-100 d-flex flex-column justify-content-center align-items-center" } do |f| %>
           <label for="genre_input" class="visually-hidden">ジャンルを入力</label>
           <%= f.text_field :genre,
                            placeholder: 'Search by genre',
@@ -181,33 +167,24 @@
         <% end %>
         <ul data-tag-autocomplete-target="suggestions"
             class="list-group tag-suggestions"
-            style="position: absolute;
-                   bottom: calc(100% - 2px);
-                   left: 0;
-                   width: 100%;
-                   z-index: 9999;
-                   margin: 0;">
+            style="position: absolute; bottom: calc(100% - 2px); left: 0; width: 100%; z-index: 9999; margin: 0;">
         </ul>
       </div>
 
       <!-- マイページ -->
       <div class="mypage-item">
-        <%= link_to my_emotion_logs_path(view: 'mobile'),
+        <%= link_to my_emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
                     class: 'mypage-icon-link' do %>
-          <%= image_tag 'mypage_logo.webp',
-                        alt: '',
-                        class: 'mypage-icon' %>
+          <%= image_tag 'mypage_logo.webp', alt: '', class: 'mypage-icon' %>
           <div class='mypage-text'>マイページ</div>
         <% end %>
       </div>
 
       <!-- お気に入り -->
       <div class="mypage-item">
-        <%= link_to bookmarks_emotion_logs_path(view: 'mobile'),
+        <%= link_to bookmarks_emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
                     class: 'mypage-icon-link' do %>
-          <%= image_tag 'favorite.webp',
-                        alt: '',
-                        class: 'mypage-icon' %>
+          <%= image_tag 'favorite.webp', alt: '', class: 'mypage-icon' %>
           <div class='mypage-text'>お気に入りリスト</div>
         <% end %>
       </div>

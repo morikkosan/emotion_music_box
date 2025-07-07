@@ -4,11 +4,15 @@
 @use "bootstrap/scss/bootstrap";
 @use "bootstrap-icons/font/bootstrap-icons";
 @use "components/floating_button";
-@use "components/neon_buttons";
+@use "components/neon_buttons" as *;
 @use "custom_styles";
 @use "index_logs";
 @use "modal_styles";
 @use "mobile_apps";
+@use "application_index";
+@use "new_html";
+@use "playlist_music";
+@use "show_html";
 // 外部CSSのみはそのあと
 @import url("https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/cyborg/bootstrap.min.css");
 
