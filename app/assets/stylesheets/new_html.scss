@@ -2,14 +2,14 @@
 
 
 /* 問い合わせページ */
-.neon-contact-wrapper {
+.neon-new-contact-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
   margin: 48px 0 32px 0;
 }
 
-.neon-contact-form {
+.neon-new-contact-form {
   background: #181e32;
   border-radius: 18px;
   padding: 32px 22px;
@@ -20,11 +20,11 @@
   font-family: 'Segoe UI', 'Arial', sans-serif;
 }
 
-.neon-form-group {
+.neon-new-form-group {
   margin-bottom: 24px;
 }
 
-.neon-label {
+.neon-new-label {
   display: block;
   margin-bottom: 8px;
   color: #9ff9ff;
@@ -34,7 +34,7 @@
 }
 
 
-.neon-input {
+.neon-new-input {
   width: 100%;
   padding: 12px 14px;
   background: #232d45;
@@ -46,17 +46,17 @@
   box-shadow: 0 0 0 2px #34f2ff30;
   transition: box-shadow .15s, border-color .15s;
 }
-.neon-input:focus {
+.neon-new-input:focus {
   border-color: #f09cff;
   box-shadow: 0 0 16px #f09cff60, 0 0 2px #fff;
 }
 
-.neon-textarea {
+.neon-new-textarea {
   min-height: 120px;
   resize: vertical;
 }
 
-.neon-btn {
+.neon-new-btn {
   padding: 0.9em 2.2em;
   border-radius: 36px;
   background: linear-gradient(90deg, #00f0ff 0%, #f09cff 100%);
@@ -71,20 +71,20 @@
   min-width: 120px;
   text-align: center;
 }
-.neon-btn:hover {
+.neon-new-btn:hover {
   background: linear-gradient(90deg, #34f2ff 0%, #e340fa 100%);
   box-shadow: 0 0 25px #f09cff88;
   color: #fff;
 }
 
-.neon-error {
+.neon-new-error {
   color: #ff70a3;
   font-size: 0.96em;
   margin-top: 4px;
   text-shadow: 0 0 6px #f09cff80;
 }
 
-.neon-btn-back {
+.neon-new-btn-back {
   background: linear-gradient(90deg, #444cf7 0%, #3ff6ff 100%);
   color: #fff;
   margin-top: 10px;
@@ -92,7 +92,7 @@
   max-width: 240px;
   width: auto;
 }
-.neon-btn-back:hover {
+.neon-new-btn-back:hover {
   background: linear-gradient(90deg, #3ff6ff 0%, #444cf7 100%);
   color: #fff;
 }

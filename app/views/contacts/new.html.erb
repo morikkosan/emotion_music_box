@@ -1,33 +1,33 @@
-<div class="neon-contact-wrapper">
-<%= form_with model: @contact, url: contact_path, local: true, data: { turbo: false }, html: { class: "neon-contact-form" } do |f| %>
-    <div class="neon-form-group">
-      <%= f.label :name, "お名前", class: "neon-label" %>
-      <%= f.text_field :name, maxlength: 10, minlength: 2, required: true, class: "neon-input" %>
+<div class="neon-new-contact-wrapper">
+<%= form_with model: @contact, url: contact_path, local: true, data: { turbo: false }, html: { class: "neon-new-contact-form" } do |f| %>
+    <div class="neon-new-form-group">
+      <%= f.label :name, "お名前", class: "neon-new-label" %>
+      <%= f.text_field :name, maxlength: 10, minlength: 2, required: true, class: "neon-new-input" %>
       <% @contact.errors.full_messages_for(:name).each do |msg| %>
-        <div class="neon-error"><%= msg %></div>
+        <div class="neon-new-error"><%= msg %></div>
       <% end %>
     </div>
-    <div class="neon-form-group">
-      <%= f.label :email, "メールアドレス", class: "neon-label" %>
-      <%= f.email_field :email, maxlength: 100, required: true, class: "neon-input" %>
+    <div class="neon-new-form-group">
+      <%= f.label :email, "メールアドレス", class: "neon-new-label" %>
+      <%= f.email_field :email, maxlength: 100, required: true, class: "neon-new-input" %>
       <% @contact.errors.full_messages_for(:email).each do |msg| %>
-        <div class="neon-error"><%= msg %></div>
+        <div class="neon-new-error"><%= msg %></div>
       <% end %>
     </div>
-    <div class="neon-form-group">
-      <%= f.label :message, "お問い合わせ内容", class: "neon-label" %>
-      <%= f.text_area :message, minlength: 5, maxlength: 200, required: true, class: "neon-input neon-textarea" %>
+    <div class="neon-new-form-group">
+      <%= f.label :message, "お問い合わせ内容", class: "neon-new-label" %>
+      <%= f.text_area :message, minlength: 5, maxlength: 200, required: true, class: "neon-new-input neon-new-textarea" %>
       <% @contact.errors.full_messages_for(:message).each do |msg| %>
-        <div class="neon-error"><%= msg %></div>
+        <div class="neon-new-error"><%= msg %></div>
       <% end %>
     </div>
-    <div class="neon-form-group text-center">
-      <%= f.submit "送信", class: "neon-btn" %>
+    <div class="neon-new-form-group text-center">
+      <%= f.submit "送信", class: "neon-new-btn" %>
     </div>
   <% end %>
 
   <div class="text-center">
-    <%= link_to "ホームへ戻る", emotion_logs_path, class: "neon-btn neon-btn-back" %>
+    <%= link_to "ホームへ戻る", emotion_logs_path, class: "neon-new-btn neon-new-btn-back" %>
   </div>
 </div>
 
