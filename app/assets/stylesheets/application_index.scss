@@ -1,0 +1,183 @@
+
+.neon-character-spinbox {
+  display: inline-block;
+  width: 48px; height: 48px;
+  position: relative;
+}
+.neon-body {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 60% 40%, #10ffec 60%, #073753 100%);
+  box-shadow: 0 0 16px 4px #1efff7;
+  position: absolute;
+  left: 8px; top: 8px;
+  animation: neon-bounce 0.7s cubic-bezier(.5,0,.5,1) infinite alternate;
+}
+@keyframes neon-bounce {
+  0%   { top: 8px;    transform: scaleY(1); }
+  10%  { top: 0px;    transform: scaleY(1.12); }
+  15%  { top: -4px;   transform: scaleY(1.1); }
+  25%  { top: -14px;  transform: scaleY(0.94);}
+  45%  { top: -22px;  transform: scaleY(1);}
+  50%  { top: -24px;  transform: scaleY(1.08);}
+  60%  { top: -12px;  transform: scaleY(0.96);}
+  80%  { top: 0px;    transform: scaleY(1.05);}
+  100% { top: 8px;    transform: scaleY(1);}
+}
+/* 目 */
+.neon-eye {
+  position: absolute;
+  top: 12px;
+  width: 5px; height: 5px;
+  background: #fff;
+  border-radius: 50%;
+  opacity: 0.8;
+  box-shadow: 0 0 4px #0ff;
+}
+.neon-eye-left  { left: 7px; }
+.neon-eye-right { left: 16px; }
+
+/* 手 */
+.neon-arm {
+  position: absolute;
+  top: 16px; width: 10px; height: 4px;
+  background: #00ffe9;
+  border-radius: 4px;
+  box-shadow: 0 0 4px #2fffcf;
+}
+.neon-arm-left  { left: -7px;  transform: rotate(-35deg);}
+.neon-arm-right { right: -7px; transform: rotate(35deg);}
+
+/* 足 */
+.neon-leg {
+  position: absolute;
+  bottom: 0; width: 7px; height: 3px;
+  background: #00ffe9;
+  border-radius: 3px;
+  box-shadow: 0 0 4px #2fffcf;
+  /* 跳ねのタイミングで動かす */
+  animation: leg-run 0.7s linear infinite alternate;
+}
+.neon-leg-left  { left: 6px;  animation-delay: 0s; }
+.neon-leg-right { right: 6px; animation-delay: 0.35s;}
+@keyframes leg-run {
+  0%   { transform: rotate(40deg) translateY(2px);}
+  40%  { transform: rotate(-25deg) translateY(0);}
+  50%  { transform: rotate(-25deg) translateY(2px);}
+  100% { transform: rotate(40deg) translateY(2px);}
+}
+
+.loading-spinner-inline {
+  min-width: 24px;
+  width: 24px;
+  height: 24px;
+  padding-left: 2px; /* ほんの少し余白を足す */
+  box-sizing: content-box;
+}
+
+.toggle-btn.active, .toggle-btn.active i {
+  color: #10ffec !important;
+  text-shadow: 0 0 8px #10ffec, 0 0 16px #19b4f0;
+  transition: all 0.2s;
+}
+
+
+
+
+.neon-character-spinbox {
+  position: relative;  /* ← これを必ず付ける！（relativeでOK） */
+  z-index: 10001;      /* ← これも大きめにしてみる */
+}
+
+/* モーダルより前面に出す */
+/* 通常時は低い値を設定しておけば、ヘッダーやコンテンツの下に隠れます */
+#bottom-player {
+  z-index: 100;  /* 適当なヘッダーよりも下の値 */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+
+
+
+
+
+/* footerフッタースタイル */
+
+
+.footer-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #111;
+  font-size: 0.85rem;
+  color: #ccc;
+  text-decoration: underline;
+
+
+  a {
+    color: #ddd;
+    text-decoration: none;
+
+    &:hover {
+      color: #fff;
+      text-shadow: 0 0 4px rgba(255, 255, 255, 0.4);
+    }
+  }
+}
+
+.footer-left,
+.footer-right {
+  padding: 0.3rem 1rem;
+}
+
+.terms {
+  background-color: #fff;         /* 白背景 */
+  color: #000;                    /* 黒文字 */
+  padding: 2rem;                  /* 内側の余白 */
+  border-radius: 10px;            /* 角を少し丸く */
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15); /* 影をつけて浮かせる */
+  line-height: 1.8;               /* 行間広めで読みやすく */
+  font-size: 1rem;                /* 基本文字サイズ */
+  font-family: "Helvetica Neue", Arial, sans-serif;
+}
+
+.terms h1 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #333;
+  padding-bottom: 0.5rem;
+}
+
+.terms h2 {
+  font-size: 1.2rem;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  color: #222;
+  border-left: 4px solid #007BFF;
+  padding-left: 0.5rem;
+}
+
+.terms p {
+  margin-bottom: 1rem;
+}
+
+.terms ul {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.terms ul li {
+  margin-bottom: 0.5rem;
+}
+
+.terms a {
+  color: #007BFF;
+  text-decoration: underline;
+}
+
+.terms a:hover {
+  color: #0056b3;
+}
