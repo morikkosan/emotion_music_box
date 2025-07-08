@@ -25,10 +25,10 @@
 <% end %>
 
 <% if @bookmark_page.present? %>
-  <div data-controller="bookmark" style="margin: 1.5rem 0 2rem 1rem;">
-    <div style="display: flex; justify-content: center; align-items: center; gap: 8rem;">
+  <div data-controller="bookmark" class="bookmark-container">
+    <div class="flex-center-gap8rem">
       <!-- ✅ チェックボックス -->
-      <label class="bookmark-merge-toggle-label" style="margin: 0;">
+      <label class="bookmark-merge-toggle-label">
         <input type="checkbox"
                id="mypage-merge-toggle"
                class="form-check-input"
@@ -43,7 +43,7 @@
               method="get"
               data-turbo-frame="playlist-modal-container"
               data-action="submit->bookmark#submitPlaylistForm"
-              style="margin: 0;">
+              class= "no-margin">
           <button type="submit" class="bookmark-playlist-create-btn">
             プレイリストを作成する
           </button>
@@ -81,12 +81,10 @@
         <div class="card">
           <div class="card-header d-flex justify-content-between align-items-center">
             <% if @bookmark_page.present? %>
-              <input type="checkbox"
-                    name="selected_logs[]"
-                    value="<%= log.id %>"
-                    class="playlist-check me-3"
-                    style="width:2.2rem; height:2.2rem; accent-color:#e800ff;
-                            box-shadow:0 0 8px #fff6, 0 0 3px #e800ff;">
+                  <input type="checkbox"
+            name="selected_logs[]"
+            value="<%= log.id %>"
+            class="playlist-check me-3 playlist-check--custom-size">
             <% end %>
 
             <div>
@@ -118,11 +116,11 @@
                 <%= render 'bookmark_buttons', emotion_log: log %>
               <% end %>
 
-              <div class="d-flex align-items-center" style="gap:4px;">
-                <span class="fw-bold" style="font-size:1rem;"><%= log.comments_count %></span>
+              <div class="d-flex align-items-center align-center-gap4">
+                <span class="fw-bold font-size-1rem"><%= log.comments_count %></span>
                 <%= image_tag 'comment_icon.webp',
-                              alt: 'コメント数',
-                              style: 'width:48px; height:48px; display:inline-block;' %>
+              alt: 'コメント数',
+              class: 'comment-icon' %>
               </div>
             </div>
           </div>
@@ -130,31 +128,21 @@
           <div class="card-body">
             <div class="d-flex align-items-start">
 
-              <div class="me-3 position-relative" style="width:80px;">
-                <!-- ▼ ここが修正ポイント！ -->
-                <%= image_tag log.music_art_url || "placeholder.webp",
-                              alt: "ジャケット画像",
-                              class: "music-art-img",
-                              style: "width:80px; height:auto; display:block;",
-                              data: {
-                                "play-url"             => log.music_url,
-                                "global-player-target" => "trackImage",
-                                "track-id"             => log.id
-                              } %>
+              <div class="me-3 position-relative music-art-wrapper">
+              <%= image_tag log.music_art_url || "placeholder.webp",
+                            alt: "ジャケット画像",
+                            class: "music-art-img",
+                            data: {
+                              "play-url"             => log.music_url,
+                              "global-player-target" => "trackImage",
+                              "track-id"             => log.id
+                            } %>
 
                 <i class="fa fa-play play-overlay-icon"
-                   data-action="click->global-player#loadAndPlay"
-                   data-global-player-target="playIcon"
-                   data-track-id="<%= log.id %>"
-                   style="
-                     position: absolute;
-                     top: 50%;
-                     left: 50%;
-                     transform: translate(-50%, -50%);
-                     font-size: 24px;
-                     color: rgba(255,255,255,0.9);
-                     cursor: pointer;
-                   "></i>
+                  data-action="click->global-player#loadAndPlay"
+                  data-global-player-target="playIcon"
+                  data-track-id="<%= log.id %>"></i>
+
               </div>
 
               <div class="d-flex align-items-center">
@@ -165,7 +153,7 @@
                               data: { turbo: false } %>
                 </div>
                 <div class="ms-3">
-                  <p class="mb-0" style="color:white; font-size:1.1rem;">
+                    <p class="text-white-lg">
                     <%= log.description.present? ? log.description : "一言はありません" %>
                   </p>
                 </div>

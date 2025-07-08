@@ -181,3 +181,71 @@
 .terms a:hover {
   color: #0056b3;
 }
+
+
+// indexのスタイルタグ
+.flex-center-gap8rem {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8rem;
+}
+
+.bookmark-container {
+  margin: 1.5rem 0 2rem 1rem;
+}
+
+.playlist-check--custom-size {
+  width: 2.2rem;
+  height: 2.2rem;
+  accent-color: #e800ff;
+  box-shadow: 0 0 8px #fff6, 0 0 3px #e800ff;
+}
+
+.music-art-img {
+  width: 80px;
+  height: auto;
+  display: block;
+}
+
+.play-overlay-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+}
+
+
+.bookmark-merge-toggle-label {
+  margin: 0;
+}
+
+.form-no-margin {
+  margin: 0;
+}
+
+.description-text {
+  color: white;
+  font-size: 1.1rem;
+}
+
+.text-white-lg {
+  color: white;
+  font-size: 1.1rem;
+  margin-bottom: 0;
+}
+
+.fw-bold {
+  font-weight: bold;
+}
+
+.font-size-1rem {
+  font-size: 1rem;
+}
+
+.align-center-gap4 {
+  gap: 4px;
+}
