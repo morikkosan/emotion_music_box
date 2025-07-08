@@ -40,14 +40,15 @@
       <!-- ✅ プレイリスト作成ボタン -->
       <% if current_user.playlists.count < 12 %>
         <form action="<%= new_playlist_path(format: :turbo_stream) %>"
-              method="get"
-              data-turbo-frame="playlist-modal-container"
-              data-action="submit->bookmark#submitPlaylistForm"
-              style="margin: 0;">
-          <button type="submit" class="bookmark-playlist-create-btn">
-            プレイリストを作成する
-          </button>
-        </form>
+      method="get"
+      data-turbo-frame="playlist-modal-container"
+      data-action="submit->bookmark#submitPlaylistForm"
+      style="margin: 0;">
+  <input type="hidden" name="selected_logs" data-bookmark-target="selectedLogsInput">
+  <button type="submit" class="bookmark-playlist-create-btn">
+    プレイリストを作成する
+  </button>
+</form>
       <% else %>
         <button class="btn btn-secondary" disabled>プレイリストは12個まで作成可能です</button>
       <% end %>

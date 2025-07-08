@@ -50,9 +50,14 @@
     }
   }
 
+  // ✅ グローバルにも公開
+  window.showFlashSwal = showFlashSwal;
+
+  // 初期表示時、Turboナビゲーション時
   document.addEventListener("DOMContentLoaded", showFlashSwal);
   document.addEventListener("turbo:load", showFlashSwal);
 
+  // DOM追加時にも反応（AJAXなど）
   const observer = new MutationObserver((mutationsList) => {
     for (const mutation of mutationsList) {
       for (const node of mutation.addedNodes) {
@@ -68,6 +73,17 @@
     subtree: true
   });
 
+  // Turbo Stream で flash-container が差し込まれた場合にも反応！
+  document.addEventListener("turbo:before-stream-render", (event) => {
+    const template = event.target;
+    if (template.innerHTML.includes('id="flash-container"')) {
+      setTimeout(() => {
+        showFlashSwal();
+      }, 0);
+    }
+  });
+
+  // ログアウトのSwal対応
   document.addEventListener("DOMContentLoaded", function () {
     const logoutLink = document.getElementById("logout-link");
     if (!logoutLink) return;
