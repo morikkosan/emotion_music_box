@@ -1,3 +1,4 @@
+<!-- app/views/emotion_logs/index.html.erb -->
 <% content_for :title, "エモミュ" %>
 
 <%= render 'shared/header' %>
@@ -10,6 +11,7 @@
   <% elsif @recommended_page.present? %>
     <span class="bookmark_title"><%= @recommended_page %></span>
   <% else %>
+    <!-- 通常のストレスゲージ -->
     <br>
     <div id="hp-bar-container">
       <span class="today_mental_text">
@@ -23,13 +25,13 @@
 <% end %>
 
 <% if @bookmark_page.present? %>
-  <div data-controller="bookmark" class="bookmark-container">
-    <div class="flex-center-gap8rem">
+  <div data-controller="bookmark" style="margin: 1.5rem 0 2rem 1rem;">
+    <div style="display: flex; justify-content: center; align-items: center; gap: 8rem;">
       <!-- ✅ チェックボックス -->
-      <label class="bookmark-merge-toggle-label">
+      <label class="bookmark-merge-toggle-label" style="margin: 0;">
         <input type="checkbox"
                id="mypage-merge-toggle"
-               class="form-check-input playlist-check--custom-size"
+               class="form-check-input"
                data-action="change->bookmark#toggleMyPageLogs"
                name="include_my_logs">
         マイページの投稿も含める
@@ -41,7 +43,7 @@
               method="get"
               data-turbo-frame="playlist-modal-container"
               data-action="submit->bookmark#submitPlaylistForm"
-              class="form-no-margin">
+              style="margin: 0;">
           <button type="submit" class="bookmark-playlist-create-btn">
             プレイリストを作成する
           </button>
@@ -52,6 +54,8 @@
     </div>
   </div>
 <% end %>
+
+
 
 <% if user_signed_in? %>
   <br><br><br><br>
@@ -64,96 +68,111 @@
     <% else %>
       <%= render 'super_search' %>
     <% end %>
-<% end %>
+si<% end %>
+
 
 <%= turbo_frame_tag "logs_list" do %>
   <div class="scroll-content">
-    <div class="row justify-content-center">
-      <% @emotion_logs.each do |log| %>
-        <% cache log do %>
-        <div id="<%= dom_id(log) %>" class="col-md-8 mb-4">
-          <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <% if @bookmark_page.present? %>
-                <input type="checkbox"
-                      name="selected_logs[]"
-                      value="<%= log.id %>"
-                      class="playlist-check me-3 playlist-check--custom-size">
-              <% end %>
 
-              <div>
-                <strong><%= log.created_at.in_time_zone('Tokyo')
-                           .strftime('%Y/%m/%d %H:%M') %></strong>
-                <% log.tags.each do |tag| %>
-                  <% if user_signed_in? %>
-                    <%= link_to tag.name,
-                                emotion_logs_path(genre: tag.name),
-                                class: "badge bg-primary text-light me-1" %>
-                  <% else %>
-                    <span class="badge bg-primary text-light me-1"
-                          title="ログインすると使えます"><%= tag.name %></span>
-                  <% end %>
-                <% end %>
-              </div>
+  <div class="row justify-content-center">
+    <% @emotion_logs.each do |log| %>
+      <div id="<%= dom_id(log) %>" class="col-md-8 mb-4">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <% if @bookmark_page.present? %>
+              <input type="checkbox"
+                     name="selected_logs[]"
+                     value="<%= log.id %>"
+                     class="playlist-check me-3"
+                     style="width:2.2rem; height:2.2rem; accent-color:#e800ff;
+                            box-shadow:0 0 8px #fff6, 0 0 3px #e800ff;">
+            <% end %>
 
-              <div class="d-flex align-items-center align-center-gap4">
-                <% if current_user == log.user %>
-                  <%= form_with url: emotion_log_path(log),
-                                method: :delete,
-                                data: { turbo_confirm: '本当に削除しますか？',
-                                        turbo_stream: true },
-                                class: 'd-inline' do %>
-                    <%= submit_tag '削除', class: 'btn btn-danger btn-sm' %>
-                  <% end %>
+            <div>
+              <strong><%= log.created_at.in_time_zone('Tokyo')
+                         .strftime('%Y/%m/%d %H:%M') %></strong>
+              <% log.tags.each do |tag| %>
+                <% if user_signed_in? %>
+                  <%= link_to tag.name,
+                              emotion_logs_path(genre: tag.name),
+                              class: "badge bg-primary text-light me-1" %>
                 <% else %>
-                  <%= render 'bookmark_buttons', emotion_log: log %>
+                  <span class="badge bg-primary text-light me-1"
+                        title="ログインすると使えます"><%= tag.name %></span>
                 <% end %>
-
-                <div class="d-flex align-items-center align-center-gap4">
-                  <span class="fw-bold font-size-1rem"><%= log.comments_count %></span>
-                  <%= image_tag 'comment_icon.webp',
-                                alt: 'コメント数',
-                                class: 'comment-icon comment-icon--large' %>
-                </div>
-              </div>
+              <% end %>
             </div>
 
-            <div class="card-body">
-              <div class="d-flex align-items-start">
-                <div class="me-3 position-relative music-art-wrapper">
-                  <%= image_tag log.music_art_url || "placeholder.webp",
-                                alt: "ジャケット画像",
-                                class: "music-art-img",
-                                data: {
-                                  "play-url"             => log.music_url,
-                                  "global-player-target" => "trackImage",
-                                  "track-id"             => log.id
-                                } %>
-                  <i class="fa fa-play play-overlay-icon"
-                     data-action="click->global-player#loadAndPlay"
-                     data-global-player-target="playIcon"
-                     data-track-id="<%= log.id %>"></i>
-                </div>
+            <div class="d-flex align-items-center gap-3">
+              <% if current_user == log.user %>
+                <%= form_with url: emotion_log_path(log),
+                              method: :delete,
+                              data: { turbo_confirm: '本当に削除しますか？',
+                                      turbo_stream: true },
+                              class: 'd-inline' do %>
+                  <%= submit_tag '削除', class: 'btn btn-danger btn-sm' %>
+                <% end %>
+              <% else %>
+                <%= render 'bookmark_buttons', emotion_log: log %>
+              <% end %>
 
-                <div class="d-flex align-items-center">
-                  <div>
-                    <%= link_to log.emotion,
-                                emotion_log_path(log),
-                                class: "button",
-                                data: { turbo: false } %>
-                  </div>
-                  <div class="ms-3">
-                    <p class="text-white-lg">
-                      <%= log.description.present? ? log.description : "一言はありません" %>
-                    </p>
-                  </div>
+              <div class="d-flex align-items-center" style="gap:4px;">
+                <span class="fw-bold" style="font-size:1rem;"><%= log.comments_count %></span>
+                <%= image_tag 'comment_icon.png',
+                              alt: 'コメント数',
+                              style: 'width:48px; height:48px; display:inline-block;' %>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="d-flex align-items-start">
+
+              <div class="me-3 position-relative" style="width:80px;">
+                <!-- ▼ ここが修正ポイント！ -->
+                <%= image_tag log.music_art_url || "placeholder.png",
+                              alt: "ジャケット画像",
+                              class: "music-art-img",
+                              style: "width:80px; height:auto; display:block;",
+                              data: {
+                                "play-url"             => log.music_url,
+                                "global-player-target" => "trackImage",
+                                "track-id"             => log.id
+                              } %>
+
+                <i class="fa fa-play play-overlay-icon"
+                   data-action="click->global-player#loadAndPlay"
+                   data-global-player-target="playIcon"
+                   data-track-id="<%= log.id %>"
+                   style="
+                     position: absolute;
+                     top: 50%;
+                     left: 50%;
+                     transform: translate(-50%, -50%);
+                     font-size: 24px;
+                     color: rgba(255,255,255,0.9);
+                     cursor: pointer;
+                   "></i>
+              </div>
+
+              <div class="d-flex align-items-center">
+                <div>
+                  <%= link_to log.emotion,
+                              emotion_log_path(log),
+                              class: "button",
+                              data: { turbo: false } %>
+                </div>
+                <div class="ms-3">
+                  <p class="mb-0" style="color:white; font-size:1.1rem;">
+                    <%= log.description.present? ? log.description : "一言はありません" %>
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <% end %>
-      <% end %>
+      </div>
+    <% end %>
     </div>
   </div>
 <% end %>
