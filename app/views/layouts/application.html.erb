@@ -39,6 +39,8 @@
   <link rel="preconnect" href="https://w.soundcloud.com" crossorigin>
   <link rel="preconnect" href="https://api.soundcloud.com" crossorigin>
   <link rel="preload" as="script" href="https://w.soundcloud.com/player/api.js">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+
   <script src="https://w.soundcloud.com/player/api.js"></script>
 
   <!-- Railsのapplication.js（defer必須！） -->
@@ -76,6 +78,16 @@
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.8/axios.min.js"></script>
 
+   <!-- ✅ グローバル変数 -->
+  <script>
+    window.SOUNDCLOUD_CLIENT_ID = "<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>";
+    window.soundcloudToken      = "<%= ENV['SOUNDCLOUD_OAUTH_TOKEN'] %>";
+      window.CLOUDINARY_CLOUD_NAME = "<%= ENV['CLOUDINARY_CLOUD_NAME'] %>";
+  window.CLOUDINARY_UPLOAD_PRESET = "<%= ENV['CLOUDINARY_UPLOAD_PRESET'] %>";
+  window.VAPID_PUBLIC_KEY = "<%= ENV['VAPID_PUBLIC_KEY'] %>";
+  window.isLoggedIn = <%= current_user.present? ? 'true' : 'false' %>;
+  </script>
+
   <%= yield :head %>
 </head>
 <body data-controller="view-switcher global-player" data-flash-notice="<%= j flash[:notice] %>"
@@ -87,7 +99,6 @@
       <div class="loading-text">Now Loading...</div>
     </div>
   </div>
-  <div id="flash-message" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;padding:1em;background:#333;color:#fff;text-align:center;"></div>
   <turbo-frame id="modal-container"></turbo-frame>
   <turbo-frame id="playlist-modal-container"></turbo-frame>
   <div id="comment-container"></div>
@@ -111,19 +122,13 @@
     </div>
   </div>
 
-  <!-- ✅ グローバル変数 -->
-  <script>
-    window.SOUNDCLOUD_CLIENT_ID = "<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>";
-    window.soundcloudToken      = "<%= ENV['SOUNDCLOUD_OAUTH_TOKEN'] %>";
-      window.CLOUDINARY_CLOUD_NAME = "<%= ENV['CLOUDINARY_CLOUD_NAME'] %>";
-  window.CLOUDINARY_UPLOAD_PRESET = "<%= ENV['CLOUDINARY_UPLOAD_PRESET'] %>";
-  </script>
+
   <%= render 'shared/footer' %>
 
   <!-- ──────────── 下部カスタムプレーヤー & 隠し iframe ──────────── -->
 
   <!-- 1) SoundCloud の iframe（display: none で隠す） -->
-   <iframe id="hidden-sc-player" src="" style="display: none;" allow="autoplay" frameborder="no" scrolling="no" width="100%" height="166"></iframe>
+<iframe id="hidden-sc-player" class="hidden-frame" src="" allow="autoplay" frameborder="no" scrolling="no" width="100%" height="166"></iframe>
 
   <!-- ===== 下部カスタムプレーヤー（前・次だけ上段/他は一切いじらない） ===== -->
   <div id="bottom-player"
@@ -131,19 +136,18 @@
      style="position: fixed; bottom: 0; left: 0; right: 0; background: #222; color: #fff; display: flex; flex-direction: column; align-items: stretch; padding: 8px 16px; z-index: 1000;">
 
   <!-- 上段: 前の曲・次の曲ボタン -->
-<div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding-bottom: 4px;">
-<div style="flex:1; display:flex; justify-content:flex-start; align-items:center;">
+<div class="bottom-player-top-row">
+<div class="flex-grow-1 d-flex justify-content-start align-items-center">
     <!-- ここにcanvasを追加！ -->
 <canvas id="waveform-anime" width="450" height="44"
     style="margin-right:0px; display:block;"></canvas>
     <button id="prev-track-button"
-      class="btn btn-link text-white"
-      data-action="click->global-player#prevTrack"
-      style="font-size:24px; padding:0 8px; border:none; background:none; width:48px; height:44px;">
+  class="btn btn-link text-white bottom-player-button"
+  data-action="click->global-player#prevTrack">
       <i class="fa fa-step-backward"></i>
     </button>
   </div>
-  <div style="flex:1.2"></div>
+<div class="bottom-player-flex-gap"></div>
   <div style="flex:1; display:flex; justify-content:flex-start;">
     <button id="next-track-button"
       class="btn btn-link text-white"
@@ -197,23 +201,22 @@
     </div>
 
     <!-- 時間・シークバー -->
-    <div style="flex: 3; display: flex; align-items: center; gap: 8px; margin-left: 16px;">
+<div class="bottom-player-seekbar">
       <span id="current-time" style="min-width: 40px;">0:00</span>
-      <input id="seek-bar"
-             type="range"
-             min="0" max="100" value="0"
-             style="flex: 1; appearance: none; height: 4px; background: #555; border-radius: 2px; outline: none;"
-             data-action="input->global-player#seek">
-      <span id="duration" style="min-width: 40px;">0:00</span>
-    </div>
+                  <input id="seek-bar"
+              type="range"
+              min="0" max="100" value="0"
+              class="seek-bar"
+              data-action="input->global-player#seek">
+        <span id="duration" style="min-width: 40px;">0:00</span>
+      </div>
 
     <!-- シャッフル・リピート・音量 -->
     <div style="display: flex; align-items: center; gap: 8px; margin-left: 16px;">
       <!-- ▼ここから追加 -->
-      <button id="shuffle-button" class="btn btn-link toggle-btn me-1"
-              data-action="click->global-player#toggleShuffle"
-              type="button"
-              style="font-size:20px; color:#fff;">
+      <button id="shuffle-button" class="btn btn-link toggle-btn me-1 bottom-player-toggle-btn"
+  data-action="click->global-player#toggleShuffle"
+  type="button">
         <i class="fa fa-random"></i>
       </button>
       <button id="repeat-button" class="btn btn-link toggle-btn me-2"
@@ -226,179 +229,12 @@
 
       <i class="fa fa-volume-up" style="color: #fff;"></i>
       <input id="volume-bar"
-             type="range"
-             min="0" max="100" value="100"
-             style="width: 80px; appearance: none; height: 4px; background: #555; border-radius: 2px; outline: none;"
-             data-action="input->global-player#changeVolume">
-    </div>
+        type="range"
+        min="0" max="100" value="100"
+        class="volume-bar"
+        data-action="input->global-player#changeVolume">
+      </div>
   </div>
 </div>
-<!-- 例: layout.erb や application.html.erb の末尾あたり -->
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js')
-      .then(function(reg) {
-        console.log('[PWA] ServiceWorker 登録成功:', reg);
-      }).catch(function(error) {
-        console.error('[PWA] ServiceWorker 登録失敗:', error);
-      });
-  }
-</script>
-
-
-<script>
-  const VAPID_PUBLIC_KEY = "<%= ENV['VAPID_PUBLIC_KEY'] %>";
-
-  async function subscribeToPushNotifications() {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      console.warn("PWA通知はこのブラウザでサポートされていません。");
-      return;
-    }
-
-    try {
-      const registration = await navigator.serviceWorker.ready;
-
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-      });
-
-      const res = await fetch('/push_subscription', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
-        },
-        body: JSON.stringify({ subscription }),
-      });
-
-      if (res.ok) {
-        console.log("✅ Push通知の購読に成功しました");
-      } else {
-        console.warn("⚠️ 購読データの送信に失敗しました");
-      }
-    } catch (err) {
-      console.error("Push通知の購読エラー:", err);
-    }
-  }
-
-  function urlBase64ToUint8Array(base64String) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
-    const rawData = atob(base64);
-    return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
-  }
-
-  // ログイン中のユーザーだけ購読させたい場合
-  <% if current_user.present? %>
-    subscribeToPushNotifications();
-  <% end %>
-</script>
-
 </body>
 </html>
-
-
-// <style>
-// .neon-character-spinbox {
-//   display: inline-block;
-//   width: 48px; height: 48px;
-//   position: relative;
-// }
-// .neon-body {
-//   width: 32px; height: 32px;
-//   border-radius: 50%;
-//   background: radial-gradient(circle at 60% 40%, #10ffec 60%, #073753 100%);
-//   box-shadow: 0 0 16px 4px #1efff7;
-//   position: absolute;
-//   left: 8px; top: 8px;
-//   animation: neon-bounce 0.7s cubic-bezier(.5,0,.5,1) infinite alternate;
-// }
-// @keyframes neon-bounce {
-//   0%   { top: 8px;    transform: scaleY(1); }
-//   10%  { top: 0px;    transform: scaleY(1.12); }
-//   15%  { top: -4px;   transform: scaleY(1.1); }
-//   25%  { top: -14px;  transform: scaleY(0.94);}
-//   45%  { top: -22px;  transform: scaleY(1);}
-//   50%  { top: -24px;  transform: scaleY(1.08);}
-//   60%  { top: -12px;  transform: scaleY(0.96);}
-//   80%  { top: 0px;    transform: scaleY(1.05);}
-//   100% { top: 8px;    transform: scaleY(1);}
-// }
-// /* 目 */
-// .neon-eye {
-//   position: absolute;
-//   top: 12px;
-//   width: 5px; height: 5px;
-//   background: #fff;
-//   border-radius: 50%;
-//   opacity: 0.8;
-//   box-shadow: 0 0 4px #0ff;
-// }
-// .neon-eye-left  { left: 7px; }
-// .neon-eye-right { left: 16px; }
-
-// /* 手 */
-// .neon-arm {
-//   position: absolute;
-//   top: 16px; width: 10px; height: 4px;
-//   background: #00ffe9;
-//   border-radius: 4px;
-//   box-shadow: 0 0 4px #2fffcf;
-// }
-// .neon-arm-left  { left: -7px;  transform: rotate(-35deg);}
-// .neon-arm-right { right: -7px; transform: rotate(35deg);}
-
-// /* 足 */
-// .neon-leg {
-//   position: absolute;
-//   bottom: 0; width: 7px; height: 3px;
-//   background: #00ffe9;
-//   border-radius: 3px;
-//   box-shadow: 0 0 4px #2fffcf;
-//   /* 跳ねのタイミングで動かす */
-//   animation: leg-run 0.7s linear infinite alternate;
-// }
-// .neon-leg-left  { left: 6px;  animation-delay: 0s; }
-// .neon-leg-right { right: 6px; animation-delay: 0.35s;}
-// @keyframes leg-run {
-//   0%   { transform: rotate(40deg) translateY(2px);}
-//   40%  { transform: rotate(-25deg) translateY(0);}
-//   50%  { transform: rotate(-25deg) translateY(2px);}
-//   100% { transform: rotate(40deg) translateY(2px);}
-// }
-
-// .loading-spinner-inline {
-//   min-width: 24px;
-//   width: 24px;
-//   height: 24px;
-//   padding-left: 2px; /* ほんの少し余白を足す */
-//   box-sizing: content-box;
-// }
-
-// .toggle-btn.active, .toggle-btn.active i {
-//   color: #10ffec !important;
-//   text-shadow: 0 0 8px #10ffec, 0 0 16px #19b4f0;
-//   transition: all 0.2s;
-// }
-
-
-
-
-// .neon-character-spinbox {
-//   position: relative;  /* ← これを必ず付ける！（relativeでOK） */
-//   z-index: 10001;      /* ← これも大きめにしてみる */
-// }
-
-// /* モーダルより前面に出す */
-// /* 通常時は低い値を設定しておけば、ヘッダーやコンテンツの下に隠れます */
-// #bottom-player {
-//   z-index: 100;  /* 適当なヘッダーよりも下の値 */
-//   position: fixed;
-//   bottom: 0;
-//   left: 0;
-//   right: 0;
-// }
-
-
-// </style>

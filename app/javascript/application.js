@@ -15,6 +15,21 @@ console.log("🔥 Rails UJS is loaded!", Rails);
 
 window.bootstrap = bootstrap;
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js')
+    .then(reg => console.log('ServiceWorker 登録成功:', reg))
+    .catch(err => console.error('ServiceWorker 登録失敗:', err));
+}
+
+// 重複する関数はここに書かない！！！
+
+// ログインしているユーザーだけ実行
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.isLoggedIn) {
+    subscribeToPushNotifications();
+  }
+});
+
 // ✅ Turboローディング制御まとめ
 document.addEventListener("turbo:visit", () => {
   const loader = document.getElementById("loading-overlay");
