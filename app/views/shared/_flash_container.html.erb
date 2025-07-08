@@ -1,3 +1,11 @@
+<% actual_flash = local_assigns[:flash] || flash %>
+
+<!-- 🔽 デバッグ出力 -->
+<div>
+  🔍 notice: "<%= actual_flash[:notice].inspect %>"
+</div>
+
 <div id="flash-container"
-     data-flash-notice="<%= j flash[:notice] %>"
-     data-flash-alert="<%= j flash[:alert] %>"></div>
+     data-flash-notice="<%= actual_flash[:notice] %>"
+     data-flash-alert="<%= actual_flash[:alert] %>">
+</div>

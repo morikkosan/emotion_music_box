@@ -1,0 +1,2 @@
+<%= turbo_stream.update "playlist-modal-container", partial: "playlists/create_modal", locals: { playlist: @playlist } %>
+<%= turbo_stream.replace "flash", partial: "shared/flash_container", locals: { flash: flash } %>
