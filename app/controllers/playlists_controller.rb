@@ -92,7 +92,7 @@ end
 
    def destroy
     @playlist.destroy
-    redirect_to bookmarks_emotion_logs_path, notice: "プレイリストを削除しました。"
+  redirect_to playlists_path, notice: "プレイリストを削除しました。"
   end
 
   private
