@@ -118,25 +118,25 @@
 
       <!-- EMOTION -->
       <div class="mypage-item search-item wide">
-        <div class="menu-label menu-label-emotion">EMOTION</div>
-        <%= form_with url: emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
-                      method: :get,
-                      data: { turbo_frame: "logs_list" },
-                      html: { class: "w-100 h-100 d-flex flex-column justify-content-center align-items-center" } do %>
-          <label for="emotion_select" class="visually-hidden">感情を選択</label>
-          <%= select_tag :emotion,
-                         options_for_select(
-                           [['選択しない',''], ['最高','最高'], ['気分良い','気分良い'],
-                            ['いつも通り','いつも通り'], ['イライラ','イライラ'],
-                            ['限界','限界']],
-                           selected: params[:emotion]
-                         ),
-                         class: 'form-control',
-                         id: 'emotion_select',
-                         onchange: 'this.form.submit()' %>
-          <%= hidden_field_tag :genre, params[:genre] %>
-        <% end %>
-      </div>
+  <div class="menu-label menu-label-emotion">EMOTION</div>
+  <%= form_with url: emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
+                method: :get,
+                data: { turbo_frame: "logs_list" },
+                html: { class: "w-100 h-100 d-flex flex-column justify-content-center align-items-center" } do %>
+    <label for="emotion_select" class="visually-hidden">感情を選択</label>
+    <%= select_tag :emotion,
+                  options_for_select(
+                  [['選択しない',''], ['最高','最高'], ['気分良い','気分良い'],
+                      ['いつも通り','いつも通り'], ['イライラ','イライラ'],
+                      ['限界','限界']],
+                  selected: params[:emotion]
+                  ),
+                  class: 'form-control auto-submit-emotion',
+                  id: 'emotion_select' %>
+    <%= hidden_field_tag :genre, params[:genre] %>
+  <% end %>
+</div>
+
 
       <!-- TAGフォーム -->
       <div class="mypage-item search-item wide position-relative" data-controller="tag-autocomplete">
