@@ -19,10 +19,10 @@
 
     <!-- ★ プレイリスト本体 -->
     <ul
-      id="<%= dom_id(@playlist, :contents) %>"
-      class="list-unstyled mt-3"
-      style="max-width:700px; margin:auto;"
-    >
+  id="<%= dom_id(@playlist, :contents) %>"
+  class="list-unstyled mt-3 playlist-contents"
+>
+
       <% @playlist.playlist_items.includes(:emotion_log).each do |item| %>
         <% log = item.emotion_log %>
         <li class="mb-4">
@@ -126,75 +126,3 @@
     </div>
   </div>
 </div>
-
-
-<!--
-<style>
-.pmx_playlist_row {
-  background: rgba(0,0,0,0.4) !important;
-  backdrop-filter: blur(8px) !important;
-  border: 1px solid rgba(255,255,255,0.15) !important;
-  border-radius: 10px !important;
-  padding: 1rem !important;
-  color: #fff !important;
-}
-.pmx_cover_wrapper {
-  position: relative;
-  width: 88px; height: 88px;
-  flex: 0 0 88px;
-}
-.pmx_cover_img { width:88px; height:88px; object-fit:cover; }
-.play-overlay-icon {
-  position:absolute; top:50%; left:50%;
-  transform:translate(-50%,-50%);
-  font-size:2rem; color:rgba(255,255,255,0.9); cursor:pointer;
-}
-.pmx_song_info { display:flex; flex-direction:column; gap:.3rem; }
-.neon-btn-title { font-size:1.1rem; color:#fff !important; }
-.neon_show-back, .neon_show-delete {
-  position: relative;
-  font-weight: bold;
-  border-radius: 2rem;
-  border: none;
-  color: #fff !important;
-  display: inline-flex;
-  align-items: center;
-  gap: .5em;
-  transition: transform .13s, box-shadow .13s, filter .16s;
-}
-.neon_show-back {
-  background: linear-gradient(90deg,#2196f3,#0d47a1);
-  padding: .68rem 2rem;
-  box-shadow: 0 2px 8px rgba(22,135,206,.3);
-  z-index: 1051;
-}
-.neon_show-delete {
-  background: linear-gradient(90deg,#b81942,#d93b7b);
-  padding: .5rem 1rem;
-  box-shadow: 0 1px 4px rgba(184,25,35,.6);
-  z-index: 1053;
-}
-.playlist-playfirst-fixed {
-  position: fixed; top:50%; left:400px;
-  transform: translateY(-50%); z-index:1002;
-}
-.add-song-floating {
-  position: fixed;
-  right: 400px; top: 50%;
-  transform: translateY(-50%);
-  border-radius: 2rem;
-  padding: .75rem 1.2rem;
-  font-size: 1rem;
-  display: flex; align-items: center; gap:.4rem;
-  background: linear-gradient(90deg,#ff00ff,#00ffff);
-  color: #fff;
-  text-shadow: 0 0 8px rgba(255,0,255,.8), 0 0 12px rgba(0,255,255,.8);
-  box-shadow: 0 0 16px rgba(255,0,255,.6), 0 0 24px rgba(0,255,255,.6);
-  transition:transform .1s,filter .1s;
-  z-index:1050;
-}
-.add-song-floating:hover {
-  transform: translateY(-50%) scale(1.05);
-  filter: brightness(1.1);
-}
-</style> -->
