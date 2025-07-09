@@ -31,7 +31,7 @@
   <!-- ✅ ロゴ表示 -->
   <div class="text-start mt-2 px-3">
     <%= link_to emotion_logs_path do %>
-      <%= image_tag "logo1.webp", alt: "Emotion List Logo", class: "img-fluid neon-icon", style: "max-width:150px; width:100%;" %>
+      <%= image_tag "logo1.webp", alt: "Emotion List Logo", class: "img-fluid neon-icon mobile-logo" %>
     <% end %>
   </div>
   <br><br>
@@ -51,18 +51,17 @@
       </span>
     <% else %>
       <!-- モバイル版専用のHPバー -->
-<div class="mobile-hp-bar-container">
-  
-  <p id="hp-status-text">メンタル正常</p>
-  <div class="mobile-hp-bar" id="hp-bar"></div>
-  <span class="mobile_today_mental_text">
-    👆Today's stress level <span id="bar-width-display"></span>👆
-  </span>
-</div>
+      <div class="mobile-hp-bar-container">
+        <p id="hp-status-text">メンタル正常</p>
+        <div class="mobile-hp-bar" id="hp-bar"></div>
+        <span class="mobile_today_mental_text">
+          👆Today's stress level <span id="bar-width-display"></span>👆
+        </span>
+      </div>
     <% end %>
 
     <!-- ✅ ネオン風記録ボタン -->
-    <div class="w-100 text-center my-4" style="z-index: 1030;">
+    <div class="w-100 text-center my-4 record-mobile-btn-wrap">
       <%= link_to "今日の気持ちを記録する",
                   new_emotion_log_path(format: :turbo_stream),
                   id: "record-button",
@@ -73,7 +72,7 @@
 
   <% unless user_signed_in? %>
     <div class="text-center mt-5 mb-4">
-      <h1 style="font-size:2rem; font-weight:bold; color:rgb(215,205,216); text-shadow:0 0 8px,#1ee4da;">
+      <h1 class="mobile-catchcopy">
         音楽とストレスを支配する
       </h1>
     </div>
@@ -82,8 +81,8 @@
         <div class="neon-main-btn-title">新規作成</div>
         <div class="neon-btn-sub">(SoundCloudアカウントも簡単作成)</div>
       <% end %>
-<%= button_to user_soundcloud_omniauth_authorize_path, method: :post, class: "neon-btn btn-neon-xl", data: { turbo: false } do %>
-  <div class="neon-main-btn-title">ログインして始める</div>
+      <%= button_to user_soundcloud_omniauth_authorize_path, method: :post, class: "neon-btn btn-neon-xl", data: { turbo: false } do %>
+        <div class="neon-main-btn-title">ログインして始める</div>
       <% end %>
     </div>
     <div class="neon-btn-footer large-text text-center mt-2">
@@ -92,7 +91,6 @@
     </div>
   <% end %>
 </div>
-
 
 <!-- ✅ 投稿一覧 -->
 <div class="mobile-content pb-5 px-3 mt-4">
@@ -105,13 +103,12 @@
       <i class="bi bi-house fs-4"></i><br>ホーム
     <% end %>
     <%= link_to "#", class: "text-center text-white small go-to-recommended-btn" do %>
-    <i class="bi bi-fire fs-4"></i><br>おすすめ🔥
-  <% end %>
-
+      <i class="bi bi-fire fs-4"></i><br>おすすめ🔥
+    <% end %>
     <%= link_to "#", class: "text-center text-white small",
-  data: { controller: "mobile-super-search", action: "click->mobile-super-search#open" } do %>
-  <i class="bi bi-search fs-4"></i><br>検索
-<% end %>
+      data: { controller: "mobile-super-search", action: "click->mobile-super-search#open" } do %>
+      <i class="bi bi-search fs-4"></i><br>検索
+    <% end %>
     <%= link_to my_emotion_logs_path, class: "text-center text-white small" do %>
       <i class="bi bi-person fs-4"></i><br>マイページ
     <% end %>

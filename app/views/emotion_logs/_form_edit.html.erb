@@ -13,9 +13,8 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
       </div>
       <div class="modal-body">
-
-        <!-- ここから下は今のフォーム部分をまるごと移動 -->
-        <div class="container" style="max-width: 600px;" data-controller="search-music">
+        <!-- ここからフォーム -->
+        <div class="container max-w-600" data-controller="search-music">
           <div class="row justify-content-center">
             <div class="col-md-12">
               <%= form_with model: @emotion_log,
@@ -60,9 +59,8 @@
                     autocomplete="off"
                     value="" />
                   <div class="mt-2" data-tag-input-target="tags"></div>
-                  <div class="dropdown-menu"
-                       data-tag-input-target="suggestions"
-                       style="max-height:150px;overflow-y:auto;">
+                  <div class="dropdown-menu scroll-y-150"
+                       data-tag-input-target="suggestions">
                   </div>
                   <%= hidden_field_tag "emotion_log[tag_names]", @emotion_log.tag_names || "",
                         id: "hidden-tags",
@@ -82,9 +80,9 @@
                 </div>
               <% end %>
               <%= link_to '一覧に戻る',
-            emotion_logs_path,
-            class: 'btn btn-secondary mt-3',
-            data: { turbo: "false" } %>
+                          emotion_logs_path,
+                          class: 'btn btn-secondary mt-3',
+                          data: { turbo: "false" } %>
 
             </div>
           </div>
