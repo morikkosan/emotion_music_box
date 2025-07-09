@@ -12,34 +12,34 @@
         <% else %>
           <%= image_tag "default_stick_figure.webp", alt: "デフォルトプロフィール画像", width: 36, height: 36, class: "rounded-circle mobile-avatar" %>
         <% end %>
-        <span class="fw-bold mobile-username" style="font-size: 1rem;"><%= @emotion_log.user.name %></span>
+        <span class="fw-bold mobile-username"><%= @emotion_log.user.name %></span>
       </div>
-      <div class="mobile-meta" style="font-size:0.9rem;">
+      <div class="mobile-meta">
         <strong>記録:</strong>
         <%= @emotion_log.created_at.strftime('%y-%m-%d %H:%M') %>
 
         <% if @emotion_log.tags.any? %>
-             <span class="mobile-tags ms-2">
+          <span class="mobile-tags ms-2">
             <% @emotion_log.tags.each do |tag| %>
-              <span class="badge bg-secondary me-1 mobile-tag" style="font-size:0.85rem;"><%= tag.name %></span>
+              <span class="badge bg-secondary me-1 mobile-tag"><%= tag.name %></span>
             <% end %>
           </span>
         <% end %>
       </div>
     </div>
     <div class="card-body text-center py-2 px-2 mobile-card-body">
-      <p class="mb-1" style="font-size:1rem;"><strong>感情:</strong> <%= @emotion_log.emotion %></p>
-      <p class="mb-1" style="font-size:0.95rem;"><strong>日記:</strong> <%= @emotion_log.description %></p>
+      <p class="mb-1 mobile-emotion-text"><strong>感情:</strong> <%= @emotion_log.emotion %></p>
+      <p class="mb-1 mobile-diary-text"><strong>日記:</strong> <%= @emotion_log.description %></p>
       <% if current_user == @emotion_log.user %>
         <%= button_to '編集',
               edit_emotion_log_path(@emotion_log, format: :turbo_stream),
               form: { data: { turbo_frame: "modal-container" } },
-              class: 'btn btn-danger btn-sm',
+              class: 'btn btn-danger btn-sm mobile-edit-btn',
               method: :get %>
       <% end %>
-      <% if log.music_art_url.present? %>
+      <% if @emotion_log.music_art_url.present? %>
   <div class="music-art-wrapper">
-    <%= image_tag log.music_art_url, alt: "ジャケット画像", class: "music-art-img" %>
+    <%= image_tag @emotion_log.music_art_url, alt: "ジャケット画像", class: "music-art-img mobile-music-art-img" %>
   </div>
 <% end %>
 
@@ -48,8 +48,8 @@
 
   <!-- ==== コメントセクション ==== -->
   <div class="d-flex justify-content-center">
-    <div class="card mb-3 w-100 mobile-comment-card" style="max-width: 700px;">
-      <div class="card-header py-1 px-2 mobile-comment-header" style="font-size:0.9rem;">
+    <div class="card mb-3 w-100 mobile-comment-card">
+      <div class="card-header py-1 px-2 mobile-comment-header">
         <strong id="comment-count">コメント (<%= @emotion_log.comments_count %>)</strong>
       </div>
       <div class="card-body py-2 px-2 mobile-comment-body">
@@ -68,12 +68,11 @@
                   data: { comment_form_target: "textarea" } %>
             <%= f.submit "送信",
                   class: "btn btn-primary btn-xs mt-1 mobile-comment-submit",
-                  data: { comment_form_target: "submit" },
-                  style: "font-size: 0.9rem; padding: 2px 10px;" %>
+                  data: { comment_form_target: "submit" } %>
           <% end %>
         </turbo-frame>
         <turbo-frame id="comments">
-          <div id="comments" data-comment-form-target="comments">
+          <div id="comments" data-comment_form_target="comments">
             <%= render @comments %>
             <div class="text-center mt-2">
               <%= paginate @comments %>
