@@ -1,4 +1,50 @@
+// ヘッダーインラインスタイル
 
+// ロゴ用
+.logo-main {
+  max-width: 400px;
+  width: 100%;
+}
+
+// キャッチコピー
+.catchcopy-title {
+  font-size: 3rem;
+  font-weight: bold;
+  color: rgb(215, 205, 216);
+  text-shadow: 0 0 10px #1ee4da;
+}
+
+// メニューラベル
+.menu-label {
+  font-weight: bold;
+  font-size: 1rem;
+  margin-bottom: 0.3rem;
+  text-align: center;
+}
+.menu-label-emotion { color: magenta; }
+.menu-label-tag     { color: #00aaff; }
+
+// メインメニュー間のgap
+.main-menu-gapped {
+  gap: 1.2rem;
+}
+
+// tagサジェストul絶対位置
+.tag-suggestions-absolute {
+  position: absolute;
+  bottom: calc(100% - 2px);
+  left: 0;
+  width: 100%;
+  z-index: 9999;
+  margin: 0;
+}
+
+
+
+
+
+
+// ローディング
 .neon-character-spinbox {
   display: inline-block;
   width: 48px; height: 48px;
