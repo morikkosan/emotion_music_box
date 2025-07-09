@@ -75,6 +75,20 @@ function setupAccountDeleteBtn() {
 }
 
 // ==========================
+// EMOTIONセレクト自動送信
+// ==========================
+function handleAutoSubmitEmotion(e) {
+  e.target.form.submit();
+}
+
+function setupAutoSubmitEmotion() {
+  document.querySelectorAll('.auto-submit-emotion').forEach(select => {
+    select.removeEventListener('change', handleAutoSubmitEmotion);
+    select.addEventListener('change', handleAutoSubmitEmotion);
+  });
+}
+
+// ==========================
 // まとめて初期化
 // ==========================
 function setupInlineHandlers() {
