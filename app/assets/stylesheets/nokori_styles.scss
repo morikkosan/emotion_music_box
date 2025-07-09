@@ -1,0 +1,31 @@
+.max-w-600 {
+  max-width: 600px;
+}
+.scroll-y-150 {
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+// app/assets/stylesheets/application.scss など
+.scroll-y-150 {
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.music-player-h-80 { height: 80px !important; }
+
+
+.playlist-modal-visible {
+  display: block !important;
+}
+
+.is-hidden { display: none !important; }
+
+
+.max-w-600 {
+  max-width: 600px !important;
+}
+
+.z-1080 {
+  z-index: 1080 !important;
+}

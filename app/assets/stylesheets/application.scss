@@ -61,3 +61,69 @@
   object-fit: cover;
 }
 
+
+// スーパーサーチmobile-super-search-
+
+
+/* モーダル全体 */
+.mobile-super-search-modal-content {
+  background: #141824;
+  color: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 20px #0006;
+}
+
+/* フォームラベル・セレクト・インプット */
+.mobile-form-label {
+  font-size: 1.06em;
+  font-weight: 600;
+  margin-bottom: 0.5em;
+  color: #c6f6fa;
+}
+.mobile-form-select,
+.mobile-form-control {
+  border-radius: 8px;
+  background: #202d36;
+  color: #fff;
+  border: 1px solid #364b6b;
+  padding: 0.55em 0.9em;
+  font-size: 1em;
+}
+
+/* オートコンプリートサジェスト用 */
+.mobile-form-autocomplete {
+  position: relative;
+}
+.mobile-tag-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  z-index: 9999;
+  margin: 0;
+  border-radius: 0 0 12px 12px;
+  background: #232b3a;
+  border: 1px solid #2b3d4d;
+  box-shadow: 0 2px 16px #0014;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+
+
+
+.mobile-super-search-btn:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 24px #ae5cff80;
+}
+
+.mobile-reset-btn {
+  min-width: 92px;
+}
+
+@media (max-width: 520px) {
+  .mobile-super-search-modal-content {
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
