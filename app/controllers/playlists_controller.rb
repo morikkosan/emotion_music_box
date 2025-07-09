@@ -1,3 +1,5 @@
+require 'securerandom'
+
 class PlaylistsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_playlist, only: [:show, :destroy]
@@ -44,15 +46,7 @@ class PlaylistsController < ApplicationController
                 playlists: current_user.playlists.includes(playlist_items: :emotion_log)
               }
             )
-
-            # ✅ Turbo Stream経由でSweetAlert実行
-            trigger_flash = render_to_string(inline: <<~ERB)
-              <turbo-stream action="append" target="modal-container">
-                <template>
-                  <script>showFlashSwal();</script>
-                </template>
-              </turbo-stream>
-            ERB
+            trigger_flash = render_trigger_flash
 
             render turbo_stream: [
               close_modal,
@@ -105,7 +99,27 @@ class PlaylistsController < ApplicationController
 
   def destroy
     @playlist.destroy
-    redirect_to bookmarks_emotion_logs_path, notice: "プレイリストを削除しました。"
+    flash.now[:notice] = "プレイリストを削除しました。"
+
+    respond_to do |format|
+      format.turbo_stream do
+        show_flash = turbo_stream.append("flash", partial: "shared/flash_container", locals: { flash: flash })
+        replace_sidebar = turbo_stream.replace(
+          "playlist-sidebar",
+          partial: "emotion_logs/playlist_sidebar",
+          locals: {
+            playlists: current_user.playlists.includes(playlist_items: :emotion_log)
+          }
+        )
+        trigger_flash = render_trigger_flash
+
+        render turbo_stream: [show_flash, replace_sidebar, trigger_flash]
+      end
+
+      format.html do
+        redirect_to bookmarks_emotion_logs_path, notice: "プレイリストを削除しました。"
+      end
+    end
   end
 
   private
@@ -121,4 +135,19 @@ class PlaylistsController < ApplicationController
   rescue ActiveRecord::RecordNotFound
     redirect_to playlists_path, alert: "指定のプレイリストが見つかりません。"
   end
+
+  def render_trigger_flash
+  render_to_string(inline: <<~ERB)
+    <turbo-stream action="remove" target="flash-container"></turbo-stream>
+    <turbo-stream action="append" target="flash">
+      <template>
+        <div id="flash-container" data-flash-notice="#{j flash[:notice]}" data-flash-alert="#{j flash[:alert]}"></div>
+      </template>
+    </turbo-stream>
+  ERB
+end
+
+
+
+
 end

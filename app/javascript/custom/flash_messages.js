@@ -1,9 +1,17 @@
+window._flashShownOnce = window._flashShownOnce || null;
+
 (function () {
-  function showFlashSwal() {
+  function showFlashSwal(source = "直接呼び出し") {
+    console.log(`📣 [${source}] showFlashSwal 実行`);
+
     const flashContainer = document.querySelector("#flash-container");
+    console.log("🔎 flashContainer:", flashContainer);
 
     const flashNotice = flashContainer?.dataset.flashNotice || document.body.dataset.flashNotice;
-    const flashAlert  = flashContainer?.dataset.flashAlert  || document.body.dataset.flashAlert;
+    const flashAlert = flashContainer?.dataset.flashAlert || document.body.dataset.flashAlert;
+
+    console.log("🔥 Flash Notice:", flashNotice);
+    console.log("🔥 Flash Alert:", flashAlert);
 
     if (!window.Swal) {
       console.warn("⚠️ SweetAlert2 (Swal) が読み込まれていません");
@@ -12,8 +20,9 @@
 
     if (flashAlert === "すでにログイン済みです") return;
 
-    // 🔴 エラーは無条件で表示
+    // 🔴 エラー（無条件で表示）
     if (flashAlert) {
+      console.log("❌ アラート表示トリガー");
       Swal.fire({
         title: "エラー ❌",
         text: flashAlert,
@@ -28,10 +37,19 @@
       return;
     }
 
-    // 🟢 通知は同じ内容を連続表示しない
+    // 🟢 通知（同一内容なら1回だけ）
     if (flashNotice) {
       const key = `flashNotice:${flashNotice}`;
-      if (!sessionStorage.getItem(key)) {
+      console.log("🟢 key:", key);
+      console.log("🧠 _flashShownOnce:", window._flashShownOnce);
+
+      if (window._flashShownOnce && window._flashShownOnce !== key) {
+        console.log("🧹 前回の記録クリア");
+        window._flashShownOnce = null;
+      }
+
+      if (window._flashShownOnce !== key) {
+        console.log("✅ SweetAlert 成功表示開始");
         Swal.fire({
           title: "成功 🎉",
           text: flashNotice,
@@ -43,47 +61,50 @@
           timerProgressBar: true,
           customClass: { popup: "cyber-popup" }
         });
-        sessionStorage.setItem(key, "shown");
+        window._flashShownOnce = key;
+      } else {
+        console.log("🚫 同一メッセージのためスキップ");
       }
+
       document.body.dataset.flashNotice = "";
       flashContainer?.remove();
     }
   }
 
-  // ✅ グローバルにも公開
   window.showFlashSwal = showFlashSwal;
 
-  // 初期表示時、Turboナビゲーション時
-  document.addEventListener("DOMContentLoaded", showFlashSwal);
-  document.addEventListener("turbo:load", showFlashSwal);
+  document.addEventListener("DOMContentLoaded", () => showFlashSwal("DOMContentLoaded"));
+  document.addEventListener("turbo:load", () => showFlashSwal("turbo:load"));
 
-  // DOM追加時にも反応（AJAXなど）
+  // ✅ MutationObserver 強化版
   const observer = new MutationObserver((mutationsList) => {
     for (const mutation of mutationsList) {
       for (const node of mutation.addedNodes) {
         if (node.id === "flash-container") {
-          showFlashSwal();
-          return;
-        }
+  console.log("👀 MutationObserver: flash-container 追加検出");
+  window._flashShownOnce = null; // ← ここで毎回リセット！
+  setTimeout(() => {
+    showFlashSwal("MutationObserver → setTimeout");
+  }, 0);
+  return;
+}
+
       }
     }
   });
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
+  observer.observe(document.body, { childList: true, subtree: true });
 
-  // Turbo Stream で flash-container が差し込まれた場合にも反応！
   document.addEventListener("turbo:before-stream-render", (event) => {
     const template = event.target;
     if (template.innerHTML.includes('id="flash-container"')) {
+      console.log("📦 turbo:before-stream-render: flash-container が stream に含まれてる");
       setTimeout(() => {
-        showFlashSwal();
+        showFlashSwal("turbo:before-stream-render → setTimeout");
       }, 0);
     }
   });
 
-  // ログアウトのSwal対応
+  // ✅ logout確認用
   document.addEventListener("DOMContentLoaded", function () {
     const logoutLink = document.getElementById("logout-link");
     if (!logoutLink) return;
