@@ -40,7 +40,7 @@ class PlaylistsController < ApplicationController
             close_modal = turbo_stream.update("playlist-modal-container", "")
             show_flash = turbo_stream.append("flash", partial: "shared/flash_container", locals: { flash: flash })
             replace_sidebar = turbo_stream.replace(
-              "playlist-sidebar",
+              "super-search-panel",
               partial: "emotion_logs/playlist_sidebar",
               locals: {
                 playlists: current_user.playlists.includes(playlist_items: :emotion_log)
@@ -98,29 +98,42 @@ class PlaylistsController < ApplicationController
   end
 
   def destroy
-    @playlist.destroy
-    flash.now[:notice] = "プレイリストを削除しました。"
+  @playlist.destroy
 
-    respond_to do |format|
-      format.turbo_stream do
-        show_flash = turbo_stream.append("flash", partial: "shared/flash_container", locals: { flash: flash })
-        replace_sidebar = turbo_stream.replace(
-          "playlist-sidebar",
-          partial: "emotion_logs/playlist_sidebar",
-          locals: {
-            playlists: current_user.playlists.includes(playlist_items: :emotion_log)
-          }
-        )
-        trigger_flash = render_trigger_flash
+  # ✅ ここだけ変更！リダイレクトがあるので flash[:notice] にする
+  flash[:notice] = "プレイリストを削除しました。"
 
-        render turbo_stream: [show_flash, replace_sidebar, trigger_flash]
-      end
+  respond_to do |format|
+    format.turbo_stream do
+      show_flash = turbo_stream.append("flash", partial: "shared/flash_container", locals: { flash: flash })
+      trigger_flash = render_trigger_flash
 
-      format.html do
-        redirect_to bookmarks_emotion_logs_path, notice: "プレイリストを削除しました。"
-      end
+      redirect_script = render_to_string(inline: <<~ERB)
+        <turbo-stream action="append" target="flash">
+          <template>
+            <script>
+              setTimeout(() => {
+                window.location.href = "#{bookmarks_emotion_logs_path}";
+              }, 1200);
+            </script>
+          </template>
+        </turbo-stream>
+      ERB
+
+      render turbo_stream: [
+        show_flash,
+        trigger_flash,
+        redirect_script
+      ]
+    end
+
+    format.html do
+      redirect_to bookmarks_emotion_logs_path, notice: "プレイリストを削除しました。"
     end
   end
+end
+
+
 
   private
 
