@@ -284,3 +284,58 @@
     margin: auto;
   }
 }
+
+
+// mobileshowコメントなど
+
+// モバイル投稿リスト（mobile_list_card用）
+.mobile-list-card {
+  border-radius: 12px;
+}
+
+// 日付
+.mobile-list-date {
+  color: #ccc;
+  font-size: 0.75rem;
+}
+
+// タグ
+.mobile-list-tag {
+  font-size: 0.65rem;
+  padding: 0.15em 0.4em;
+  margin-right: 0.2em;
+}
+
+// 感情
+.mobile-list-emotion {
+  font-weight: bold;
+}
+
+// コメント・一言
+.mobile-list-desc {
+  font-size: 0.85rem;
+  color: #ddd;
+}
+
+// コメントアイコン
+.mobile-list-comment-icon {
+  width: 20px;
+  height: 20px;
+}
+
+// コメント数
+.mobile-list-comment-count {
+  font-size: 0.85rem;
+}
+
+// 削除ボタン
+.mobile-list-delete-btn {
+  font-size: 0.75rem;
+}
+
+
+// コメントスタイル
+.comment-date {
+  color: #666;
+  font-size: 0.89em;
+}
