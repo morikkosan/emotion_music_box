@@ -1,11 +1,14 @@
-<% actual_flash = local_assigns[:flash] || flash %>
+<turbo-stream action="remove" target="flash-container"></turbo-stream>
 
-<!-- 🔽 デバッグ出力 -->
-<div>
-  🔍 notice: "<%= actual_flash[:notice].inspect %>"
-</div>
-
-<div id="flash-container"
-     data-flash-notice="<%= actual_flash[:notice] %>"
-     data-flash-alert="<%= actual_flash[:alert] %>">
-</div>
+<turbo-stream action="append" target="modal-container">
+  <template>
+    <% actual_flash = local_assigns[:flash] || flash %>
+    <% if actual_flash[:notice].present? || actual_flash[:alert].present? %>
+      <div id="flash-container"
+           data-flash-notice="<%= j actual_flash[:notice] %>"
+           data-flash-alert="<%= j actual_flash[:alert] %>">
+      </div>
+      <script>window._flashShownOnce = null;</script>
+    <% end %>
+  </template>
+</turbo-stream>
