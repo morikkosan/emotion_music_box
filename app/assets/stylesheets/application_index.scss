@@ -185,6 +185,22 @@
 
 // application.html.erbのスタイル
 /* ────────── ボトムプレーヤーの上段行 ────────── */
+
+.bottom-player {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #222;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 8px 16px;
+  z-index: 1000;
+}
+
+
 .bottom-player-top-row {
   display: flex;
   justify-content: space-between;
@@ -275,6 +291,164 @@
   align-items: center;
 }
 
+#bottom-player {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: #222;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 8px 16px;
+  z-index: 1000;
+}
+
+.bottom-player-top-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.waveform-canvas {
+  margin-right: 0px;
+  display: block;
+}
+.bottom-player-flex-gap {
+  flex-basis: 16px;
+}
+.bottom-player-next-btn-area {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
+}
+.next-track-btn {
+  font-size: 24px;
+  padding: 0 8px;
+  border: none;
+  background: none;
+  width: 48px;
+  height: 44px;
+}
+
+.bottom-player-controls {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.play-pause-btn {
+  font-size: 24px;
+  padding: 0;
+  border: none;
+  background: none;
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+.play-btn-spinner {
+  display: none;
+  position: absolute;
+  left: 0; top: 0;
+  width: 40px; height: 40px;
+}
+.track-info-box {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  padding-left: 12px;
+}
+.loading-spinner-inline {
+  display: none;
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.track-title {
+  font-weight: 600;
+}
+.neon-character-spinbox {
+  vertical-align: middle;
+  margin-left: 8px;
+  display: inline-block;
+}
+.track-artist {
+  color: #bbb;
+  margin-left: 8px;
+}
+.bottom-player-seekbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.current-time,
+.duration {
+  min-width: 40px;
+}
+.seek-bar {
+  flex: 1 1 auto;
+}
+.bottom-player-extra-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 16px;
+}
+.repeat-btn {
+  font-size: 20px;
+  color: #fff;
+}
+.volume-icon {
+  color: #fff;
+}
+.volume-bar {
+  width: 100px;
+  margin-left: 4px;
+}
+
+/* ▼ ネオンキャラのサンプルスタイル(適宜調整) */
+.neon-body {
+  display: inline-block;
+  position: relative;
+  width: 28px;
+  height: 28px;
+}
+.neon-eye {
+  position: absolute;
+  width: 5px; height: 5px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #00fff7, 0 0 2px #fff;
+  top: 8px;
+}
+.neon-eye-left  { left: 5px; }
+.neon-eye-right { right: 5px; }
+.neon-arm {
+  position: absolute;
+  width: 12px; height: 3px;
+  background: #0ff;
+  border-radius: 2px;
+  top: 16px;
+}
+.neon-arm-left  { left: 0;  transform: rotate(-25deg);}
+.neon-arm-right { right: 0; transform: rotate(25deg);}
+.neon-leg {
+  position: absolute;
+  width: 4px; height: 10px;
+  background: #0ff;
+  border-radius: 2px;
+  bottom: 0;
+}
+.neon-leg-left  { left: 8px;  transform: rotate(-10deg);}
+.neon-leg-right { right: 8px; transform: rotate(10deg);}
+
+
+
+
+
+
+
+
 
 /* 色違いの切替などは既存の .toggle-btn.active 等が効いていればOK */
 
@@ -282,6 +456,7 @@
 
 // indexのスタイルタグ
 // チェックボックスラベル
+// ===== チェックボックスラベル（豪華ver.） =====
 .bookmark-merge-toggle-label {
   background: linear-gradient(135deg, #009688, #4db6ac);
   background-size: 200% 200%;
@@ -299,6 +474,7 @@
   user-select: none;
   transition: all 0.3s ease;
   animation: bookmarkNeonGlow 6s ease-in-out infinite;
+  margin: 0; // ←追加
 }
 .bookmark-merge-toggle-label:hover {
   box-shadow: 0 0 12px rgba(0, 150, 136, 0.8), 0 0 18px rgba(77, 182, 172, 0.7);
@@ -310,7 +486,7 @@
   margin-right: 0.5em;
 }
 
-// プレイリスト作成ボタン
+// ===== プレイリスト作成ボタン =====
 .bookmark-playlist-create-btn {
   background: linear-gradient(135deg, #ff7043, #f06292);
   background-size: 200% 200%;
@@ -332,26 +508,76 @@
   transform: scale(1.06);
 }
 
-// 共通アニメーション
+// ===== 共通アニメーション =====
 @keyframes bookmarkNeonGlow {
   0%   { background-position: left center; }
   50%  { background-position: right center; }
   100% { background-position: left center; }
 }
 
-// チェックボックスサイズなど
-.playlist-check--custom-size {
+// ===== パネル&ツールバー =====
+.bookmark-panel {
+  margin: 1.5rem 0 2rem 1rem;
+}
+.bookmark-toolbar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8rem;
+}
+
+// ===== プレイリスト作成フォーム =====
+.bookmark-create-form {
+  margin: 0;
+}
+
+// ===== チェックボックスサイズ（カスタム） =====
+// ※古い.playlist-check--custom-sizeは使わず、下の新しい方のみ残す！
+.playlist-check-accent {
   width: 2.2rem;
   height: 2.2rem;
   accent-color: #e800ff;
   box-shadow: 0 0 8px #fff6, 0 0 3px #e800ff;
 }
 
-// ツールバー（上部ボタンのまとめ）
-.bookmark-toolbar {
-  margin: 1.5rem 0 2rem 1rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8rem;
+// ===== コメント数まわり =====
+.comment-count-box {
+  gap: 4px;
 }
+.comment-count-number {
+  font-size: 1rem;
+}
+.comment-icon {
+  width: 48px;
+  height: 48px;
+  display: inline-block;
+}
+
+// ===== ジャケット画像・再生アイコン =====
+.music-art-box {
+  width: 80px;
+  position: relative;
+}
+.music-art-img {
+  width: 80px;
+  height: auto;
+  display: block;
+}
+.play-overlay-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  color: rgba(255,255,255,0.9);
+  cursor: pointer;
+}
+
+// ===== ログ本文 =====
+.log-description {
+  color: white;
+  font-size: 1.1rem;
+}
+
+
+// application.html.erbのインラインスタイル移植
