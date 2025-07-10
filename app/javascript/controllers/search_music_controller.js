@@ -6,25 +6,18 @@ import * as bootstrap from "bootstrap";
 export default class extends Controller {
   static targets = ["query", "results", "audio", "track", "loading", "section"];
 
-  /* =============================
-   * ライフサイクル
-   * ===========================*/
   connect () {
-    //console.log("🎧 search_music_controller connected");
-    this.currentPage   = 1;
+    this.currentPage = 1;
     this.searchResults = [];
   }
 
-  /* =============================
-   * 検索処理
-   * ===========================*/
   async search () {
     const q = this.queryTarget.value.trim();
     if (!q) { alert("検索ワードを入力してください"); return; }
 
     this.loadingTarget.style.display = "";
     try {
-      const res  = await fetch(`/soundcloud/search?q=${encodeURIComponent(q)}`, {
+      const res = await fetch(`/soundcloud/search?q=${encodeURIComponent(q)}`, {
         headers: { Accept: "application/json" },
         credentials: "same-origin"
       });
@@ -32,7 +25,7 @@ export default class extends Controller {
       if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
 
       this.searchResults = json;
-      this.currentPage   = 1;
+      this.currentPage = 1;
       this.renderPage();
     } catch (e) {
       console.error("検索エラー:", e);
@@ -42,9 +35,6 @@ export default class extends Controller {
     }
   }
 
-  /* =============================
-   * 検索結果ページ描画
-   * ===========================*/
   renderPage () {
     this.resultsTarget.innerHTML = "";
     if (this.searchResults.length === 0) {
@@ -53,39 +43,69 @@ export default class extends Controller {
     }
 
     const perPage = 10;
-    const start   = (this.currentPage - 1) * perPage;
-    const page    = this.searchResults.slice(start, start + perPage);
+    const start = (this.currentPage - 1) * perPage;
+    const page = this.searchResults.slice(start, start + perPage);
 
     page.forEach(track => {
       const div = document.createElement("div");
       div.classList.add("track-result", "mb-3");
-      div.innerHTML = `
-        <div class="d-flex align-items-center">
-          <img src="${track.artwork_url || "https://placehold.jp/100x100.png"}" class="img-thumbnail me-3" style="width:100px;height:100px;">
-          <div>
-            <p><strong>${track.title}</strong><br>${track.user.username}</p>
-            <a href="${track.permalink_url}" class="btn btn-info btn-sm"
-               style="min-width:100px;font-size:13px;padding:0.25em 0.7em;" target="_blank">
-              SoundCloudで再生
-            </a>
-            <button type="button"
-              class="btn btn-success btn-lg"
-              style="font-size: 1.1rem; min-width:140px; margin-left: 8px;"
-              data-action="search-music#select"
-              data-audio="${track.permalink_url}"
-              data-name="${track.title}"
-              data-artist="${track.user.username}"
-              data-track-id="${track.id}">
-              選択or視聴
-            </button>
-          </div>
-        </div>
-        <div class="player-slot mt-2"></div><hr/>`;
+
+      const wrapper = document.createElement("div");
+      wrapper.classList.add("d-flex", "align-items-center");
+
+      const img = document.createElement("img");
+      img.src = track.artwork_url || "https://placehold.jp/100x100.png";
+      img.classList.add("img-thumbnail", "me-3");
+      img.style.width = "100px";
+      img.style.height = "100px";
+
+      const info = document.createElement("div");
+      const p = document.createElement("p");
+      p.innerHTML = `<strong>${track.title}</strong><br>${track.user.username}`;
+
+      const a = document.createElement("a");
+      a.href = track.permalink_url;
+      a.className = "btn btn-info btn-sm";
+      a.textContent = "SoundCloudで再生";
+      a.target = "_blank";
+      a.style.minWidth = "100px";
+      a.style.fontSize = "13px";
+      a.style.padding = "0.25em 0.7em";
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn btn-success btn-lg";
+      btn.textContent = "選択or視聴";
+      btn.dataset.action = "search-music#select";
+      btn.dataset.audio = track.permalink_url;
+      btn.dataset.name = track.title;
+      btn.dataset.artist = track.user.username;
+      btn.dataset.trackId = track.id;
+      btn.style.fontSize = "1.1rem";
+      btn.style.minWidth = "140px";
+      btn.style.marginLeft = "8px";
+
+      info.appendChild(p);
+      info.appendChild(a);
+      info.appendChild(btn);
+
+      wrapper.appendChild(img);
+      wrapper.appendChild(info);
+
+      const playerSlot = document.createElement("div");
+      playerSlot.className = "player-slot mt-2";
+
+      const hr = document.createElement("hr");
+
+      div.appendChild(wrapper);
+      div.appendChild(playerSlot);
+      div.appendChild(hr);
+
       this.resultsTarget.appendChild(div);
     });
 
     const total = Math.ceil(this.searchResults.length / perPage);
-    const nav   = document.createElement("div");
+    const nav = document.createElement("div");
     nav.classList.add("pagination-controls", "my-3");
 
     if (this.currentPage > 1) {
@@ -96,9 +116,11 @@ export default class extends Controller {
       prev.dataset.action = "search-music#prevPage";
       nav.appendChild(prev);
     }
+
     const info = document.createElement("span");
     info.textContent = `ページ ${this.currentPage} / ${total}`;
     nav.appendChild(info);
+
     if (this.currentPage < total) {
       const next = document.createElement("button");
       next.type = "button";
@@ -107,50 +129,57 @@ export default class extends Controller {
       next.dataset.action = "search-music#nextPage";
       nav.appendChild(next);
     }
+
     this.resultsTarget.appendChild(nav);
   }
-  prevPage () { if (this.currentPage > 1) { this.currentPage--; this.renderPage(); } }
-  nextPage () { if (this.currentPage * 10 < this.searchResults.length) { this.currentPage++; this.renderPage(); } }
 
-  /* =============================
-   * 曲選択 → プレイヤー表示＋下部プレーヤー再生
-   * ===========================*/
+  prevPage () {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.renderPage();
+    }
+  }
+
+  nextPage () {
+    if (this.currentPage * 10 < this.searchResults.length) {
+      this.currentPage++;
+      this.renderPage();
+    }
+  }
+
   select(e) {
     const { audio, name, artist } = e.target.dataset;
-    this.audioTarget.value  = audio;
-    this.trackTarget.value  = `${name} - ${artist}`;
+    this.audioTarget.value = audio;
+    this.trackTarget.value = `${name} - ${artist}`;
     document.querySelectorAll(".player-slot").forEach(s => s.innerHTML = "");
 
-    // 🎵 カスタムイベントをwindowに投げる
     window.dispatchEvent(new CustomEvent("play-from-search", {
       detail: {
-        trackId: audio,   // 一意ならaudio（URL）で充分
+        trackId: audio,
         playUrl: audio
       }
     }));
 
-    // 必要なら「この曲にする」ボタンだけ出す
     const slot = e.target.closest(".track-result").querySelector(".player-slot");
-    slot.innerHTML = `<button type="button" class="btn btn-primary mt-2 btn-lg" style="min-width:120px;" data-action="search-music#confirm">この曲にする</button>`;
+    const confirmBtn = document.createElement("button");
+    confirmBtn.type = "button";
+    confirmBtn.className = "btn btn-primary mt-2 btn-lg";
+    confirmBtn.textContent = "この曲にする";
+    confirmBtn.dataset.action = "search-music#confirm";
+    confirmBtn.style.minWidth = "120px";
+
+    slot.appendChild(confirmBtn);
     slot.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
-  /* =============================
-   * 検索フォーム → 記録フォーム
-   * ===========================*/
   async confirm () {
     await this.fetchAndSwap(`/emotion_logs/form_switch.turbo_stream?music_url=${encodeURIComponent(this.audioTarget.value)}&track_name=${encodeURIComponent(this.trackTarget.value)}`);
   }
 
-  /* =============================
-   * 記録フォーム → 検索フォームへ戻る（モーダル作り直し）
-   * ===========================*/
   async backToSearch () {
-    // 旧モーダルを閉じる
     const modalEl = document.getElementById("modal-container");
     if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).hide();
 
-    // 新しい検索フォーム付きモーダルを取得
     const res = await fetch("/emotion_logs/new.turbo_stream", {
       headers: { Accept: "text/vnd.turbo-stream.html" },
       credentials: "same-origin"
@@ -168,9 +197,6 @@ export default class extends Controller {
     }
   }
 
-  /* =============================
-   * Turbo Stream 取得＆モーダル更新（confirm 用）
-   * ===========================*/
   async fetchAndSwap(url) {
     try {
       const res = await fetch(url, {
