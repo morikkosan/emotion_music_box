@@ -5,24 +5,25 @@ window._flashShownOnce = window._flashShownOnce || null;
     console.log(`📣 [${source}] showFlashSwal 実行`);
 
     const flashContainer = document.querySelector("#flash-container");
-    console.log("🔎 flashContainer:", flashContainer);
-
     const flashNotice = flashContainer?.dataset.flashNotice || document.body.dataset.flashNotice;
-    const flashAlert = flashContainer?.dataset.flashAlert || document.body.dataset.flashAlert;
+    const flashAlert  = flashContainer?.dataset.flashAlert  || document.body.dataset.flashAlert;
 
-    console.log("🔥 Flash Notice:", flashNotice);
-    console.log("🔥 Flash Alert:", flashAlert);
+    // --- 既に出したものなら絶対スキップ ---
+    const key = flashNotice ? `flashNotice:${flashNotice}` : flashAlert ? `flashAlert:${flashAlert}` : null;
+    if (window._flashShownOnce === key) {
+      console.log("🚫 [Guard] 二重発火防止：同一内容はスキップ");
+      return;
+    }
 
     if (!window.Swal) {
       console.warn("⚠️ SweetAlert2 (Swal) が読み込まれていません");
       return;
     }
 
-    if (flashAlert === "すでにログイン済みです") return;
-
-    // 🔴 エラー（無条件で表示）
-    if (flashAlert) {
+    // --- エラー（無条件で表示） ---
+    if (flashAlert && flashAlert !== "すでにログイン済みです") {
       console.log("❌ アラート表示トリガー");
+      window._flashShownOnce = key;
       Swal.fire({
         title: "エラー ❌",
         text: flashAlert,
@@ -37,35 +38,21 @@ window._flashShownOnce = window._flashShownOnce || null;
       return;
     }
 
-    // 🟢 通知（同一内容なら1回だけ）
+    // --- 通知（同一内容なら1回だけ） ---
     if (flashNotice) {
-      const key = `flashNotice:${flashNotice}`;
-      console.log("🟢 key:", key);
-      console.log("🧠 _flashShownOnce:", window._flashShownOnce);
-
-      if (window._flashShownOnce && window._flashShownOnce !== key) {
-        console.log("🧹 前回の記録クリア");
-        window._flashShownOnce = null;
-      }
-
-      if (window._flashShownOnce !== key) {
-        console.log("✅ SweetAlert 成功表示開始");
-        Swal.fire({
-          title: "成功 🎉",
-          text: flashNotice,
-          icon: "success",
-          confirmButtonText: "OK",
-          background: "linear-gradient(135deg, #00b3ff, #ff0088)",
-          color: "#fff",
-          timer: 3000,
-          timerProgressBar: true,
-          customClass: { popup: "cyber-popup" }
-        });
-        window._flashShownOnce = key;
-      } else {
-        console.log("🚫 同一メッセージのためスキップ");
-      }
-
+      console.log("✅ SweetAlert 成功表示開始");
+      window._flashShownOnce = key;
+      Swal.fire({
+        title: "成功 🎉",
+        text: flashNotice,
+        icon: "success",
+        confirmButtonText: "OK",
+        background: "linear-gradient(135deg, #00b3ff, #ff0088)",
+        color: "#fff",
+        timer: 3000,
+        timerProgressBar: true,
+        customClass: { popup: "cyber-popup" }
+      });
       document.body.dataset.flashNotice = "";
       flashContainer?.remove();
     }
@@ -73,38 +60,28 @@ window._flashShownOnce = window._flashShownOnce || null;
 
   window.showFlashSwal = showFlashSwal;
 
-  document.addEventListener("DOMContentLoaded", () => showFlashSwal("DOMContentLoaded"));
-  document.addEventListener("turbo:load", () => showFlashSwal("turbo:load"));
-
-  // ✅ MutationObserver 強化版
+  // ✅ MutationObserverだけで呼び出し！
   const observer = new MutationObserver((mutationsList) => {
     for (const mutation of mutationsList) {
       for (const node of mutation.addedNodes) {
         if (node.id === "flash-container") {
-  console.log("👀 MutationObserver: flash-container 追加検出");
-  window._flashShownOnce = null; // ← ここで毎回リセット！
-  setTimeout(() => {
-    showFlashSwal("MutationObserver → setTimeout");
-  }, 0);
-  return;
-}
-
+          console.log("👀 MutationObserver: flash-container 追加検出");
+          setTimeout(() => {
+            showFlashSwal("MutationObserver → setTimeout");
+          }, 0);
+          return;
+        }
       }
     }
   });
   observer.observe(document.body, { childList: true, subtree: true });
 
-  document.addEventListener("turbo:before-stream-render", (event) => {
-    const template = event.target;
-    if (template.innerHTML.includes('id="flash-container"')) {
-      console.log("📦 turbo:before-stream-render: flash-container が stream に含まれてる");
-      setTimeout(() => {
-        showFlashSwal("turbo:before-stream-render → setTimeout");
-      }, 0);
-    }
-  });
+  // --- 他のイベントは全部コメントアウト ---
+  // document.addEventListener("DOMContentLoaded", () => showFlashSwal("DOMContentLoaded"));
+  // document.addEventListener("turbo:load", () => showFlashSwal("turbo:load"));
+  // document.addEventListener("turbo:before-stream-render", ...);
 
-  // ✅ logout確認用
+  // ✅ logout用イベントだけ残す
   document.addEventListener("DOMContentLoaded", function () {
     const logoutLink = document.getElementById("logout-link");
     if (!logoutLink) return;
@@ -156,3 +133,15 @@ window._flashShownOnce = window._flashShownOnce || null;
     });
   });
 })();
+
+document.addEventListener('hidden.bs.modal', function (event) {
+  // cyber-popupモーダルが閉じられた時だけガード解除
+  if (
+    event.target &&
+    event.target.classList &&
+    event.target.classList.contains('cyber-popup')
+  ) {
+    window._flashShownOnce = null;
+    console.log('🔄 [Guard] モーダル閉じでリセット');
+  }
+});
