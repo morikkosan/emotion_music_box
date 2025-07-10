@@ -1,0 +1,111 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Baloo+2:wght@600&family=Montserrat:wght@600&family=Orbitron:wght@700&family=Kosugi+Maru&family=Zen+Maru+Gothic:wght@700&display=swap');
+
+.cyber-popup {
+  background: linear-gradient(135deg, #8653e5 10%, #443185 60%, #d6a0e1 100%);
+  border: 2px solid #dcb8ff;
+  border-radius: 1.3rem;
+  box-shadow: 0 0 13px #b99ada55, 0 0 24px #7fd2ec33, 0 2px 16px #67408316 inset;
+  color: #ede5fb;
+  position: relative;
+  overflow: hidden;
+  padding-bottom: 0.7em;
+}
+
+.cyber-popup .modal-title {
+  font-size: 2.05rem;
+  font-family: 'Zen Maru Gothic', 'Kosugi Maru', 'Baloo 2', 'Quicksand', 'Montserrat', 'Orbitron', sans-serif;
+  color: #efe9ff;
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 5px #e8a0e0bb, 0 0 2px #a7f8fd77;
+  line-height: 1.11;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 0.12em;
+}
+
+.cyber-icon {
+  font-size: 2.6rem;
+  margin-right: 0.7rem;
+  vertical-align: middle;
+  filter: drop-shadow(0 0 7px #81f8f355);
+  animation: neon-flicker 1.2s infinite alternate;
+  line-height: 1;
+  opacity: 0.89;
+}
+
+.cyber-icon.success { color: #afe5d7; text-shadow: 0 0 6px #aee8cd44; }
+.cyber-icon.error   { color: #e0a2cb; text-shadow: 0 0 7px #e0a2cb33; }
+.cyber-icon.question{ color: #b6b9ff; text-shadow: 0 0 6px #b6b9ff33; }
+
+.cyber-title, .cyber-text {
+  font-family: 'Zen Maru Gothic', 'Kosugi Maru', 'Baloo 2', 'Quicksand', 'Montserrat', 'Orbitron', sans-serif;
+  color: #ede5fb;
+  text-shadow: 0 0 4px #b888c6bb, 0 0 1.2px #66c7ee77;
+  font-size: 1.11rem;
+  line-height: 1.28;
+  margin-top: 0.06em;
+  word-break: keep-all;
+}
+
+.cyber-popup .modal-body {
+  padding: 0.8em 2em 0.3em 2em;
+  display: flex;
+  align-items: center;
+  min-height: 2.0em;
+}
+
+.cyber-btn-ok, .cyber-btn-cancel {
+  font-family: 'Zen Maru Gothic', 'Kosugi Maru', 'Baloo 2', 'Quicksand', 'Montserrat', 'Orbitron', sans-serif;
+  font-weight: bold;
+  border-radius: 2em;
+  padding: 0.54em 1.5em;
+  font-size: 1.08rem;
+  border: none;
+  box-shadow: 0 1px 8px #bc80e488, 0 0 2px #bb7fff55 inset;
+  /* ← 少しブルー&ピンクで太く */
+  background: linear-gradient(90deg, #d072ec 0%, #90b1ff 100%);
+  /* ← もっと紫+ブルーをしっかり */
+  color: #e0d6ef;
+  /* ← 淡くならず背景色に近づける */
+  transition: filter .13s, box-shadow .23s;
+  margin-right: 0.38em;
+  margin-left: 0;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+  white-space: nowrap;
+  opacity: 0.99;
+}
+
+.cyber-popup .modal-footer {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 1em;
+  background: none;
+  border: none;
+  padding: 0.8em 2em 1.0em 2em;
+}
+
+.cyber-btn-ok:hover, .cyber-btn-cancel:hover {
+  filter: brightness(1.05) drop-shadow(0 0 4px #b79afdcc);
+  box-shadow: 0 0 10px #bc80e4cc, 0 0 10px #a8d8ffcc inset;
+}
+
+.cyber-btn-cancel {
+  background: linear-gradient(90deg, #fba4e3 0%, #9677e6 100%);
+  /* ピンク→濃いめパープル */
+  color: #fff8fe;
+  text-shadow: 0 0 5px #bb44ff88, 0 0 2px #fff;
+  margin-right: 0.46em;
+}
+
+
+@keyframes neon-flicker {
+  0%, 100% { opacity: 1; }
+  90%      { opacity: .85; }
+  93%      { opacity: .5; }
+  95%      { opacity: 1; }
+}

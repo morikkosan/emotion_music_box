@@ -16,14 +16,10 @@
         </div>
 
         <div class="dropdown-menu">
-          <%= link_to destroy_user_session_path(view: (mobile_device? ? 'mobile' : nil)),
-                      method: :delete,
-                      data: { turbo: false },
+          <%= link_to "#",
                       id: "logout-link",
                       class: "dropdown-item d-flex align-items-center text-danger" do %>
-            <%= image_tag "log_out.webp",
-                          class: "dropdown-icon me-2",
-                          alt: "" %>
+            <%= image_tag "log_out.webp", class: "dropdown-icon me-2", alt: "" %>
             ログアウト
           <% end %>
 
@@ -56,15 +52,14 @@
     <%= link_to emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)) do %>
       <%= image_tag "logo1.webp",
                     alt: "Emotion List Logo",
-                    class: "img-fluid neon-icon",
-                    style: "max-width:400px; width:100%;" %>
+                    class: "img-fluid neon-icon logo-main" %>
     <% end %>
   </div>
 
   <!-- キャッチコピー -->
   <% unless user_signed_in? %>
     <div class="text-center mt-5 mb-4">
-      <h1 style="font-size:3rem; font-weight:bold; color:rgb(215,205,216); text-shadow:0 0 10px,#1ee4da;">
+      <h1 class="catchcopy-title">
         音楽とストレスを支配する
       </h1>
     </div>
@@ -98,9 +93,7 @@
 
   <!-- メインメニュー -->
   <% if user_signed_in? %>
-    <div class="main-menu d-flex justify-content-center align-items-stretch flex-wrap mt-4"
-      style="gap: 1.2rem;">
-
+    <div class="main-menu d-flex justify-content-center align-items-stretch flex-wrap mt-4 main-menu-gapped">
       <!-- ホーム -->
       <div class="mypage-item">
         <%= link_to emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
@@ -112,45 +105,38 @@
 
       <!-- おすすめ🔥 -->
       <div class="mypage-item">
-  <%= link_to "#",
-              class: "mypage-icon-link go-to-recommended-btn" do %>
-    <%= image_tag 'hot.webp', alt: '', class: 'mypage-icon' %>
-    <div class='mypage-text'>おすすめ🔥</div>
+        <%= link_to "#",
+                    class: "mypage-icon-link go-to-recommended-btn" do %>
+          <%= image_tag 'hot.webp', alt: '', class: 'mypage-icon' %>
+          <div class='mypage-text'>おすすめ🔥</div>
+        <% end %>
+      </div>
+
+      <!-- EMOTION -->
+      <div class="mypage-item search-item wide">
+  <div class="menu-label menu-label-emotion">EMOTION</div>
+  <%= form_with url: emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
+                method: :get,
+                data: { turbo_frame: "logs_list" },
+                html: { class: "w-100 h-100 d-flex flex-column justify-content-center align-items-center" } do %>
+    <label for="emotion_select" class="visually-hidden">感情を選択</label>
+    <%= select_tag :emotion,
+                  options_for_select(
+                  [['選択しない',''], ['最高','最高'], ['気分良い','気分良い'],
+                      ['いつも通り','いつも通り'], ['イライラ','イライラ'],
+                      ['限界','限界']],
+                  selected: params[:emotion]
+                  ),
+                  class: 'form-control auto-submit-emotion',
+                  id: 'emotion_select' %>
+    <%= hidden_field_tag :genre, params[:genre] %>
   <% end %>
 </div>
 
 
-      <!-- EMOTION -->
-      <div class="mypage-item search-item wide">
-        <div style="color: magenta; font-weight: bold; font-size: 1rem; margin-bottom: 0.3rem; text-align: center;">
-          EMOTION
-        </div>
-        <%= form_with url: emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
-                      method: :get,
-                      data: { turbo_frame: "logs_list" },
-                      html: { class: "w-100 h-100 d-flex flex-column justify-content-center align-items-center" } do %>
-          <label for="emotion_select" class="visually-hidden">感情を選択</label>
-          <%= select_tag :emotion,
-                         options_for_select(
-                           [['選択しない',''], ['最高','最高'], ['気分良い','気分良い'],
-                            ['いつも通り','いつも通り'], ['イライラ','イライラ'],
-                            ['限界','限界']],
-                           selected: params[:emotion]
-                         ),
-                         class: 'form-control',
-                         id: 'emotion_select',
-                         onchange: 'this.form.submit()' %>
-          <%= hidden_field_tag :genre, params[:genre] %>
-        <% end %>
-      </div>
-
       <!-- TAGフォーム -->
-      <div class="mypage-item search-item wide"
-           data-controller="tag-autocomplete"
-           style="position: relative;">
-        <div style="color: #00aaff; font-weight: bold; font-size: 1rem; margin-bottom: 0.3rem; text-align: center;">
-          TAG
-        </div>
+      <div class="mypage-item search-item wide position-relative" data-controller="tag-autocomplete">
+        <div class="menu-label menu-label-tag">TAG</div>
         <%= form_with url: emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
                       method: :get,
                       data: { turbo_frame: "logs_list" },
@@ -166,8 +152,7 @@
           <%= hidden_field_tag :emotion, params[:emotion] %>
         <% end %>
         <ul data-tag-autocomplete-target="suggestions"
-            class="list-group tag-suggestions"
-            style="position: absolute; bottom: calc(100% - 2px); left: 0; width: 100%; z-index: 9999; margin: 0;">
+            class="list-group tag-suggestions tag-suggestions-absolute">
         </ul>
       </div>
 

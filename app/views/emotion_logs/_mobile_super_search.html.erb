@@ -1,13 +1,12 @@
 <div class="modal fade" id="mobile-super-search-modal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-fullscreen-sm-down">
-    <div class="modal-content mobile-super-search-modal-content" style="background:#141824; color: #fff;">
+    <div class="modal-content mobile-super-search-modal-content">
       <div class="modal-header">
         <h5 class="modal-title w-100 text-center" id="searchModalLabel">検索・フィルター</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="閉じる"></button>
       </div>
       <div class="modal-body mobile-super-search-form">
         <%= form_with url: emotion_logs_path, method: :get, data: { turbo_frame: "logs_list" }, local: true do |f| %>
-
           <div class="mb-3">
             <label class="mobile-form-label">感情で絞り込み</label>
             <%= f.select :emotion, [
@@ -16,7 +15,7 @@
             ], { selected: params[:emotion] }, class: 'mobile-form-select' %>
           </div>
 
-          <div class="mb-3" data-controller="tag-autocomplete" style="position: relative;">
+          <div class="mb-3 mobile-form-autocomplete" data-controller="tag-autocomplete">
             <label class="mobile-form-label">ジャンル/タグで絞り込み</label>
             <%= f.text_field :genre,
               placeholder: 'ジャンルを入力',
@@ -25,8 +24,7 @@
               autocomplete: 'off',
               data: { tag_autocomplete_target: "input" } %>
             <ul data-tag-autocomplete-target="suggestions"
-                class="list-group mobile-tag-suggestions"
-                style="position: absolute; top: 100%; left: 0; width: 100%; z-index: 9999; margin: 0;"></ul>
+                class="list-group mobile-tag-suggestions"></ul>
           </div>
 
           <div class="mb-3">
@@ -49,7 +47,7 @@
 
           <div class="mb-2 text-center">
             <%= link_to "全てリセット", emotion_logs_path, class: "btn btn-outline-danger btn-sm me-2 mobile-reset-btn" %>
-            <%= f.submit "検索", class: "btn btn-primary btn-sm mobile-neon-btn" %>
+            <%= f.submit "検索", class: "mobile-super-search-btn" %>
           </div>
         <% end %>
       </div>

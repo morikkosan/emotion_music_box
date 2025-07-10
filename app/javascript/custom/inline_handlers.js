@@ -75,57 +75,17 @@ function setupAccountDeleteBtn() {
 }
 
 // ==========================
-// フラッシュSweetAlert表示
+// EMOTIONセレクト自動送信
 // ==========================
-function showFlashSwal() {
-  const flashContainer = document.querySelector("#flash-container");
-  const flashNotice = flashContainer?.dataset.flashNotice || document.body.dataset.flashNotice;
-  const flashAlert  = flashContainer?.dataset.flashAlert  || document.body.dataset.flashAlert;
+function handleAutoSubmitEmotion(e) {
+  e.target.form.submit();
+}
 
-  console.log("showFlashSwal called!");
-  console.log("flashNotice:", flashNotice, "flashAlert:", flashAlert);
-
-  if (!window.Swal) {
-    console.warn("⚠️ SweetAlert2 (Swal) が読み込まれていません");
-    return;
-  }
-
-  if (flashAlert === "すでにログイン済みです") return;
-
-  if (flashAlert) {
-    Swal.fire({
-      title: "エラー ❌",
-      text: flashAlert,
-      icon: "error",
-      confirmButtonText: "閉じる",
-      background: "linear-gradient(135deg, #00b3ff, #ff0088)",
-      color: "#fff",
-      customClass: { popup: "cyber-popup" }
-    });
-    document.body.dataset.flashAlert = "";
-    flashContainer?.remove();
-    return;
-  }
-
-  if (flashNotice) {
-    const key = `flashNotice:${flashNotice}`;
-    if (!sessionStorage.getItem(key)) {
-      Swal.fire({
-        title: "成功 🎉",
-        text: flashNotice,
-        icon: "success",
-        confirmButtonText: "OK",
-        background: "linear-gradient(135deg, #00b3ff, #ff0088)",
-        color: "#fff",
-        timer: 3000,
-        timerProgressBar: true,
-        customClass: { popup: "cyber-popup" }
-      });
-      sessionStorage.setItem(key, "shown");
-    }
-    document.body.dataset.flashNotice = "";
-    flashContainer?.remove();
-  }
+function setupAutoSubmitEmotion() {
+  document.querySelectorAll('.auto-submit-emotion').forEach(select => {
+    select.removeEventListener('change', handleAutoSubmitEmotion);
+    select.addEventListener('change', handleAutoSubmitEmotion);
+  });
 }
 
 // ==========================
@@ -136,7 +96,6 @@ function setupInlineHandlers() {
   setupCloseWindowBtn();
   setupPlaylistDeleteBtns();
   setupAccountDeleteBtn();
-  // 必要な初期化はここに増やしていく
   console.log("setupInlineHandlers ran.");
 }
 
@@ -144,23 +103,4 @@ function setupInlineHandlers() {
 document.addEventListener('DOMContentLoaded', setupInlineHandlers);
 document.addEventListener('turbo:load', setupInlineHandlers);
 
-// フラッシュ監視
-document.addEventListener("DOMContentLoaded", showFlashSwal);
-document.addEventListener("turbo:load", showFlashSwal);
-window.addEventListener("pageshow", showFlashSwal);
-
-const observer = new MutationObserver((mutationsList) => {
-  for (const mutation of mutationsList) {
-    for (const node of mutation.addedNodes) {
-      if (node.id === "flash-container") {
-        console.log("MutationObserver: flash-container added!");
-        showFlashSwal();
-        return;
-      }
-    }
-  }
-});
-observer.observe(document.body, {
-  childList: true,
-  subtree: true
-});
+window._flashShownOnce = null;
