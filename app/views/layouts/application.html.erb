@@ -21,8 +21,8 @@
   <meta name="twitter:url" content="https://moriappli-emotion.com">
 
   <!-- PWA 対応 -->
-<%= tag.link rel: "manifest", href: "/manifest.json" %>
-<%= tag.meta name: "theme-color", content: "#ff69b4" %>
+  <%= tag.link rel: "manifest", href: "/manifest.json" %>
+  <%= tag.meta name: "theme-color", content: "#ff69b4" %>
 
   <!-- SoundCloudメタ -->
   <meta name="soundcloud-client-id" content="<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>">
@@ -49,43 +49,32 @@
   <!-- RailsのCSS -->
   <%= stylesheet_link_tag "application", "data-turbo-track": "reload", media: "all" %>
 
-  <!-- Font Awesome（最適化）-->
+  <!-- Font Awesome（CSP対応）-->
   <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-        media="print" onload="this.media='all'">
-  <noscript>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  </noscript>
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
   <!-- Google Fonts 最適化 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" onload="this.rel='stylesheet'">
-  <noscript>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
-  </noscript>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
 
-  <!-- Bootstrap Icons（最適化）-->
+  <!-- Bootstrap Icons（CSP対応）-->
   <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
-        media="print" onload="this.media='all'">
-  <noscript>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-  </noscript>
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
   <!-- GSAP, SweetAlert2, Axios（deferで安全） -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.8/axios.min.js"></script>
 
-   <!-- ✅ グローバル変数 -->
-  <script>
+  <!-- ✅ グローバル変数 -->
+  <script nonce="<%= content_security_policy_nonce %>">
     window.SOUNDCLOUD_CLIENT_ID = "<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>";
     window.soundcloudToken      = "<%= ENV['SOUNDCLOUD_OAUTH_TOKEN'] %>";
-      window.CLOUDINARY_CLOUD_NAME = "<%= ENV['CLOUDINARY_CLOUD_NAME'] %>";
-  window.CLOUDINARY_UPLOAD_PRESET = "<%= ENV['CLOUDINARY_UPLOAD_PRESET'] %>";
-  window.VAPID_PUBLIC_KEY = "<%= ENV['VAPID_PUBLIC_KEY'] %>";
-  window.isLoggedIn = <%= current_user.present? ? 'true' : 'false' %>;
+    window.CLOUDINARY_CLOUD_NAME = "<%= ENV['CLOUDINARY_CLOUD_NAME'] %>";
+    window.CLOUDINARY_UPLOAD_PRESET = "<%= ENV['CLOUDINARY_UPLOAD_PRESET'] %>";
+    window.VAPID_PUBLIC_KEY = "<%= ENV['VAPID_PUBLIC_KEY'] %>";
+    window.isLoggedIn = <%= current_user.present? ? 'true' : 'false' %>;
   </script>
 
   <%= yield :head %>
@@ -99,8 +88,10 @@
       <div class="loading-text">Now Loading...</div>
     </div>
   </div>
+
   <turbo-frame id="modal-container"></turbo-frame>
   <turbo-frame id="playlist-modal-container"></turbo-frame>
+
   <div id="comment-container"></div>
   <div id="flash" class="position-fixed top-0 start-50 translate-middle-x mt-4 zindex-tooltip"></div>
   <%= flash[:notice] %>
@@ -108,7 +99,8 @@
 
   <!-- ──────────── ヘッダー & コンテンツ ──────────── -->
   <%= yield %>
-   <!-- ✅ 保存完了トースト(簡易型ポップアップ) -->
+
+  <!-- ✅ 保存完了トースト(簡易型ポップアップ) -->
   <div aria-live="polite" aria-atomic="true"
      class="z-1080 position-fixed top-0 end-0 p-3">
     <div id="save-toast"
@@ -122,106 +114,102 @@
     </div>
   </div>
 
-
   <%= render 'shared/footer' %>
 
   <!-- ──────────── 下部カスタムプレーヤー & 隠し iframe ──────────── -->
 
   <!-- 1) SoundCloud の iframe（display: none で隠す） -->
-<iframe id="hidden-sc-player" class="hidden-frame" src="" allow="autoplay" frameborder="no" scrolling="no" width="100%" height="166"></iframe>
+  <iframe id="hidden-sc-player" class="hidden-frame" src="" allow="autoplay" frameborder="no" scrolling="no" width="100%" height="166"></iframe>
 
   <!-- ===== 下部カスタムプレーヤー（前・次だけ上段/他は一切いじらない） ===== -->
   <div id="bottom-player" class="bottom-player d-none">
 
-
-
-  <!-- 上段: 前の曲・次の曲ボタン -->
-  <div class="bottom-player-top-row">
-    <div class="flex-grow-1 d-flex justify-content-start align-items-center">
-      <!-- ここにcanvasを追加！ -->
-      <canvas id="waveform-anime" width="450" height="44" class="waveform-canvas"></canvas>
-      <button id="prev-track-button"
-        class="btn btn-link text-white bottom-player-button"
-        data-action="click->global-player#prevTrack">
-        <i class="fa fa-step-backward"></i>
-      </button>
+    <!-- 上段: 前の曲・次の曲ボタン -->
+    <div class="bottom-player-top-row">
+      <div class="flex-grow-1 d-flex justify-content-start align-items-center">
+        <!-- ここにcanvasを追加！ -->
+        <canvas id="waveform-anime" width="450" height="44" class="waveform-canvas"></canvas>
+        <button id="prev-track-button"
+          class="btn btn-link text-white bottom-player-button"
+          data-action="click->global-player#prevTrack">
+          <i class="fa fa-step-backward"></i>
+        </button>
+      </div>
+      <div class="bottom-player-flex-gap"></div>
+      <div class="bottom-player-next-btn-area">
+        <button id="next-track-button"
+          class="btn btn-link text-white next-track-btn"
+          data-action="click->global-player#nextTrack">
+          <i class="fa fa-step-forward"></i>
+        </button>
+      </div>
     </div>
-    <div class="bottom-player-flex-gap"></div>
-    <div class="bottom-player-next-btn-area">
-      <button id="next-track-button"
-        class="btn btn-link text-white next-track-btn"
-        data-action="click->global-player#nextTrack">
-        <i class="fa fa-step-forward"></i>
+
+    <!-- 下段: プレーヤー本体 -->
+    <div class="bottom-player-controls">
+      <!-- 再生／停止ボタン -->
+      <button id="play-pause-button"
+              class="btn btn-link text-white me-3 play-pause-btn"
+              data-action="click->global-player#togglePlayPause">
+        <i id="play-pause-icon" class="fa fa-play"></i>
+        <span id="play-btn-spinner" class="play-btn-spinner">
+          <span class="loading-spinner-inline"></span>
+        </span>
       </button>
+
+      <!-- 曲情報＋NowLoadingアニメも兼用 -->
+      <div id="track-info" class="track-info-box">
+        <span class="loading-spinner-inline" id="loading-spinner"></span>
+        <span id="track-title" class="track-title">
+          <span class="neon-wave">
+            <span>N</span><span>O</span><span>W</span>
+            <span>&nbsp;</span>
+            <span>L</span><span>O</span><span>A</span><span>D</span><span>I</span><span>N</span><span>G</span>
+            <span>.</span><span>.</span><span>.</span>
+          </span>
+        </span>
+        <span class="neon-character-spinbox">
+          <span class="neon-body">
+            <span class="neon-eye neon-eye-left"></span>
+            <span class="neon-eye neon-eye-right"></span>
+            <span class="neon-arm neon-arm-left"></span>
+            <span class="neon-arm neon-arm-right"></span>
+            <span class="neon-leg neon-leg-left"></span>
+            <span class="neon-leg neon-leg-right"></span>
+          </span>
+        </span>
+        <small id="track-artist" class="track-artist"></small>
+      </div>
+
+      <!-- 時間・シークバー -->
+      <div class="bottom-player-seekbar">
+        <span id="current-time" class="current-time">0:00</span>
+        <input id="seek-bar"
+          type="range"
+          min="0" max="100" value="0"
+          class="seek-bar"
+          data-action="input->global-player#seek">
+        <span id="duration" class="duration">0:00</span>
+      </div>
+
+      <!-- シャッフル・リピート・音量 -->
+      <div class="bottom-player-extra-controls">
+        <button id="shuffle-button" class="btn btn-link toggle-btn me-1 bottom-player-toggle-btn"
+          data-action="click->global-player#toggleShuffle" type="button">
+          <i class="fa fa-random"></i>
+        </button>
+        <button id="repeat-button" class="btn btn-link toggle-btn me-2 repeat-btn"
+          data-action="click->global-player#toggleRepeat" type="button">
+          <i class="fa fa-repeat"></i>
+        </button>
+        <i class="fa fa-volume-up volume-icon"></i>
+        <input id="volume-bar"
+          type="range"
+          min="0" max="100" value="100"
+          class="volume-bar"
+          data-action="input->global-player#changeVolume">
+      </div>
     </div>
   </div>
-
-  <!-- 下段: プレーヤー本体 -->
-  <div class="bottom-player-controls">
-    <!-- 再生／停止ボタン -->
-    <button id="play-pause-button"
-            class="btn btn-link text-white me-3 play-pause-btn"
-            data-action="click->global-player#togglePlayPause">
-      <i id="play-pause-icon" class="fa fa-play"></i>
-      <span id="play-btn-spinner" class="play-btn-spinner">
-        <span class="loading-spinner-inline"></span>
-      </span>
-    </button>
-
-    <!-- 曲情報＋NowLoadingアニメも兼用 -->
-    <div id="track-info" class="track-info-box">
-      <span class="loading-spinner-inline" id="loading-spinner"></span>
-      <span id="track-title" class="track-title">
-        <span class="neon-wave">
-          <span>N</span><span>O</span><span>W</span>
-          <span>&nbsp;</span>
-          <span>L</span><span>O</span><span>A</span><span>D</span><span>I</span><span>N</span><span>G</span>
-          <span>.</span><span>.</span><span>.</span>
-        </span>
-      </span>
-      <span class="neon-character-spinbox">
-        <span class="neon-body">
-          <span class="neon-eye neon-eye-left"></span>
-          <span class="neon-eye neon-eye-right"></span>
-          <span class="neon-arm neon-arm-left"></span>
-          <span class="neon-arm neon-arm-right"></span>
-          <span class="neon-leg neon-leg-left"></span>
-          <span class="neon-leg neon-leg-right"></span>
-        </span>
-      </span>
-      <small id="track-artist" class="track-artist"></small>
-    </div>
-
-    <!-- 時間・シークバー -->
-    <div class="bottom-player-seekbar">
-      <span id="current-time" class="current-time">0:00</span>
-      <input id="seek-bar"
-        type="range"
-        min="0" max="100" value="0"
-        class="seek-bar"
-        data-action="input->global-player#seek">
-      <span id="duration" class="duration">0:00</span>
-    </div>
-
-    <!-- シャッフル・リピート・音量 -->
-    <div class="bottom-player-extra-controls">
-      <button id="shuffle-button" class="btn btn-link toggle-btn me-1 bottom-player-toggle-btn"
-        data-action="click->global-player#toggleShuffle" type="button">
-        <i class="fa fa-random"></i>
-      </button>
-      <button id="repeat-button" class="btn btn-link toggle-btn me-2 repeat-btn"
-        data-action="click->global-player#toggleRepeat" type="button">
-        <i class="fa fa-repeat"></i>
-      </button>
-      <i class="fa fa-volume-up volume-icon"></i>
-      <input id="volume-bar"
-        type="range"
-        min="0" max="100" value="100"
-        class="volume-bar"
-        data-action="input->global-player#changeVolume">
-    </div>
-  </div>
-</div>
-
 </body>
 </html>

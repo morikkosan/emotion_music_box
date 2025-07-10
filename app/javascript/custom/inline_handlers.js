@@ -102,3 +102,5 @@ function setupInlineHandlers() {
 // Turboページ遷移対応
 document.addEventListener('DOMContentLoaded', setupInlineHandlers);
 document.addEventListener('turbo:load', setupInlineHandlers);
+
+window._flashShownOnce = null;
