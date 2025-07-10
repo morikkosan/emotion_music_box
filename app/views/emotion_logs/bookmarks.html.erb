@@ -8,11 +8,11 @@
     <%= link_to emotion_logs_path do %>
       <%= image_tag "favorite_emotion.jpg",
         alt: "Emotion List Logo",
-        class: "favorite-fluid",
-        style: "max-width: 500px; width: 120%; height: auto; object-fit: cover;" %>
+        class: "favorite-fluid bookmark-header-img" %>
     <% end %>
   </div>
 </div>
+
 
   <div class="row justify-content-center">
     <% @emotion_logs.each do |log| %>

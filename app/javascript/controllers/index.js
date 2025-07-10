@@ -15,6 +15,9 @@ import GlobalPlayerController from "./global-player_controller" // ←ここが�
 import BookmarkController from "./bookmark_controller";
 import AddSongController from "./add_song_modal_controller"; // ← 追加
 import PushController from "./push_controller"; // ← 追加
+import RedirectController from "./redirect_controller";
+import CommentUpdateController from "./comment_update_controller";
+
 const application = Application.start(); // ← 最初に application を定義！
 
 application.register("modal", ModalController);
@@ -34,3 +37,5 @@ application.register("global-player", GlobalPlayerController); // ← 追加
 application.register("bookmark", BookmarkController); // ← 追加
 application.register("add-song-modal", AddSongController); // ← 追加
 application.register("push", PushController); // ← 追加
+application.register("redirect", RedirectController);
+application.register("comment-update", CommentUpdateController);
