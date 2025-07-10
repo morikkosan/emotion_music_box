@@ -84,7 +84,7 @@
       <!-- 削除ボタン -->
       <% if resource.avatar_url.present? %>
         <div class="form-group text-center">
-          <%= f.check_box :remove_avatar, id: "removeAvatarCheckbox", style: "display:none;" %>
+          <%= f.check_box :remove_avatar, id: "removeAvatarCheckbox", class: "d-none" %>
           <button type="button" id="removeAvatarBtn" class="btn btn-warning btn-sm profile-avatar-remove-btn">画像を削除する</button>
         </div>
       <% end %>

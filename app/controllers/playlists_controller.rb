@@ -98,42 +98,36 @@ class PlaylistsController < ApplicationController
   end
 
   def destroy
-  @playlist.destroy
+    @playlist.destroy
 
-  # ✅ ここだけ変更！リダイレクトがあるので flash[:notice] にする
-  flash[:notice] = "プレイリストを削除しました。"
+    flash[:notice] = "プレイリストを削除しました。"
 
-  respond_to do |format|
-    format.turbo_stream do
-      show_flash = turbo_stream.append("flash", partial: "shared/flash_container", locals: { flash: flash })
-      trigger_flash = render_trigger_flash
+    respond_to do |format|
+      format.turbo_stream do
+        show_flash = turbo_stream.append("flash", partial: "shared/flash_container", locals: { flash: flash })
+        trigger_flash = render_trigger_flash
 
-      redirect_script = render_to_string(inline: <<~ERB)
-        <turbo-stream action="append" target="flash">
-          <template>
-            <script>
-              setTimeout(() => {
-                window.location.href = "#{bookmarks_emotion_logs_path}";
-              }, 1200);
-            </script>
-          </template>
-        </turbo-stream>
-      ERB
+        # ⬇️ ここがCSP完全対応
+        redirect_div = render_to_string(inline: <<~ERB)
+          <turbo-stream action="append" target="flash">
+            <template>
+              <div data-controller="redirect" data-redirect-url="#{bookmarks_emotion_logs_path}"></div>
+            </template>
+          </turbo-stream>
+        ERB
 
-      render turbo_stream: [
-        show_flash,
-        trigger_flash,
-        redirect_script
-      ]
-    end
+        render turbo_stream: [
+          show_flash,
+          trigger_flash,
+          redirect_div
+        ]
+      end
 
-    format.html do
-      redirect_to bookmarks_emotion_logs_path, notice: "プレイリストを削除しました。"
+      format.html do
+        redirect_to bookmarks_emotion_logs_path, notice: "プレイリストを削除しました。"
+      end
     end
   end
-end
-
-
 
   private
 
@@ -150,17 +144,13 @@ end
   end
 
   def render_trigger_flash
-  render_to_string(inline: <<~ERB)
-    <turbo-stream action="remove" target="flash-container"></turbo-stream>
-    <turbo-stream action="append" target="flash">
-      <template>
-        <div id="flash-container" data-flash-notice="#{j flash[:notice]}" data-flash-alert="#{j flash[:alert]}"></div>
-      </template>
-    </turbo-stream>
-  ERB
-end
-
-
-
-
+    render_to_string(inline: <<~ERB)
+      <turbo-stream action="remove" target="flash-container"></turbo-stream>
+      <turbo-stream action="append" target="flash">
+        <template>
+          <div id="flash-container" data-flash-notice="#{j flash[:notice]}" data-flash-alert="#{j flash[:alert]}"></div>
+        </template>
+      </turbo-stream>
+    ERB
+  end
 end
