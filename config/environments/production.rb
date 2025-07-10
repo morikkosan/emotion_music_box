@@ -12,6 +12,9 @@ Rails.application.configure do
   config.assets.compile = true          # プリコンパイルしたファイルだけ使う
   config.assets.digest = true               # キャッシュ防止のためファイル名にハッシュをつける
 
+# HSTSオプションを追加（もしさらに強化したい場合）
+  config.ssl_options = { hsts: { expires: 1.year, preload: true, subdomains: true } }
+
   # ----------------------------------------
 
   # メールURLやルーティングのホストを変更
