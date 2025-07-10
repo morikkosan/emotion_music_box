@@ -15,6 +15,7 @@
 @use "show_html";
 @use "profile_styles";
 @use "nokori_styles";
+@use "swal_flash_craft";
 
 // 外部CSSのみはそのあと
 @import url("https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/cyborg/bootstrap.min.css");

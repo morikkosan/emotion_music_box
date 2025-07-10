@@ -10,9 +10,10 @@
           <span class="ms-2 text-white"><%= current_user.name %></span>
         </div>
         <div class="dropdown-menu">
-          <%= link_to destroy_user_session_path, method: :delete, data: { turbo: false }, id: "logout-link", class: "dropdown-item d-flex align-items-center text-danger" do %>
-            <%= image_tag "log_out.webp", class: "dropdown-icon me-2", alt: "ログアウト" %> ログアウト
-          <% end %>
+          <%= link_to destroy_user_session_path, id: "logout-link", class: "dropdown-item d-flex align-items-center text-danger" do %>
+          <%= image_tag "log_out.webp", class: "dropdown-icon me-2", alt: "ログアウト" %> ログアウト
+        <% end %>
+
           <div class="dropdown-divider"></div>
           <%= link_to edit_user_registration_path, class: "dropdown-item d-flex align-items-center" do %>
             <%= image_tag "profile_edit.webp", class: "dropdown-icon me-2", alt: "プロフィール編集" %> プロフィール編集
