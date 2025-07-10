@@ -1,0 +1,89 @@
+// プロフィール編集カード全体
+.profile-edit-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.profile-edit-card {
+  width: 100%;
+  max-width: 500px;
+  border-radius: 14px;
+  box-shadow: 0 4px 18px #a7f3ff1a;
+  background: #21293d;
+  color: #f0f0f0;
+}
+.profile-edit-title {
+  font-weight: bold;
+  color: #aabadd;
+  text-shadow: 0 0 8px #44c3c9;
+}
+.profile-edit-form-group {
+  margin-bottom: 1.5rem;
+}
+.profile-avatar-upload-area {
+  margin-top: 1.5em;
+}
+.profile-avatar-preview {
+  width: 80px !important;
+  height: 80px !important;
+  object-fit: cover;
+  border-radius: 50%;
+  box-shadow: 0 2px 10px #0003;
+}
+.profile-avatar-input {
+  margin-top: 0.5em;
+}
+.profile-update-btn {
+  /* width: 80%; ← これを削除！ */
+  padding: 0.4em 1.2em;   /* ← 縦を減らし、横はほどよく */
+  border-radius: 2em;
+  font-size: 1rem;        /* 少し小さめに */
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(90deg,#00e7ff,#ae5cff 90%);
+  box-shadow: 0 0 12px #3ed9ff99, 0 4px 12px #a46fff60;
+  border: none;
+  text-shadow: 0 0 6px #fff8;
+  transition: transform .13s, box-shadow .13s;
+  display: inline-block;
+}
+.profile-update-btn:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 40px #ae5cff80;
+}
+
+.profile-update-btn:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 40px #ae5cff80;
+}
+.profile-avatar-remove-btn {
+  margin-top: 1rem;
+}
+.profile-account-delete-btn {
+  margin-top: 1rem;
+  color: #ff4a4a !important;
+}
+.profile-back-btn {
+  margin-top: 1.2em;
+}
+.profile-crop-modal-body {
+  justify-content: center;
+  align-items: center;
+}
+.profile-crop-container {
+  width: 300px;
+  height: 300px;
+  overflow: hidden;
+  position: relative;
+  background: #eee;
+  border-radius: 14px;
+}
+.profile-crop-img {
+  position: absolute;
+  top: 0; left: 0;
+  cursor: grab;
+  max-width: none;
+  max-height: none;
+  user-select: none;
+}

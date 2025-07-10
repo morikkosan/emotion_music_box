@@ -1,4 +1,50 @@
+// ヘッダーインラインスタイル
 
+// ロゴ用
+.logo-main {
+  max-width: 400px;
+  width: 100%;
+}
+
+// キャッチコピー
+.catchcopy-title {
+  font-size: 3rem;
+  font-weight: bold;
+  color: rgb(215, 205, 216);
+  text-shadow: 0 0 10px #1ee4da;
+}
+
+// メニューラベル
+.menu-label {
+  font-weight: bold;
+  font-size: 1rem;
+  margin-bottom: 0.3rem;
+  text-align: center;
+}
+.menu-label-emotion { color: magenta; }
+.menu-label-tag     { color: #00aaff; }
+
+// メインメニュー間のgap
+.main-menu-gapped {
+  gap: 1.2rem;
+}
+
+// tagサジェストul絶対位置
+.tag-suggestions-absolute {
+  position: absolute;
+  bottom: calc(100% - 2px);
+  left: 0;
+  width: 100%;
+  z-index: 9999;
+  margin: 0;
+}
+
+
+
+
+
+
+// ローディング
 .neon-character-spinbox {
   display: inline-block;
   width: 48px; height: 48px;
@@ -180,4 +226,509 @@
 
 .terms a:hover {
   color: #0056b3;
+}
+
+
+// application.html.erbのスタイル
+/* ────────── ボトムプレーヤーの上段行 ────────── */
+
+.bottom-player {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #222;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 8px 16px;
+  z-index: 1000;
+}
+
+
+.bottom-player-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding-bottom: 4px;
+}
+
+/* ボタン共通 */
+.bottom-player-button {
+  font-size: 24px;
+  padding: 0 8px;
+  border: none;
+  background: none;
+  width: 48px;
+  height: 44px;
+}
+
+/* 真ん中の空白div */
+.bottom-player-flex-gap {
+  flex: 1.2;
+}
+
+/* シークバーまわりのdiv */
+.bottom-player-seekbar {
+  flex: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 16px;
+}
+
+/* シークバーinput */
+.seek-bar {
+  flex: 1;
+  appearance: none;
+  height: 4px;
+  background: #555;
+  border-radius: 2px;
+  outline: none;
+}
+
+/* シャッフル・リピートボタン */
+.bottom-player-toggle-btn {
+  font-size: 20px;
+  color: #fff;
+}
+
+/* ボリュームバー */
+.volume-bar {
+  width: 80px;
+  appearance: none;
+  height: 4px;
+  background: #555;
+  border-radius: 2px;
+  outline: none;
+}
+
+
+.flash-message {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9999;
+  padding: 1em;
+  background: #333;
+  color: #fff;
+  text-align: center;
+}
+
+.hidden-frame {
+  display: none !important;
+}
+
+.flex-grow-1 {
+  flex: 1;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.justify-content-start {
+  justify-content: flex-start;
+}
+
+.align-items-center {
+  align-items: center;
+}
+
+#bottom-player {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: #222;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 8px 16px;
+  z-index: 1000;
+}
+
+.bottom-player-top-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.waveform-canvas {
+  margin-right: 0px;
+  display: block;
+}
+.bottom-player-flex-gap {
+  flex-basis: 16px;
+}
+.bottom-player-next-btn-area {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
+}
+.next-track-btn {
+  font-size: 24px;
+  padding: 0 8px;
+  border: none;
+  background: none;
+  width: 48px;
+  height: 44px;
+}
+
+.bottom-player-controls {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.play-pause-btn {
+  font-size: 24px;
+  padding: 0;
+  border: none;
+  background: none;
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+.play-btn-spinner {
+  display: none;
+  position: absolute;
+  left: 0; top: 0;
+  width: 40px; height: 40px;
+}
+.track-info-box {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  padding-left: 12px;
+}
+.loading-spinner-inline {
+  display: none;
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.track-title {
+  font-weight: 600;
+}
+.neon-character-spinbox {
+  vertical-align: middle;
+  margin-left: 8px;
+  display: inline-block;
+}
+.track-artist {
+  color: #bbb;
+  margin-left: 8px;
+}
+.bottom-player-seekbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.current-time,
+.duration {
+  min-width: 40px;
+}
+.seek-bar {
+  flex: 1 1 auto;
+}
+.bottom-player-extra-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 16px;
+}
+.repeat-btn {
+  font-size: 20px;
+  color: #fff;
+}
+.volume-icon {
+  color: #fff;
+}
+.volume-bar {
+  width: 100px;
+  margin-left: 4px;
+}
+
+/* ▼ ネオンキャラのサンプルスタイル(適宜調整) */
+.neon-body {
+  display: inline-block;
+  position: relative;
+  width: 28px;
+  height: 28px;
+}
+.neon-eye {
+  position: absolute;
+  width: 5px; height: 5px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #00fff7, 0 0 2px #fff;
+  top: 8px;
+}
+.neon-eye-left  { left: 5px; }
+.neon-eye-right { right: 5px; }
+.neon-arm {
+  position: absolute;
+  width: 12px; height: 3px;
+  background: #0ff;
+  border-radius: 2px;
+  top: 16px;
+}
+.neon-arm-left  { left: 0;  transform: rotate(-25deg);}
+.neon-arm-right { right: 0; transform: rotate(25deg);}
+.neon-leg {
+  position: absolute;
+  width: 4px; height: 10px;
+  background: #0ff;
+  border-radius: 2px;
+  bottom: 0;
+}
+.neon-leg-left  { left: 8px;  transform: rotate(-10deg);}
+.neon-leg-right { right: 8px; transform: rotate(10deg);}
+
+
+
+
+
+
+
+
+
+/* 色違いの切替などは既存の .toggle-btn.active 等が効いていればOK */
+
+
+
+// indexのスタイルタグ
+// チェックボックスラベル
+// ===== チェックボックスラベル（豪華ver.） =====
+.bookmark-merge-toggle-label {
+  background: linear-gradient(135deg, #009688, #4db6ac);
+  background-size: 200% 200%;
+  color: #ffffff;
+  font-weight: 800;
+  text-shadow: 0 0 3px #000;
+  padding: 1rem 2rem;
+  border-radius: 40px;
+  font-size: 1.15rem;
+  box-shadow: 0 0 8px rgba(0, 150, 136, 0.6), 0 0 14px rgba(77, 182, 172, 0.5);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s ease;
+  animation: bookmarkNeonGlow 6s ease-in-out infinite;
+  margin: 0; // ←追加
+}
+.bookmark-merge-toggle-label:hover {
+  box-shadow: 0 0 12px rgba(0, 150, 136, 0.8), 0 0 18px rgba(77, 182, 172, 0.7);
+  transform: scale(1.05);
+}
+.bookmark-merge-toggle-label input[type="checkbox"] {
+  accent-color: #26a69a;
+  transform: scale(1.4);
+  margin-right: 0.5em;
+}
+
+// ===== プレイリスト作成ボタン =====
+.bookmark-playlist-create-btn {
+  background: linear-gradient(135deg, #ff7043, #f06292);
+  background-size: 200% 200%;
+  color: #ffffff;
+  font-weight: 800;
+  text-shadow: 0 0 3px #000;
+  padding: 1rem 2.2rem;
+  border: none;
+  border-radius: 40px;
+  font-size: 1.2rem;
+  box-shadow: 0 0 10px rgba(255, 112, 67, 0.6), 0 0 16px rgba(240, 98, 146, 0.5);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  animation: bookmarkNeonGlow 5s ease-in-out infinite;
+}
+.bookmark-playlist-create-btn:hover {
+  background-position: right center;
+  box-shadow: 0 0 14px rgba(255, 112, 67, 0.9), 0 0 20px rgba(240, 98, 146, 0.8);
+  transform: scale(1.06);
+}
+
+// ===== 共通アニメーション =====
+@keyframes bookmarkNeonGlow {
+  0%   { background-position: left center; }
+  50%  { background-position: right center; }
+  100% { background-position: left center; }
+}
+
+// ===== パネル&ツールバー =====
+.bookmark-panel {
+  margin: 1.5rem 0 2rem 1rem;
+}
+.bookmark-toolbar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8rem;
+}
+
+// ===== プレイリスト作成フォーム =====
+.bookmark-create-form {
+  margin: 0;
+}
+
+// ===== チェックボックスサイズ（カスタム） =====
+// ※古い.playlist-check--custom-sizeは使わず、下の新しい方のみ残す！
+.playlist-check-accent {
+  width: 2.2rem;
+  height: 2.2rem;
+  accent-color: #e800ff;
+  box-shadow: 0 0 8px #fff6, 0 0 3px #e800ff;
+}
+
+// ===== コメント数まわり =====
+.comment-count-box {
+  gap: 4px;
+}
+.comment-count-number {
+  font-size: 1rem;
+}
+.comment-icon {
+  width: 48px;
+  height: 48px;
+  display: inline-block;
+}
+
+// ===== ジャケット画像・再生アイコン =====
+.music-art-box {
+  width: 80px;
+  position: relative;
+}
+.music-art-img {
+  width: 80px;
+  height: auto;
+  display: block;
+}
+.play-overlay-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  color: rgba(255,255,255,0.9);
+  cursor: pointer;
+}
+
+// ===== ログ本文 =====
+.log-description {
+  color: white;
+  font-size: 1.1rem;
+}
+
+
+// スマホ版index
+
+// ロゴ画像
+.mobile-logo {
+  max-width: 150px;
+  width: 100%;
+}
+
+// キャッチコピー
+.mobile-catchcopy {
+  font-size: 2rem;
+  font-weight: bold;
+  color: rgb(215,205,216);
+  text-shadow: 0 0 8px #1ee4da;
+}
+
+// HPバー
+.mobile-hp-bar-container {
+  margin: 1.2em 0 1em 0;
+  background: #202d42;
+  border-radius: 14px;
+  padding: 1em 0.7em 0.6em;
+  box-shadow: 0 2px 16px #0cf2;
+  text-align: center;
+}
+.mobile-hp-bar {
+  width: 100%;
+  height: 18px;
+  background: linear-gradient(90deg,#3bffce,#1ee4da,#007fff);
+  border-radius: 9px;
+  margin: 6px 0 3px 0;
+}
+.mobile_today_mental_text {
+  color: #44e2c9;
+  font-size: 0.96em;
+  font-weight: bold;
+  text-shadow: 0 0 4px #10b0b4;
+}
+
+// ネオン記録ボタン（モバイル）
+.record-mobile-btn-wrap {
+  z-index: 1030;
+  position: relative;
+}
+.record-mobile-button {
+  padding: 0.7em 1.5em;
+  border-radius: 2em;
+  font-size: 1.15rem;
+  font-weight: bold;
+  color: #fff !important;
+  background: linear-gradient(90deg,#00e7ff,#ae5cff 90%);
+  box-shadow: 0 0 20px #3ed9ff99, 0 4px 18px #a46fff60;
+  text-shadow: 0 0 8px #fff8;
+  border: none;
+  display: inline-block;
+  transition: transform .13s, box-shadow .13s;
+}
+.record-mobile-button:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 40px #ae5cff80;
+}
+
+// フッター
+.mobile-footer {
+  box-shadow: 0 -1px 18px #00b7ff22;
+  font-size: 0.99rem;
+  z-index: 1100;
+}
+
+// その他全体
+.mobile-content {
+  margin-bottom: 80px; // フッター分の余白
+}
+
+// ブックマークやタイトル
+.bookmark_title {
+  display: inline-block;
+  font-weight: bold;
+  font-size: 1.15rem;
+  margin: 0 0 8px 0;
+  color: #f0b0ff;
+  text-shadow: 0 0 8px #cd47d4a0;
+}
+
+// --- 必要に応じて追加 ---
+
+
+/* ボタン */
+input[type="submit"].mobile-super-search-btn,
+button[type="submit"].mobile-super-search-btn {
+  background: linear-gradient(90deg,#00e7ff,#ae5cff 90%) !important;
+  color: #fff !important;
+  font-weight: bold !important;
+  border-radius: 1.5em !important;
+  box-shadow: 0 0 10px #3ed9ff99, 0 2px 8px #a46fff60 !important;
+  border: none !important;
+  padding: 0.36em 1.2em !important;
+  font-size: 1em !important;
+  margin-top: 0.25em !important;
+  text-shadow: 0 0 4px #fff8 !important;
+  transition: transform .13s, box-shadow .13s !important;
+  display: inline-block !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  cursor: pointer;
 }
