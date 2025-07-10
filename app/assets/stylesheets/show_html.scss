@@ -2,6 +2,211 @@
 
 
 
+/* emotion_log_show */
+
+// カード全体の最大幅・中央寄せ
+.emotion-detail-card {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+// カードbodyのgap指定
+.emotion-gap-28 {
+  gap: 28px;
+}
+
+// ジャケット画像
+.emotion-music-art-img {
+  object-fit: cover;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px #0005;
+  width: 160px;
+  height: 160px;
+}
+
+// テキスト部分のmin-width
+.min-width-180 {
+  min-width: 180px;
+}
+
+// 感情テキスト
+.emotion-main-text {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-bottom: 0.4em;
+  line-height: 1.2;
+}
+
+// 日記テキスト
+.emotion-diary-text {
+  font-size: 1.2rem;
+  margin-bottom: 1em;
+  word-break: break-all;
+}
+
+// Twitterシェアボタン
+.tweet-share-btn {
+  background: #000;
+  border-color: #111;
+}
+.tweet-icon {
+  font-size: 1.3em;
+}
+
+// コメントカード最大幅
+.emotion-comments-card {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+
+// _show_mobile.html.erb
+
+
+// モバイル用全体
+.mobile-container {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 0 4px;
+  background: transparent;
+}
+
+// タイトル
+.mobile-title {
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #aabadd;
+  text-shadow: 0 0 8px #44c3c9;
+}
+
+// レコードカード
+.mobile-card {
+  border-radius: 16px;
+  box-shadow: 0 2px 12px #0002;
+  border: 1px solid #ececec;
+  background: #21293d;
+  color: #f0f0f0;
+}
+
+.mobile-card-header {
+  background: #222a38;
+  border-bottom: 1px solid #223;
+  padding-top: 0.2em !important;
+  padding-bottom: 0.2em !important;
+}
+
+.mobile-header-user {
+  align-items: center;
+  gap: 0.4em;
+}
+.mobile-avatar {
+  width: 40px;
+  height: 40px;
+}
+.mobile-username {
+  font-size: 1rem;
+  color: #d8f5f9;
+  text-shadow: 0 0 3px #47e4ee;
+}
+.mobile-meta {
+  font-size: 0.9rem;
+  color: #ccc;
+}
+.mobile-tag {
+  font-size: 0.85rem;
+  padding: 2px 8px;
+}
+.mobile-tags {
+  display: inline-block;
+  margin-left: 0.4em;
+}
+
+// レコード本文
+.mobile-card-body {
+  padding: 8px 6px !important;
+  background: transparent;
+}
+.mobile-emotion-text {
+  font-size: 1rem;
+  margin-bottom: 2px;
+}
+.mobile-diary-text {
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+.mobile-edit-btn {
+  font-size: 0.92rem;
+  padding: 2px 12px;
+  margin-bottom: 4px;
+}
+
+// ジャケット画像
+.music-art-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+.music-art-img,
+.mobile-music-art-img {
+  width: 108px;
+  height: 108px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px #0004;
+  margin: 0 auto;
+}
+
+// コメントカード
+.mobile-comment-card {
+  max-width: 440px;
+  margin: 0 auto;
+  border-radius: 12px;
+  border: 1px solid #ddd3;
+  background: #252d3c;
+}
+.mobile-comment-header {
+  background: #223;
+  color: #fff;
+  font-size: 0.92rem;
+  border-bottom: 1px solid #334;
+  padding: 3px 8px !important;
+}
+.mobile-comment-body {
+  padding: 7px 8px;
+  background: transparent;
+}
+
+// コメント入力
+.mobile-comment-textarea {
+  font-size: 0.96rem;
+  border-radius: 8px;
+  min-height: 40px;
+}
+.mobile-comment-submit {
+  font-size: 0.9rem !important;
+  padding: 2px 12px !important;
+  margin-top: 4px !important;
+}
+
+@media (max-width: 520px) {
+  .mobile-container, .mobile-card, .mobile-comment-card {
+    max-width: 99vw;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .music-art-img, .mobile-music-art-img {
+    width: 90vw;
+    max-width: 120px;
+    height: auto;
+  }
+}
+
+
+
+
+
+
+
 
 /* playlist_show */
 .pmx_playlist_row {
@@ -70,4 +275,67 @@
 .add-song-floating:hover {
   transform: translateY(-50%) scale(1.05);
   filter: brightness(1.1);
+}
+
+.playlist-container {
+  // プレイリスト全体
+  .playlist-contents {
+    max-width: 700px;
+    margin: auto;
+  }
+}
+
+
+// mobileshowコメントなど
+
+// モバイル投稿リスト（mobile_list_card用）
+.mobile-list-card {
+  border-radius: 12px;
+}
+
+// 日付
+.mobile-list-date {
+  color: #ccc;
+  font-size: 0.75rem;
+}
+
+// タグ
+.mobile-list-tag {
+  font-size: 0.65rem;
+  padding: 0.15em 0.4em;
+  margin-right: 0.2em;
+}
+
+// 感情
+.mobile-list-emotion {
+  font-weight: bold;
+}
+
+// コメント・一言
+.mobile-list-desc {
+  font-size: 0.85rem;
+  color: #ddd;
+}
+
+// コメントアイコン
+.mobile-list-comment-icon {
+  width: 20px;
+  height: 20px;
+}
+
+// コメント数
+.mobile-list-comment-count {
+  font-size: 0.85rem;
+}
+
+// 削除ボタン
+.mobile-list-delete-btn {
+  font-size: 0.75rem;
+}
+
+
+// コメントスタイル
+.comment-date {
+  color: #666;
+  font-size: 0.89em;
 }

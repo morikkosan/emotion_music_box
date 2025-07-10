@@ -3,8 +3,6 @@
     <i class="bi bi-heart-pulse" aria-hidden="true"></i> Record emotions
   </h1>
 
-
-
   <div class="row justify-content-center">
     <div class="col-md-8">
       <%= form_with model: emotion_log,
@@ -46,15 +44,13 @@
             type="text"
             class="form-control"
             data-tag-input-target="input"
-            data-action="keydown->tag-input#keydown
-                         input->tag-input#filterSuggestions"
+            data-action="keydown->tag-input#keydown input->tag-input#filterSuggestions"
             placeholder="例：Pop, Rock, アニメ　なんでもよし"
             autocomplete="off" />
           <div class="mt-2" data-tag-input-target="tags"></div>
           <div
-            class="dropdown-menu"
-            data-tag-input-target="suggestions"
-            style="max-height:150px;overflow-y:auto;">
+            class="dropdown-menu scroll-y-150"
+            data-tag-input-target="suggestions">
           </div>
           <%= hidden_field_tag "emotion_log[tag_names]", "",
                 id: "hidden-tags",
@@ -68,9 +64,9 @@
                               placeholder: '例：今日は最高の気分！' %>
         </div>
 
-        <div class="d-flex justify-content-center">
+        <div class="d-flex justify-content-center gap-2">
           <%= form.submit '記録する',
-                          class: 'btn btn-primary me-2',
+                          class: 'btn btn-primary',
                           data: { "submit-handler-target": "submit" } %>
           <button type="button"
                   class="btn btn-warning"
@@ -78,7 +74,6 @@
             曲を選び直す
           </button>
         </div>
-
       <% end %>
 
       <%= link_to '一覧に戻る',

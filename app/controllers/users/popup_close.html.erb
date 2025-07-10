@@ -1,16 +1,15 @@
-<!-- app/views/users/omniauth_callbacks/popup_close.html.erb -->
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>ログイン完了</title>
+  <%= csp_meta_tag %>
 </head>
 <body>
-  <script>
+  <script nonce="<%= content_security_policy_nonce %>">
     // 親ウィンドウに通知して閉じる
     window.opener.postMessage('soundcloudLoginSuccess', window.location.origin);
     window.close();
-    
   </script>
   <p>ログインが完了しました。ウィンドウを閉じています…</p>
 </body>
