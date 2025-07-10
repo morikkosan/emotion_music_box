@@ -16,14 +16,10 @@
         </div>
 
         <div class="dropdown-menu">
-          <%= link_to destroy_user_session_path(view: (mobile_device? ? 'mobile' : nil)),
-                      method: :delete,
-                      data: { turbo: false },
+          <%= link_to "#",
                       id: "logout-link",
                       class: "dropdown-item d-flex align-items-center text-danger" do %>
-            <%= image_tag "log_out.webp",
-                          class: "dropdown-icon me-2",
-                          alt: "" %>
+            <%= image_tag "log_out.webp", class: "dropdown-icon me-2", alt: "" %>
             ログアウト
           <% end %>
 
