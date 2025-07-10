@@ -1,6 +1,6 @@
 <turbo-stream action="append" target="body">
   <template>
-    <script>
+    <script nonce="<%= content_security_policy_nonce %>">
       (() => {
         const modal = document.getElementById("playlist-modal");
         if (!modal) return;
