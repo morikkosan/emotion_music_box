@@ -29,3 +29,12 @@
 .z-1080 {
   z-index: 1080 !important;
 }
+
+.d-none { display: none !important; }
+
+.bookmark-header-img {
+  max-width: 500px;
+  width: 120%;
+  height: auto;
+  object-fit: cover;
+}
