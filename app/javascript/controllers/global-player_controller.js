@@ -54,13 +54,11 @@ export default class extends Controller {
     console.log("[connect] global-playerコントローラ初期化完了")
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // 「検索結果から再生」用メソッド。ここを追加！
+  // ─────────────────────────────────────────────
   playFromExternal(playUrl) {
-    // 下部プレーヤーを表示
     this.bottomPlayer?.classList.remove("d-none")
 
-    // 既存Widgetクリア
+    // Widgetクリア
     if (this.widget) {
       this.widget.unbind(SC.Widget.Events.PLAY)
       this.widget.unbind(SC.Widget.Events.PAUSE)
@@ -75,17 +73,13 @@ export default class extends Controller {
       alert("iframe生成に失敗しました")
       return
     }
-
-    // SoundCloudプレイヤーURLセット＆自動再生
     this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(playUrl)}&auto_play=true`
 
-    // UIリセット＆widgetイベント登録
     this.resetPlayerUI()
     this.iframeElement.onload = () => {
       setTimeout(() => {
         this.widget = SC.Widget(this.iframeElement)
         this.widget.bind(SC.Widget.Events.READY, () => {
-          // タイトル取得
           this.widget.getCurrentSound((sound) => {
             if (sound && sound.title) {
               this.trackTitleEl.textContent  = sound.title
@@ -105,7 +99,7 @@ export default class extends Controller {
       }, 100)
     }
   }
-  // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────
 
   startWaveformAnime() {
     if (!this.waveformCtx) return
@@ -169,9 +163,9 @@ export default class extends Controller {
   }
 
   showLoadingUI() {
-    this.playPauseIcon && (this.playPauseIcon.style.display = "none")
-    this.loadingArea   && (this.loadingArea.style.display   = "inline-flex")
-    this.neonCharacter && (this.neonCharacter.style.display = "inline-block")
+    this.playPauseIcon?.classList.add("is-hidden")
+    this.loadingArea?.classList.remove("is-hidden")
+    this.neonCharacter?.classList.remove("is-hidden")
     if (this.trackTitleEl) {
       this.trackTitleEl.innerHTML = `
         <span class="neon-wave">
@@ -181,20 +175,20 @@ export default class extends Controller {
           <span>I</span><span>N</span><span>G</span>
           <span>.</span><span>.</span><span>.</span>
         </span>`
-      this.trackTitleEl.style.display = "block"
+      this.trackTitleEl.classList.remove("is-hidden")
     }
     if (this.trackArtistEl) {
       this.trackArtistEl.textContent = ""
-      this.trackArtistEl.style.display = "none"
+      this.trackArtistEl.classList.add("is-hidden")
     }
   }
 
   hideLoadingUI() {
-    this.playPauseIcon && (this.playPauseIcon.style.display = "")
-    this.loadingArea   && (this.loadingArea.style.display   = "none")
-    this.neonCharacter && (this.neonCharacter.style.display = "none")
-    this.trackTitleEl  && (this.trackTitleEl.style.display  = "")
-    this.trackArtistEl && (this.trackArtistEl.style.display = "")
+    this.playPauseIcon?.classList.remove("is-hidden")
+    this.loadingArea?.classList.add("is-hidden")
+    this.neonCharacter?.classList.add("is-hidden")
+    this.trackTitleEl?.classList.remove("is-hidden")
+    this.trackArtistEl?.classList.remove("is-hidden")
   }
 
   resetPlayerUI() {
@@ -219,7 +213,7 @@ export default class extends Controller {
     const parent    = oldIframe.parentNode
     const newIframe = document.createElement("iframe")
     newIframe.id         = "hidden-sc-player"
-    newIframe.style.display = "none"
+    newIframe.classList.add("is-hidden") // クラスで非表示
     newIframe.allow      = "autoplay"
     newIframe.frameBorder= "no"
     newIframe.scrolling  = "no"
@@ -452,20 +446,20 @@ export default class extends Controller {
     const idx = this.playlistOrder.indexOf(this.currentTrackId)
     if (idx < this.playlistOrder.length - 1) {
       const icon = this.playIconTargets.find(icn =>
-        icn.dataset-trackId == this.playlistOrder[idx + 1])
+        icn.dataset.trackId == this.playlistOrder[idx + 1])
       icon && this.loadAndPlay({ currentTarget: icon, stopPropagation(){} })
     }
   }
 
   playFirstTrack(event) {
-  event?.stopPropagation()
-  this.updatePlaylistOrder()
-  if (!this.playlistOrder?.length) return
-  const icon = this.playIconTargets.find(icn =>
-    icn.dataset.trackId == this.playlistOrder[0])  // ←こう書く
-  if (icon) {
-    this.loadAndPlay({ currentTarget: icon, stopPropagation(){} })
+    event?.stopPropagation()
+    this.updatePlaylistOrder()
+    if (!this.playlistOrder?.length) return
+    const icon = this.playIconTargets.find(icn =>
+      icn.dataset.trackId == this.playlistOrder[0])
+    if (icon) {
+      this.loadAndPlay({ currentTarget: icon, stopPropagation(){} })
+    }
   }
-}
 
 }
