@@ -21,6 +21,7 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { host: "moriappli-emotion.com", protocol: "https" }
   Rails.application.routes.default_url_options = { host: "moriappli-emotion.com", protocol: "https" }
 
+
   # OmniAuthのフルホストも統一
   OmniAuth.config.full_host = "https://moriappli-emotion.com"
 
