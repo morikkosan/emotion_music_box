@@ -109,7 +109,7 @@ gem "line-bot-api", "~> 1.20"
 
 gem 'web-push', '~> 3.0'
 
-gem 'zeitwerk', '~> 2.6'
+gem 'zeitwerk', '~> 2.7'
 
 gem 'lograge'
 
