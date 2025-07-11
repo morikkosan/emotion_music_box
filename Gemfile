@@ -111,3 +111,8 @@ gem 'web-push', '~> 3.0'
 
 gem 'zeitwerk', '~> 2.6'
 
+gem 'lograge'
+
+gem 'sentry-rails'
+
+gem 'sentry-ruby'

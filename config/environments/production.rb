@@ -21,6 +21,7 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { host: "moriappli-emotion.com", protocol: "https" }
   Rails.application.routes.default_url_options = { host: "moriappli-emotion.com", protocol: "https" }
 
+
   # OmniAuthのフルホストも統一
   OmniAuth.config.full_host = "https://moriappli-emotion.com"
 
@@ -55,4 +56,15 @@ Rails.application.configure do
   config.action_view.annotate_rendered_view_with_filenames = true
   config.action_controller.raise_on_missing_callback_actions = true
   config.assets.paths << Rails.root.join("app", "assets", "builds")
+
+  # Lograge有効化（Railsログ整形）
+  config.lograge.enabled = true
+
+  # もしJSONフォーマットにしたい場合は↓も追加
+  # config.lograge.formatter = Lograge::Formatters::Json.new
+
+  # 必要に応じてカスタム項目（例：user_id等）も追加可能
+  # config.lograge.custom_options = lambda do |event|
+  #   { time: Time.now, user_id: event.payload[:user_id] }
+  # end
 end
