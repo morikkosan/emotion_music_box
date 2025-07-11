@@ -38,3 +38,33 @@
   height: auto;
   object-fit: cover;
 }
+
+
+.comment-toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  background: #333;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .4s;
+  text-align: center;
+}
+
+.comment-toast.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+
+.is-hidden { display: none !important; }
+
+// 必要に応じて追加
+// .is-inline-flex { display: inline-flex !important; }
+// .is-inline-block { display: inline-block !important; }
