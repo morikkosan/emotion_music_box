@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1
 
 ARG RUBY_VERSION=3.2.3
-FROM ruby:${RUBY_VERSION}-bullseye AS base
+FROM ruby:${RUBY_VERSION}-bookworm AS base
 WORKDIR /rails
 
-# Install base packages
+# Install base packages + Chrome + Chromedriver
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
     curl \
@@ -14,9 +14,18 @@ RUN apt-get update -qq && \
     ca-certificates \
     openssl \
     gnupg \
-    dirmngr && \
-    update-ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+    dirmngr \
+    wget \
+    fonts-ipafont-gothic \
+    fonts-ipafont-mincho \
+    # 以下「公式Google Chrome」を追加
+    && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list' \
+    && apt-get update -qq \
+    && apt-get install --no-install-recommends -y google-chrome-stable \
+    && apt-get install --no-install-recommends -y chromium-driver \
+    && update-ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set environment variables
 ENV RAILS_ENV="production" \
@@ -73,7 +82,6 @@ RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
     apt-get update -qq && apt-get install --no-install-recommends -y yarn && \
     rm -rf /var/lib/apt/lists/*
 
-
 RUN yarn global add esbuild
 
 # Copy built artifacts
@@ -87,9 +95,12 @@ COPY docker/certs/moriappli-emotion.com-key.pem /etc/ssl/private/
 
 # ── 追加: SSL 証明書ディレクトリとファイル権限設定 ──
 RUN chmod 755 /etc/ssl/private \
- && chmod 644 /etc/ssl/certs/moriappli-emotion.com.pem \
- && chmod 600 /etc/ssl/private/moriappli-emotion.com-key.pem
-# ─────────────────────────────────────────────
+&& chmod 644 /etc/ssl/certs/moriappli-emotion.com.pem \
+&& chmod 600 /etc/ssl/private/moriappli-emotion.com-key.pem
+
+# ── 追加: mkcert rootCAをシステムのCAストアに追加 ──
+COPY docker/certs/rootCA.pem /usr/local/share/ca-certificates/rootCA.crt
+RUN update-ca-certificates
 
 # Verify
 RUN ls -l /etc/ssl/certs/ && ls -l /etc/ssl/private/
