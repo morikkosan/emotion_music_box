@@ -78,7 +78,6 @@ gem "redis-session-store"
 
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-# gem "image_processing", "~> 1.2"
 group :development, :test do
   gem "rspec-rails"
   gem 'factory_bot_rails'
@@ -92,10 +91,14 @@ group :development do
 end
 
 group :test do
-  gem "capybara"
-  gem "selenium-webdriver"
   gem 'shoulda-matchers'
   gem 'database_cleaner-active_record'
+  gem "webmock"
+  gem 'vcr', require: false
+  gem 'simplecov', require: false
+      # WebMockと連携した録画型の外部APIテスト
+
+
 end
 
 gem "line-bot-api", "~> 1.20"
