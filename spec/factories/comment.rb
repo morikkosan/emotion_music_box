@@ -2,6 +2,6 @@ FactoryBot.define do
   factory :comment do
     association :user
     association :emotion_log
-    content { "テストコメント" }
+    body { "テストコメント" }
   end
 end

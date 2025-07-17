@@ -1,15 +1,16 @@
 require 'rails_helper'
 
-before(:each) do
-  CommentReaction.delete_all
-  Comment.delete_all
-  Bookmark.delete_all
-  PlaylistItem.delete_all   # ← これが必須
-  EmotionLogTag.delete_all  # ← タグの中間も
-  Tag.delete_all
-  EmotionLog.delete_all
-end
+RSpec.describe EmotionLog, type: :model do
 
+  before(:each) do
+    CommentReaction.delete_all
+    Comment.delete_all
+    Bookmark.delete_all
+    PlaylistItem.delete_all   # ← これが必須
+    EmotionLogTag.delete_all  # ← タグの中間も
+    Tag.delete_all
+    EmotionLog.delete_all
+  end
 
   let(:user) { create(:user) }
 
@@ -114,4 +115,5 @@ end
       expect(assoc.options[:through]).to eq :emotion_log_tags
     end
   end
+
 end
