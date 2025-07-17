@@ -15,8 +15,15 @@ class User < ApplicationRecord
   has_one :push_subscription, dependent: :destroy
 
   # バリデーション
+  validates :name, presence: true
+  validates :name, length: { maximum: 6 }
+
+  validates :uid, presence: true
+
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
   validates :password, length: { minimum: 6 }, allow_nil: true
+  validates :provider, presence: true
+
 
     attr_accessor :cropped_avatar_data
     attr_accessor :remove_avatar
@@ -33,9 +40,10 @@ class User < ApplicationRecord
     user = identity.user || User.find_by(email: auth.info.email)
 
     if user.nil?
+      name = (auth.info.name || "未設定")[0, 6]
       user = User.new(
         email: auth.info.email.presence || "#{auth.uid}@soundcloud.com",
-        name: auth.info.name || "未設定",
+        name: name,
         password: Devise.friendly_token[0, 20],
         provider: auth.provider,
         uid: auth.uid,
