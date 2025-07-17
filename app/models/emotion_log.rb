@@ -120,9 +120,9 @@ class EmotionLog < ApplicationRecord
       errors.add(:description, "に過激な表現が含まれています。やさしい言葉でお願いします。")
     end
 
-    if description =~ /[!@#$%^&*()_+={}\[\]:;"'<>,.?\/\\|-]/
-      errors.add(:description, "に記号や特殊文字は使用できません。")
-    end
+    # if description =~ /[!@#$%^&*()_+={}\[\]:;"'<>,.?\/\\|-]/
+    #   errors.add(:description, "に記号や特殊文字は使用できません。")
+    # end
   end
 
   # タグを登録する（カンマ区切りで受け取った tag_names を保存）
