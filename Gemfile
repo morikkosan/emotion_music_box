@@ -107,3 +107,6 @@ gem 'zeitwerk', '~> 2.6'
 gem 'lograge'
 gem 'sentry-rails'
 gem 'sentry-ruby'
+gem "spring", "~> 4.3"
+
+gem "spring-commands-rspec", "~> 1.0"
