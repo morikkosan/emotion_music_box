@@ -6,11 +6,23 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
     Rails.logger.debug "🔹 OAuth Callback Started for SoundCloud"
     Rails.logger.debug "🔹 Parameters received: #{params.inspect}"
     Rails.logger.debug "🔍 Current session data: #{session.to_hash}"
+    
+    
 
     oauth_data = request.env["omniauth.auth"]
     error_data = request.env["omniauth.error"]
-    Rails.logger.debug "🔍 omniauth.auth: #{oauth_data.inspect}"
-    Rails.logger.debug "🔍 omniauth.error: #{error_data.inspect}" if error_data
+
+if oauth_data.nil? || oauth_data["info"].nil?
+  flash[:alert] = "SoundCloud認証に失敗しました。"
+  redirect_to root_path and return
+end
+
+Rails.logger.debug "🧪 credentials: #{oauth_data.credentials&.inspect}"
+Rails.logger.debug "🔑 トークン: #{oauth_data.credentials&.token}"
+Rails.logger.debug "🔁 リフレッシュトークン: #{oauth_data.credentials&.refresh_token}"
+Rails.logger.debug "⏳ 有効期限(UNIX): #{oauth_data.credentials&.expires_at}"
+Rails.logger.debug "⏰ 有効期限(Readable): #{Time.at(oauth_data.credentials.expires_at) if oauth_data.credentials&.expires_at}"
+
 
     if oauth_data.nil? || oauth_data["info"].nil?
       # Rails.logger.error "❌ SoundCloud OAuth data is missing"

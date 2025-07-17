@@ -16,10 +16,14 @@ class User < ApplicationRecord
 
   # バリデーション
   validates :name, presence: true
+  validates :name, length: { maximum: 6 }
+
   validates :uid, presence: true
 
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
   validates :password, length: { minimum: 6 }, allow_nil: true
+  validates :provider, presence: true
+
 
     attr_accessor :cropped_avatar_data
     attr_accessor :remove_avatar
