@@ -260,6 +260,42 @@
           null
         ]
       },
+      "/rails/app/models/comment_reaction.rb": {
+        "lines": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          null
+        ]
+      },
+      "/rails/app/models/comment.rb": {
+        "lines": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          null,
+          null,
+          null,
+          1,
+          6,
+          3,
+          null,
+          null,
+          null,
+          1,
+          12,
+          null,
+          null,
+          1,
+          6,
+          null,
+          null
+        ]
+      },
       "/rails/app/models/emotion_log.rb": {
         "lines": [
           null,
@@ -286,7 +322,7 @@
           1,
           null,
           null,
-          10,
+          14,
           null,
           null,
           3,
@@ -328,18 +364,14 @@
           null,
           null,
           1,
-          9,
+          13,
           null,
           null,
           null,
-          9,
+          13,
           null,
-          9,
-          9,
-          null,
-          null,
-          null,
-          null,
+          13,
+          13,
           null,
           null,
           null,
@@ -351,9 +383,13 @@
           null,
           null,
           null,
-          9,
           null,
-          9,
+          null,
+          null,
+          null,
+          13,
+          null,
+          13,
           null,
           0,
           null,
@@ -361,26 +397,26 @@
           null,
           null,
           1,
-          9,
-          9,
+          13,
+          13,
           null,
           null,
           1,
           null,
           null,
           1,
-          15,
+          19,
           1,
           null,
           null,
           null,
           null,
           1,
-          15,
+          19,
           null,
-          15,
+          19,
           null,
-          142,
+          182,
           1,
           null,
           null,
@@ -391,7 +427,7 @@
           null,
           null,
           1,
-          9,
+          13,
           null,
           1,
           2,
@@ -436,42 +472,6 @@
           1,
           1,
           1,
-          null
-        ]
-      },
-      "/rails/app/models/comment_reaction.rb": {
-        "lines": [
-          1,
-          1,
-          1,
-          1,
-          1,
-          null
-        ]
-      },
-      "/rails/app/models/comment.rb": {
-        "lines": [
-          1,
-          1,
-          1,
-          1,
-          1,
-          null,
-          null,
-          null,
-          1,
-          0,
-          0,
-          null,
-          null,
-          null,
-          1,
-          0,
-          null,
-          null,
-          1,
-          0,
-          null,
           null
         ]
       },
@@ -2497,6 +2497,6 @@
         "branches": {}
       }
     },
-    "timestamp": 1752758786
+    "timestamp": 1752769174
   }
 }
