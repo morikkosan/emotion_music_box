@@ -12,6 +12,7 @@ class Playlist < ApplicationRecord
   private
 
   def playlist_count_within_limit
+      return if user.nil?
     # 新規作成時に user.playlists がすでに12個あるときはエラー
     if user.playlists.count >= 12
       errors.add(:base, "プレイリストは12個までしか作成できません")

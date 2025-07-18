@@ -4,7 +4,7 @@ class SoundCloudController < ApplicationController
   # 認証不要にする場合は before_action を外すかコメントアウトしてください。
   # before_action :authenticate_user!, only: [:resolve, :search]
 
-  # GET /sc_resolve?url=…
+  # GET /sc_resolve?url=…SoundCloudのページURLを、APIで扱いやすい曲データに**変換（resolve）する
   def resolve
     url   = params.require(:url)
     token = fetch_app_token
