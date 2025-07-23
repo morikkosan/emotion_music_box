@@ -96,6 +96,8 @@ group :test do
   gem "webmock"
   gem 'vcr', require: false
   gem 'simplecov', require: false
+  gem 'rails-controller-testing'
+
       # WebMockと連携した録画型の外部APIテスト
 
 
