@@ -1,6 +1,8 @@
 # This file is copied to spec/ when you run 'rails generate rspec:install'
 
 require 'spec_helper'
+require 'rails-controller-testing'
+
 ENV['RAILS_ENV'] ||= 'test'
 require_relative '../config/environment'
 
@@ -48,6 +50,9 @@ RSpec.configure do |config|
     allow_any_instance_of(ActionController::Base)
       .to receive(:protect_against_forgery?).and_return(false)
   end
+
+  config.include Devise::Test::ControllerHelpers, type: :controller
+
 
   # データベースをテストごとにロールバックしてクリーンに保つ
   config.use_transactional_fixtures = true

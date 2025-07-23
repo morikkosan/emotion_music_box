@@ -311,3 +311,4 @@ end
     head :forbidden unless @emotion_log.user == current_user
   end
 end
+
