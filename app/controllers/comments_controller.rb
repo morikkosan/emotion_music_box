@@ -19,21 +19,24 @@ class CommentsController < ApplicationController
         log_owner = @emotion_log.user
         if log_owner != current_user
           # LINE通知
-          if log_owner.line_user_id.present?
-            LineBotController.new.send_comment_notification(
-              log_owner,
-              commenter_name: current_user.name,
-              comment_body: @comment.body
-            )
-          end
+          # if log_owner.line_user_id.present?
+          #   LineBotController.new.send_comment_notification(
+          #     log_owner,
+          #     commenter_name: current_user.name,
+          #     comment_body: @comment.body
+          #   )
+          # end
+
           # WebPush通知
-          if log_owner.push_subscription.present?
+          # WebPush通知
+          if log_owner.push_enabled? && log_owner.push_subscription.present?
             PushNotifier.send_comment_notification(
               log_owner,
               commenter_name: current_user.name,
               comment_body: @comment.body
             )
           end
+
         end
 
         format.turbo_stream
@@ -129,14 +132,14 @@ end
       # ✅ コメント主が自分以外なら通知
       if comment.user != current_user
         # LINE通知
-        if comment.user.line_user_id.present?
-          LineBotController.new.send_reaction(
-            comment.user,
-            user_name: current_user.name,
-            bookmark: comment.emotion_log&.track_name || "あなたの投稿",
-            comment_reaction: kind.to_s
-          )
-        end
+        # if comment.user.line_user_id.present?
+        #   LineBotController.new.send_reaction(
+        #     comment.user,
+        #     user_name: current_user.name,
+        #     bookmark: comment.emotion_log&.track_name || "あなたの投稿",
+        #     comment_reaction: kind.to_s
+        #   )
+        # end
         # WebPush通知
         if comment.user.push_subscription.present?
           PushNotifier.send_reaction_notification(

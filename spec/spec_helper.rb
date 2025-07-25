@@ -3,7 +3,15 @@
 # The generated `.rspec` file contains `--require spec_helper` which will cause
 # this file to always be loaded, without a need to explicitly require it in any
 # files.
-#
+require 'simplecov'
+SimpleCov.start do
+  add_filter 'app/channels/'
+
+    add_group 'Lib', 'lib'
+
+  # ...必要に応じて他も
+end
+
 # Given that it is always loaded, you are encouraged to keep this file as
 # light-weight as possible. Requiring heavyweight dependencies from this file
 # will add to the boot time of your test suite on EVERY test run, even for an
@@ -79,6 +87,7 @@ RSpec.configure do |config|
   # particularly slow.
   config.profile_examples = 10
 
+  
   # Run specs in random order to surface order dependencies. If you find an
   # order dependency and want to debug it, you can fix the order by providing
   # the seed, which is printed after each run.

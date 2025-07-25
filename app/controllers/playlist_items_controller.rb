@@ -38,7 +38,7 @@ class PlaylistItemsController < ApplicationController
             ),
             turbo_stream.append(
               "flash_messages",
-              partial: "shared/flash",
+              partial: "shared/flash_container",
               locals: { flash: { alert: "曲の追加に失敗しました: #{@item.errors.full_messages.join(', ')}" } }
             )
           ]

@@ -21,8 +21,9 @@ end
   helper_method :mobile_device?
 
   def mobile_device?
-    request.user_agent.to_s.downcase =~ /mobile|webos|iphone|android/
-  end
+  !!(request.user_agent.to_s.downcase =~ /mobile|webos|iphone|android/)
+end
+
 
 
 
