@@ -19,8 +19,40 @@ ja:
       x_months: "%{count}ヶ月前"
       x_years: "%{count}年前"
 
+  errors:
+    format: "%{attribute}%{message}"
+    messages:
+      blank: "を入力してください"
+      taken: "はすでに存在します"
+      too_short: "は%{count}文字以上で入力してください"
+      too_long: "は%{count}文字以内で入力してください"
+      not_a_number: "は数値で入力してください"
+      confirmation: "が一致しません"
+
   activerecord:
+    errors:
+      models:
+        playlist:
+          attributes:
+            name:
+              blank: "を入力してください"
+        tag:
+          attributes:
+            name:
+              blank: "を入力してください"
+        user:
+          attributes:
+            name:
+              blank: "を入力してください"
+            email:
+              blank: "を入力してください"
     attributes:
+      playlist:
+        name: "名前"
+        user_id: "ユーザーID"
+        created_at: "作成日時"
+        updated_at: "更新日時"
+
       active_storage_attachment:
         name: "名前"
         record_type: "レコードタイプ"
@@ -91,7 +123,7 @@ ja:
         session_id: "セッションID"
         data: "データ"
         created_at: "作成日時"
-        updated_at: "更新日時"
+        updated_at: "作成日時"
 
       tag:
         name: "名前"
