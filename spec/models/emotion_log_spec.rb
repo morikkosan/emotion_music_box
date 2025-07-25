@@ -109,11 +109,29 @@ RSpec.describe EmotionLog, type: :model do
       expect(assoc.macro).to eq :has_many
     end
 
+    it "複数のブックマークを持てること" do
+      assoc = described_class.reflect_on_association(:bookmarks)
+      expect(assoc.macro).to eq :has_many
+    end
+
     it "タグと多対多の関係を持つこと" do
       assoc = described_class.reflect_on_association(:tags)
       expect(assoc.macro).to eq :has_many
       expect(assoc.options[:through]).to eq :emotion_log_tags
     end
   end
+
+  describe "#bookmark_users" do
+  it "ブックマークしたユーザーが取得できること" do
+    log = create(:emotion_log, user: user)      # 対象の投稿（EmotionLog）
+    user1 = create(:user)                       # ブックマークするユーザー1
+    user2 = create(:user)                       # ブックマークするユーザー2
+    create(:bookmark, emotion_log: log, user: user1) # user1がブックマーク
+    create(:bookmark, emotion_log: log, user: user2) # user2がブックマーク
+
+    expect(log.bookmark_users).to contain_exactly(user1, user2)
+  end
+end
+
 
 end

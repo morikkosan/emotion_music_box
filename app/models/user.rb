@@ -57,6 +57,11 @@ class User < ApplicationRecord
     user
   end
 
+  def push_enabled?
+  self[:push_enabled]  # もしくは self.push_enabled
+  end
+
+
   def connected_with?(provider)
     identities.exists?(provider: provider)
   end
