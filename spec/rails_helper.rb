@@ -6,17 +6,14 @@ require 'rails-controller-testing'
 ENV['RAILS_ENV'] ||= 'test'
 require_relative '../config/environment'
 
-# 本番環境でテストが実行されないようにする安全装置
 abort("The Rails environment is running in production mode!") if Rails.env.production?
 
 # ✅ カバレッジ計測（コードの網羅率を計測）
 require 'simplecov'
 SimpleCov.start 'rails'
 
-# ✅ shoulda-matchers（ここが重要！）
+# ✅ shoulda-matchers
 require 'shoulda/matchers'
-
-# ✅ RSpecとRailsの統合設定
 Shoulda::Matchers.configure do |config|
   config.integrate do |with|
     with.test_framework :rspec
@@ -24,19 +21,19 @@ Shoulda::Matchers.configure do |config|
   end
 end
 
-# Require the Rails testing framework
 require 'rspec/rails'
 
-# ✅ 外部APIをテストで呼ばないようにスタブ化（WebMock使用）
+# ✅ 外部APIをテストで呼ばないようにスタブ化
 require 'webmock/rspec'
 WebMock.disable_net_connect!(allow_localhost: true)
 
-# `spec/support/`配下にあるファイルを全て読み込む
+# ✅ `spec/support/` を読み込む
 Rails.root.glob('spec/support/**/*.rb').sort_by(&:to_s).each { |f| require f }
 
-Rails.application.routes.default_url_options[:host] = 'localhost'
+# ✅ 明示的にデフォルトURLホストを設定
+Rails.application.routes.default_url_options[:host] = 'www.example.com'
 
-# テスト前にDBのスキーマが最新か確認（マイグレーション漏れ対策）
+# ✅ DBマイグレーションチェック
 begin
   ActiveRecord::Migration.maintain_test_schema!
 rescue ActiveRecord::PendingMigrationError => e
@@ -45,21 +42,21 @@ end
 
 RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
+  config.include Devise::Test::IntegrationHelpers, type: :request
+  config.include Devise::Test::ControllerHelpers, type: :controller
 
+  # ✅ リクエストスペック用
   config.before(:each, type: :request) do
+    host! "www.example.com"
     allow_any_instance_of(ActionController::Base)
       .to receive(:protect_against_forgery?).and_return(false)
   end
 
-  config.include Devise::Test::ControllerHelpers, type: :controller
+  # ✅ コントローラスペック用
+  config.before(:each, type: :controller) do
+    request.host = "www.example.com"
+  end
 
-
-  # データベースをテストごとにロールバックしてクリーンに保つ
   config.use_transactional_fixtures = true
-
-  # テストファイルの場所から自動で `type: :model` などを推測
-  # config.infer_spec_type_from_file_location!
-
-  # バックトレースからRails内部の行を省略して見やすくする
   config.filter_rails_from_backtrace!
 end
