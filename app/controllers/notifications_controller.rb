@@ -5,7 +5,7 @@ class NotificationsController < ApplicationController
 
     return render plain: "No subscription" unless user.push_subscription.present?
 
-    Webpush.payload_send(
+    WebPush.payload_send(
       endpoint: user.push_subscription.endpoint,
       message: {
         title: "通知テスト 🎉",

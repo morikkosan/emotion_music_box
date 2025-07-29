@@ -1,7 +1,7 @@
 class User < ApplicationRecord
   # devise関連
   devise :database_authenticatable, :registerable, :recoverable,
-         :rememberable, :omniauthable, omniauth_providers: [ :soundcloud, :google_oauth2 ]
+         :rememberable, :omniauthable, omniauth_providers: [:soundcloud, :google_oauth2]
 
   # 関連
   has_many :emotion_logs, dependent: :destroy
@@ -17,17 +17,13 @@ class User < ApplicationRecord
   # バリデーション
   validates :name, presence: true
   validates :name, length: { maximum: 6 }
-
-  validates :uid, presence: true
-
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
   validates :password, length: { minimum: 6 }, allow_nil: true
+  validates :uid, presence: true
   validates :provider, presence: true
 
-
-    attr_accessor :cropped_avatar_data
-    attr_accessor :remove_avatar
-
+  attr_accessor :cropped_avatar_data
+  attr_accessor :remove_avatar
 
   # プロフィール画像URLを返す（Cloudinary無ければデフォルト画像）
   def profile_avatar_url
@@ -58,9 +54,8 @@ class User < ApplicationRecord
   end
 
   def push_enabled?
-  self[:push_enabled]  # もしくは self.push_enabled
+    self[:push_enabled]
   end
-
 
   def connected_with?(provider)
     identities.exists?(provider: provider)
