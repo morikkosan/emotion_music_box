@@ -1,16 +1,20 @@
 FactoryBot.define do
   factory :user do
-    sequence(:email) { |n| "dummy#{n}@example.com" }  # ←これ追加
+    sequence(:email) { |n| "dummy#{n}@example.com" }
     uid { SecureRandom.hex(8) }
-    provider { "soundcloud" }   # ← "sound_cloud" → "soundcloud" に合わせて（from_omniauthの値に揃える）
+    provider { "soundcloud" }
     profile_completed { true }
     gender { "other" }
     age { 20 }
     name { "太郎" }
     avatar_url { "/images/default_stick_figure.webp" }
+    password { "password" }
+    password_confirmation { "password" }
 
-    trait :with_unique_name do
-      sequence(:name) { |n| ("u#{n}")[0...6] }
+    # テスト用パスワードユーザー
+    trait :password_user do
+      provider { "test" }   # ← nilにしない！
+      uid { "test_uid" }
     end
   end
 end
