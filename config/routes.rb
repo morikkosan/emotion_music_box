@@ -8,6 +8,7 @@ Rails.application.routes.draw do
         sessions: "users/sessions"
 
     },
+    
     path: ""
 
   root "emotion_logs#index"
@@ -43,6 +44,7 @@ Rails.application.routes.draw do
   get "jamendo/search",          to: "jamendo#search"
   get "/soundcloud_client_id",   to: "sound_cloud#client_id"
   get "/soundcloud/search",      to: "sound_cloud#search"
+  get "tags", to: "tags#index"
   get "tags/search", to: "tags#search"
   get "/terms", to: "pages#terms", as: :terms
   post '/line_bot/callback', to: 'line_bot#callback'
@@ -66,6 +68,9 @@ Rails.application.routes.draw do
   get "notifications/public_key", to: "notifications#public_key"
 
 
+if Rails.env.test? || Rails.env.development?
+  get '/debug/session_info', to: 'debug#session_info'
+end
 
 
 #   get '/line_notify_test', to: 'line_bot#test_notify'

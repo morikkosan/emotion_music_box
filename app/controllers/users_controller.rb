@@ -1,30 +1,30 @@
 class UsersController < ApplicationController
   before_action :authenticate_user!  # ログインしていない場合にアクセス不可
 
-  # ユーザー一覧ページ
-  def index
-    @users = User.all
-  end
+  # # ユーザー一覧ページ
+  # def index
+  #   @users = User.all
+  # end
 
-  # ユーザー詳細ページ
-  def show
-    @user = User.find(params[:id])
-  end
+  # # ユーザー詳細ページ
+  # def show
+  #   @user = User.find(params[:id])
+  # end
 
-  # ユーザー編集ページ
-  def edit
-    @user = current_user
-  end
+  # # ユーザー編集ページ
+  # def edit
+  #   @user = current_user
+  # end
 
-  # ユーザー情報更新
-  def update
-    @user = current_user
-    if @user.update(user_params)
-      redirect_to @user, notice: "プロフィールが更新されました"
-    else
-      render :edit
-    end
-  end
+  # # ユーザー情報更新
+  # def update
+  #   @user = current_user
+  #   if @user.update(user_params)
+  #     redirect_to @user, notice: "プロフィールが更新されました"
+  #   else
+  #     render :edit
+  #   end
+  # end
 
   def enable_push_notifications
   current_user.update!(push_enabled: true)

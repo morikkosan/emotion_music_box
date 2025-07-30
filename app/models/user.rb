@@ -34,6 +34,7 @@ class User < ApplicationRecord
   def self.from_omniauth(auth)
     identity = Identity.find_or_initialize_by(provider: auth.provider, uid: auth.uid)
     user = identity.user || User.find_by(email: auth.info.email)
+      new_name = (auth.info.name || "未設定")[0, 6]
 
     if user.nil?
       name = (auth.info.name || "未設定")[0, 6]
@@ -46,6 +47,8 @@ class User < ApplicationRecord
         soundcloud_uid: auth.uid # ← 追加
       )
       user.save
+    else
+        user.update(name: new_name) if user.name != new_name
     end
 
     identity.user = user
