@@ -5,7 +5,20 @@
 # files.
 require 'simplecov'
 SimpleCov.start do
-  add_filter 'app/channels/'
+add_filter 'app/controllers/home_controller.rb'
+add_filter 'app/controllers/errors_controller.rb'
+add_filter 'app/controllers/pages_controller.rb'
+add_filter 'app/controllers/test_controller.rb'
+add_filter 'app/channels/omniauth_callbacks_controller.rb'
+add_filter 'app/controllers/users/registrations_controller.rb'
+add_filter 'app/controllers/users/sessions_controller.rb'
+add_filter 'app/channels/'
+add_filter 'app/jobs/'
+add_filter 'app/services/line_bot_notifier.rb'
+add_filter 'app/controllers/users/omniauth_callbacks_controller.rb'
+
+
+
 
     add_group 'Lib', 'lib'
 
