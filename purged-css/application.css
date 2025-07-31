@@ -2539,7 +2539,7 @@ h1 i.bi bi-heart-pulse {
 #bar-width-display {
   font-weight: bold;
   font-size: 28px;
-  color: rgb(0, 85, 165); /* 🎯 文字色は白 */
+  color: rgb(18, 198, 24); /* 🎯 文字色は白 */
   display: inline-block;
   margin-left: 10px; /* 🎯 数値とテキストの間隔を調整 */
   text-shadow: 0 0 25px rgba(183, 13, 73, 0.8), 0 0 35px rgba(212, 212, 59, 0.6); /* 🎯 ぼんやりした光 */
