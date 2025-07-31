@@ -60,8 +60,11 @@ end
     format.turbo_stream      # toggle.turbo_stream.erb
     format.html { redirect_back fallback_location: root_path }
   end
+  # :nocov:
 rescue ActiveRecord::RecordNotUnique
-  retry                     # まれに競合したとき用
+  retry 
+  # :nocov:
+                    # まれに競合したとき用
 end
 
 

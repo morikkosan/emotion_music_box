@@ -40,6 +40,13 @@ RSpec.describe EmotionLogsController, type: :controller do
         expect(assigns(:user_bookmark_ids)).to include(log1.id)
       end
     end
+
+    it "hpパラメータでHP値から感情を計算し絞り込み" do
+      allow_any_instance_of(EmotionLogsController).to receive(:calculate_hp_emotion).and_return("最高")
+      get :index, params: { hp: 10 }
+      expect(assigns(:emotion_logs)).to include(log1)
+      expect(assigns(:emotion_logs)).not_to include(log2)
+    end
   end
 
   describe "GET #my_emotion_logs" do
@@ -214,7 +221,113 @@ RSpec.describe EmotionLogsController, type: :controller do
       get :bookmarks
       expect(response).to redirect_to(emotion_logs_path)
     end
+
+    it "include_my_logsがtrueなら自分の投稿も一覧に含まれる" do
+      my_log = create(:emotion_log, user: user)
+      get :bookmarks, params: { include_my_logs: "true" }
+      expect(assigns(:emotion_logs)).to include(bookmark_log, my_log)
+    end
   end
+
+  describe "#calculate_hp_emotion" do
+    controller do
+      public :calculate_hp_emotion
+    end
+
+    it "HP0で限界" do
+      expect(controller.calculate_hp_emotion(0)).to eq("限界")
+    end
+
+    it "HP10でイライラ" do
+      expect(controller.calculate_hp_emotion(10)).to eq("イライラ")
+    end
+
+    it "HP30でいつも通り" do
+      expect(controller.calculate_hp_emotion(30)).to eq("いつも通り")
+    end
+
+    it "HP60で気分良い" do
+      expect(controller.calculate_hp_emotion(60)).to eq("気分良い")
+    end
+
+    it "HP80で最高" do
+      expect(controller.calculate_hp_emotion(80)).to eq("最高")
+    end
+
+    it "範囲外はいつも通り" do
+      expect(controller.calculate_hp_emotion(999)).to eq("いつも通り")
+      expect(controller.calculate_hp_emotion(-10)).to eq("いつも通り")
+    end
+  end
+
+    describe "#apply_sort_and_period_filters" do
+    controller do
+      public :apply_sort_and_period_filters
+    end
+
+    let(:logs) { double("logs") }
+
+    it "sort=new で logs.newest" do
+      allow(controller).to receive(:params).and_return(ActionController::Parameters.new(sort: "new"))
+      expect(logs).to receive(:newest).and_return(logs)
+      controller.apply_sort_and_period_filters(logs)
+    end
+
+    it "sort=old で logs.oldest" do
+      allow(controller).to receive(:params).and_return(ActionController::Parameters.new(sort: "old"))
+      expect(logs).to receive(:oldest).and_return(logs)
+      controller.apply_sort_and_period_filters(logs)
+    end
+
+    it "sort=likes で logs.by_bookmarks" do
+      allow(controller).to receive(:params).and_return(ActionController::Parameters.new(sort: "likes"))
+      expect(logs).to receive(:by_bookmarks).and_return(logs)
+      controller.apply_sort_and_period_filters(logs)
+    end
+
+    it "sort=comments で logs.by_comments" do
+      allow(controller).to receive(:params).and_return(ActionController::Parameters.new(sort: "comments"))
+      expect(logs).to receive(:by_comments).and_return(logs)
+      controller.apply_sort_and_period_filters(logs)
+    end
+
+    # period も同じように
+    it "period=today で logs.for_today" do
+      expect(logs).to receive(:newest).and_return(logs)
+      allow(controller).to receive(:params).and_return(ActionController::Parameters.new(period: "today"))
+      expect(logs).to receive(:for_today).and_return(logs)
+      controller.apply_sort_and_period_filters(logs)
+    end
+
+  it "period=week で logs.for_week" do
+    expect(logs).to receive(:newest).and_return(logs)
+    allow(controller).to receive(:params).and_return(ActionController::Parameters.new(period: "week"))
+    expect(logs).to receive(:for_week).and_return(logs)
+    controller.apply_sort_and_period_filters(logs)
+  end
+
+  it "period=month で logs.for_month" do
+    expect(logs).to receive(:newest).and_return(logs)
+    allow(controller).to receive(:params).and_return(ActionController::Parameters.new(period: "month"))
+    expect(logs).to receive(:for_month).and_return(logs)
+    controller.apply_sort_and_period_filters(logs)
+  end
+
+  it "period=halfyear で logs.for_half_year" do
+    expect(logs).to receive(:newest).and_return(logs)
+    allow(controller).to receive(:params).and_return(ActionController::Parameters.new(period: "halfyear"))
+    expect(logs).to receive(:for_half_year).and_return(logs)
+    controller.apply_sort_and_period_filters(logs)
+  end
+
+  it "period=year で logs.for_year" do
+    expect(logs).to receive(:newest).and_return(logs)
+    allow(controller).to receive(:params).and_return(ActionController::Parameters.new(period: "year"))
+    expect(logs).to receive(:for_year).and_return(logs)
+    controller.apply_sort_and_period_filters(logs)
+  end
+end
+
 
   describe "GET #recommended" do
     before { sign_in user }
@@ -226,14 +339,13 @@ RSpec.describe EmotionLogsController, type: :controller do
   end
 
   describe "ログインユーザーのトークンが期限切れのときはリフレッシュ処理が走る" do
-  let(:expired_user) { create(:user, soundcloud_token_expires_at: 1.hour.ago) }
+    let(:expired_user) { create(:user, soundcloud_token_expires_at: 1.hour.ago) }
 
-  before { sign_in expired_user }
+    before { sign_in expired_user }
 
-  it "リフレッシュ処理が呼ばれる" do
-    expect(SoundCloudClient).to receive(:refresh_token).with(expired_user).and_return(true)
-    get :index
+    it "リフレッシュ処理が呼ばれる" do
+      expect(SoundCloudClient).to receive(:refresh_token).with(expired_user).and_return(true)
+      get :index
+    end
   end
-end
-
 end
