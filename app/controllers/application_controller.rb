@@ -1,5 +1,5 @@
 class ApplicationController < ActionController::Base
-  protect_from_forgery with: :exception
+protect_from_forgery with: Rails.env.test? ? :null_session : :exception
   # before_action :force_mobile_view
 before_action :refresh_soundcloud_token_if_needed
 
@@ -112,4 +112,19 @@ end
   #   Rails.logger.debug "🔍 [SESSION] Current session data: #{session.to_hash}"
   #   Rails.logger.debug "🟢 Current session['omniauth.state']: #{session['omniauth.state']}"
   # end
+
+    def authenticate_user!
+  if user_signed_in?
+    super
+  else
+    request_format = request.format.symbol
+
+    if request_format == :json
+      render json: { error: "Unauthorized" }, status: :unauthorized
+    else
+      redirect_to new_user_session_path
+    end
+  end
+end
+
 end
