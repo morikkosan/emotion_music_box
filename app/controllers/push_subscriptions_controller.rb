@@ -1,9 +1,19 @@
-# app/controllers/push_subscriptions_controller.rb
 class PushSubscriptionsController < ApplicationController
-  protect_from_forgery with: :null_session
+  skip_before_action :verify_authenticity_token
+
+  protect_from_forgery with: :null_session, if: -> { request.format.json? }
+
   before_action :authenticate_user!
+  respond_to :json
 
   def create
+    
+  Rails.logger.debug "🐛 createアクションに入りました"
+  Rails.logger.debug "🐛 current_user: #{current_user.inspect}"
+  Rails.logger.debug "🐛 リクエスト形式: #{request.format}"
+  Rails.logger.debug "🐛 リクエストヘッダー: #{request.headers.env.select { |k, _| k.to_s.start_with?('HTTP_') }}"
+  Rails.logger.debug "🐛 params: #{params.inspect}"
+
     sub = params[:subscription]
 
     current_user.push_subscription&.destroy
