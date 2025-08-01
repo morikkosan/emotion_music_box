@@ -191,7 +191,9 @@
 
   </div> <!-- #desktop-view -->
 
- <!-- モバイルビュー -->
+
+
+  <!-- モバイルビュー -->
   <div id="mobile-view" style="display: none;">
     <% content_for :title, "エモミュ" %>
 
@@ -246,13 +248,14 @@
           </span>
         <% else %>
           <!-- モバイル版専用のHPバー -->
-          <div class="mobile-hp-bar-container">
-            <p id="hp-status-text">メンタル正常</p>
-            <div class="mobile-hp-bar" id="hp-bar"></div>
-            <span class="mobile_today_mental_text">
-              👆Today's stress level <span id="bar-width-display"></span>👆
-            </span>
-          </div>
+          <!-- モバイル版専用のHPバー -->
+<div class="mobile-hp-bar-container">
+  <p id="hp-status-text">メンタル正常</p>
+  <div class="mobile-hp-bar" id="hp-bar"></div>
+  <span class="mobile_today_mental_text">
+    👆Today's stress level <span id="bar-width-display"></span>👆
+  </span>
+</div>
         <% end %>
 
         <!-- ✅ ネオン風記録ボタン -->
@@ -292,6 +295,9 @@
       <%= render partial: "emotion_logs/mobile_list", locals: { logs: @emotion_logs } %>
       <div class="player-space-spacer"></div>
     </div>
+
+<!-- 他のプレイヤーの操作エリア -->
+
 
     <% if user_signed_in? %>
       <!-- ✅ フッターメニュー -->
