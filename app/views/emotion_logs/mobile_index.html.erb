@@ -96,6 +96,8 @@
 <!-- ✅ 投稿一覧 -->
 <div class="mobile-content pb-5 px-3 mt-4">
   <%= render partial: "emotion_logs/mobile_list", locals: { logs: @emotion_logs } %>
+    <div class="player-space-spacer"></div>
+
 </div>
 <% if user_signed_in? %>
   <!-- ✅ フッターメニュー -->
