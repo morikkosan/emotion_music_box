@@ -182,18 +182,31 @@ h1 i.bi bi-heart-pulse {
 #hp-bar-container {
   width: 100%;
   text-align: center;
-  margin-top: 10px;
+  margin: 1.2em 0 1em 0;
   position: relative;
   z-index: 0;
+  background: rgba(203, 73, 194, 0.3);  /* ←背景の透明紫 */
+  border-radius: 14px;
+  padding: 1em 0.7em 0.6em;
+  box-shadow: 0 2px 16px #0cf2;
 }
 
 #hp-bar {
-  height: 20px; /* バーの高さ */
-  width: 100%; /* 親幅いっぱい */
-  max-width: 100%; /* 最大幅100% */
-  background-color: green; /* 初期色 */
-  transition: width 0.5s ease-in-out; /* アニメーション */
-  border-radius: 10px; /* 角丸 */
+  height: 18px;
+  width: 100%;
+  max-width: 100%;
+  background: linear-gradient(90deg, #3bffce, #1ee4da, #007fff);
+  transition: width 0.5s ease-in-out;
+  border-radius: 9px;
+  margin: 6px 0 3px 0;
+}
+
+.today_mental_text {
+  color: #44e2c9;
+  font-size: 0.96em;
+  font-weight: bold;
+  text-shadow: 0 0 4px #10b0b4;
+  margin-top: 0.5em;
 }
 
 #hp-status-text {
@@ -292,7 +305,7 @@ h1 i.bi bi-heart-pulse {
 #bar-width-display {
   font-weight: bold;
   font-size: 28px;
-  color: rgb(0, 85, 165); /* 🎯 文字色は白 */
+  color: rgb(15, 206, 47); /* 🎯 文字色は白 */
   display: inline-block;
   margin-left: 10px; /* 🎯 数値とテキストの間隔を調整 */
   text-shadow: 
@@ -728,14 +741,9 @@ h1 i.bi bi-heart-pulse {
 }
 
 /* レスポンシブ */
-@media (max-width: 768px) {
-  #super-search-panel {
-    display: none;
-  }
-}
 #super-search-panel {
   position: fixed;
-  top: 160px;      // 仮 ここは「ゲージ下端」の実ピクセルにあわせる
+  top: 150px;
   left: 0;
   width: 240px;
   z-index: 10;
@@ -743,8 +751,11 @@ h1 i.bi bi-heart-pulse {
   border-radius: 0 12px 12px 0;
   box-shadow: 2px 0 8px #0004;
   padding: 16px 10px 16px 20px;
-  bottom: unset;  // bottom指定は外す
+  bottom: unset;
 }
+
+@media (max-width: 1695px) { #super-search-panel { top: 250px; } }
+
 
 #playlist-sidebar {
   all: unset;
