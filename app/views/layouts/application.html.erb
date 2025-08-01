@@ -124,30 +124,30 @@
 <!-- ===== 下部カスタムプレーヤー ===== -->
 <div id="bottom-player" class="bottom-player d-none">
 
-  <!-- 上段: 前の曲・次の曲ボタン＆スマホ用タイトル -->
-  <div class="bottom-player-top-row">
-    <div class="flex-grow-1 d-flex justify-content-center align-items-center" style="width: 100%;">
-      <!-- canvasはPCのみ表示（CSSで消す） -->
-      <canvas id="waveform-anime" width="450" height="44" class="waveform-canvas"></canvas>
+<!-- 上段: 前の曲・次の曲ボタン＆スマホ用タイトル -->
+<div class="bottom-player-top-row">
+  <!-- 左端: canvas -->
+  <canvas id="waveform-anime" width="450" height="44" class="waveform-canvas"></canvas>
 
-      <!-- ▼ 前ボタン -->
-      <button id="prev-track-button"
-        class="btn btn-link text-white bottom-player-button"
-        data-action="click->global-player#prevTrack">
-        <i class="fa fa-step-backward"></i>
-      </button>
-
-      <!-- ▼ 【スマホ専用】曲タイトル（初期は非表示、CSSでスマホ時だけ表示） -->
-      <span id="track-title-top" class="track-title d-none"></span>
-
-      <!-- ▼ 次ボタン -->
-      <button id="next-track-button"
-        class="btn btn-link text-white next-track-btn"
-        data-action="click->global-player#nextTrack">
-        <i class="fa fa-step-forward"></i>
-      </button>
-    </div>
+  <!-- 真ん中: ボタン・曲タイトル（曲タイトルはスマホ時のみ） -->
+  <div class="player-center-btns">
+    <button id="prev-track-button"
+      class="btn btn-link text-white bottom-player-button"
+      data-action="click->global-player#prevTrack">
+      <i class="fa fa-step-backward"></i>
+    </button>
+    <span id="track-title-top" class="track-title d-none"></span>
+    <button id="next-track-button"
+      class="btn btn-link text-white next-track-btn"
+      data-action="click->global-player#nextTrack">
+      <i class="fa fa-step-forward"></i>
+    </button>
   </div>
+
+  <!-- 右端: 空白スペース（flexの空白要素 -->
+  <div class="bottom-player-flex-gap"></div>
+</div>
+
 
   <!-- 下段: プレーヤー本体 -->
   <div class="bottom-player-controls">

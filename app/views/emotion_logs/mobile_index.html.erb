@@ -1,9 +1,9 @@
-<% content_for :title, "エモミュ" %>
+<!-- <% content_for :title, "エモミュ" %>
 
 <div class="container mt-3 position-relative">
-  <% if user_signed_in? %>
+  <% if user_signed_in? %> -->
     <!-- ✅ ユーザードロップダウン -->
-    <div class="user-dropdown-wrapper px-3">
+    <!-- <div class="user-dropdown-wrapper px-3">
       <div class="user-dropdown">
         <div class="user-bar">
           <%= image_tag current_user.profile_avatar_url, size: "32x32", class: "rounded-circle", alt: current_user.name %>
@@ -27,10 +27,10 @@
         </div>
       </div>
     </div>
-  <% end %>
+  <% end %> -->
 
   <!-- ✅ ロゴ表示 -->
-  <div class="text-start mt-2 px-3">
+  <!-- <div class="text-start mt-2 px-3">
     <%= link_to emotion_logs_path do %>
       <%= image_tag "logo1.webp", alt: "Emotion List Logo", class: "img-fluid neon-icon mobile-logo" %>
     <% end %>
@@ -50,7 +50,7 @@
       <span class="bookmark_title">
         <%= @recommended_page %> <!-- 例: 「おすすめ🔥」 -->
       </span>
-    <% else %>
+    <% else %> -->
       <!-- モバイル版専用のHPバー -->
       <div class="mobile-hp-bar-container">
         <p id="hp-status-text">メンタル正常</p>
@@ -62,7 +62,7 @@
     <% end %>
 
     <!-- ✅ ネオン風記録ボタン -->
-    <div class="w-100 text-center my-4 record-mobile-btn-wrap">
+    <!-- <div class="w-100 text-center my-4 record-mobile-btn-wrap">
       <%= link_to "今日の気持ちを記録する",
                   new_emotion_log_path(format: :turbo_stream),
                   id: "record-button",
@@ -91,17 +91,17 @@
         この画面に戻って「ログインして始める」をクリック、さらに「Connect and Continue」を押せば、あなたの新しい音楽の旅が始まります。</strong>
     </div>
   <% end %>
-</div>
+</div> -->
 
 <!-- ✅ 投稿一覧 -->
-<div class="mobile-content pb-5 px-3 mt-4">
+<!-- <div class="mobile-content pb-5 px-3 mt-4">
   <%= render partial: "emotion_logs/mobile_list", locals: { logs: @emotion_logs } %>
     <div class="player-space-spacer"></div>
 
 </div>
-<% if user_signed_in? %>
+<% if user_signed_in? %> -->
   <!-- ✅ フッターメニュー -->
-  <nav class="mobile-footer fixed-bottom bg-dark text-white d-flex justify-content-around py-2">
+  <!-- <nav class="mobile-footer fixed-bottom bg-dark text-white d-flex justify-content-around py-2">
     <%= link_to emotion_logs_path, class: "text-center text-white small" do %>
       <i class="bi bi-house fs-4"></i><br>ホーム
     <% end %>
@@ -122,4 +122,4 @@
 <% end %>
 
 <%= render "emotion_logs/mobile_super_search" %>
-
+ -->
