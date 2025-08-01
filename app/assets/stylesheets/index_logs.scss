@@ -126,46 +126,61 @@
     left: 300px;
     // z-index: 2000;
   }
-
+/* 既存のデザイン（そのまま変更なし） */
+/* --- ここはそのまま --- */
 .mypage-item select.form-control {
-  font-weight: bold;                     /* 文字を太く */
-  color: #fff;                           /* 白文字に統一（任意） */
-  background-color: #333;                /* ダーク背景 */
-  border: 1px solid #666;                /* 枠線調整 */
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.4); /* 内側の影で立体感 */
-
+  font-weight: bold;
+  color: #fff;
+  background-color: #333;
+  border: 1px solid #666;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);
   transition: box-shadow 0.25s ease, border-color 0.25s ease;
 }
-
 .mypage-item select.form-control:hover {
   box-shadow:
     0 0 6px rgba(230, 0, 255, 0.5),
-    0 0 12px rgba(230, 0, 255, 0.3);     /* 紫がかったネオン風 */
-  border-color: rgba(230, 0, 255, 0.6);  /* 境界線も光るように */
+    0 0 12px rgba(230, 0, 255, 0.3);
+  border-color: rgba(230, 0, 255, 0.6);
   cursor: pointer;
 }
-
 .mypage-item input.form-control[type="text"] {
   font-weight: bold;
-  color: #fff;                              /* ← 文字を白に */
-  background-color: #333;                   /* ダーク背景 */
+  color: #fff;
+  background-color: #333;
   border: 1px solid #666;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
-
   transition: box-shadow 0.25s ease, border-color 0.25s ease;
 }
-
 .mypage-item input.form-control[type="text"]::placeholder {
-  color: #aaa;                              /* プレースホルダーは淡いグレーに */
+  color: #aaa;
 }
-
 .mypage-item input.form-control[type="text"]:hover,
 .mypage-item input.form-control[type="text"]:focus {
   box-shadow:
     0 0 6px rgba(0, 170, 255, 0.5),
-    0 0 12px rgba(0, 170, 255, 0.3);         /* 青く光るエフェクト */
+    0 0 12px rgba(0, 170, 255, 0.3);
   border-color: rgba(0, 170, 255, 0.6);
   outline: none;
+}
+
+/* --- ここからレスポンシブ対応だけ追加（色やエフェクトは絶対に変更しない）--- */
+@media (max-width: 900px) {
+  .mypage-item select.form-control,
+  .mypage-item input.form-control[type="text"] {
+    font-size: 0.98em;
+    padding: 0.35em 0.9em;
+    min-width: 60px;
+    width: 100%;
+  }
+}
+@media (max-width: 600px) {
+  .mypage-item select.form-control,
+  .mypage-item input.form-control[type="text"] {
+    font-size: 0.92em;
+    padding: 0.28em 0.5em;
+    min-width: 48px;
+    width: 100%;
+  }
 }
 
 /* 入力欄の下角を削る */
