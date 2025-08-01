@@ -21,6 +21,11 @@
 // 外部CSSのみはそのあと
 @import url("https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/cyborg/bootstrap.min.css");
 
+.view-hidden {
+  display: none !important;
+}
+
+
 html.preload body { visibility: hidden; }
 js
 コードをコピーする

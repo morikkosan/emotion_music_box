@@ -7,15 +7,14 @@ import "./custom/flash_messages";
 import "./custom/gages_test";
 import "./custom/inline_handlers";
 import "./custom/swal_my_create";
-import { subscribeToPushNotifications } from "./custom/push_subscription";  // ← ここを修正
-
-//console.log("🔥 application.js 読み込み開始", Date.now());
+import { subscribeToPushNotifications } from "./custom/push_subscription";
 
 Rails.start();
 console.log("🔥 Rails UJS is loaded!", Rails);
 
 window.bootstrap = bootstrap;
 
+// サービスワーカー登録
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/service-worker.js')
     .then(reg => console.log('ServiceWorker 登録成功:', reg))
@@ -31,60 +30,54 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// ✅ Turboローディング制御まとめ
+// Turboローディング制御まとめ
 document.addEventListener("turbo:visit", () => {
   const loader = document.getElementById("loading-overlay");
-  if (loader) loader.style.display = "flex";
+  if (loader) loader.classList.remove("view-hidden"); // 表示
 });
 
 document.addEventListener("turbo:load", () => {
   const loader = document.getElementById("loading-overlay");
-  if (loader) loader.style.display = "none";
-  // 非同期関数はここで呼び出す（awaitは使えないので then か IIFEで処理）
+  if (loader) loader.classList.add("view-hidden"); // 非表示
+
+  // Push通知
   subscribeToPushNotifications().catch(err => {
     console.error("Push通知登録エラー:", err);
   });
 
-  // 🌱 初期HPと日付の保存処理（ここに移動して確実にDOM読み込み後に実行）
+  // HPと日付保存
   const today = new Date().toISOString().slice(0, 10);
   const savedDate = localStorage.getItem("hpDate");
 
   if (savedDate !== today) {
     localStorage.setItem("hpPercentage", "50");
     localStorage.setItem("hpDate", today);
-    //console.log("✅ HPと日付を初期化しました:", today);
-  } else {
-    //console.log("✅ 既に保存されたHPを使用中:", localStorage.getItem("hpPercentage"));
   }
 
-  //ローディングを非表示にする
-document.addEventListener("turbo:frame-load", () => {
-  const loader = document.getElementById("loading-overlay");
-  if (loader) {
-    //console.log("🟢 turbo:frame-load → ローディング非表示");
-    loader.style.display = "none";
-  }
-});
-  // ✅ Turboフレーム内にモーダルが差し込まれた時にもローディングを確実に消す2回目
-const modalFixObserver = new MutationObserver(() => {
-  const modal = document.querySelector(".modal.show");
-  const modalContent = document.querySelector(".modal-content");
-  const loader = document.getElementById("loading-overlay");
+  // Turboフレーム内でローディングを非表示
+  document.addEventListener("turbo:frame-load", () => {
+    const loader = document.getElementById("loading-overlay");
+    if (loader) loader.classList.add("view-hidden");
+  });
 
-  if (modal && modalContent && loader && loader.style.display !== "none") {
-    //console.log("🛠 turbo-frame + modal を検出 → ローディング非表示");
-    loader.style.display = "none";
-  }
-});
+  // Turboフレーム内モーダルにも対応
+  const modalFixObserver = new MutationObserver(() => {
+    const modal = document.querySelector(".modal.show");
+    const modalContent = document.querySelector(".modal-content");
+    const loader = document.getElementById("loading-overlay");
+    // 「style.display」直接比較はやめてOK、常に非表示指示でOK
+    if (modal && modalContent && loader) {
+      loader.classList.add("view-hidden");
+    }
+  });
 
-modalFixObserver.observe(document.body, {
-  childList: true,
-  subtree: true,
-});
+  modalFixObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
 
-
-  // 🔽 「おすすめ」ボタン処理
-    const recommendButton = document.getElementById("show-recommendations-btn");
+  // おすすめボタン
+  const recommendButton = document.getElementById("show-recommendations-btn");
   if (recommendButton) {
     recommendButton.addEventListener("click", () => {
       const storedHP = localStorage.getItem("hpPercentage");
@@ -97,7 +90,7 @@ modalFixObserver.observe(document.body, {
     });
   }
 
-  // 🔽 アバター画像のアップロード処理（Cropper）
+  // アバター画像アップロード（Cropper）
   const fileInput = document.getElementById("avatarInput");
   const inlinePreview = document.getElementById("avatarPreviewInline");
   const modalEl = document.getElementById("avatarCropModal");
@@ -201,67 +194,67 @@ modalFixObserver.observe(document.body, {
   }
 
   confirmBtn.addEventListener("click", async () => {
-  if (submitBtn) submitBtn.disabled = true;
+    if (submitBtn) submitBtn.disabled = true;
 
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  canvas.width = 80;
-  canvas.height = 80;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = 80;
+    canvas.height = 80;
 
-  const viewWidth = cropContainer.clientWidth;
-  const viewHeight = cropContainer.clientHeight;
-  const scaleX = cropImage.naturalWidth / cropImage.clientWidth;
-  const scaleY = cropImage.naturalHeight / cropImage.clientHeight;
-  const sx = startX * -1 * scaleX;
-  const sy = startY * -1 * scaleY;
+    const viewWidth = cropContainer.clientWidth;
+    const viewHeight = cropContainer.clientHeight;
+    const scaleX = cropImage.naturalWidth / cropImage.clientWidth;
+    const scaleY = cropImage.naturalHeight / cropImage.clientHeight;
+    const sx = startX * -1 * scaleX;
+    const sy = startY * -1 * scaleY;
 
-  ctx.drawImage(
-    cropImage,
-    sx, sy,
-    viewWidth * scaleX, viewHeight * scaleY,
-    0, 0,
-    canvas.width, canvas.height
-  );
+    ctx.drawImage(
+      cropImage,
+      sx, sy,
+      viewWidth * scaleX, viewHeight * scaleY,
+      0, 0,
+      canvas.width, canvas.height
+    );
 
-  const dataUrl = canvas.toDataURL("image/png");
-  inlinePreview.src = dataUrl;
-  avatarUrlField.value = "";
-  modal.hide();
+    const dataUrl = canvas.toDataURL("image/png");
+    inlinePreview.src = dataUrl;
+    avatarUrlField.value = "";
+    modal.hide();
 
-  // ここでCloudinary設定の有無を判定
-  if (window.CLOUDINARY_CLOUD_NAME && window.CLOUDINARY_UPLOAD_PRESET) {
-    try {
-      inlinePreview.classList.add("loading");
+    // ここでCloudinary設定の有無を判定
+    if (window.CLOUDINARY_CLOUD_NAME && window.CLOUDINARY_UPLOAD_PRESET) {
+      try {
+        inlinePreview.classList.add("loading");
 
-      const tempImage = new window.Image();
-      tempImage.onload = async () => {
-        const resizedBlob = await resizeImage(tempImage, 300);
-        const fd = new FormData();
-        fd.append("file", resizedBlob, "avatar.jpg");
-        fd.append("upload_preset", window.CLOUDINARY_UPLOAD_PRESET);
+        const tempImage = new window.Image();
+        tempImage.onload = async () => {
+          const resizedBlob = await resizeImage(tempImage, 300);
+          const fd = new FormData();
+          fd.append("file", resizedBlob, "avatar.jpg");
+          fd.append("upload_preset", window.CLOUDINARY_UPLOAD_PRESET);
 
-        const res = await axios.post(
-          `https://api.cloudinary.com/v1_1/${window.CLOUDINARY_CLOUD_NAME}/upload`,
-          fd
-        );
+          const res = await axios.post(
+            `https://api.cloudinary.com/v1_1/${window.CLOUDINARY_CLOUD_NAME}/upload`,
+            fd
+          );
 
-        inlinePreview.src = res.data.secure_url;
-        avatarUrlField.value = res.data.secure_url;
-        if (submitBtn) submitBtn.disabled = false;
+          inlinePreview.src = res.data.secure_url;
+          avatarUrlField.value = res.data.secure_url;
+          if (submitBtn) submitBtn.disabled = false;
+          inlinePreview.classList.remove("loading");
+        };
+        tempImage.src = dataUrl;
+      } catch (err) {
+        console.error("Cloudinary upload failed", err);
         inlinePreview.classList.remove("loading");
-      };
-      tempImage.src = dataUrl;
-    } catch (err) {
-      console.error("Cloudinary upload failed", err);
-      inlinePreview.classList.remove("loading");
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    } else {
+      // ←開発時はこちら！アップロードせずcanvasのデータURLだけでOK
+      avatarUrlField.value = dataUrl;
       if (submitBtn) submitBtn.disabled = false;
     }
-  } else {
-    // ←開発時はこちら！アップロードせずcanvasのデータURLだけでOK
-    avatarUrlField.value = dataUrl;
-    if (submitBtn) submitBtn.disabled = false;
-  }
-});
+  });
 
   const removeAvatarBtn = document.getElementById("removeAvatarBtn");
   const removeAvatarCheckbox = document.getElementById("removeAvatarCheckbox");
@@ -290,15 +283,14 @@ modalFixObserver.observe(document.body, {
     });
   }
 });
-// ✅ モーダルの中身が追加されたことを監視してローディングを強制的に非表示
+
+// モーダルの中身が追加されたことを監視してローディングを強制的に非表示
 const modalContentObserver = new MutationObserver(() => {
   const modal = document.querySelector(".modal.show");
   const modalContent = document.querySelector(".modal-content");
   const loader = document.getElementById("loading-overlay");
-
-  if (modal && modalContent && loader && loader.style.display !== "none") {
-    //console.log("✅ モーダルと中身を検出 → ローディングを非表示にします");
-    loader.style.display = "none";
+  if (modal && modalContent && loader) {
+    loader.classList.add("view-hidden");
     modalContentObserver.disconnect();
   }
 });
@@ -308,13 +300,10 @@ modalContentObserver.observe(document.body, {
   subtree: true,
 });
 
-// ✅ グローバル関数として定義することで onclick="goToRecommended()" が動くようにする
+// グローバル関数として定義
 window.goToRecommended = function () {
   const storedHP = localStorage.getItem("hpPercentage");
   const hp = parseInt(storedHP);
-
-  //console.log("🔥 goToRecommended 実行: HP =", hp);
-
   if (!isNaN(hp)) {
     window.location.href = `/emotion_logs/recommended?hp=${hp}`;
   } else {
@@ -322,15 +311,14 @@ window.goToRecommended = function () {
   }
 };
 
-
+// ローディングカバーを隠す（CSP対応）
 function hideScreenCover() {
   var cover = document.getElementById("screen-cover-loading");
   if (cover) {
-    // ★ ここで数秒だけローディングを"意図的に"残す
     setTimeout(() => {
       cover.classList.add("hide");
-      setTimeout(() => { cover.style.display = "none"; }, 200); // ← フェードアウト
-    }); // ← ここを好きなだけ遅らせる（例: 1200ミリ秒 = 1.2秒）
+      setTimeout(() => { cover.classList.add("view-hidden"); }, 200); // ← 最後にclassで消す
+    }, 1200); // ここは好きな秒数でOK
   }
 }
 window.addEventListener("DOMContentLoaded", hideScreenCover);
