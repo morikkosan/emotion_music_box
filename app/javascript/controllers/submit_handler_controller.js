@@ -22,7 +22,7 @@ export default class extends Controller {
   submit(event) {
     event.preventDefault();
     const loader = document.getElementById("loading-overlay");
-    if (loader) loader.style.display = "flex";
+    if (loader) loader.classList.remove("view-hidden"); // ここを修正
     if (this.hasSubmitTarget) this.submitTarget.disabled = true;
 
     const form      = this.element;
@@ -59,12 +59,18 @@ export default class extends Controller {
             }
           }
 
+          // --- 👇追加する部分ここから ---
+          if (typeof data.hpPercentage !== "undefined") {
+            localStorage.setItem("hpPercentage", data.hpPercentage);
+            window.updateHPBar();
+          }
+          // --- 👆ここまで追加する ---
+
           // HPバー反映／リダイレクト
           const redirect = () => { window.location.href = data.redirect_url };
           if (data.hp_today) {
             setTimeout(redirect, 1500); // HPバー更新後に遷移
           } else {
-            // 今日以外の記録は警告を出して即リダイレクト
             Swal.fire({
               title: "完了",
               text: "記録は保存されましたが、HPゲージの反映は今日の記録のみです。",
@@ -78,7 +84,7 @@ export default class extends Controller {
 
         } else {
           // --- バリデーションエラーなど失敗時 ---
-          if (this.hasSubmitTarget) this.submitTarget.disabled = false; // 再度押せるように
+          if (this.hasSubmitTarget) this.submitTarget.disabled = false;
           Swal.fire({
             title: "エラー ❌",
             text: (data.errors || []).join("\n"),
@@ -93,7 +99,7 @@ export default class extends Controller {
       .catch(error => {
         // --- 通信エラー時 ---
         console.error("送信エラー:", error);
-        if (this.hasSubmitTarget) this.submitTarget.disabled = false; // 再度押せるように
+        if (this.hasSubmitTarget) this.submitTarget.disabled = false;
         Swal.fire({
           title: "送信エラー",
           text: "予期しないエラーが発生しました",
@@ -105,8 +111,7 @@ export default class extends Controller {
         });
       })
       .finally(() => {
-        if (loader) loader.style.display = "none";
-        // 成功時はボタンを戻さず、失敗時はthen/catch内で制御
+        if (loader) loader.classList.add("view-hidden"); // ここを修正
       });
   }
 }

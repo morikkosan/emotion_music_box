@@ -1,14 +1,15 @@
-// app/javascript/controllers/global_player_controller.js
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["trackImage", "playIcon"]
 
   connect() {
+    // DOMキャッシュ
     this.iframeElement    = document.getElementById("hidden-sc-player")
     this.bottomPlayer     = document.getElementById("bottom-player")
     this.playPauseIcon    = document.getElementById("play-pause-icon")
-    this.trackTitleEl     = document.getElementById("track-title")
+    this.trackTitleEl     = document.getElementById("track-title")      // 下段タイトル
+    this.trackTitleTopEl  = document.getElementById("track-title-top")  // 上段タイトル(スマホ)
     this.trackArtistEl    = document.getElementById("track-artist")
     this.seekBar          = document.getElementById("seek-bar")
     this.currentTimeEl    = document.getElementById("current-time")
@@ -16,6 +17,7 @@ export default class extends Controller {
     this.volumeBar        = document.getElementById("volume-bar")
     this.loadingArea      = document.getElementById("loading-spinner")
     this.neonCharacter    = document.querySelector(".neon-character-spinbox")
+
     this.currentTrackId   = null
     this.widget           = null
     this.progressInterval = null
@@ -51,14 +53,119 @@ export default class extends Controller {
       this.playFromExternal(playUrl)
     })
 
+    // ★ここで復元（追加）
+    this.restorePlayerState()
+
     console.log("[connect] global-playerコントローラ初期化完了")
   }
 
-  // ─────────────────────────────────────────────
+  // ★ ここから追記：state保存/復元メソッド
+  savePlayerState() {
+    if (!this.widget) return
+    // プレイリスト内での現在の曲情報を保存
+    this.widget.getPosition(pos => {
+      this.widget.getDuration(dur => {
+        // 保存内容
+        const state = {
+          trackId: this.currentTrackId,
+          trackUrl: this.iframeElement?.src,
+          position: pos,
+          duration: dur,
+          isPlaying: this.playPauseIcon?.classList.contains('fa-pause') // fa-pause=再生中
+        }
+        localStorage.setItem("playerState", JSON.stringify(state))
+      })
+    })
+  }
+
+  tryRestore(state, retry = 0) {
+  if (!this.widget) return setTimeout(() => this.tryRestore(state, retry), 300)
+  this.widget.getDuration(dur => {
+    if (!dur) return setTimeout(() => this.tryRestore(state, retry), 300)
+    this.widget.getCurrentSound((sound) => {
+      if (sound && sound.title) {
+        this.setTrackTitle(sound.title)
+        this.trackArtistEl.textContent = sound.user?.username
+          ? `— ${sound.user.username}` : ""
+        this.hideLoadingUI()
+      } else if (retry < 5) {
+        setTimeout(() => this.tryRestore(state, retry + 1), 250)
+        return
+      } else {
+        this.setTrackTitle("タイトル不明")
+        this.trackArtistEl.textContent = ""
+        this.hideLoadingUI()
+      }
+    })
+    this.widget.seekTo(state.position)
+    if (!state.isPlaying) this.widget.pause()
+  })
+}
+
+  restorePlayerState() {
+  const saved = localStorage.getItem("playerState")
+  if (!saved) return
+  const state = JSON.parse(saved)
+    console.log("restore", state)
+
+  if (!state.trackUrl) return
+
+  this.currentTrackId = state.trackId // ★trackIdを直接復元
+  this.bottomPlayer?.classList.remove("d-none")
+  if (this.widget) {
+    this.widget.unbind(SC.Widget.Events.PLAY)
+    this.widget.unbind(SC.Widget.Events.PAUSE)
+    this.widget.unbind(SC.Widget.Events.FINISH)
+    clearInterval(this.progressInterval)
+    this.widget = null
+  }
+  this.iframeElement = this.replaceIframeWithNew()
+  if (!this.iframeElement) return
+  this.iframeElement.src = state.trackUrl.replace("&auto_play=true", "&auto_play=false")
+  this.resetPlayerUI()
+  this.iframeElement.onload = () => {
+    setTimeout(() => {
+      this.widget = SC.Widget(this.iframeElement)
+      this.widget.bind(SC.Widget.Events.READY, () => {
+        this.widget.getCurrentSound((sound) => {
+          if (sound && sound.title) {
+            this.setTrackTitle(sound.title)
+            this.trackArtistEl.textContent = sound.user?.username
+              ? `— ${sound.user.username}` : ""
+            this.hideLoadingUI()
+          } else {
+            this.setTrackTitle("タイトル不明")
+            this.trackArtistEl.textContent = ""
+            this.hideLoadingUI()
+          }
+          this.widget.seekTo(state.position)
+          if (state.isPlaying) {
+            this.widget.play()
+          } else {
+            this.widget.pause()
+          }
+          this.bindWidgetEvents()
+          this.startProgressTracking()
+          this.changeVolume({ target: this.volumeBar })
+          // ★アイコン復元をここで必ず
+          this.updateTrackIcon(this.currentTrackId, state.isPlaying)
+        })
+      })
+    }, 150)
+  }
+}
+
+
+
+  // ★ ここまで
+
+  setTrackTitle(title) {
+    if (this.trackTitleEl)    this.trackTitleEl.textContent = title
+    if (this.trackTitleTopEl) this.trackTitleTopEl.textContent = title
+  }
+
   playFromExternal(playUrl) {
     this.bottomPlayer?.classList.remove("d-none")
-
-    // Widgetクリア
     if (this.widget) {
       this.widget.unbind(SC.Widget.Events.PLAY)
       this.widget.unbind(SC.Widget.Events.PAUSE)
@@ -66,15 +173,12 @@ export default class extends Controller {
       clearInterval(this.progressInterval)
       this.widget = null
     }
-
-    // iframe差し替え
     this.iframeElement = this.replaceIframeWithNew()
     if (!this.iframeElement) {
       alert("iframe生成に失敗しました")
       return
     }
     this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(playUrl)}&auto_play=true`
-
     this.resetPlayerUI()
     this.iframeElement.onload = () => {
       setTimeout(() => {
@@ -82,11 +186,11 @@ export default class extends Controller {
         this.widget.bind(SC.Widget.Events.READY, () => {
           this.widget.getCurrentSound((sound) => {
             if (sound && sound.title) {
-              this.trackTitleEl.textContent  = sound.title
+              this.setTrackTitle(sound.title)
               this.trackArtistEl.textContent = sound.user?.username
                 ? `— ${sound.user.username}` : ""
             } else {
-              this.trackTitleEl.textContent  = "タイトル不明"
+              this.setTrackTitle("タイトル不明")
               this.trackArtistEl.textContent = ""
             }
             this.hideLoadingUI()
@@ -95,11 +199,12 @@ export default class extends Controller {
           this.widget.play()
           this.startProgressTracking()
           this.changeVolume({ target: this.volumeBar })
+          // ここで保存
+          this.savePlayerState()
         })
       }, 100)
     }
   }
-  // ─────────────────────────────────────────────
 
   startWaveformAnime() {
     if (!this.waveformCtx) return
@@ -130,23 +235,20 @@ export default class extends Controller {
   stopWaveformAnime() {
     this.waveformAnimating = false
     if (this.waveformCtx) {
-      this.waveformCtx.clearRect(0, 0,
-        this.waveformCanvas.width, this.waveformCanvas.height)
+      this.waveformCtx.clearRect(0, 0, this.waveformCanvas.width, this.waveformCanvas.height)
     }
   }
 
   toggleShuffle(e) {
     this.isShuffle = !this.isShuffle
-    document.getElementById("shuffle-button")
-      ?.classList.toggle("active", this.isShuffle)
+    document.getElementById("shuffle-button")?.classList.toggle("active", this.isShuffle)
     this.updatePlaylistOrder()
     console.log("[toggleShuffle]", this.isShuffle)
   }
 
   toggleRepeat(e) {
     this.isRepeat = !this.isRepeat
-    document.getElementById("repeat-button")
-      ?.classList.toggle("active", this.isRepeat)
+    document.getElementById("repeat-button")?.classList.toggle("active", this.isRepeat)
     console.log("[toggleRepeat]", this.isRepeat)
   }
 
@@ -157,8 +259,7 @@ export default class extends Controller {
   shufflePlaylistOrder() {
     for (let i = this.playlistOrder.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
-      ;[this.playlistOrder[i], this.playlistOrder[j]] =
-        [this.playlistOrder[j], this.playlistOrder[i]]
+      ;[this.playlistOrder[i], this.playlistOrder[j]] = [this.playlistOrder[j], this.playlistOrder[i]]
     }
   }
 
@@ -177,6 +278,9 @@ export default class extends Controller {
         </span>`
       this.trackTitleEl.classList.remove("is-hidden")
     }
+    if (this.trackTitleTopEl) {
+      this.trackTitleTopEl.innerHTML = `Loading...`
+    }
     if (this.trackArtistEl) {
       this.trackArtistEl.textContent = ""
       this.trackArtistEl.classList.add("is-hidden")
@@ -188,6 +292,7 @@ export default class extends Controller {
     this.loadingArea?.classList.add("is-hidden")
     this.neonCharacter?.classList.add("is-hidden")
     this.trackTitleEl?.classList.remove("is-hidden")
+    this.trackTitleTopEl?.classList.remove("is-hidden")
     this.trackArtistEl?.classList.remove("is-hidden")
   }
 
@@ -213,7 +318,7 @@ export default class extends Controller {
     const parent    = oldIframe.parentNode
     const newIframe = document.createElement("iframe")
     newIframe.id         = "hidden-sc-player"
-    newIframe.classList.add("is-hidden") // クラスで非表示
+    newIframe.classList.add("is-hidden")
     newIframe.allow      = "autoplay"
     newIframe.frameBorder= "no"
     newIframe.scrolling  = "no"
@@ -240,7 +345,6 @@ export default class extends Controller {
     this.bottomPlayer?.classList.remove("d-none")
     this.currentTrackId = newTrackId
 
-    // widgetクリア
     if (this.widget) {
       this.widget.unbind(SC.Widget.Events.PLAY)
       this.widget.unbind(SC.Widget.Events.PAUSE)
@@ -249,7 +353,6 @@ export default class extends Controller {
       this.widget = null
     }
 
-    // iframe差し替え
     this.iframeElement = this.replaceIframeWithNew()
     if (!this.iframeElement) {
       alert("iframe生成に失敗しました")
@@ -265,14 +368,14 @@ export default class extends Controller {
           const trySetTitle = (retry = 0) => {
             this.widget.getCurrentSound(sound => {
               if (sound?.title) {
-                this.trackTitleEl.textContent  = sound.title
+                this.setTrackTitle(sound.title)
                 this.trackArtistEl.textContent = sound.user?.username
                   ? `— ${sound.user.username}` : ""
                 this.hideLoadingUI()
               } else if (retry < 5) {
                 setTimeout(() => trySetTitle(retry + 1), 250)
               } else {
-                this.trackTitleEl.textContent  = "タイトル不明"
+                this.setTrackTitle("タイトル不明")
                 this.trackArtistEl.textContent = ""
                 this.hideLoadingUI()
               }
@@ -284,6 +387,7 @@ export default class extends Controller {
           this.startProgressTracking()
           this.changeVolume({ target: this.volumeBar })
           this.updateTrackIcon(this.currentTrackId, true)
+          this.savePlayerState() // ←ここも追加
         })
       }, 100)
     }
@@ -295,6 +399,7 @@ export default class extends Controller {
     this.widget.isPaused(paused => {
       if (paused) this.widget.play()
       else        this.widget.pause()
+      setTimeout(() => this.savePlayerState(), 500)
     })
   }
 
@@ -304,6 +409,7 @@ export default class extends Controller {
     this.widget.getDuration(dur => {
       if (!dur) return
       this.widget.seekTo((percent / 100) * dur)
+      this.savePlayerState()
     })
   }
 
@@ -311,6 +417,7 @@ export default class extends Controller {
     if (!this.widget) return
     const vol = event.target.value / 100
     this.widget.setVolume(vol * 100)
+    // 音量保存したい場合はここでも
   }
 
   onPlay = () => {
@@ -320,18 +427,20 @@ export default class extends Controller {
     this.startWaveformAnime()
     this.widget.getCurrentSound(sound => {
       if (sound?.title && !this.trackTitleEl.textContent) {
-        this.trackTitleEl.textContent  = sound.title
+        this.setTrackTitle(sound.title)
         this.trackArtistEl.textContent = sound.user?.username
           ? `— ${sound.user.username}` : ""
         this.hideLoadingUI()
       }
     })
+    this.savePlayerState()
   }
 
   onPause = () => {
     this.playPauseIcon?.classList.replace("fa-pause", "fa-play")
     this.updateTrackIcon(this.currentTrackId, false)
     this.stopWaveformAnime()
+    this.savePlayerState()
   }
 
   onFinish = () => {
@@ -380,6 +489,7 @@ export default class extends Controller {
     }
 
     this.bottomPlayer?.classList.add("d-none")
+    this.savePlayerState()
   }
 
   updateTrackIcon(trackId, playing) {
@@ -417,7 +527,9 @@ export default class extends Controller {
           this.durationEl    && (this.durationEl.textContent    = this.formatTime(dur))
         })
       })
-    }, 500)
+      // 毎秒状態保存してもOK（負荷は低い）
+      this.savePlayerState()
+    }, 1000)
   }
 
   formatTime(ms) {
