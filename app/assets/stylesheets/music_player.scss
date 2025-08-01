@@ -1,0 +1,338 @@
+
+// application.html.erbのスタイル
+/* ────────── ボトムプレーヤーの上段行 ────────── */
+
+.bottom-player {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #222;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 8px 16px;
+  z-index: 1000;
+}
+
+
+.bottom-player-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding-bottom: 4px;
+}
+
+/* ボタン共通 */
+.bottom-player-button {
+  font-size: 24px;
+  padding: 0 8px;
+  border: none;
+  background: none;
+  width: 48px;
+  height: 44px;
+}
+
+/* 真ん中の空白div */
+.bottom-player-flex-gap {
+  flex: 1.2;
+}
+
+/* シークバーまわりのdiv */
+.bottom-player-seekbar {
+  flex: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 16px;
+}
+
+/* シークバーinput */
+.seek-bar {
+  flex: 1;
+  appearance: none;
+  height: 4px;
+  background: #555;
+  border-radius: 2px;
+  outline: none;
+}
+
+/* シャッフル・リピートボタン */
+.bottom-player-toggle-btn {
+  font-size: 20px;
+  color: #fff;
+}
+
+/* ボリュームバー */
+.volume-bar {
+  width: 80px;
+  appearance: none;
+  height: 4px;
+  background: #555;
+  border-radius: 2px;
+  outline: none;
+}
+
+
+.flash-message {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9999;
+  padding: 1em;
+  background: #333;
+  color: #fff;
+  text-align: center;
+}
+
+.hidden-frame {
+  display: none !important;
+}
+
+.flex-grow-1 {
+  flex: 1;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.justify-content-start {
+  justify-content: flex-start;
+}
+
+.align-items-center {
+  align-items: center;
+}
+
+#bottom-player {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: #222;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 8px 16px;
+  z-index: 1000;
+}
+
+.bottom-player-top-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.waveform-canvas {
+  margin-right: 0px;
+  display: block;
+}
+.bottom-player-flex-gap {
+  flex-basis: 16px;
+}
+.bottom-player-next-btn-area {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
+}
+.next-track-btn {
+  font-size: 24px;
+  padding: 0 8px;
+  border: none;
+  background: none;
+  width: 48px;
+  height: 44px;
+}
+
+.bottom-player-controls {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.play-pause-btn {
+  font-size: 24px;
+  padding: 0;
+  border: none;
+  background: none;
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+.play-btn-spinner {
+  display: none;
+  position: absolute;
+  left: 0; top: 0;
+  width: 40px; height: 40px;
+}
+.track-info-box {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  padding-left: 12px;
+}
+.loading-spinner-inline {
+  display: none;
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.track-title {
+  font-weight: 600;
+}
+.neon-character-spinbox {
+  vertical-align: middle;
+  margin-left: 8px;
+  display: inline-block;
+}
+.track-artist {
+  color: #bbb;
+  margin-left: 8px;
+}
+.bottom-player-seekbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.current-time,
+.duration {
+  min-width: 40px;
+}
+.seek-bar {
+  flex: 1 1 auto;
+}
+.bottom-player-extra-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 16px;
+}
+.repeat-btn {
+  font-size: 20px;
+  color: #fff;
+}
+.volume-icon {
+  color: #fff;
+}
+.volume-bar {
+  width: 100px;
+  margin-left: 4px;
+}
+
+/* デフォルトは track-title-top は非表示 */
+
+#track-title-top {
+  display: none;
+}
+#waveform-anime  { display: block; }
+
+
+/* スマホ(768px以下)だけ表示/非表示を入れ替え */
+/* ────────── 1200px以下：タブレットPC・小さめウィンドウ────────── */
+@media (max-width: 1199px) {
+  .bottom-player-top-row {
+    gap: 14px;
+    padding-bottom: 2px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  #track-title-top {
+    display: inline-block !important;
+    max-width: 60vw;
+    font-size: 1.06rem;
+    margin: 0 10px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+  }
+  #track-title { display: none !important; }
+  .waveform-canvas {
+    max-width: 55vw;
+    height: 40px;
+  }
+}
+
+/* ────────── 992px以下：iPad縦・2in1・細めPC────────── */
+@media (max-width: 991px) {
+  .bottom-player-top-row {
+    gap: 10px;
+    padding-bottom: 0px;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+  #track-title-top { max-width: 57vw; font-size: 1rem; }
+  .waveform-canvas { max-width: 45vw; height: 36px; }
+}
+
+/* ────────── 768px以下：スマホ & iPad mini────────── */
+@media (max-width: 768px) {
+  .bottom-player-top-row {
+    gap: 7px;
+    padding: 0 2px !important;
+  }
+  #track-title-top {
+    display: inline-block !important;
+    max-width: 55vw;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+  }
+  #track-title { display: none !important; }
+  .waveform-canvas { display: none !important; }
+}
+
+/* ────────── 480px以下：超小型スマホ（iPhone SE等）────────── */
+@media (max-width: 480px) {
+  .bottom-player-top-row {
+    gap: 4px;
+    padding: 0 !important;
+    min-height: 38px;
+  }
+  #track-title-top {
+    font-size: 0.97rem;
+    max-width: 48vw;
+    margin: 0 2px;
+  }
+}
+
+/* ────────── 400px以下：最小サイズ対応────────── */
+@media (max-width: 400px) {
+  .bottom-player-top-row {
+    justify-content: center;
+    align-items: center;
+    width: 100% !important;
+    gap: 2px !important;
+    overflow-x: visible !important;
+  }
+  #prev-track-button,
+  #next-track-button {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 15px !important;
+    margin: 0 1px !important;
+    min-width: 0 !important;
+    flex-shrink: 1 !important;
+    flex-basis: auto !important;
+  }
+  #track-title-top {
+    font-size: 0.88rem;
+    max-width: 38vw;
+    margin: 0 0.5vw;
+  }
+}
+
+/* ────────── スペーサーも幅ごとに調整────────── */
+.player-space-spacer { height: 80px; }
+@media (max-width: 1199px) { .player-space-spacer { height: 110px; } }
+@media (max-width: 991px)  { .player-space-spacer { height: 118px; } }
+@media (max-width: 768px)  { .player-space-spacer { height: 124px; } }
+@media (max-width: 400px)  { .player-space-spacer { height: 140px; } }
