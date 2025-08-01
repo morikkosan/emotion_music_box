@@ -2,52 +2,57 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   connect() {
-    console.log("🟢 view-switcher 起動");
-
-    this.boundHandler = this.checkAndRedirect.bind(this);
-
-    this.checkAndRedirect();
-    window.addEventListener("resize", this.boundHandler);
+    console.log("[view-switcher] connect!!");
+    this._switchViewBound = this.switchView.bind(this);
+    this.switchView();
+    window.addEventListener("resize", this._switchViewBound);
   }
 
   disconnect() {
-    window.removeEventListener("resize", this.boundHandler);
+    console.log("[view-switcher] disconnect!!");
+    window.removeEventListener("resize", this._switchViewBound);
   }
 
-  checkAndRedirect() {
+  switchView() {
     const width = window.innerWidth;
-    const isNarrow = width <= 600;
+    console.log("[view-switcher] switchView called! 幅:", width);
+    const isMobile = width <= 996;
+    console.log("[view-switcher] isMobile:", isMobile);
+
     const path = window.location.pathname;
-    const url = new URL(window.location.href);
-    const isAlreadyMobile = url.searchParams.get("view") === "mobile";
+    console.log("[view-switcher] path:", path);
 
-  const isOnTargetPage = [
-    "/",
-    "/emotion_logs",
-    "/emotion_logs/", 
-    "/emotion_logs/index", 
-    "/my_emotion_logs",
-    "/bookmarks/emotion_logs",
-    "/recommended"
-  ].some(prefix => path.startsWith(prefix));
+    const isOnTargetPage = [
+      "/", "/emotion_logs", "/emotion_logs/", "/emotion_logs/index", "/my_emotion_logs", "/bookmarks/emotion_logs", "/recommended"
+    ].some(prefix => path.startsWith(prefix));
+    console.log("[view-switcher] isOnTargetPage:", isOnTargetPage);
 
+    const desktopView = document.getElementById("desktop-view");
+    const mobileView  = document.getElementById("mobile-view");
+    console.log("[view-switcher] desktopView:", desktopView);
+    console.log("[view-switcher] mobileView:", mobileView);
 
-    console.log("📏 幅:", width);
-    console.log("✅ isNarrow（600以下）:", isNarrow);
-    console.log("✅ isOnTargetPage:", isOnTargetPage);
-    console.log("✅ isAlreadyMobile（view=mobile）:", isAlreadyMobile);
+    if (!isOnTargetPage || !desktopView || !mobileView) {
+      console.log("[view-switcher] Not target page or missing elements");
+      if (desktopView) {
+        console.log("[view-switcher] desktopView: remove view-hidden");
+        desktopView.classList.remove("view-hidden");
+      }
+      if (mobileView) {
+        console.log("[view-switcher] mobileView: add view-hidden");
+        mobileView.classList.add("view-hidden");
+      }
+      return;
+    }
 
-    if (isNarrow && isOnTargetPage && !isAlreadyMobile) {
-      console.log("📱 モバイルに切替");
-      url.searchParams.set("view", "mobile");
-      window.location.href = url.toString();
-    } else if (!isNarrow && isOnTargetPage && isAlreadyMobile) {
-      console.log("💻 デスクトップに戻す");
-      url.searchParams.delete("view");
-      window.location.href = url.pathname; // クエリなしで再読み込み
+    if (isMobile) {
+      console.log("[view-switcher] → MOBILE表示");
+      desktopView.classList.add("view-hidden");
+      mobileView.classList.remove("view-hidden");
     } else {
-      console.log("🛑 条件を満たさないので何もしない");
+      console.log("[view-switcher] → DESKTOP表示");
+      desktopView.classList.remove("view-hidden");
+      mobileView.classList.add("view-hidden");
     }
   }
 }
-

@@ -22,7 +22,7 @@ export default class extends Controller {
   submit(event) {
     event.preventDefault();
     const loader = document.getElementById("loading-overlay");
-    if (loader) loader.style.display = "flex";
+    if (loader) loader.classList.remove("view-hidden"); // ここを修正
     if (this.hasSubmitTarget) this.submitTarget.disabled = true;
 
     const form      = this.element;
@@ -111,7 +111,7 @@ export default class extends Controller {
         });
       })
       .finally(() => {
-        if (loader) loader.style.display = "none";
+        if (loader) loader.classList.add("view-hidden"); // ここを修正
       });
   }
 }
