@@ -129,20 +129,24 @@
   <!-- 左端: canvas -->
   <canvas id="waveform-anime" width="450" height="44" class="waveform-canvas"></canvas>
 
-  <!-- 真ん中: ボタン・曲タイトル（曲タイトルはスマホ時のみ） -->
-  <div class="player-center-btns">
-    <button id="prev-track-button"
-      class="btn btn-link text-white bottom-player-button"
-      data-action="click->global-player#prevTrack">
-      <i class="fa fa-step-backward"></i>
-    </button>
-    <span id="track-title-top" class="track-title d-none"></span>
-    <button id="next-track-button"
-      class="btn btn-link text-white next-track-btn"
-      data-action="click->global-player#nextTrack">
-      <i class="fa fa-step-forward"></i>
-    </button>
-  </div>
+ <!-- 真ん中: ボタン・曲タイトル（曲タイトルはスマホ時のみ） -->
+<div class="player-center-btns">
+  <!-- ✅ 曲タイトル（スマホ専用） -->
+  <span id="track-title-top" class="track-title-top-inline d-md-none"></span>
+
+  <button id="prev-track-button"
+    class="btn btn-link text-white bottom-player-button"
+    data-action="click->global-player#prevTrack">
+    <i class="fa fa-step-backward"></i>
+  </button>
+
+  <button id="next-track-button"
+    class="btn btn-link text-white next-track-btn"
+    data-action="click->global-player#nextTrack">
+    <i class="fa fa-step-forward"></i>
+  </button>
+</div>
+
 
   <!-- 右端: 空白スペース（flexの空白要素 -->
   <div class="bottom-player-flex-gap"></div>

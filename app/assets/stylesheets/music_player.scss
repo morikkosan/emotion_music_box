@@ -1,7 +1,4 @@
-
-// application.html.erbのスタイル
-/* ────────── ボトムプレーヤーの上段行 ────────── */
-
+/* ────────── 共通：ボトムプレーヤー ────────── */
 .bottom-player {
   position: fixed;
   bottom: 0;
@@ -16,37 +13,42 @@
   z-index: 1000;
 }
 
-
+/* ────────── 上段行（canvas + 中央 + 空白） ────────── */
 .bottom-player-top-row {
   display: flex;
-  justify-content: space-between;  /* ←真ん中と左右をしっかり分ける */
+  justify-content: space-between;
   align-items: center;
   width: 100%;
   padding-bottom: 4px;
 }
 
-/* 左のcanvasは固定幅 */
+/* 左のcanvas */
 .waveform-canvas {
-  flex: 0 0 450px; /* 固定幅 */
+  flex: 1 1 450px;
+  max-width: 450px;
+  min-width: 200px;
 }
 
-/* 中央のボタン群は幅固定で中央寄せ */
+/* 中央ボタン群 */
 .player-center-btns {
   flex: 0 0 180px;
   display: flex;
   justify-content: center;
   gap: 36px;
-  margin: 0 auto; /* 左右マージン自動で中央に */
+  margin: 0 auto;
 }
 
-/* 右側の空白 */
+/* 右の空白 */
 .bottom-player-flex-gap {
-  flex: 1 1 auto; /* 空白部分は伸びる */
+  flex: 1 1 300px;
+  max-width: 450px;
+  min-width: 180px;
 }
 
-
-/* ボタン共通 */
-.bottom-player-button {
+/* ────────── 再生・ボタン系 ────────── */
+.bottom-player-button,
+.next-track-btn,
+.play-pause-btn {
   font-size: 24px;
   padding: 0 8px;
   border: none;
@@ -55,12 +57,22 @@
   height: 44px;
 }
 
-/* 真ん中の空白div */
-.bottom-player-flex-gap {
-  flex: 1.2;
+.play-btn-spinner {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 40px;
+  height: 40px;
 }
 
-/* シークバーまわりのdiv */
+/* ────────── 下段：シークバー行 ────────── */
+.bottom-player-controls {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
 .bottom-player-seekbar {
   flex: 3;
   display: flex;
@@ -69,7 +81,6 @@
   margin-left: 16px;
 }
 
-/* シークバーinput */
 .seek-bar {
   flex: 1;
   appearance: none;
@@ -79,124 +90,30 @@
   outline: none;
 }
 
-/* シャッフル・リピートボタン */
-.bottom-player-toggle-btn {
-  font-size: 20px;
-  color: #fff;
+/* ────────── 右下：音量など ────────── */
+.bottom-player-extra-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 16px;
 }
 
-/* ボリュームバー */
 .volume-bar {
-  width: 80px;
-  appearance: none;
+  width: 100px;
   height: 4px;
   background: #555;
   border-radius: 2px;
   outline: none;
+  margin-left: 4px;
 }
 
-
-.flash-message {
-  display: none;
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 9999;
-  padding: 1em;
-  background: #333;
+.volume-icon,
+.repeat-btn {
+  font-size: 20px;
   color: #fff;
-  text-align: center;
 }
 
-.hidden-frame {
-  display: none !important;
-}
-
-.flex-grow-1 {
-  flex: 1;
-}
-
-.d-flex {
-  display: flex;
-}
-
-.justify-content-start {
-  justify-content: flex-start;
-}
-
-.align-items-center {
-  align-items: center;
-}
-
-#bottom-player {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  background: #222;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  padding: 8px 16px;
-  z-index: 1000;
-}
-
-.waveform-canvas {
-  flex: 0 0 450px; /* 固定幅 */
-}
-
-.bottom-player-flex-gap {
-  flex: 0 0 450px; /* 左右幅合わせるために固定幅に */
-}
-
-.bottom-player-next-btn-area {
-  flex: 1;
-  display: flex;
-  justify-content: flex-start;
-}
-.next-track-btn {
-  font-size: 24px;
-  padding: 0 8px;
-  border: none;
-  background: none;
-  width: 48px;
-  height: 44px;
-}
-
-.bottom-player-controls {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.bottom-player-top-row > * {
-  outline: 2px solid red !important;
-  background-color: rgba(255,0,0,0.1) !important;
-}
-
-.play-pause-btn {
-  font-size: 24px;
-  padding: 0;
-  border: none;
-  background: none;
-  position: relative;
-  width: 40px;
-  height: 40px;
-}
-
-.player-center-btns {
-  flex: 1 1 auto;
-  display: flex;
-  justify-content: space-between;   /* ボタン群は真ん中に */
-  align-items: center;
-  gap: 36px;                  /* ボタン間の空白 */
-  min-width: 180px;
-  margin: 0 auto;
-}
-.play-btn-spinner {
-  display: none;
-  position: absolute;
-  left: 0; top: 0;
-  width: 40px; height: 40px;
-}
+/* ────────── 曲情報 ────────── */
 .track-info-box {
   flex: 1;
   overflow: hidden;
@@ -205,97 +122,105 @@
   align-items: center;
   padding-left: 12px;
 }
-.loading-spinner-inline {
-  display: none;
-  width: 24px;
-  height: 24px;
-  margin-right: 8px;
-  vertical-align: middle;
-}
+
 .track-title {
   font-weight: 600;
 }
-.neon-character-spinbox {
-  vertical-align: middle;
-  margin-left: 8px;
-  display: inline-block;
-}
+
 .track-artist {
   color: #bbb;
   margin-left: 8px;
 }
-.bottom-player-seekbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.current-time,
-.duration {
-  min-width: 40px;
-}
-.seek-bar {
-  flex: 1 1 auto;
-}
-.bottom-player-extra-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: 16px;
-}
-.repeat-btn {
-  font-size: 20px;
-  color: #fff;
-}
-.volume-icon {
-  color: #fff;
-}
-.volume-bar {
-  width: 100px;
-  margin-left: 4px;
+
+#track-title {
+  display: block;
 }
 
+#track-title-top {
+  display: none;
+}
+
+/* ────────── スマホ対応 ────────── */
 @media (max-width: 768px) {
-  /* 上段: 前/次ボタンを左右端に */
+  .waveform-canvas {
+    display: none !important;
+    flex: 0 0 0 !important;
+    width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .bottom-player-flex-gap {
+    display: none !important;
+  }
+
+  .bottom-player {
+    padding: 8px 12px !important;
+    flex-direction: column !important;
+  }
+
   .bottom-player-top-row {
-    justify-content: space-between !important; /* 両端に配置 */
-    gap: 0 !important;                         /* 余白なし */
-    position: relative;                        /* 曲タイトルの絶対配置用に親をrelativeに */
-  }
-  .waveform-canvas,
-  .bottom-player-flex-gap,
-  .bottom-player-next-btn-area {
-    display: none !important; /* 波形や余分なエリア非表示 */
-  }
-  #prev-track-button,
-  #next-track-button {
-    margin: 0 12px;
-    position: static;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 4px !important;
   }
 
-  /* 曲タイトルは絶対配置で中央に重ねる */
   #track-title-top {
-    display: block !important;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 60vw;
-    font-weight: 600;
-    font-size: 1.1rem;
-    color: #fff;
-    pointer-events: none; /* ボタンのクリックを妨げない */
+    display: none !important;
   }
-}
 
-/* 400px以下のボタンサイズ調整はそのまま */
-@media (max-width: 400px) {
-  #prev-track-button,
-  #next-track-button {
-    width: 40px;
-    height: 40px;
-    font-size: 20px;
+  #track-title {
+    display: block !important;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+  }
+
+  .player-center-btns {
+    flex-direction: row !important;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin: 4px 0 !important;
+  }
+
+  .play-pause-btn {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 26px !important;
+  }
+
+  .bottom-player-controls {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .bottom-player-seekbar {
+    flex: 1 1 100%;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .seek-bar {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .bottom-player-extra-controls {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding-bottom: 4px;
+  }
+
+  .volume-bar {
+    width: 100px !important;
   }
 }
