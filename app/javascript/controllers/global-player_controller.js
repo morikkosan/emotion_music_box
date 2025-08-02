@@ -166,6 +166,8 @@ export default class extends Controller {
 
   playFromExternal(playUrl) {
     this.bottomPlayer?.classList.remove("d-none")
+    this.bottomPlayer?.offsetHeight // ← ★これ追加
+
     if (this.widget) {
       this.widget.unbind(SC.Widget.Events.PLAY)
       this.widget.unbind(SC.Widget.Events.PAUSE)
