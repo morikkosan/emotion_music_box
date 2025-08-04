@@ -25,7 +25,6 @@
       <p id="hp-status-text">メンタル正常</p>
       <div id="hp-bar"></div>
     </div>
-    <br>
   <% end %>
 <% end %>
 
@@ -64,7 +63,7 @@
 
 
 <% if user_signed_in? %>
-  <br><br><br><br>
+  <br><br><br>
   <div class="main-content">
     <% if @bookmark_page.present? || @mypage_title.present? %>
       <div id="playlist-sidebar">
@@ -259,13 +258,15 @@
         <% end %>
 
         <!-- ✅ ネオン風記録ボタン -->
-        <div class="w-100 text-center my-4 record-mobile-btn-wrap">
-          <%= link_to "今日の気持ちを記録する",
-                      new_emotion_log_path(format: :turbo_stream),
-                      id: "record-button",
-                      class: "record-mobile-button",
-                      data: { controller: "record-btn", action: "click->record-btn#hide", turbo_prefetch: false } %>
-        </div>
+
+          <div class="record-btn-wrap">
+  <%= link_to "今日の気持ちを記録する",
+      new_emotion_log_path(format: :turbo_stream),
+      id: "record-button",
+      class: "record-mobile-button",
+      data: { controller: "record-btn", action: "click->record-btn#hide", turbo_prefetch: false } %>
+</div>
+
       <% end %>
 
       <% unless user_signed_in? %>

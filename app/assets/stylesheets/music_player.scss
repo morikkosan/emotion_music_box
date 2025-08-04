@@ -141,8 +141,19 @@
 }
 
 /* ────────── スマホ対応 ────────── */
+/* デスクトップのまま横並びを維持 */
 @media (max-width: 768px) {
-  .waveform-canvas {
+  /* スマホ時：デザイン、位置は絶対いじらない。 */
+  .bottom-player {
+    padding: 8px 8px !important;
+    min-height: 88px !important;
+    height: 88px !important;
+    bottom: 72px !important;
+    box-sizing: border-box !important;
+  }
+
+  .waveform-canvas,
+  .bottom-player-flex-gap {
     display: none !important;
     flex: 0 0 0 !important;
     width: 0 !important;
@@ -150,77 +161,61 @@
     margin: 0 !important;
   }
 
-  .bottom-player-flex-gap {
-    display: none !important;
-  }
-
-  .bottom-player {
-    padding: 8px 12px !important;
-    flex-direction: column !important;
-  }
-
   .bottom-player-top-row {
-    flex-direction: column !important;
+    display: flex !important;
+    flex-direction: row !important;
     align-items: center !important;
-    gap: 4px !important;
-  }
-
-  #track-title-top {
-    display: none !important;
-  }
-
-  #track-title {
-    display: block !important;
-    font-size: 14px;
-    font-weight: bold;
-    text-align: center;
-    margin: 0;
-    padding: 0;
+    justify-content: center !important;
+    gap: 0 !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
   }
 
   .player-center-btns {
+    display: flex !important;
     flex-direction: row !important;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-    margin: 4px 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    width: auto !important;
+    flex: 0 1 auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
+  #track-title-top {
+    display: inline-block !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 150px !important;
+    margin: 0 10px !important;
+    padding: 0 !important;
+    line-height: 1.2 !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+  }
+
+  #track-title {
+    display: none !important;
+  }
+
+  .bottom-player-button,
+  .next-track-btn,
   .play-pause-btn {
-    width: 48px !important;
-    height: 48px !important;
-    font-size: 26px !important;
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 22px !important;
+    padding: 0 !important;
   }
 
-  .bottom-player-controls {
-    flex-direction: row !important;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    margin-top: 4px;
-  }
-
-  .bottom-player-seekbar {
-    flex: 1 1 100%;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .seek-bar {
-    width: 100%;
-    max-width: 300px;
-  }
-
-  .bottom-player-extra-controls {
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 0;
-    padding-bottom: 4px;
-  }
-
-  .volume-bar {
-    width: 100px !important;
+  /* ここが今回追加分（track-info-box内の要素制御）*/
+  .track-info-box > *:not(#track-title):not(.loading-text) {
+    display: none !important;
   }
 }
