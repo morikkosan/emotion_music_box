@@ -129,11 +129,14 @@
   <!-- 左端: canvas -->
   <canvas id="waveform-anime" width="450" height="44" class="waveform-canvas"></canvas>
 
+    <!-- ✅ 曲タイトル（スマホ専用） -->
+  <span id="track-title-top" class="track-title-top-inline d-md-none"></span>
+  <small id="track-artist-mobile" class="track-artist d-md-none" style="position: absolute; left: 8px; top: 26px; font-size: 12px; color: #bbb; z-index: 9999;"></small>
  <!-- 真ん中: ボタン・曲タイトル（曲タイトルはスマホ時のみ） -->
 <div class="player-center-btns">
   <!-- ✅ 曲タイトル（スマホ専用） -->
   <span id="track-title-top" class="track-title-top-inline d-md-none"></span>
-
+x
   <button id="prev-track-button"
     class="btn btn-link text-white bottom-player-button"
     data-action="click->global-player#prevTrack">
@@ -199,8 +202,6 @@
           data-action="input->global-player#seek">
         <span id="duration" class="duration">0:00</span>
       </div>
-
-      <div class="mobile-nav-spacer"></div>
 
       <!-- シャッフル・リピート・音量 -->
       <div class="bottom-player-extra-controls">
