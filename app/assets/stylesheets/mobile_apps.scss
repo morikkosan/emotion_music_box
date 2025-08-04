@@ -29,8 +29,7 @@
   align-items: center; /* 縦位置も揃う */
 }
 
-
-
+// mobile今日の気持ちを記録する
 /* 2カラム→モバイル時は1カラムに */
 .neon-btn-panel {
   display: flex;
@@ -52,11 +51,12 @@
   }
 }
 
+// 今日の気持ちを記録するボタン
 #record-button.record-mobile-button {
-  position: fixed;
+  position: fixed !important;
   /* 右下、メニューバー上あたりに配置 */
   right: 1.2rem;           /* 画面右からの距離 */
-  bottom: 4.2rem;          /* 画面下からの距離（メニューの上に来るように調整。必要なら+0.5remずつ調整OK） */
+  bottom: 13rem !important;          /* 画面下からの距離（メニューの上に来るように調整。必要なら+0.5remずつ調整OK） */
   left: auto;
   top: auto;
 
