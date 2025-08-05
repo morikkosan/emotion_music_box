@@ -463,6 +463,28 @@ export default class extends Controller {
     this.widget.setVolume(vol * 100);
   }
 
+
+  onPlayIconClick(event) {
+  event.stopPropagation();
+  const icon = event.currentTarget;
+  const trackId = icon.dataset.trackId;
+
+  // 現在再生中の曲と同じなら、再生/停止トグル
+  if (this.currentTrackId === trackId && this.widget) {
+    this.widget.isPaused((paused) => {
+      if (paused) {
+        this.widget.play();
+      } else {
+        this.widget.pause();
+      }
+    });
+    return;
+  }
+  // 違う曲ならロード＆再生
+  this.loadAndPlay(event);
+}
+
+
   /* ---------- 再生イベント ---------- */
   onPlay = () => {
     this.playPauseIcon?.classList.replace("fa-play", "fa-pause");
