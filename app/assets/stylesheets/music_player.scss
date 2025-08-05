@@ -174,22 +174,24 @@
     margin: 0 !important;
   }
 
-  #track-artist {
-    position: absolute !important;
-    top: 7px !important;
-    transform: none !important; /* ← 中央化されないように */
-    margin: 0 !important;
-    padding: 0 !important;
-    font-size: 13px !important;
-    color: #ccc !important;
-    max-width: 90px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    z-index: 9999 !important;
-    pointer-events: none !important;
-    display: inline-block !important;
-  }
+#track-artist-mobile {
+  position: absolute !important;
+  left: 50% !important;
+  top: 15px !important;
+  transform: translateX(-250%) !important;
+  /* -20%で中央より左へ20%だけ移動します */
+  color: #bbb !important;
+  font-size: 13px !important;
+  max-width: 110px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  z-index: 9999 !important;
+  display: inline-block !important;
+  // background: yellow !important;  /* テスト用 */
+}
+
+
 
 
 
