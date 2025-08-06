@@ -321,6 +321,36 @@ function hideScreenCover() {
     }, 1200); // ここは好きな秒数でOK
   }
 }
+
+
+// スマホ版プレイリストモーダル
+document.addEventListener("DOMContentLoaded", function() {
+  var btn = document.getElementById("show-playlist-modal-mobile");
+  if (!btn) return;
+  btn.addEventListener("click", function(e) {
+    e.preventDefault();
+
+    var modal = document.getElementById("playlist-modal-mobile");
+    var content = document.getElementById("playlist-modal-content-mobile");
+    if (!modal || !content) return;
+
+    // ajaxで部分テンプレートを取得
+    fetch('/emotion_logs/playlist_sidebar_modal', {
+      headers: { 'Accept': 'text/html' }
+    })
+      .then(response => response.text())
+      .then(html => {
+        content.innerHTML = html;
+        modal.style.display = "block";
+        // 背景クリックで閉じる
+        modal.onclick = function(ev) {
+          if (ev.target === modal) modal.style.display = "none";
+        }
+      });
+  });
+});
+
+
 window.addEventListener("DOMContentLoaded", hideScreenCover);
 window.addEventListener("load", hideScreenCover);
 document.addEventListener("turbo:load", hideScreenCover);
