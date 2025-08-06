@@ -1,4 +1,30 @@
 
+.mobile-footer .text-center.text-white.small {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  box-sizing: border-box !important;
+  height: auto !important;         /* 高さは自動（余計な高さ消す） */
+  line-height: 1.2 !important;     /* 文字も詰める */
+}
+
+.mobile-footer .text-center.text-white.small.active {
+  color: #ffd700 !important;     /* ゴールドで光る */
+  font-weight: bold !important;
+  text-shadow: 0 0 6px #ffd70088, 0 0 16px #fff;
+}
+.mobile-footer .text-center.text-white.small.active i {
+  color: #ffd700 !important;
+}
+
+
+
 
 .mobile-card, .mobile-comment-card {
   margin-bottom: 0.75rem;

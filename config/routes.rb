@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+
+get 'emotion_logs/playlist_sidebar_modal(.:format)', to: 'emotion_logs#playlist_sidebar_modal'
+
   get "contacts/new"
   get "contacts/create"
   devise_for :users,

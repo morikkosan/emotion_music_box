@@ -755,6 +755,16 @@ h1 i.bi bi-heart-pulse {
 }
 
 @media (max-width: 1695px) { #super-search-panel { top: 250px; } }
+@media (max-width: 996px) {
+  #super-search-panel {
+    top: 150px !important;  /* ←好きな高さに調整 */
+    left: 0;
+    width: 50vw;           /* 必要なら幅もスマホ用に調整 */
+    border-radius: 0 0 12px 12px; /* 好きな見た目でOK */
+    box-shadow: 0 2px 8px #0004;
+    /* その他スマホ時だけ変更したいものがあればここに追記 */
+  }
+}
 
 
 #playlist-sidebar {
