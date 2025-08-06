@@ -1,3 +1,30 @@
+/* 必須: ページネーションの中央寄せ強制 */
+.mobile-pagination-center {
+  display: flex !important;
+  justify-content: center !important;  /* これで基本は中央 */
+  align-items: center !important;
+  width: 100% !important;
+  margin: 16px 0 8px 0 !important;
+  /* ここで少し左にズラす（例: -12%） */
+  margin-left: -30% !important;
+}
+
+
+/* ページネーション本体(ul)もリセット・中央寄せ */
+.mobile-pagination-center .pagination {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  float: none !important;
+  position: static !important;
+  margin: 0 auto !important;
+  width: auto !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+
+
 
 .mobile-footer .text-center.text-white.small {
   flex: 1 1 0 !important;
