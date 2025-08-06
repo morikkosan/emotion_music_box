@@ -214,6 +214,16 @@ end
 
   def bookmarks
   # 通常はブックマークのみ
+  Rails.logger.error("PARAMS: #{params.inspect}")
+  logs = current_user.bookmarked_emotion_logs.includes(:user, :tags)
+  Rails.logger.error("初期logs件数: #{logs.count}")
+  logs = logs.where(emotion: params[:emotion]) if params[:emotion].present?
+  Rails.logger.error("emotionフィルタ後: #{logs.count}")
+  logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
+  Rails.logger.error("genreフィルタ後: #{logs.count}")
+
+
+  
   logs = current_user.bookmarked_emotion_logs.includes(:user, :tags)
   logs = logs.where(emotion: params[:emotion]) if params[:emotion].present?
   logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
@@ -238,7 +248,7 @@ end
     return
   end
 
-  render (params[:view] == "mobile" || mobile_device?) ? :mobile_index : :index
+  render :index
 end
 
 
@@ -256,6 +266,16 @@ end
 
     render (params[:view] == "mobile" || mobile_device?) ? :mobile_index : :index
   end
+
+ # スマホのプレイリスト　モーダル
+  def playlist_sidebar_modal
+  @playlists = current_user.playlists.includes(:playlist_items, :emotion_logs)
+  render partial: "emotion_logs/playlist_sidebar", locals: { playlists: @playlists }, formats: [:html]
+end
+
+
+
+
 
   private
 
@@ -310,5 +330,8 @@ end
     @emotion_log = EmotionLog.find(params[:id])
     head :forbidden unless @emotion_log.user == current_user
   end
+
+
+
 end
 
