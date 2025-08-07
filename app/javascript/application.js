@@ -351,6 +351,7 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 
+
 window.addEventListener("DOMContentLoaded", hideScreenCover);
 window.addEventListener("load", hideScreenCover);
 document.addEventListener("turbo:load", hideScreenCover);
