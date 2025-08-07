@@ -188,23 +188,6 @@
   margin-top: 4px !important;
 }
 
-@media (max-width: 520px) {
-  .mobile-container, .mobile-card, .mobile-comment-card {
-    max-width: 99vw;
-    padding-left: 0;
-    padding-right: 0;
-  }
-  .music-art-img, .mobile-music-art-img {
-    width: 90vw;
-    max-width: 120px;
-    height: auto;
-  }
-}
-
-
-
-
-
 
 
 
@@ -339,3 +322,97 @@
   color: #666;
   font-size: 0.89em;
 }
+
+@media (max-width: 520px) {
+  .mobile-container, .mobile-card, .mobile-comment-card {
+    max-width: 99vw;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .music-art-img, .mobile-music-art-img {
+    width: 90vw;
+    max-width: 120px;
+    height: auto;
+  }
+}
+
+/* デフォルトでは非表示（PC用） */
+.mobile-footer-menu {
+  display: none;
+}
+/* PC用デフォルトで隠す */
+.mobile-footer-menu {
+  display: none;
+}
+
+@media (max-width: 768px) {
+
+  .playlist-playfirst-fixed,
+  .add-song-floating,
+  .d-flex.justify-content-center.gap-3.mt-4 {
+    display: none !important;
+  }
+
+  .mobile-footer-menu {
+    display: flex !important;
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100vw;
+    background: rgba(18,24,48,0.98);
+    box-shadow: 0 -2px 12px #0005;
+    z-index: 11111;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 0 4px 0;
+    height: 56px;
+    border-top: 1px solid #344c;
+  }
+  .mobile-footer-menu .footer-btn {
+    flex: 1 1 0%;
+    margin: 0 4px;
+    height: 40px;
+    font-size: 0.99rem;
+    border-radius: 1.7rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    color: #fff;
+    font-weight: bold;
+    box-shadow: 0 1px 4px #0002;
+    transition: background .13s, color .13s;
+    gap: 2px;
+  }
+  .mobile-footer-menu .footer-btn.playfirst {
+    background: linear-gradient(90deg,#4cfff4,#00c4ff);
+    color: #083d4d;
+  }
+  .mobile-footer-menu .footer-btn.add {
+    background: linear-gradient(90deg,#cc47f5,#4ed2ff);
+    color: #fff;
+  }
+  .mobile-footer-menu .footer-btn.back {
+    background: linear-gradient(90deg,#2e7fff,#01eaff);
+    color: #fff;
+  }
+  .mobile-footer-menu .footer-btn.delete {
+    background: linear-gradient(90deg,#ff3795,#ff6868);
+    color: #fff;
+  }
+  .mobile-footer-menu .footer-btn i {
+    font-size: 1.1em;
+    margin-bottom: 2px;
+  }
+  .mobile-footer-menu .footer-btn span {
+    font-size: 0.79em;
+    line-height: 1.1;
+    letter-spacing: 0.03em;
+    margin: 0;
+    padding: 0;
+    font-weight: bold;
+  }
+
+} /* ← 必ずここで閉じる！ */

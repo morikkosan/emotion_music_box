@@ -1,12 +1,11 @@
 <%# app/views/playlists/show.html.erb %>
-
 <% if @playlist.playlist_items.empty? %>
   <p class="text-center">まだ曲が追加されていません。</p>
 <% else %>
-  <!-- ★ 親要組織にコントローラをアタッチ -->
+  <!-- プレイリスト全体に Stimulus Controller アタッチ -->
   <div class="playlist-container" data-controller="global-player">
 
-    <!-- ★ 1曲目から再生ボタン -->
+    <!-- 1曲目から再生ボタン（デスクトップ用のみ） -->
     <div class="playlist-playfirst-fixed">
       <button
         type="button"
@@ -17,12 +16,11 @@
       </button>
     </div>
 
-    <!-- ★ プレイリスト本体 -->
+    <!-- プレイリスト本体 -->
     <ul
-  id="<%= dom_id(@playlist, :contents) %>"
-  class="list-unstyled mt-3 playlist-contents"
->
-
+      id="<%= dom_id(@playlist, :contents) %>"
+      class="list-unstyled mt-3 playlist-contents"
+    >
       <% @playlist.playlist_items.includes(:emotion_log).each do |item| %>
         <% log = item.emotion_log %>
         <li class="mb-4">
@@ -66,27 +64,53 @@
                     },
                     class: "btn btn-danger btn-sm" %>
             </div>
-
           </div>
         </li>
       <% end %>
 
-      <!-- ★ 戻る＆プレイリスト削除 -->
+      <!-- 戻る・プレイリスト削除（デスクトップ用のみ） -->
       <li class="d-flex justify-content-center gap-3 mt-4">
         <%= link_to "← プレイリスト一覧に戻る",
                     bookmarks_emotion_logs_path(view: 'mobile'),
                     class: "neon_show neon_show-back btn" %>
-       <%= link_to raw('<i class="fa fa-trash me-1"></i>プレイリストを削除'),
-    playlist_path(@playlist),
-    method: :delete,
-    data: { confirm: "本当にこのプレイリストを削除しますか？" },
-    class: "neon_show neon_show-delete btn" %>
+        <%= link_to raw('<i class="fa fa-trash me-1"></i>プレイリストを削除'),
+                    playlist_path(@playlist),
+                    method: :delete,
+                    data: { confirm: "本当にこのプレイリストを削除しますか？" },
+                    class: "neon_show neon_show-delete btn" %>
       </li>
     </ul>
+
+    <!-- ★ スマホ専用フッターメニュー（4ボタン横並び） -->
+    <nav class="mobile-footer-menu">
+      <button
+        type="button"
+        class="footer-btn playfirst"
+        data-action="click->global-player#playFirstTrack">
+        <i class="fa fa-play"></i><span>再生</span>
+      </button>
+      <button
+        type="button"
+        class="footer-btn add"
+        data-bs-toggle="modal"
+        data-bs-target="#addSongsModal"
+        aria-label="曲を追加">
+        <i class="fa fa-plus-circle"></i><span>追加</span>
+      </button>
+      <a href="<%= bookmarks_emotion_logs_path(view: 'mobile') %>"
+         class="footer-btn back">
+        <i class="fa fa-arrow-left"></i><span>戻る</span>
+      </a>
+      <%= link_to raw('<i class="fa fa-trash"></i>'),
+            playlist_path(@playlist),
+            method: :delete,
+            data: { confirm: "本当にこのプレイリストを削除しますか？" },
+            class: "footer-btn delete" %>
+    </nav>
   </div>
 <% end %>
 
-<!-- ★ 固定ネオン風「曲を追加」ボタン -->
+<!-- 固定ネオン風「曲を追加」ボタン（デスクトップ用のみ） -->
 <button
   type="button"
   class="btn neon_show add-song-floating"
@@ -96,7 +120,7 @@
   <i class="fa fa-plus-circle me-1"></i> 曲を追加
 </button>
 
-<!-- ★ モーダル定義 -->
+<!-- モーダル定義（省略せず全て書く） -->
 <div class="modal fade"
      id="addSongsModal"
      data-controller="add-song-modal"
@@ -104,16 +128,13 @@
      aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
-
       <div class="modal-header">
         <h5 class="modal-title">ブックマーク済みの曲一覧</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-
       <div class="modal-body" id="addSongsModalBody">
         <%= render 'playlists/bookmarked_songs', playlist: @playlist %>
       </div>
-
       <div class="modal-footer">
         <button
           type="button"
@@ -122,7 +143,6 @@
           閉じる
         </button>
       </div>
-
     </div>
   </div>
 </div>
