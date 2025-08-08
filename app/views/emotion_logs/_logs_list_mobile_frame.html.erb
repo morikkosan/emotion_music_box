@@ -1,0 +1,10 @@
+<%= turbo_frame_tag "logs_list_mobile" do %>
+  <div class="mobile-pagination-center">
+    <%= paginate @emotion_logs, params: request.query_parameters.merge(view: "mobile") %>
+  </div>
+
+  <div class="mobile-content pb-5 px-3 mt-4">
+    <%= render partial: "emotion_logs/mobile_list", locals: { logs: @emotion_logs } %>
+    <div class="player-space-spacer"></div>
+  </div>
+<% end %>
