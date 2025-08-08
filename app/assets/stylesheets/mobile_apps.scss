@@ -105,7 +105,7 @@
 }
 
 // 今日の気持ちを記録するボタン
-#record-button.record-mobile-button {
+#record-button-mobile.record-mobile-button {
   position: fixed !important;
   /* 右下、メニューバー上あたりに配置 */
   right: 1.2rem;           /* 画面右からの距離 */
@@ -137,7 +137,7 @@
 }
 
 /* ホバー時 */
-#record-button.record-mobile-button:hover {
+#record-button-mobile.record-mobile-button:hover {
   transform: translateY(-4px);
   box-shadow:
     0 0 15px #00c3ff,
