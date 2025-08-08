@@ -2,187 +2,176 @@
 
   <div id="desktop-view">
 
-<!-- app/views/emotion_logs/index.html.erb -->
-<% content_for :title, "エモミュ" %>
+    <!-- app/views/emotion_logs/index.html.erb -->
+    <% content_for :title, "エモミュ" %>
+    <%= render 'shared/header' %>
 
-<%= render 'shared/header' %>
-
-<% if user_signed_in? %>
-  <% if @bookmark_page.present? %>
-    <span class="bookmark_title"><%= @bookmark_page %></span>
-  <% elsif @mypage_title.present? %>
-    <span class="bookmark_title"><%= @mypage_title %></span>
-  <% elsif @recommended_page.present? %>
-    <span class="bookmark_title"><%= @recommended_page %></span>
-  <% else %>
-    <!-- 通常のストレスゲージ -->
-    <br>
-    <div id="hp-bar-container">
-      <span class="today_mental_text">
-        👆Today's stress level <span id="bar-width-display"></span>👆
-      </span>
-      <p id="hp-status-text">メンタル正常</p>
-      <div id="hp-bar"></div>
-    </div>
-  <% end %>
-<% end %>
-
-<% if @bookmark_page.present? %>
-  <div data-controller="bookmark" class="bookmark-panel">
-    <div class="bookmark-toolbar">
-      <!-- ✅ チェックボックス -->
-      <label class="bookmark-merge-toggle-label">
-        <input type="checkbox"
-               id="mypage-merge-toggle"
-               class="form-check-input"
-               data-action="change->bookmark#toggleMyPageLogs"
-               name="include_my_logs">
-        マイページの投稿も含める
-      </label>
-
-      <!-- ✅ プレイリスト作成ボタン -->
-      <% if current_user.playlists.count < 12 %>
-        <form action="<%= new_playlist_path(format: :turbo_stream) %>"
-              method="get"
-              data-turbo-frame="playlist-modal-container"
-              data-action="submit->bookmark#submitPlaylistForm"
-              class="bookmark-create-form">
-          <input type="hidden" name="selected_logs" data-bookmark-target="selectedLogsInput">
-          <button type="submit" class="bookmark-playlist-create-btn">
-            プレイリストを作成する
-          </button>
-        </form>
+    <% if user_signed_in? %>
+      <% if @bookmark_page.present? %>
+        <span class="bookmark_title"><%= @bookmark_page %></span>
+      <% elsif @mypage_title.present? %>
+        <span class="bookmark_title"><%= @mypage_title %></span>
+      <% elsif @recommended_page.present? %>
+        <span class="bookmark_title"><%= @recommended_page %></span>
       <% else %>
-        <button class="btn btn-secondary" disabled>プレイリストは12個まで作成可能です</button>
-      <% end %>
-    </div>
-  </div>
-<% end %>
-
-<% if user_signed_in? %>
-  <br><br><br>
-  <div class="main-content">
-    <% if @bookmark_page.present? || @mypage_title.present? %>
-      <div id="playlist-sidebar">
-        <%= render 'emotion_logs/playlist_sidebar',
-                   playlists: current_user.playlists.includes(:playlist_items, :emotion_logs) %>
-      </div>
-    <% else %>
-      <%= render 'super_search' %>
-    <% end %>
-  </div>
-<% end %>  <!-- ←この位置でOK！ -->
-
-<%= turbo_frame_tag "logs_list" do %>
-  <div class="scroll-content">
-
-    <div class="row justify-content-center">
-      <% @emotion_logs.each do |log| %>
-        <div id="<%= dom_id(log) %>" class="col-md-8 mb-4">
-          <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <% if @bookmark_page.present? %>
-                <input type="checkbox"
-                       name="selected_logs[]"
-                       value="<%= log.id %>"
-                       class="playlist-check me-3 playlist-check-accent">
-              <% end %>
-
-              <div>
-                <strong><%= log.created_at.in_time_zone('Tokyo').strftime('%Y/%m/%d %H:%M') %></strong>
-                <% log.tags.each do |tag| %>
-                  <% if user_signed_in? %>
-                    <%= link_to tag.name,
-                                emotion_logs_path(genre: tag.name),
-                                class: "badge bg-primary text-light me-1" %>
-                  <% else %>
-                    <span class="badge bg-primary text-light me-1"
-                          title="ログインすると使えます"><%= tag.name %></span>
-                  <% end %>
-                <% end %>
-              </div>
-
-              <div class="d-flex align-items-center gap-3">
-                <% if current_user == log.user %>
-                  <%= form_with url: emotion_log_path(log),
-                                method: :delete,
-                                data: { turbo_confirm: '本当に削除しますか？',
-                                        turbo_stream: true },
-                                class: 'd-inline' do %>
-                    <%= submit_tag '削除', class: 'btn btn-danger btn-sm' %>
-                  <% end %>
-                <% else %>
-                  <%= render 'bookmark_buttons', emotion_log: log %>
-                <% end %>
-
-                <div class="d-flex align-items-center comment-count-box">
-                  <span class="fw-bold comment-count-number">
-                    <%= log.comments_count %></span>
-                  <%= image_tag 'comment_icon.webp',
-                                alt: 'コメント数',
-                                class: "comment-icon" %>
-                </div>
-              </div>
-            </div>
-
-            <div class="card-body">
-              <div class="d-flex align-items-start">
-
-                <div class="me-3 position-relative music-art-box">
-                  <!-- ▼ ここが修正ポイント！ -->
-                  <%= image_tag log.music_art_url || "placeholder.png",
-                                alt: "ジャケット画像",
-                                class: "music-art-img",
-                                data: {
-                                  "play-url"             => log.music_url,
-                                  "global-player-target" => "trackImage",
-                                  "track-id"             => log.id
-                                } %>
-
-                  <i class="fa fa-play play-overlay-icon"
-                    data-action="click->global-player#onPlayIconClick"
-                    data-global-player-target="playIcon"
-                    data-track-id="<%= log.id %>"></i>
-                </div>
-
-                <div class="d-flex align-items-center">
-                  <div>
-                    <%= link_to log.emotion,
-                                emotion_log_path(log),
-                                class: "button",
-                                data: { turbo: false } %>
-                  </div>
-                  <div class="ms-3">
-                    <p class="mb-0 log-description">
-
-                      <%= log.description.present? ? log.description : "一言はありません" %>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        <!-- 通常のストレスゲージ -->
+        <br>
+        <div id="hp-bar-container">
+          <span class="today_mental_text">
+            👆Today's stress level <span id="bar-width-display"></span>👆
+          </span>
+          <p id="hp-status-text">メンタル正常</p>
+          <div id="hp-bar"></div>
         </div>
       <% end %>
-    </div>
-  </div>
-<% end %>
+    <% end %>
 
-<% if user_signed_in? %>
+    <% if @bookmark_page.present? %>
+      <div data-controller="bookmark" class="bookmark-panel">
+        <div class="bookmark-toolbar">
+          <!-- ✅ チェックボックス -->
+          <label class="bookmark-merge-toggle-label">
+            <input type="checkbox"
+                   id="mypage-merge-toggle"
+                   class="form-check-input"
+                   data-action="change->bookmark#toggleMyPageLogs"
+                   name="include_my_logs">
+            マイページの投稿も含める
+          </label>
 
-  <%= paginate @emotion_logs %>
+          <!-- ✅ プレイリスト作成ボタン -->
+          <% if current_user.playlists.count < 12 %>
+            <form action="<%= new_playlist_path(format: :turbo_stream) %>"
+                  method="get"
+                  data-turbo-frame="playlist-modal-container"
+                  data-action="submit->bookmark#submitPlaylistForm"
+                  class="bookmark-create-form">
+              <input type="hidden" name="selected_logs" data-bookmark-target="selectedLogsInput">
+              <button type="submit" class="bookmark-playlist-create-btn">
+                プレイリストを作成する
+              </button>
+            </form>
+          <% else %>
+            <button class="btn btn-secondary" disabled>プレイリストは12個まで作成可能です</button>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
 
-  <%= link_to "今日の気持ちを記録する",
-              new_emotion_log_path(format: :turbo_stream),
-              id: "record-button",
-              data: { controller: "record-btn",
-                      action: "click->record-btn#hide",
-                      turbo_prefetch: false },
-              class: "btn btn-primary floating-btn" %>
-<% end %>
+    <% if user_signed_in? %>
+      <br><br><br>
+      <div class="main-content">
+        <% if @bookmark_page.present? || @mypage_title.present? %>
+          <div id="playlist-sidebar">
+            <%= render 'emotion_logs/playlist_sidebar',
+              playlists: current_user.playlists.includes(:playlist_items, :emotion_logs) %>
+          </div>
+        <% else %>
+          <%= render 'super_search' %>
+        <% end %>
+      </div>
+    <% end %>  <!-- ←この位置でOK！ -->
+
+    <!-- turbo_frame_tagの中にはボタンを入れない -->
+    <%= turbo_frame_tag "logs_list" do %>
+      <div class="scroll-content">
+        <div class="row justify-content-center">
+          <% @emotion_logs.each do |log| %>
+            <div id="<%= dom_id(log) %>" class="col-md-8 mb-4">
+              <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <% if @bookmark_page.present? %>
+                    <input type="checkbox"
+                      name="selected_logs[]"
+                      value="<%= log.id %>"
+                      class="playlist-check me-3 playlist-check-accent">
+                  <% end %>
+
+                  <div>
+                    <strong><%= log.created_at.in_time_zone('Tokyo').strftime('%Y/%m/%d %H:%M') %></strong>
+                    <% log.tags.each do |tag| %>
+                      <% if user_signed_in? %>
+                        <%= link_to tag.name,
+                          emotion_logs_path(genre: tag.name),
+                          class: "badge bg-primary text-light me-1" %>
+                      <% else %>
+                        <span class="badge bg-primary text-light me-1"
+                          title="ログインすると使えます"><%= tag.name %></span>
+                      <% end %>
+                    <% end %>
+                  </div>
+                  <div class="d-flex align-items-center gap-3">
+                    <% if current_user == log.user %>
+                      <%= form_with url: emotion_log_path(log),
+                          method: :delete,
+                          data: { turbo_confirm: '本当に削除しますか？',
+                                  turbo_stream: true },
+                          class: 'd-inline' do %>
+                        <%= submit_tag '削除', class: 'btn btn-danger btn-sm' %>
+                      <% end %>
+                    <% else %>
+                      <%= render 'bookmark_buttons', emotion_log: log %>
+                    <% end %>
+                    <div class="d-flex align-items-center comment-count-box">
+                      <span class="fw-bold comment-count-number">
+                        <%= log.comments_count %></span>
+                      <%= image_tag 'comment_icon.webp',
+                        alt: 'コメント数',
+                        class: "comment-icon" %>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="d-flex align-items-start">
+                    <div class="me-3 position-relative music-art-box">
+                      <%= image_tag log.music_art_url || "placeholder.png",
+                        alt: "ジャケット画像",
+                        class: "music-art-img",
+                        data: {
+                          "play-url"             => log.music_url,
+                          "global-player-target" => "trackImage",
+                          "track-id"             => log.id
+                        } %>
+                      <i class="fa fa-play play-overlay-icon"
+                        data-action="click->global-player#onPlayIconClick"
+                        data-global-player-target="playIcon"
+                        data-track-id="<%= log.id %>"></i>
+                    </div>
+                    <div class="d-flex align-items-center">
+                      <div>
+                        <%= link_to log.emotion,
+                          emotion_log_path(log),
+                          class: "button",
+                          data: { turbo: false } %>
+                      </div>
+                      <div class="ms-3">
+                        <p class="mb-0 log-description">
+                          <%= log.description.present? ? log.description : "一言はありません" %>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- ここから下 turbo_frame_tagの外！絶対外！ -->
+    <% if user_signed_in? %>
+      <%= paginate @emotion_logs %>
+      <%= link_to "今日の気持ちを記録する",
+        new_emotion_log_path(format: :turbo_stream),
+        id: "record-button",
+        data: { controller: "record-btn", action: "click->record-btn#hide", turbo_prefetch: false },
+        class: "btn btn-primary floating-btn" %>
+    <% end %>
 
   </div> <!-- #desktop-view -->
- <!-- ================= モバイルビュー ================= -->
+
+  <!-- ================= モバイルビュー ================= -->
   <div id="mobile-view">
     <% content_for :title, "エモミュ" %>
     <div class="container mt-3 position-relative">
@@ -236,6 +225,7 @@
         </div>
       <% end %>
     </div>
+    <!-- turbo_frame_tagの中にはボタンを入れない -->
     <%= turbo_frame_tag "logs_list_mobile" do %>
       <% if @bookmark_page.present? %>
         <div class="bookmark_title"><%= @bookmark_page %></div>
@@ -275,21 +265,10 @@
         <div class="mobile-hp-bar-container">
           <div class="mobile-hp-bar" id="hp-bar"></div>
           <span class="mobile_today_mental_text">
-            👆Today's stress level <span id="bar-width-display"></span>👆
+            👆Today's stress level <span id="bar-width-display-mobile"></span>👆
           </span>
         </div>
       <% end %>
-
-        <!-- ✅ ネオン風記録ボタン -->
-        <div class="w-100 text-center my-4 record-mobile-btn-wrap">
-          <%= link_to "今日の気持ちを記録する",
-                      new_emotion_log_path(format: :turbo_stream),
-                      id: "record-button",
-                      class: "record-mobile-button",
-                      data: { controller: "record-btn", action: "click->record-btn#hide", turbo_prefetch: false } %>
-        </div>
-
-
       <div class="mobile-pagination-center">
         <%= paginate @emotion_logs, params: { view: "mobile" }, remote: true, turbo_frame: "logs_list_mobile" %>
       </div>
@@ -297,14 +276,18 @@
         <%= render partial: "emotion_logs/mobile_list", locals: { logs: @emotion_logs } %>
         <div class="player-space-spacer"></div>
       </div>
-      <% if user_signed_in? %>
-        <%= link_to "今日の気持ちを記録する",
-            new_emotion_log_path(format: :turbo_stream),
-            id: "record-button-mobile",
-            data: { controller: "record-btn", action: "click->record-btn#hide", turbo_prefetch: false },
-            class: "btn btn-primary floating-btn-mobile w-100 mb-4" %>
-      <% end %>
     <% end %>
+    <!-- turbo_frame_tagの外に出したボタン -->
+    <% if user_signed_in? %>
+      <div class="w-100 text-center my-4 record-mobile-btn-wrap">
+        <%= link_to "今日の気持ちを記録する",
+          new_emotion_log_path(format: :turbo_stream),
+        id: "record-button-mobile",
+          class: "record-mobile-button",
+          data: { controller: "record-btn", action: "click->record-btn#hide", turbo_prefetch: false } %>
+      </div>
+    <% end %>
+
     <% if user_signed_in? %>
       <nav class="mobile-footer fixed-bottom bg-dark text-white d-flex justify-content-evenly py-2">
         <%= link_to emotion_logs_path,

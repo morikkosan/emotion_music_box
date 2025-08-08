@@ -1,45 +1,80 @@
 import { Controller } from "@hotwired/stimulus"
 import * as bootstrap from "bootstrap"
-// 下手に触らない新しく作るならこれから違うファイルへ違うモーダルidへ
-export default class extends Controller {
-  connect () {
-    //console.log("🟢 modal_controller connected")
 
-    // ------- モーダルの重複排除（あなた仕様） -------
-    const modals = document.querySelectorAll("#modal-container")
-    if (modals.length > 1) {
-      modals.forEach((el, idx) => { if (idx < modals.length - 1) el.remove() })
+// 使い方：Turbo Streamで #modal-container に .modal を丸ごと update して差し込む。
+// 閉じたら .modal は破棄するが、#modal-container は残す（次回の差し替え先にする）。
+export default class extends Controller {
+  connect() {
+    // --- 前回の残骸を掃除（backdrop / bodyクラス） ---
+    document.querySelectorAll(".modal-backdrop").forEach(el => el.remove())
+    document.body.classList.remove("modal-open")
+    document.body.style.overflow = ""
+
+    // 万が一、画面上に他の .modal.show が残っていたら閉じる
+    document.querySelectorAll(".modal.show").forEach(m => {
+      const inst = bootstrap.Modal.getInstance(m) || bootstrap.Modal.getOrCreateInstance(m)
+      try { inst.hide(); inst.dispose() } catch (_) {}
+      // 既存モーダルは消去（containerは残す方針）
+      m.remove()
+    })
+
+    // --- Bootstrap モーダルを必ず生成・表示 ---
+    this.bs = bootstrap.Modal.getOrCreateInstance(this.element) // this.element は .modal
+    this.bs.show()
+
+    // --- 任意：フォームのテキストエリアにフォーカス ---
+    const desc = this.element.querySelector("#emotion_log_description")
+    if (desc) {
+      // レイアウト確定後にフォーカスさせる
+      requestAnimationFrame(() => { try { desc.focus() } catch (_) {} })
     }
 
-    // ------- 既存のモーダルバックドロップ重複排除（追加） -------
-    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove())
+    // --- 閉じたら .modal だけ捨て、container は生かす ---
+    this._onHidden = () => {
+      try { this.bs?.dispose() } catch (_) {}
+      // .modal（自分自身）を削除
+      this.element.remove()
 
-    // ------- Bootstrap モーダルを必ず表示 -------
-    const bsModal = bootstrap.Modal.getOrCreateInstance(this.element)
-    bsModal.show()
+      // 念のため container の中身を空にする（container 自体は残す）
+      const container = document.getElementById("modal-container")
+      if (container) container.innerHTML = ""
 
-    // ------- description にフォーカス（任意）-------
-    const desc = this.element.querySelector("#emotion_log_description")
-    if (desc) setTimeout(() => desc.focus(), 100)
+      // 後片付け（backdrop / bodyクラス）
+      document.querySelectorAll(".modal-backdrop").forEach(el => el.remove())
+      document.body.classList.remove("modal-open")
+      document.body.style.overflow = ""
+    }
+    this.element.addEventListener("hidden.bs.modal", this._onHidden, { once: true })
+  }
 
-//         this.element.addEventListener('hidden.bs.modal', () => {
-//     this.element.remove();  // モーダル自身を完全に削除する
-// });
-
+  disconnect() {
+    // StimulusがDOMから外れる際の保険
+    try { this.bs?.dispose() } catch (_) {}
+    this.element?.removeEventListener?.("hidden.bs.modal", this._onHidden)
   }
 }
 
+// --- Turboの描画前後での残骸掃除（安定化用）---
+document.addEventListener("turbo:before-cache", () => {
+  document.querySelectorAll(".modal.show").forEach(m => {
+    const inst = bootstrap.Modal.getInstance(m)
+    try { inst?.hide(); inst?.dispose() } catch (_) {}
+    m.remove()
+  })
+  document.querySelectorAll(".modal-backdrop").forEach(el => el.remove())
+  document.body.classList.remove("modal-open")
+  document.body.style.overflow = ""
+})
+
 document.addEventListener("turbo:before-stream-render", (event) => {
-  // Turbo Stream remove/replace で modal-container が対象の時
-  if (
-    event.target.tagName === "TURBO-STREAM" &&
-    ["remove", "replace"].includes(event.target.getAttribute("action")) &&
-    event.target.getAttribute("target") === "modal-container"
-  ) {
-    // 黒いモヤを消す
-    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove())
-    document.body.classList.remove('modal-open')
+  // Turbo Stream が #modal-container を remove/replace するときは、先に残骸を掃除
+  const isTS = event.target.tagName === "TURBO-STREAM"
+  if (!isTS) return
+  const action = event.target.getAttribute("action")
+  const target = event.target.getAttribute("target")
+  if (["remove", "replace"].includes(action) && target === "modal-container") {
+    document.querySelectorAll(".modal-backdrop").forEach(el => el.remove())
+    document.body.classList.remove("modal-open")
     document.body.style.overflow = ""
   }
 })
-
