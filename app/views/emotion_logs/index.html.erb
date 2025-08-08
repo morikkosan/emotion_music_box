@@ -289,6 +289,8 @@
     <% end %>
 
     <% if user_signed_in? %>
+      <div data-controller="mobile-super-search">
+
       <nav class="mobile-footer fixed-bottom bg-dark text-white d-flex justify-content-evenly py-2">
         <%= link_to emotion_logs_path,
           class: "text-center text-white small #{'active' if current_page?(emotion_logs_path)}" do %>
@@ -299,10 +301,11 @@
           data: { turbo_frame: "logs_list_mobile", turbo_action: "advance" } do %>
           <i class="bi bi-fire fs-4"></i><br>おすすめ🔥
         <% end %>
-        <%= link_to "#", class: "text-center text-white small",
-            data: { controller: "mobile-super-search", action: "click->mobile-super-search#open" } do %>
-          <i class="bi bi-search fs-4"></i><br>検索
-        <% end %>
+       <button type="button"
+        class="text-center text-white small btn btn-link p-0"
+        data-action="click->mobile-super-search#open">
+        <i class="bi bi-search fs-4"></i><br>検索
+      </button>
         <%= link_to my_emotion_logs_path,
           class: "text-center text-white small #{'active' if current_page?(my_emotion_logs_path)}",
           data: { turbo_frame: "logs_list_mobile" } do %>
@@ -319,6 +322,8 @@
           <i class="bi bi-music-note-list fs-4"></i><br>プレイリスト
         <% end %>
       </nav>
+          <%= render "emotion_logs/mobile_super_search" %>
+
       <div id="playlist-modal-mobile" class="modal" tabindex="-1" style="display: none;">
         <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content" id="playlist-modal-content-mobile">
@@ -327,6 +332,5 @@
         </div>
       </div>
     <% end %>
-    <%= render "emotion_logs/mobile_super_search" %>
   </div>
 </div>
