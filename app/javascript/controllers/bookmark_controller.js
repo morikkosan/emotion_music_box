@@ -4,14 +4,50 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = ["selectedLogsInput", "includeMyLogsCheckbox"]
 
+  connect() {
+    this.storageKey = "playlist:selected_ids"
+    try {
+      this.selected = new Set(JSON.parse(localStorage.getItem(this.storageKey) || "[]"))
+    } catch (_) {
+      this.selected = new Set()
+    }
+
+    this.restoreChecks()
+    this.fillHiddenFromStorage()
+
+    this.onFrameLoad = (e) => {
+      const id = e.target?.id
+      if (id === "logs_list" || id === "logs_list_mobile") {
+        this.restoreChecks()
+        this.fillHiddenFromStorage()
+      }
+    }
+    document.addEventListener("turbo:frame-load", this.onFrameLoad)
+
+    this.onChange = (e) => {
+      const t = e.target
+      if (!t.matches?.(".playlist-check")) return
+      const id = String(t.value)
+      if (t.checked) this.selected.add(id)
+      else this.selected.delete(id)
+      this.persist()
+      this.fillHiddenFromStorage()
+    }
+    document.addEventListener("change", this.onChange)
+  }
+
+  disconnect() {
+    document.removeEventListener("turbo:frame-load", this.onFrameLoad)
+    document.removeEventListener("change", this.onChange)
+  }
+
   toggleMyPageLogs(event) {
     const el = event.target
     const form = el.form
 
-    // モバイル判定
     const inMobileFrame = !!(
       document.getElementById("logs_list_mobile")?.contains(this.element) ||
-      el.closest("turbo-frame#logs_list_mobile")
+      el.closest?.("turbo-frame#logs_list_mobile")
     )
     const isMobileForm =
       inMobileFrame ||
@@ -22,56 +58,100 @@ export default class extends Controller {
       event.preventDefault()
       event.stopPropagation()
 
-      // ★ ここを form.action ではなく、必ずブクマ一覧に固定
       const url = new URL("/emotion_logs/bookmarks", window.location.origin)
-
-      // 現在クエリをベースに
       const params = new URLSearchParams(window.location.search)
-
-      // フォームがあればフォーム値もマージ（検索条件を維持）
       if (form) {
         for (const [k, v] of new FormData(form).entries()) {
-          if (v !== null && v !== "") params.set(k, v)
+          if (v != null && v !== "") params.set(k, v)
         }
       }
+      if (el.checked) params.set("include_my_logs", "true")
+      else params.delete("include_my_logs")
 
-      // チェックON/OFF反映
-      if (el.checked) {
-        params.set("include_my_logs", "true")
-      } else {
-        params.delete("include_my_logs")
-      }
-
-      // モバイル表示を強制
       params.set("view", "mobile")
-
       url.search = params.toString()
 
-      // フレームだけ差し替え（フル遷移させない）
       const frame = document.getElementById("logs_list_mobile")
-      if (frame) {
-        frame.setAttribute("src", url.toString())
-      } else if (window.Turbo?.visit) {
-        Turbo.visit(url.toString(), { frame: "logs_list_mobile" })
-      } else {
-        window.location.href = url.toString()
-      }
+      if (frame) frame.setAttribute("src", url.toString())
+      else if (window.Turbo?.visit) Turbo.visit(url.toString(), { frame: "logs_list_mobile" })
+      else window.location.href = url.toString()
       return
     }
 
-    // デスクトップ
     const base = new URL("/emotion_logs/bookmarks", window.location.origin)
     const cur  = new URLSearchParams(window.location.search)
-    ;["genre","emotion","sort","period"].forEach(k => {
-      const v = cur.get(k); if (v) base.searchParams.set(k, v)
-    })
+    ;["genre","emotion","sort","period"].forEach(k => { const v = cur.get(k); if (v) base.searchParams.set(k, v) })
     if (el.checked) base.searchParams.set("include_my_logs", "true")
-    // 未チェック時は param を付けずデフォルト（=含めない）
     window.Turbo?.visit ? Turbo.visit(base.toString(), { action: "advance" }) : (window.location.href = base.toString())
   }
 
-  submitPlaylistForm() {
-    const ids = Array.from(document.querySelectorAll(".playlist-check:checked")).map(b => b.value)
-    if (this.hasSelectedLogsInputTarget) this.selectedLogsInputTarget.value = ids.join(",")
+  // ✅ 送信直前：localStorageに入っている「全ページ分」を
+  //  1) selected_log_ids（カンマ区切り文字列）
+  //  2) selected_logs[]（配列）
+  // の2系統で form に詰める
+  submitPlaylistForm(e) {
+    const form = e?.target
+    if (!form) return
+
+    let arr = []
+    try {
+      arr = JSON.parse(localStorage.getItem(this.storageKey) || "[]")
+    } catch (_) {
+      arr = this.selected ? [...this.selected] : []
+    }
+
+    // 1) 文字列 hidden（ターゲットがあればそれを使う）
+    let idsHidden =
+      form.querySelector('input[name="selected_log_ids"]') ||
+      (this.hasSelectedLogsInputTarget ? this.selectedLogsInputTarget : null)
+
+    if (!idsHidden) {
+      idsHidden = document.createElement("input")
+      idsHidden.type = "hidden"
+      idsHidden.name = "selected_log_ids"
+      form.appendChild(idsHidden)
+    }
+    idsHidden.value = arr.join(",")
+
+    // 2) 配列 hidden（毎回作り直し）
+    form.querySelectorAll('input[name="selected_logs[]"]').forEach(n => n.remove())
+    arr.forEach(id => {
+      const h = document.createElement("input")
+      h.type  = "hidden"
+      h.name  = "selected_logs[]"
+      h.value = id
+      form.appendChild(h)
+    })
+  }
+
+  clearSelection(e) {
+    if (!e?.detail?.success) return
+    localStorage.setItem(this.storageKey, JSON.stringify([]))
+    this.selected?.clear?.()
+    document.querySelectorAll(".playlist-check:checked").forEach(cb => (cb.checked = false))
+    this.fillHiddenFromStorage()
+  }
+
+  // --- util ---
+  restoreChecks() {
+    document.querySelectorAll(".playlist-check").forEach(cb => {
+      cb.checked = this.selected.has(String(cb.value))
+    })
+  }
+
+  fillHiddenFromStorage() {
+    let arr = []
+    try {
+      arr = JSON.parse(localStorage.getItem(this.storageKey) || "[]")
+    } catch (_) {
+      arr = this.selected ? [...this.selected] : []
+    }
+    if (this.hasSelectedLogsInputTarget) {
+      this.selectedLogsInputTarget.value = arr.join(",")
+    }
+  }
+
+  persist() {
+    localStorage.setItem(this.storageKey, JSON.stringify([...this.selected]))
   }
 }

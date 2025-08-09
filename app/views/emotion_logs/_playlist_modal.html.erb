@@ -1,12 +1,10 @@
 <%# app/views/emotion_logs/_playlist_modal.html.erb %>
-<%# 互換性のためにデフォルトを持つ（locals 無しでも落ちない） %>
 <% modal_dom_id = local_assigns[:modal_id] || 'playlist-modal' %>
-<% pl          = (defined?(playlist) && playlist.present?) ? playlist : Playlist.new %>
+<% pl = (defined?(playlist) && playlist.present?) ? playlist : Playlist.new %>
 
 <div class="modal fade"
      id="<%= modal_dom_id %>"
      tabindex="-1"
-     role="dialog"
      aria-hidden="true"
      data-bs-backdrop="true"
      data-bs-keyboard="true">
@@ -14,7 +12,11 @@
     <div class="modal-content">
       <%= form_with model: pl,
                     url: playlists_path,
-                    data: { turbo: true },
+                    data: {
+                      controller: "bookmark",
+                      action: "submit->bookmark#submitPlaylistForm turbo:submit-end->bookmark#clearSelection",
+                      turbo: true
+                    },
                     html: { id: "playlist-form" } do |f| %>
 
         <div class="modal-header">
@@ -28,8 +30,9 @@
         </div>
 
         <div class="modal-footer">
-          <!-- チェック済みログIDを差し込む置き場（JSが埋める） -->
-          <div id="selected-log-ids"></div>
+          <!-- 文字列版 hidden（あれば使う／無ければJSが作る） -->
+          <%= hidden_field_tag :selected_log_ids, "",
+                data: { bookmark_target: "selectedLogsInput" } %>
 
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
           <%= f.submit "作成", class: "btn btn-primary" %>
