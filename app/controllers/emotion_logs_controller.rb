@@ -1,4 +1,5 @@
-class EmotionLogsController < ApplicationController
+# app/controllers/emotion_logs_controller.rb
+class EmotionLogsController < ApplicationController 
   before_action :authenticate_user!, except: %i[index show]
   before_action :ensure_owner, only: %i[edit update destroy]
 
@@ -34,7 +35,7 @@ class EmotionLogsController < ApplicationController
     @user_bookmark_ids = user_signed_in? ? current_user.bookmarks.pluck(:emotion_log_id) : []
 
     # ---- ここが肝：モバイルのフレーム置換に対応 ----
-return if render_mobile_frame_if_needed
+    return if render_mobile_frame_if_needed
 
     render choose_view
   end
@@ -54,7 +55,7 @@ return if render_mobile_frame_if_needed
     @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
     @mypage_title = "👮マイページ👮"
 
-return if render_mobile_frame_if_needed
+    return if render_mobile_frame_if_needed
 
     render choose_view
   end
@@ -218,7 +219,7 @@ return if render_mobile_frame_if_needed
     logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
 
     # 自分の投稿もマージ
-    if params[:include_my_logs] == "true"
+    if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs])  # ← ここを修正
       my = current_user.emotion_logs.includes(:user, :tags)
       my = my.where(emotion: params[:emotion]) if params[:emotion].present?
       my = my.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
@@ -237,8 +238,14 @@ return if render_mobile_frame_if_needed
       return
     end
 
+     if turbo_frame_request? && request.headers["Turbo-Frame"] == "logs_list_mobile"
+    # ここは <%= turbo_frame_tag "logs_list_mobile" %> を含むパーシャルを返す
+    render partial: "emotion_logs/logs_list_mobile_frame"
+    return
+  end
+
     # モバイルのフレーム置換対応
-return if render_mobile_frame_if_needed
+    return if render_mobile_frame_if_needed
 
     render choose_view
   end
@@ -259,7 +266,7 @@ return if render_mobile_frame_if_needed
     @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
     @recommended_page  = "🔥おすすめ🔥"
 
-return if render_mobile_frame_if_needed
+    return if render_mobile_frame_if_needed
 
     render choose_view
   end
