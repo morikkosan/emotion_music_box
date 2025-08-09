@@ -9,7 +9,8 @@
           class="form-check-input"
           data-action="change->bookmark#toggleMyPageLogs"
           name="include_my_logs"
-          <%= 'checked' if params[:include_my_logs] == 'true' %>
+          value="true"
+          <%= 'checked' if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs]) %>
           form="mobile-search-form">
         マイページの投稿も含める
       </label>
