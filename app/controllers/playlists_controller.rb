@@ -23,74 +23,59 @@ class PlaylistsController < ApplicationController
   end
 
   def create
-    selected = Array(params[:selected_logs])
+  # 2系統の入力を両方マージする（どっちか片方でもOK）
+  csv_ids   = params[:selected_log_ids].to_s.split(",")
+  array_ids = Array(params[:selected_logs])
+  selected_ids = (csv_ids + array_ids).map(&:to_i).reject(&:zero?).uniq
 
-    if selected.any?
-      @playlist = current_user.playlists.new(playlist_params)
+  if selected_ids.any?
+    @playlist = current_user.playlists.new(playlist_params)
+    if @playlist.save
+      selected_ids.each { |log_id| @playlist.playlist_items.create!(emotion_log_id: log_id) }
 
-      if @playlist.save
-        selected.each do |log_id|
-          @playlist.playlist_items.create!(emotion_log_id: log_id)
-        end
-
-        flash.now[:notice] = "プレイリストを作成しました！"
-
-        respond_to do |format|
-          format.turbo_stream do
-            close_modal = turbo_stream.update("playlist-modal-container", "")
-            show_flash = turbo_stream.append("flash", partial: "shared/flash_container", locals: { flash: flash })
-            replace_sidebar = turbo_stream.replace(
-              "super-search-panel",
-              partial: "emotion_logs/playlist_sidebar",
-              locals: {
-                playlists: current_user.playlists.includes(playlist_items: :emotion_log)
-              }
-            )
-            trigger_flash = render_trigger_flash
-
-            render turbo_stream: [
-              close_modal,
-              show_flash,
-              replace_sidebar,
-              trigger_flash
-            ]
-          end
-
-          format.html { redirect_to playlists_path, notice: "プレイリストを作成しました！" }
-        end
-      else
-        flash[:alert] = @playlist.errors.full_messages.join("、")
-        respond_to do |format|
-          format.turbo_stream do
-            retry_modal = turbo_stream.update(
-              "playlist-modal-container",
-              partial: "emotion_logs/playlist_modal",
-              locals: { playlist: @playlist }
-            )
-            show_flash = turbo_stream.append("flash", partial: "shared/flash_container", locals: { flash: flash })
-            render turbo_stream: [retry_modal, show_flash]
-          end
-          format.html { render :new, status: :unprocessable_entity }
-        end
-      end
-
-    else
-      @playlist = current_user.playlists.new(playlist_params)
-      flash[:alert] = "チェックマークが1つも選択されていません"
+      flash.now[:notice] = "プレイリストを作成しました！"
       respond_to do |format|
         format.turbo_stream do
-          retry_modal = turbo_stream.update(
-            "playlist-modal-container",
-            partial: "emotion_logs/playlist_modal",
-            locals: { playlist: @playlist }
+          close_modal = turbo_stream.update("playlist-modal-container", "")
+          show_flash  = turbo_stream.append("flash", partial: "shared/flash_container", locals: { flash: flash })
+          replace_sidebar = turbo_stream.replace(
+            "super-search-panel",
+            partial: "emotion_logs/playlist_sidebar",
+            locals: { playlists: current_user.playlists.includes(playlist_items: :emotion_log) }
           )
-          show_flash = turbo_stream.append("flash", partial: "shared/flash_container", locals: { flash: flash })
+          trigger_flash = render_trigger_flash
+          render turbo_stream: [close_modal, show_flash, replace_sidebar, trigger_flash]
+        end
+        format.html { redirect_to playlists_path, notice: "プレイリストを作成しました！" }
+      end
+    else
+      flash[:alert] = @playlist.errors.full_messages.join("、")
+      respond_to do |format|
+        format.turbo_stream do
+          retry_modal = turbo_stream.update("playlist-modal-container",
+                        partial: "emotion_logs/playlist_modal", locals: { playlist: @playlist })
+          show_flash  = turbo_stream.append("flash", partial: "shared/flash_container", locals: { flash: flash })
           render turbo_stream: [retry_modal, show_flash]
         end
         format.html { render :new, status: :unprocessable_entity }
       end
     end
+  else
+    @playlist = current_user.playlists.new(playlist_params)
+    flash[:alert] = "チェックマークが1つも選択されていません"
+    respond_to do |format|
+      format.turbo_stream do
+        retry_modal = turbo_stream.update("playlist-modal-container",
+                      partial: "emotion_logs/playlist_modal", locals: { playlist: @playlist })
+        show_flash  = turbo_stream.append("flash", partial: "shared/flash_container", locals: { flash: flash })
+        render turbo_stream: [retry_modal, show_flash]
+      end
+      format.html { render :new, status: :unprocessable_entity }
+    end
   end
+end
+
+
 
   def show
     @playlist_urls = @playlist.playlist_items.includes(:emotion_log).map { |item| item.emotion_log.music_url }
