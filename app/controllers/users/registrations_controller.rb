@@ -1,8 +1,10 @@
+# app/controllers/users/registrations_controller.rb
 class Users::RegistrationsController < Devise::RegistrationsController
-  before_action :ensure_current_user, only: [ :edit, :update ]
-  before_action :skip_current_password_validation, only: [ :update ]
+  before_action :ensure_current_user, only: [:edit, :update]
+  before_action :skip_current_password_validation, only: [:update]
 
   def update
+    # 念のため Devise 流で自分を取り直す
     self.resource = resource_class.to_adapter.get!(send(:"current_#{resource_name}").to_key)
     resource_updated = update_resource(resource, account_update_params)
     yield resource if block_given?
@@ -24,18 +26,22 @@ class Users::RegistrationsController < Devise::RegistrationsController
       resource.avatar_url = params.delete(:avatar_url)
     end
 
-    # 開発環境：cropped_avatar_dataがあればActiveStorageへattach
+    # 開発環境：cropped_avatar_data があれば ActiveStorage へ attach
     if params[:cropped_avatar_data].present?
       data = params.delete(:cropped_avatar_data)
       if data =~ /^data:(.*?);base64,(.*)$/
-        ext = $1.split("/").last
-        decoded = Base64.decode64($2)
-        tempfile = Tempfile.new([ "avatar", ".#{ext}" ], binmode: true)
-        tempfile.write(decoded)
-        tempfile.rewind
-        resource.avatar.attach(io: tempfile, filename: "avatar.#{ext}")
-        tempfile.close
-        resource.avatar_url = nil # ActiveStorage優先
+        ext      = $1.split("/").last
+        decoded  = Base64.decode64($2)
+        tempfile = Tempfile.new(["avatar", ".#{ext}"], binmode: true)
+        begin
+          tempfile.write(decoded)
+          tempfile.rewind
+          resource.avatar.attach(io: tempfile, filename: "avatar.#{ext}")
+          resource.avatar_url = nil # ActiveStorage優先
+        ensure
+          # close! でクローズ＋実ファイル削除（リーク防止）
+          tempfile.close!
+        end
       end
     end
 
@@ -50,9 +56,14 @@ class Users::RegistrationsController < Devise::RegistrationsController
   end
 
   def skip_current_password_validation
-    if params[:user] && (params[:user][:provider].present? || params[:user][:uid].present?)
+    return unless params[:user]
+
+    # SoundCloudオンリーなら、連携ユーザーは current_password 不要にする
+    if resource&.soundcloud_uid.present? || params[:user][:provider].present? || params[:user][:uid].present?
       params[:user].delete(:current_password)
     end
+    # ※ update_resource では current_password を使っていないため、
+    #   常に削除しても実挙動は変わりません。明示性のため条件を残しています。
   end
 
   private
@@ -75,8 +86,11 @@ class Users::RegistrationsController < Devise::RegistrationsController
   end
 
   def ensure_current_user
-    if resource != current_user
-      flash[:alert] = "他のユーザーのプロフィールは編集できません"
+    # /users/edit はIDを受けないので他人編集経路は基本なし。
+    # nil安全のため、明示的に自分を resource にセット。
+    self.resource = send(:"current_#{resource_name}")
+    unless resource
+      flash[:alert] = "ログインが必要です"
       redirect_to emotion_logs_path
     end
   end
