@@ -1,1 +1,22 @@
-<%= turbo_stream.replace "modal-container", partial: "emotion_logs/playlist_modal", locals: { playlist: @playlist } %>
+<%# app/views/playlists/new.turbo_stream.erb %>
+<%
+  is_mobile  = params[:view] == 'mobile'
+  modal_id   = is_mobile ? 'playlist-modal-mobile' : 'playlist-modal'
+%>
+
+<%= turbo_stream.replace modal_id do %>
+  <%= render "emotion_logs/playlist_modal",
+             playlist: @playlist,
+             modal_id: modal_id %>
+<% end %>
+
+<%= turbo_stream.append "body" do %>
+  %><script nonce="<%= content_security_policy_nonce %>">
+    (function () {
+      var el = document.getElementById('<%= modal_id %>');
+      if (!el) return;
+      var m = bootstrap.Modal.getOrCreateInstance(el);
+      m.show();
+    })();
+  </script><%
+end %>

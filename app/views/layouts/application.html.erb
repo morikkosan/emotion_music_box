@@ -221,5 +221,11 @@
     </div>
   </div>
   <div id="modal-container"></div>
+  <div id="playlist-modal-root" data-turbo-permanent>
+<%= render "emotion_logs/playlist_modal",
+           playlist: Playlist.new,
+           modal_id: "playlist-modal" %>
+
+</div>
 </body>
 </html>
