@@ -41,19 +41,15 @@
 
           <!-- ✅ プレイリスト作成ボタン -->
           <% if current_user.playlists.count < 12 %>
-            <form action="<%= new_playlist_path(format: :turbo_stream) %>"
-                  method="get"
-                  data-turbo-frame="playlist-modal-container"
-                  data-action="submit->bookmark#submitPlaylistForm"
-                  class="bookmark-create-form">
-              <input type="hidden" name="selected_logs" data-bookmark-target="selectedLogsInput">
-              <button type="submit" class="bookmark-playlist-create-btn">
-                プレイリストを作成する
-              </button>
-            </form>
-          <% else %>
-            <button class="btn btn-secondary" disabled>プレイリストは12個まで作成可能です</button>
-          <% end %>
+          <!-- ★ここを修正：playlist-modal に -->
+          <div data-controller="playlist-modal" data-playlist-modal-id-value="playlist-modal">
+            <button type="button" class="bookmark-playlist-create-btn" data-action="click->playlist-modal#open">
+              プレイリストを作成する
+            </button>
+          </div>
+        <% else %>
+          <button class="btn btn-secondary" disabled>プレイリストは12個まで作成可能です</button>
+        <% end %>
         </div>
       </div>
     <% end %>
@@ -225,6 +221,9 @@
         </div>
       <% end %>
     </div>
+
+
+    
     <!-- turbo_frame_tagの中にはボタンを入れない -->
     <%= turbo_frame_tag "logs_list_mobile" do %>
       <% if @bookmark_page.present? %>
@@ -242,19 +241,15 @@
               マイページの投稿も含める
             </label>
             <% if current_user.playlists.count < 12 %>
-              <form action="<%= new_playlist_path(format: :turbo_stream) %>"
-                    method="get"
-                    data-turbo-frame="playlist-modal-container"
-                    data-action="submit->bookmark#submitPlaylistForm"
-                    class="bookmark-create-form">
-                <input type="hidden" name="selected_logs" data-bookmark-target="selectedLogsInput">
-                <button type="submit" class="bookmark-playlist-create-btn">
-                  プレイリストを作成する
-                </button>
-              </form>
-            <% else %>
-              <button class="btn btn-secondary" disabled>プレイリストは12個まで作成可能です</button>
-            <% end %>
+            <!-- ★ここを修正：playlist-modal-mobile に -->
+            <div data-controller="playlist-modal" data-playlist-modal-id-value="playlist-modal-mobile">
+              <button type="button" class="bookmark-playlist-create-btn" data-action="click->playlist-modal#open">
+                プレイリストを作成する
+              </button>
+            </div>
+<% else %>
+  <button class="btn btn-secondary" disabled>プレイリストは12個まで作成可能です</button>
+<% end %>
           </div>
         </div>
       <% elsif @mypage_title.present? %>
@@ -270,8 +265,11 @@
         </div>
       <% end %>
       <div class="mobile-pagination-center">
-        <%= paginate @emotion_logs, params: { view: "mobile" }, remote: true, turbo_frame: "logs_list_mobile" %>
-      </div>
+  <%= paginate @emotion_logs,
+        params: request.query_parameters.merge(view: "mobile"),
+        remote: true,
+        turbo_frame: "logs_list_mobile" %>
+</div>
       <div class="mobile-content pb-5 px-3 mt-4">
         <%= render partial: "emotion_logs/mobile_list", locals: { logs: @emotion_logs } %>
         <div class="player-space-spacer"></div>
@@ -316,21 +314,31 @@
           data: { turbo_frame: "logs_list_mobile" } do %>
           <i class="bi bi-heart fs-4"></i><br>お気に入り
         <% end %>
-        <%= link_to "#",
-          id: "show-playlist-modal-mobile",
-          class: "text-center text-white small #{'active' if params[:modal] == 'playlist'}" do %>
-          <i class="bi bi-music-note-list fs-4"></i><br>プレイリスト
-        <% end %>
+      <%= link_to "#",
+        id: "show-playlist-modal-mobile",
+        class: "text-center text-white small #{'active' if params[:modal] == 'playlist'}",
+        data: {
+          controller: "playlist-modal",
+          action: "click->playlist-modal#open",
+          "playlist-modal-modal-id-value": "playlist-modal-mobile",
+          turbo: false
+        } do %>
+  <i class="bi bi-music-note-list fs-4"></i><br>プレイリスト
+<% end %>
+
       </nav>
           <%= render "emotion_logs/mobile_super_search" %>
 
-      <div id="playlist-modal-mobile" class="modal" tabindex="-1" style="display: none;">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content" id="playlist-modal-content-mobile">
-            <!-- ここにプレイリストサイドバーの中身が入る -->
-          </div>
-        </div>
-      </div>
+      <!-- index.html.erb のモバイル用モーダル -->
+<div id="playlist-modal-mobile" class="modal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" id="playlist-modal-content-mobile">
+      <%= render 'emotion_logs/playlist_sidebar',
+            playlists: current_user.playlists.includes(:playlist_items, :emotion_logs) %>
+    </div>
+  </div>
+</div>
+
     <% end %>
   </div>
 </div>

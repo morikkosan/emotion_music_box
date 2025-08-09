@@ -5,6 +5,8 @@ window.updateHPBar = function () {
   const hpBar = document.getElementById("hp-bar");
   const hpStatusText = document.getElementById("hp-status-text");
   const barWidthDisplay = document.getElementById("bar-width-display");
+  const barWidthDisplayMobile = document.getElementById("bar-width-display-mobile");
+
   
 
   if (!hpBar || !hpStatusText) return;
@@ -21,6 +23,7 @@ window.updateHPBar = function () {
   hpBar.dataset.width = barWidth;
 
   if (barWidthDisplay) barWidthDisplay.innerText = barWidth;
+  if (barWidthDisplayMobile) barWidthDisplayMobile.innerText = barWidth;
 
   if (hpPercentage <= 20) {
     hpBar.style.backgroundColor = "red";
