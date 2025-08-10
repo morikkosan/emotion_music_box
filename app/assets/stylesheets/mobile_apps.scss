@@ -1,3 +1,77 @@
+/* 必須: ページネーションの中央寄せ強制 */
+.mobile-pagination-center {
+  display: flex !important;
+  justify-content: center !important;  /* これで基本は中央 */
+  align-items: center !important;
+  width: 100% !important;
+  margin: 16px 0 8px 0 !important;
+  /* ここで少し左にズラす（例: -12%） */
+  margin-left: -30% !important;
+}
+
+
+
+/* ページネーション本体(ul)もリセット・中央寄せ */
+.mobile-pagination-center .pagination {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  float: none !important;
+  position: static !important;
+  margin: 0 auto !important;
+  width: auto !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+/* モバイルフォームモーダル幅（<=996px）のときだけ、record-modal を上に持ち上げる */
+@media (max-width: 996px) {
+  /* 5cm ≒ 190px（CSSは96dpi換算） */
+  #record-modal.modal {
+    --mobile-modal-offset: 190px;
+  }
+
+  /* 下側に余白を作って、見かけ上モーダルを上げる */
+  #record-modal .modal-dialog {
+    margin-bottom: calc(var(--mobile-modal-offset) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* モーダルが開いている間だけ、固定フッター等を奥へ下げる */
+  body.modal-open #bottom-player,
+  body.modal-open .mobile-footer {
+    z-index: 1040; /* Bootstrap: backdrop=1050, modal=1055 なのでこれで奥に行く */
+  }
+}
+
+
+
+
+
+.mobile-footer .text-center.text-white.small {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  box-sizing: border-box !important;
+  height: auto !important;         /* 高さは自動（余計な高さ消す） */
+  line-height: 1.2 !important;     /* 文字も詰める */
+}
+
+.mobile-footer .text-center.text-white.small.active {
+  color: #ffd700 !important;     /* ゴールドで光る */
+  font-weight: bold !important;
+  text-shadow: 0 0 6px #ffd70088, 0 0 16px #fff;
+}
+.mobile-footer .text-center.text-white.small.active i {
+  color: #ffd700 !important;
+}
+
+
 
 
 .mobile-card, .mobile-comment-card {
@@ -29,8 +103,7 @@
   align-items: center; /* 縦位置も揃う */
 }
 
-
-
+// mobile今日の気持ちを記録する
 /* 2カラム→モバイル時は1カラムに */
 .neon-btn-panel {
   display: flex;
@@ -52,11 +125,12 @@
   }
 }
 
-#record-button.record-mobile-button {
-  position: fixed;
+// 今日の気持ちを記録するボタン
+#record-button-mobile.record-mobile-button {
+  position: fixed !important;
   /* 右下、メニューバー上あたりに配置 */
   right: 1.2rem;           /* 画面右からの距離 */
-  bottom: 4.2rem;          /* 画面下からの距離（メニューの上に来るように調整。必要なら+0.5remずつ調整OK） */
+  bottom: 13rem !important;          /* 画面下からの距離（メニューの上に来るように調整。必要なら+0.5remずつ調整OK） */
   left: auto;
   top: auto;
 
@@ -84,7 +158,7 @@
 }
 
 /* ホバー時 */
-#record-button.record-mobile-button:hover {
+#record-button-mobile.record-mobile-button:hover {
   transform: translateY(-4px);
   box-shadow:
     0 0 15px #00c3ff,

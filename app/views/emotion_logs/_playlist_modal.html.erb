@@ -1,24 +1,43 @@
-<!-- app/views/emotion_logs/_playlist_modal.html.erb -->
-<div class="modal fade show playlist-modal-visible"
-     id="playlist-modal"
+<%# app/views/emotion_logs/_playlist_modal.html.erb %>
+<% modal_dom_id = local_assigns[:modal_id] || 'playlist-modal' %>
+<% pl = (defined?(playlist) && playlist.present?) ? playlist : Playlist.new %>
+
+<div class="modal fade"
+     id="<%= modal_dom_id %>"
      tabindex="-1"
-     data-controller="playlist-modal">
+     aria-hidden="true"
+     data-bs-backdrop="true"
+     data-bs-keyboard="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <%= form_with model: playlist, url: playlists_path, data: { turbo: true }, html: { id: "playlist-form" } do |f| %>
+      <%= form_with model: pl,
+                    url: playlists_path,
+                    data: {
+                      controller: "bookmark",
+                      action: "submit->bookmark#submitPlaylistForm turbo:submit-end->bookmark#clearSelection",
+                      turbo: true
+                    },
+                    html: { id: "playlist-form" } do |f| %>
+
         <div class="modal-header">
           <h5 class="modal-title">プレイリスト名を入力</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
         </div>
+
         <div class="modal-body">
           <%= f.label :name, "プレイリスト名" %>
           <%= f.text_field :name, class: "form-control" %>
         </div>
+
         <div class="modal-footer">
-          <div id="selected-log-ids"></div>
+          <!-- 文字列版 hidden（あれば使う／無ければJSが作る） -->
+          <%= hidden_field_tag :selected_log_ids, "",
+                data: { bookmark_target: "selectedLogsInput" } %>
+
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
           <%= f.submit "作成", class: "btn btn-primary" %>
         </div>
+
       <% end %>
     </div>
   </div>
