@@ -18,6 +18,7 @@ export default class extends Controller {
       m.remove()
     })
 
+
     // --- Bootstrap モーダルを必ず生成・表示 ---
     this.bs = bootstrap.Modal.getOrCreateInstance(this.element) // this.element は .modal
     this.bs.show()

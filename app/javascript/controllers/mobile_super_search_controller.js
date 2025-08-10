@@ -1,38 +1,91 @@
-// app/javascript/controllers/mobile_super_search_controller.js
 import { Controller } from "@hotwired/stimulus"
-import * as bootstrap from "bootstrap"
+import { Modal } from "bootstrap"
 
 export default class extends Controller {
-  static values = {
-    modalId: { type: String, default: "mobile-super-search-modal" }
+  static values = { modalId: String }
+
+  connect() {
+    this._isModal = this.element.classList.contains("modal")
+    this._transitioning = false
+    this._closing = false
+
+    this._onShown  = () => { this._transitioning = false; this._closing = false }
+    this._onHidden = () => { this._transitioning = false; this._closing = false; this._scrub() }
+
+    this._beforeCache  = () => this._hideIfExists()
+    this._beforeRender = () => this._hideIfExists()
+
+    if (this._isModal) {
+      this.modal = Modal.getOrCreateInstance(this.element, { backdrop: true, keyboard: true, focus: true })
+      this.element.addEventListener("shown.bs.modal", this._onShown)
+      this.element.addEventListener("hidden.bs.modal", this._onHidden)
+
+      // ← ドキュメントイベントはモーダル側のインスタンスだけが持つ
+      document.addEventListener("turbo:before-cache", this._beforeCache)
+      document.addEventListener("turbo:before-render", this._beforeRender)
+    }
   }
 
-  // ---- ユーティリティ ----
-  get modalEl() {
-    return document.getElementById(this.modalIdValue)
-  }
-  get modal() {
-    if (!this.modalEl) return null
-    return bootstrap.Modal.getOrCreateInstance(this.modalEl)
-  }
-
-  // ---- イベントハンドラ ----
-  open(event) {
-    if (event) event.preventDefault()
-    this.modal?.show()
+  disconnect() {
+    if (this._isModal) {
+      this.element.removeEventListener("shown.bs.modal", this._onShown)
+      this.element.removeEventListener("hidden.bs.modal", this._onHidden)
+      document.removeEventListener("turbo:before-cache", this._beforeCache)
+      document.removeEventListener("turbo:before-render", this._beforeRender)
+      // 重要：disposeしない（hide中に _element が null になって例外化するため）
+      // try { this.modal?.dispose() } catch {}
+    }
   }
 
-  // Turboで送信が始まったらモーダルを閉じる（フォーカス/再描画の競合を回避）
+  // どのボタンからでも
+  open(e) {
+    e?.preventDefault()
+    const el = this._modalEl()
+    if (!el) return
+    this._scrub()
+    const inst = Modal.getOrCreateInstance(el, { backdrop: true, keyboard: true, focus: true })
+    this._transitioning = true
+    el.addEventListener("shown.bs.modal", this._onShown)
+    el.addEventListener("hidden.bs.modal", this._onHidden)
+    inst.show()
+  }
+
+  close(e) {
+    e?.preventDefault()
+    this._hideIfExists()
+  }
+
   beforeSubmit() {
-    this.modal?.hide()
-    // 送信ボタンを念のため無効化（多重送信防止）
-    const submit = this.modalEl?.querySelector('[data-role="mobile-search-submit"]')
-    if (submit) submit.disabled = true
+    this._hideIfExists()
+    const btn = this._modalEl()?.querySelector('[data-role="mobile-search-submit"]')
+    if (btn) btn.disabled = true
   }
 
-  // 送信完了後にボタンを戻す（失敗時もここに来る）
   afterSubmit() {
-    const submit = this.modalEl?.querySelector('[data-role="mobile-search-submit"]')
-    if (submit) submit.disabled = false
+    const btn = this._modalEl()?.querySelector('[data-role="mobile-search-submit"]')
+    if (btn) btn.disabled = false
+  }
+
+  // ---- 内部 ----
+  _hideIfExists() {
+    const el = this._modalEl()
+    if (!el || this._closing) return
+    const inst = Modal.getInstance(el) || Modal.getOrCreateInstance(el)
+    this._closing = true
+    try { inst.hide() } catch {}
+  }
+
+  _modalEl() {
+    if (this._isModal) return this.element
+    if (this.hasModalIdValue) return document.getElementById(this.modalIdValue)
+    const sel = this.element.getAttribute("data-bs-target") || this.element.getAttribute("data-target")
+    return sel ? document.querySelector(sel) : null
+  }
+
+  _scrub() {
+    document.querySelectorAll(".modal-backdrop").forEach(el => el.remove())
+    document.body.classList.remove("modal-open")
+    document.body.style.removeProperty("overflow")
+    document.body.style.removeProperty("padding-right")
   }
 }

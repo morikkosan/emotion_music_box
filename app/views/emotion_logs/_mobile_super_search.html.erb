@@ -1,9 +1,13 @@
+<!-- app/views/emotion_logs/_mobile_super_search.html.erb -->
 <div class="modal fade"
      id="mobile-super-search-modal"
+    data-turbo-permanent
+
      tabindex="-1"
      aria-labelledby="searchModalLabel"
      aria-hidden="true"
-     data-controller="mobile-super-search"><!-- ← ① ここ追加 -->
+     data-controller="mobile-super-search"
+     data-action="turbo:submit-start->mobile-super-search#beforeSubmit turbo:submit-end->mobile-super-search#afterSubmit">
   <div class="modal-dialog modal-fullscreen-sm-down">
     <div class="modal-content mobile-super-search-modal-content">
       <div class="modal-header">
@@ -14,11 +18,7 @@
       <div class="modal-body mobile-super-search-form">
         <%= form_with url: emotion_logs_path,
                       method: :get,
-                      data: {
-                        turbo_frame: "logs_list_mobile",
-                        action: "turbo:submit-start->mobile-super-search#beforeSubmit turbo:submit-end->mobile-super-search#afterSubmit" # ← ② ここ追加
-                      } do |f| %>
-
+                      data: { turbo_frame: "logs_list_mobile" } do |f| %>
           <%= hidden_field_tag :view, "mobile" %>
 
           <div class="mb-3">
@@ -63,7 +63,7 @@
                         emotion_logs_path(view: "mobile"),
                         class: "btn btn-outline-danger btn-sm me-2 mobile-reset-btn",
                         data: { turbo_frame: "logs_list_mobile" } %>
-            <%= f.submit "検索", class: "mobile-super-search-btn", data: { role: "mobile-search-submit" } %> <!-- ← ③ ここ追加 -->
+            <%= f.submit "検索", class: "mobile-super-search-btn", data: { role: "mobile-search-submit" } %>
           </div>
 
         <% end %>
