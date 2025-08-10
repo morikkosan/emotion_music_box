@@ -84,6 +84,7 @@
       data-flash-notice="<%= j flash[:notice] %>"
       data-flash-alert="<%= j flash[:alert] %>">
 
+
   <!-- ここから下は元の内容を**絶対に壊さずそのまま**にしてください -->
   <div id="screen-cover-loading" aria-live="polite" aria-label="ローディング画面">
     <div class="pacman-wrapper" aria-hidden="true">
@@ -230,5 +231,9 @@
            modal_id: "playlist-modal" %>
 
 </div>
+<div id="mobile-super-search-root" data-turbo-permanent>
+  <%= render "emotion_logs/mobile_super_search" %>
+</div>
+
 </body>
 </html>

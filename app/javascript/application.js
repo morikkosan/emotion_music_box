@@ -14,6 +14,42 @@ console.log("🔥 Rails UJS is loaded!", Rails);
 
 window.bootstrap = bootstrap;
 
+
+/** ▼▼▼ ここから保険 ▼▼▼ **/
+function hideMobileSearchModalSafely() {
+  const el = document.getElementById("mobile-super-search-modal");
+  const BS = window.bootstrap && window.bootstrap.Modal;
+  if (!el || !BS) return;
+
+  // 既存 or 新規インスタンスを必ず取る（消えた参照を使わない）
+  const inst = BS.getInstance(el) || BS.getOrCreateInstance(el, { backdrop: true, keyboard: true });
+
+  // Bootstrapの正式APIで閉じる → 念のため残骸も掃除
+  try { inst.hide(); } catch {}
+
+  // 念のための残骸掃除（重複removeでも安全）
+  document.querySelectorAll(".modal-backdrop").forEach(b => b.remove());
+  document.body.classList.remove("modal-open");
+  document.body.style.removeProperty("overflow");
+  document.body.style.removeProperty("padding-right");
+
+  // element 側の visible 状態も確実に戻す
+  el.classList.remove("show");
+  el.setAttribute("aria-hidden", "true");
+  el.style.display = "none";
+}
+
+// Turbo の画面差し替え前／キャッシュ前／訪問開始で毎回閉じる
+document.addEventListener("turbo:before-render", hideMobileSearchModalSafely);
+document.addEventListener("turbo:before-cache",  hideMobileSearchModalSafely);
+document.addEventListener("turbo:visit",         hideMobileSearchModalSafely);
+
+// bfcache 復帰（戻る）でも念のため閉じる
+window.addEventListener("pageshow", (e) => {
+  if (e.persisted) hideMobileSearchModalSafely();
+});
+
+
 // サービスワーカー登録
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/service-worker.js')
