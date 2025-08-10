@@ -305,84 +305,82 @@
     <% end %>
 
     <% if user_signed_in? %>
-      <div data-controller="mobile-super-search">
+       <nav
+    class="mobile-footer fixed-bottom bg-dark text-white d-flex justify-content-evenly py-2"
+    data-controller="mobile-footer"
+  >
+    <%= link_to emotion_logs_path,
+      class: "text-center text-white small",
+      data: {
+        "mobile-footer-target": "item",
+        section: "home",
+        action: "click->mobile-footer#onClick",
+        turbo_frame: "logs_list_mobile",
+        turbo_action: "advance"
+      } do %>
+      <i class="bi bi-house fs-4"></i><br>ホーム
+    <% end %>
 
-      <nav
-  class="mobile-footer fixed-bottom bg-dark text-white d-flex justify-content-evenly py-2"
-  data-controller="mobile-footer"
->
-  <%= link_to emotion_logs_path,
-    class: "text-center text-white small",
-    data: {
-      "mobile-footer-target": "item",
-      section: "home",
-      action: "click->mobile-footer#onClick",
-      turbo_frame: "logs_list_mobile",
-      turbo_action: "advance"
-    } do %>
-    <i class="bi bi-house fs-4"></i><br>ホーム
-  <% end %>
+    <%= link_to recommended_emotion_logs_path,
+      class: "text-center text-white small",
+      data: {
+        "mobile-footer-target": "item",
+        section: "recommended",
+        action: "click->mobile-footer#onClick",
+        turbo_frame: "logs_list_mobile",
+        turbo_action: "advance"
+      } do %>
+      <i class="bi bi-fire fs-4"></i><br>おすすめ🔥
+    <% end %>
 
-  <%= link_to recommended_emotion_logs_path,
-    class: "text-center text-white small",
-    data: {
-      "mobile-footer-target": "item",
-      section: "recommended",
-      action: "click->mobile-footer#onClick",
-      turbo_frame: "logs_list_mobile",
-      turbo_action: "advance"
-    } do %>
-    <i class="bi bi-fire fs-4"></i><br>おすすめ🔥
-  <% end %>
+    <button type="button"
+  class="text-center text-white small btn btn-link p-0"
+  data-controller="mobile-super-search"
+  data-mobile-super-search-modal-id-value="mobile-super-search-modal"
+  data-action="click->mobile-super-search#open">
+  <i class="bi bi-search fs-4"></i><br>検索
+</button>
 
-  <button type="button"
-    class="text-center text-white small btn btn-link p-0"
-    data-mobile-footer-target="item"
-    data-section="search"
-    data-action="click->mobile-footer#onSearchClick click->mobile-super-search#open">
-    <i class="bi bi-search fs-4"></i><br>検索
-  </button>
 
-  <%= link_to my_emotion_logs_path,
-    class: "text-center text-white small",
-    data: {
-      "mobile-footer-target": "item",
-      section: "mypage",
-      action: "click->mobile-footer#onClick",
-      turbo_frame: "logs_list_mobile",
-      turbo_action: "advance"
-    } do %>
-    <i class="bi bi-person fs-4"></i><br>マイページ
-  <% end %>
+    <%= link_to my_emotion_logs_path,
+      class: "text-center text-white small",
+      data: {
+        "mobile-footer-target": "item",
+        section: "mypage",
+        action: "click->mobile-footer#onClick",
+        turbo_frame: "logs_list_mobile",
+        turbo_action: "advance"
+      } do %>
+      <i class="bi bi-person fs-4"></i><br>マイページ
+    <% end %>
 
-  <%= link_to bookmarks_emotion_logs_path(view: "mobile"),
-    class: "text-center text-white small",
-    data: {
-      "mobile-footer-target": "item",
-      section: "bookmarks",
-      action: "click->mobile-footer#onClick",
-      turbo_frame: "logs_list_mobile",
-      turbo_action: "advance"
-    } do %>
-    <i class="bi bi-heart fs-4"></i><br>お気に入り
-  <% end %>
+    <%= link_to bookmarks_emotion_logs_path(view: "mobile"),
+      class: "text-center text-white small",
+      data: {
+        "mobile-footer-target": "item",
+        section: "bookmarks",
+        action: "click->mobile-footer#onClick",
+        turbo_frame: "logs_list_mobile",
+        turbo_action: "advance"
+      } do %>
+      <i class="bi bi-heart fs-4"></i><br>お気に入り
+    <% end %>
 
-  <%= link_to "#",
-    id: "show-playlist-modal-mobile",
-    class: "text-center text-white small",
-    data: {
-      "mobile-footer-target": "item",
-      section: "playlist",
-      action: "click->mobile-footer#onPlaylistClick",
-      controller: "playlist-modal",
-      "playlist-modal-modal-id-value": "playlist-modal-mobile",
-      turbo: false
-    } do %>
-    <i class="bi bi-music-note-list fs-4"></i><br>プレイリスト
-  <% end %>
-</nav>
+    <%= link_to "#",
+      id: "show-playlist-modal-mobile",
+      class: "text-center text-white small",
+      data: {
+        "mobile-footer-target": "item",
+        section: "playlist",
+        action: "click->mobile-footer#onPlaylistClick",
+        controller: "playlist-modal",
+        "playlist-modal-modal-id-value": "playlist-modal-mobile",
+        turbo: false
+      } do %>
+      <i class="bi bi-music-note-list fs-4"></i><br>プレイリスト
+    <% end %>
+  </nav>
 
-          <%= render "emotion_logs/mobile_super_search" %>
 
       <!-- index.html.erb のモバイル用モーダル -->
 <div id="playlist-modal-mobile" class="modal" tabindex="-1">
