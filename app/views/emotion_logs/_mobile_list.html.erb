@@ -1,63 +1,76 @@
-<% logs.each do |log| %>
-  <div class="card mb-2 shadow-sm mobile-list-card">
-    <div class="card-body py-2 px-2">
 
-      <!-- 上段：日付とタグ -->
-      <div class="d-flex justify-content-between align-items-center mb-1">
-        <small class="mobile-list-date"><%= log.created_at.strftime("%Y/%m/%d %H:%M") %></small>
-        <div>
-          <% log.tags.each do |tag| %>
-            <% if user_signed_in? %>
-              <%= link_to tag.name, emotion_logs_path(genre: tag.name),
-                    class: "badge bg-primary text-light mobile-list-tag" %>
-            <% else %>
-              <span class="badge bg-primary text-light mobile-list-tag" title="ログインすると使えます"><%= tag.name %></span>
+
+<%# ----------- ログリスト本体（ページ共通。チェックボックスはお気に入りだけ） ----------- %>
+<% logs.each do |log| %>
+  <%= turbo_frame_tag dom_id(log) do %>
+    <div class="card mb-2 shadow-sm mobile-list-card">
+      <div class="card-body py-2 px-2">
+
+        <!-- 上段：日付とタグ -->
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <%# ★ チェックボックス（お気に入りページの時だけ） %>
+          <% if @bookmark_page.present? %>
+            <input type="checkbox"
+                   name="selected_logs[]"
+                   value="<%= log.id %>"
+                   class="playlist-check me-3 playlist-check-accent"
+                   data-bookmark-target="playlistCheckbox">
+          <% end %>
+          <small class="mobile-list-date"><%= log.created_at.strftime("%Y/%m/%d %H:%M") %></small>
+          <div>
+            <% log.tags.each do |tag| %>
+              <% if user_signed_in? %>
+                <%= link_to tag.name, emotion_logs_path(genre: tag.name),
+                      class: "badge bg-primary text-light mobile-list-tag" %>
+              <% else %>
+                <span class="badge bg-primary text-light mobile-list-tag" title="ログインすると使えます"><%= tag.name %></span>
+              <% end %>
             <% end %>
+          </div>
+        </div>
+
+        <!-- 中段：感情 + コメント -->
+        <h6 class="mb-1 mt-1 mobile-list-emotion">
+          <% if user_signed_in? %>
+            <%= link_to log.emotion, emotion_log_path(log, view: "mobile"), class: "text-decoration-none text-light" %>
+          <% else %>
+            <%= link_to log.emotion, user_soundcloud_omniauth_authorize_path, class: "text-decoration-none text-light", data: { turbo: false } %>
+          <% end %>
+        </h6>
+        <p class="mb-1 mobile-list-desc"><%= log.description.presence || "（一言はありません）" %></p>
+
+        <!-- 🎵 ジャケット画像・再生ボタン -->
+        <div class="music-art-box position-relative my-2">
+          <%= image_tag log.music_art_url || "placeholder.png",
+            alt: "ジャケット画像",
+            class: "music-art-img",
+            data: {
+              "play-url"             => log.music_url,
+              "global-player-target" => "trackImage",
+              "track-id"             => log.id
+            } %>
+          <i class="fa fa-play play-overlay-icon"
+             data-action="click->global-player#onPlayIconClick"
+             data-global-player-target="playIcon"
+             data-track-id="<%= log.id %>"></i>
+        </div>
+
+        <!-- 下段：コメント数 + ブックマーク or 削除 -->
+        <div class="d-flex justify-content-between align-items-center mt-1">
+          <div class="d-flex align-items-center">
+            <%= image_tag "comment_icon.webp", alt: "コメント数", class: "mobile-list-comment-icon" %>
+            <span class="ms-1 text-white mobile-list-comment-count"><%= log.comments_count %></span>
+          </div>
+          <% if current_user == log.user %>
+            <%= link_to "削除", emotion_log_path(log),
+                  method: :delete,
+                  data: { turbo_confirm: "本当に削除しますか？", turbo_stream: true },
+                  class: "btn btn-outline-danger btn-sm px-2 py-1 mobile-list-delete-btn" %>
+          <% else %>
+            <%= render "bookmark_buttons", emotion_log: log %>
           <% end %>
         </div>
       </div>
-
-      <!-- 中段：感情 + コメント -->
-      <h6 class="mb-1 mt-1 mobile-list-emotion">
-        <% if user_signed_in? %>
-          <%= link_to log.emotion, emotion_log_path(log, view: "mobile"), class: "text-decoration-none text-light" %>
-        <% else %>
-          <%= link_to log.emotion, user_soundcloud_omniauth_authorize_path, class: "text-decoration-none text-light", data: { turbo: false } %>
-        <% end %>
-      </h6>
-      <p class="mb-1 mobile-list-desc"><%= log.description.presence || "（一言はありません）" %></p>
-
-      <!-- 🎵 ここがモバイル用グローバルプレーヤー連動：再生ボタン付きジャケット 🎵 -->
-      <div class="music-art-box position-relative my-2">
-        <%= image_tag log.music_art_url || "placeholder.png",
-          alt: "ジャケット画像",
-          class: "music-art-img",
-          data: {
-            "play-url"             => log.music_url,
-            "global-player-target" => "trackImage",
-            "track-id"             => log.id
-          } %>
-        <i class="fa fa-play play-overlay-icon"
-           data-action="click->global-player#loadAndPlay"
-           data-global-player-target="playIcon"
-           data-track-id="<%= log.id %>"></i>
-      </div>
-
-      <!-- 下段：コメント数 + ブックマーク or 削除 -->
-      <div class="d-flex justify-content-between align-items-center mt-1">
-        <div class="d-flex align-items-center">
-          <%= image_tag "comment_icon.webp", alt: "コメント数", class: "mobile-list-comment-icon" %>
-          <span class="ms-1 text-white mobile-list-comment-count"><%= log.comments_count %></span>
-        </div>
-        <% if current_user == log.user %>
-          <%= link_to "削除", emotion_log_path(log),
-                method: :delete,
-                data: { turbo_confirm: "本当に削除しますか？", turbo_stream: true },
-                class: "btn btn-outline-danger btn-sm px-2 py-1 mobile-list-delete-btn" %>
-        <% else %>
-          <%= render "bookmark_buttons", emotion_log: log %>
-        <% end %>
-      </div>
     </div>
-  </div>
+  <% end %>
 <% end %>

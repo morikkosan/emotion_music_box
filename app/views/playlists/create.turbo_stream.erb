@@ -1,2 +1,88 @@
-<%= turbo_stream.update "playlist-modal-container", partial: "playlists/create_modal", locals: { playlist: @playlist } %>
-<%= turbo_stream.replace "flash", partial: "shared/flash_container", locals: { flash: flash } %>
+<%# app/views/playlists/create.turbo_stream.erb %>
+<%
+  is_mobile  = params[:view] == 'mobile'
+  modal_id   = is_mobile ? 'playlist-modal-mobile' : 'playlist-modal'
+%>
+
+<%= turbo_stream.replace "flash",
+      partial: "shared/flash_container",
+      locals: { flash: flash } %>
+
+<% if @playlist.errors.any? %>
+  <%= turbo_stream.update (params[:view] == 'mobile' ? 'playlist-modal-content-mobile' : 'playlist-modal-content') do %>
+    <%= render "emotion_logs/playlist_modal", playlist: @playlist %>
+  <% end %>
+
+  <%= turbo_stream.append "body" do %>
+    %><script nonce="<%= content_security_policy_nonce %>">
+      (function () {
+        var el = document.getElementById('<%= modal_id %>');
+        if (!el) return;
+        var m = bootstrap.Modal.getOrCreateInstance(el);
+        m.show();
+      })();
+    </script><%
+  end %>
+<% else %>
+  <%= turbo_stream.append "body" do %>
+    %><script nonce="<%= content_security_policy_nonce %>">
+      (function () {
+        function cleanupBootstrapModals() {
+          // すべての .modal を hide + dispose + 初期化
+          document.querySelectorAll('.modal').forEach(function(el){
+            try {
+              var inst = bootstrap.Modal.getInstance(el) || bootstrap.Modal.getOrCreateInstance(el);
+              inst.hide(); inst.dispose();
+            } catch (_) {}
+            el.classList.remove('show');
+            el.style.display = '';
+            el.removeAttribute('aria-modal');
+            el.setAttribute('aria-hidden', 'true');
+          });
+          // backdrop/ボディ初期化
+          document.querySelectorAll('.modal-backdrop, .offcanvas-backdrop').forEach(function(b){
+            try { b.remove(); } catch (_) {}
+          });
+          document.body.classList.remove('modal-open');
+          document.body.style.overflow = '';
+          document.body.style.paddingRight = '';
+        }
+
+        // ★ SweetAlert/SweetAlert2 の偽モーダルも掃除（犯人潰し）
+        window.playlistModalCleanupSwal = function () {
+          ['#swal-fake-modal', '.sweet-overlay', '#sweet-alert', '.swal2-container', '.swal2-backdrop']
+            .forEach(function(sel){
+              document.querySelectorAll(sel).forEach(function(n){
+                try { n.remove(); } catch (_) {
+                  n.style.pointerEvents = 'none';
+                  n.style.display = 'none';
+                  n.style.visibility = 'hidden';
+                }
+              });
+            });
+          document.body.classList.remove('swal2-shown');
+          document.body.style.pointerEvents = 'auto';
+        };
+
+        // まず対象モーダルを閉じる
+        (function(){
+          var el = document.getElementById('<%= modal_id %>');
+          if (!el) return;
+          try {
+            var m = bootstrap.Modal.getInstance(el) || bootstrap.Modal.getOrCreateInstance(el);
+            m.hide();
+          } catch (_) {}
+          el.addEventListener('hidden.bs.modal', function(){
+            cleanupBootstrapModals();
+            window.playlistModalCleanupSwal();
+          }, { once: true });
+        })();
+
+        // 念のため即時＆遅延でも二重掃除（タイミング競合対策）
+        cleanupBootstrapModals(); window.playlistModalCleanupSwal();
+        setTimeout(function(){ cleanupBootstrapModals(); window.playlistModalCleanupSwal(); }, 0);
+        setTimeout(function(){ cleanupBootstrapModals(); window.playlistModalCleanupSwal(); }, 250);
+      })();
+    </script><%
+  end %>
+<% end %>

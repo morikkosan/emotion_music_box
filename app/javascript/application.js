@@ -1,3 +1,4 @@
+// app/javascript/application.js
 import Rails from "@rails/ujs";
 import "@hotwired/turbo-rails";
 import * as bootstrap from "bootstrap";
@@ -13,6 +14,35 @@ Rails.start();
 console.log("🔥 Rails UJS is loaded!", Rails);
 
 window.bootstrap = bootstrap;
+
+/** ▼▼▼ ここから保険 ▼▼▼ **/
+function hideMobileSearchModalSafely() {
+  const el = document.getElementById("mobile-super-search-modal");
+  const BS = window.bootstrap && window.bootstrap.Modal;
+  if (!el || !BS) return;
+
+  const inst = BS.getInstance(el) || BS.getOrCreateInstance(el, { backdrop: true, keyboard: true });
+  try { inst.hide(); } catch {}
+
+  document.querySelectorAll(".modal-backdrop").forEach(b => b.remove());
+  document.body.classList.remove("modal-open");
+  document.body.style.removeProperty("overflow");
+  document.body.style.removeProperty("padding-right");
+
+  el.classList.remove("show");
+  el.setAttribute("aria-hidden", "true");
+  el.style.display = "none";
+}
+
+// Turbo の画面差し替え前／キャッシュ前／訪問開始で毎回閉じる
+document.addEventListener("turbo:before-render", hideMobileSearchModalSafely);
+document.addEventListener("turbo:before-cache",  hideMobileSearchModalSafely);
+document.addEventListener("turbo:visit",         hideMobileSearchModalSafely);
+
+// bfcache 復帰（戻る）でも念のため閉じる
+window.addEventListener("pageshow", (e) => {
+  if (e.persisted) hideMobileSearchModalSafely();
+});
 
 // サービスワーカー登録
 if ('serviceWorker' in navigator) {
@@ -65,7 +95,6 @@ document.addEventListener("turbo:load", () => {
     const modal = document.querySelector(".modal.show");
     const modalContent = document.querySelector(".modal-content");
     const loader = document.getElementById("loading-overlay");
-    // 「style.display」直接比較はやめてOK、常に非表示指示でOK
     if (modal && modalContent && loader) {
       loader.classList.add("view-hidden");
     }
@@ -221,7 +250,6 @@ document.addEventListener("turbo:load", () => {
     avatarUrlField.value = "";
     modal.hide();
 
-    // ここでCloudinary設定の有無を判定
     if (window.CLOUDINARY_CLOUD_NAME && window.CLOUDINARY_UPLOAD_PRESET) {
       try {
         inlinePreview.classList.add("loading");
@@ -250,7 +278,6 @@ document.addEventListener("turbo:load", () => {
         if (submitBtn) submitBtn.disabled = false;
       }
     } else {
-      // ←開発時はこちら！アップロードせずcanvasのデータURLだけでOK
       avatarUrlField.value = dataUrl;
       if (submitBtn) submitBtn.disabled = false;
     }
@@ -317,10 +344,59 @@ function hideScreenCover() {
   if (cover) {
     setTimeout(() => {
       cover.classList.add("hide");
-      setTimeout(() => { cover.classList.add("view-hidden"); }, 200); // ← 最後にclassで消す
-    }, 1200); // ここは好きな秒数でOK
+      setTimeout(() => { cover.classList.add("view-hidden"); }, 200);
+    }, 1200);
   }
 }
+
+// スマホ版プレイリストモーダル
+document.addEventListener("DOMContentLoaded", function() {
+  var btn = document.getElementById("show-playlist-modal-mobile");
+  if (!btn) return;
+  btn.addEventListener("click", function(e) {
+    e.preventDefault();
+
+    var modal = document.getElementById("playlist-modal-mobile");
+    var content = document.getElementById("playlist-modal-content-mobile");
+    if (!modal || !content) return;
+
+    fetch('/emotion_logs/playlist_sidebar_modal', {
+      headers: { 'Accept': 'text/html' }
+    })
+      .then(response => response.text())
+      .then(html => {
+        content.innerHTML = html;
+        modal.style.display = "block";
+        modal.onclick = function(ev) {
+          if (ev.target === modal) modal.style.display = "none";
+        }
+      });
+  });
+});
+
 window.addEventListener("DOMContentLoaded", hideScreenCover);
 window.addEventListener("load", hideScreenCover);
 document.addEventListener("turbo:load", hideScreenCover);
+
+/* ===========================================================
+   🔧 追加：record-modal-content を update した直後に必ず再 show
+   （他機能は一切触らない）
+   =========================================================== */
+document.addEventListener("turbo:before-stream-render", (event) => {
+  if (event.target.tagName !== "TURBO-STREAM") return;
+
+  const action = event.target.getAttribute("action");
+  const target = event.target.getAttribute("target");
+  if (action !== "update" || target !== "record-modal-content") return;
+
+  const original = event.detail.render;
+  event.detail.render = (streamEl) => {
+    original(streamEl);
+    requestAnimationFrame(() => {
+      const el = document.getElementById("record-modal");
+      if (el && window.bootstrap?.Modal) {
+        window.bootstrap.Modal.getOrCreateInstance(el).show();
+      }
+    });
+  };
+});

@@ -1,26 +1,27 @@
-<turbo-frame id="notification-toggle">
+<!-- app/views/shared/_notification_toggle.html.erb -->
+<%# frame_id が未提供でも落ちないようにフォールバックを用意 %>
+<% fid = local_assigns[:frame_id] || (defined?(mobile_device?) && mobile_device? ? "notification-toggle-mobile" : "notification-toggle-desktop") %>
+
+<turbo-frame id="<%= fid %>">
   <% if current_user.push_enabled? %>
     <%= link_to disable_push_notifications_path,
                 method: :patch,
-                data: { turbo_method: :patch },
-                class: "dropdown-item d-flex align-items-center text-warning" do %>
-      <%= image_tag "bell_on.webp", class: "dropdown-icon me-2", alt: "" %>
-      通知をオフにする
+                class: "dropdown-item d-flex align-items-center text-warning",
+                data: { turbo_method: :patch, turbo_frame: fid } do %>
+      <%= image_tag "bell_on.webp", class: "dropdown-icon me-2", alt: "" %> 通知をオフにする
     <% end %>
 
     <%= link_to debug_emotion_notifications_path,
                 class: "dropdown-item d-flex align-items-center text-success",
                 data: { turbo: false } do %>
-      <%= image_tag "bell_on.webp", class: "dropdown-icon me-2", alt: "" %>
-      通知テストを送信
+      <%= image_tag "bell_on.webp", class: "dropdown-icon me-2", alt: "" %> 通知テストを送信
     <% end %>
   <% else %>
     <%= link_to enable_push_notifications_path,
                 method: :patch,
-                data: { turbo_method: :patch },
-                class: "dropdown-item d-flex align-items-center text-primary" do %>
-      <%= image_tag "bell_off.webp", class: "dropdown-icon me-2", alt: "" %>
-      通知をオンにする
+                class: "dropdown-item d-flex align-items-center text-primary",
+                data: { turbo_method: :patch, turbo_frame: fid } do %>
+      <%= image_tag "bell_off.webp", class: "dropdown-icon me-2", alt: "" %> 通知をオンにする
     <% end %>
   <% end %>
 </turbo-frame>
