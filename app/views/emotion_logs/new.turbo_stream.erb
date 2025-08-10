@@ -1,16 +1,13 @@
-<%= turbo_stream.replace "modal-container" do %>
-  <div class="modal fade show d-block"
-       id="modal-container"
+<%= turbo_stream.update "modal-container" do %>
+  <div id="record-modal"
+       class="modal fade"
        tabindex="-1"
        data-controller="modal">
-
-    <div class="modal-dialog">
-      <div class="modal-content" id="modal-content">
-        <% if @emotion_log.track_name.present? %>
-          <%= render "form", emotion_log: @emotion_log %>
-        <% else %>
-          <%= render "search_form", emotion_log: @emotion_log %>
-        <% end %>
+    <div class="modal-dialog modal-dialog-centered">
+      <!-- ★ここを固有IDに -->
+      <div class="modal-content" id="record-modal-content">
+        <%= render(@emotion_log.track_name.present? ? "form" : "search_form",
+                   emotion_log: @emotion_log) %>
       </div>
     </div>
   </div>

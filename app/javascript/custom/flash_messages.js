@@ -1,3 +1,4 @@
+// ✅ 最小限の修復版（差し替え用）
 window._flashShownOnce = window._flashShownOnce || null;
 
 (function () {
@@ -31,7 +32,9 @@ window._flashShownOnce = window._flashShownOnce || null;
         confirmButtonText: "閉じる",
         background: "linear-gradient(135deg, #00b3ff, #ff0088)",
         color: "#fff",
-        customClass: { popup: "cyber-popup" }
+        customClass: { popup: "cyber-popup" },
+        // ✅ ここだけ追加：閉じたらガード解除（次を出せるように）
+        didClose: () => { window._flashShownOnce = null; }
       });
       document.body.dataset.flashAlert = "";
       flashContainer?.remove();
@@ -51,7 +54,9 @@ window._flashShownOnce = window._flashShownOnce || null;
         color: "#fff",
         timer: 3000,
         timerProgressBar: true,
-        customClass: { popup: "cyber-popup" }
+        customClass: { popup: "cyber-popup" },
+        // ✅ ここだけ追加：閉じたらガード解除（次を出せるように）
+        didClose: () => { window._flashShownOnce = null; }
       });
       document.body.dataset.flashNotice = "";
       flashContainer?.remove();
@@ -76,12 +81,7 @@ window._flashShownOnce = window._flashShownOnce || null;
   });
   observer.observe(document.body, { childList: true, subtree: true });
 
-  // --- 他のイベントは全部コメントアウト ---
-  // document.addEventListener("DOMContentLoaded", () => showFlashSwal("DOMContentLoaded"));
-  // document.addEventListener("turbo:load", () => showFlashSwal("turbo:load"));
-  // document.addEventListener("turbo:before-stream-render", ...);
-
-  // ✅ logout用イベントだけ残す
+  // ✅ logout用イベントだけ残す（そのまま）
   document.addEventListener("DOMContentLoaded", function () {
     const logoutLink = document.getElementById("logout-link");
     if (!logoutLink) return;
@@ -103,7 +103,9 @@ window._flashShownOnce = window._flashShownOnce || null;
         confirmButtonText: "はい、帰ります",
         cancelButtonText: "キャンセル",
         background: "linear-gradient(135deg, #00b3ff, #ff0088)",
-        color: "#fff"
+        color: "#fff",
+        customClass: { popup: "cyber-popup" },
+        didClose: () => { window._flashShownOnce = null; } // ←保険
       }).then((result) => {
         if (result.isConfirmed) {
           const logoutUrl = logoutLink.dataset.logoutUrl || logoutLink.href;
@@ -134,13 +136,9 @@ window._flashShownOnce = window._flashShownOnce || null;
   });
 })();
 
+// （参考）これはSweetAlert2では発火しないけど残しても無害
 document.addEventListener('hidden.bs.modal', function (event) {
-  // cyber-popupモーダルが閉じられた時だけガード解除
-  if (
-    event.target &&
-    event.target.classList &&
-    event.target.classList.contains('cyber-popup')
-  ) {
+  if (event.target?.classList?.contains('cyber-popup')) {
     window._flashShownOnce = null;
     console.log('🔄 [Guard] モーダル閉じでリセット');
   }
