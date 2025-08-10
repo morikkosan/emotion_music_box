@@ -1,3 +1,4 @@
+// app/javascript/application.js
 import Rails from "@rails/ujs";
 import "@hotwired/turbo-rails";
 import * as bootstrap from "bootstrap";
@@ -14,26 +15,20 @@ console.log("🔥 Rails UJS is loaded!", Rails);
 
 window.bootstrap = bootstrap;
 
-
 /** ▼▼▼ ここから保険 ▼▼▼ **/
 function hideMobileSearchModalSafely() {
   const el = document.getElementById("mobile-super-search-modal");
   const BS = window.bootstrap && window.bootstrap.Modal;
   if (!el || !BS) return;
 
-  // 既存 or 新規インスタンスを必ず取る（消えた参照を使わない）
   const inst = BS.getInstance(el) || BS.getOrCreateInstance(el, { backdrop: true, keyboard: true });
-
-  // Bootstrapの正式APIで閉じる → 念のため残骸も掃除
   try { inst.hide(); } catch {}
 
-  // 念のための残骸掃除（重複removeでも安全）
   document.querySelectorAll(".modal-backdrop").forEach(b => b.remove());
   document.body.classList.remove("modal-open");
   document.body.style.removeProperty("overflow");
   document.body.style.removeProperty("padding-right");
 
-  // element 側の visible 状態も確実に戻す
   el.classList.remove("show");
   el.setAttribute("aria-hidden", "true");
   el.style.display = "none";
@@ -48,7 +43,6 @@ document.addEventListener("turbo:visit",         hideMobileSearchModalSafely);
 window.addEventListener("pageshow", (e) => {
   if (e.persisted) hideMobileSearchModalSafely();
 });
-
 
 // サービスワーカー登録
 if ('serviceWorker' in navigator) {
@@ -101,7 +95,6 @@ document.addEventListener("turbo:load", () => {
     const modal = document.querySelector(".modal.show");
     const modalContent = document.querySelector(".modal-content");
     const loader = document.getElementById("loading-overlay");
-    // 「style.display」直接比較はやめてOK、常に非表示指示でOK
     if (modal && modalContent && loader) {
       loader.classList.add("view-hidden");
     }
@@ -257,7 +250,6 @@ document.addEventListener("turbo:load", () => {
     avatarUrlField.value = "";
     modal.hide();
 
-    // ここでCloudinary設定の有無を判定
     if (window.CLOUDINARY_CLOUD_NAME && window.CLOUDINARY_UPLOAD_PRESET) {
       try {
         inlinePreview.classList.add("loading");
@@ -286,7 +278,6 @@ document.addEventListener("turbo:load", () => {
         if (submitBtn) submitBtn.disabled = false;
       }
     } else {
-      // ←開発時はこちら！アップロードせずcanvasのデータURLだけでOK
       avatarUrlField.value = dataUrl;
       if (submitBtn) submitBtn.disabled = false;
     }
@@ -353,11 +344,10 @@ function hideScreenCover() {
   if (cover) {
     setTimeout(() => {
       cover.classList.add("hide");
-      setTimeout(() => { cover.classList.add("view-hidden"); }, 200); // ← 最後にclassで消す
-    }, 1200); // ここは好きな秒数でOK
+      setTimeout(() => { cover.classList.add("view-hidden"); }, 200);
+    }, 1200);
   }
 }
-
 
 // スマホ版プレイリストモーダル
 document.addEventListener("DOMContentLoaded", function() {
@@ -370,7 +360,6 @@ document.addEventListener("DOMContentLoaded", function() {
     var content = document.getElementById("playlist-modal-content-mobile");
     if (!modal || !content) return;
 
-    // ajaxで部分テンプレートを取得
     fetch('/emotion_logs/playlist_sidebar_modal', {
       headers: { 'Accept': 'text/html' }
     })
@@ -378,7 +367,6 @@ document.addEventListener("DOMContentLoaded", function() {
       .then(html => {
         content.innerHTML = html;
         modal.style.display = "block";
-        // 背景クリックで閉じる
         modal.onclick = function(ev) {
           if (ev.target === modal) modal.style.display = "none";
         }
@@ -386,8 +374,29 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 });
 
-
-
 window.addEventListener("DOMContentLoaded", hideScreenCover);
 window.addEventListener("load", hideScreenCover);
 document.addEventListener("turbo:load", hideScreenCover);
+
+/* ===========================================================
+   🔧 追加：record-modal-content を update した直後に必ず再 show
+   （他機能は一切触らない）
+   =========================================================== */
+document.addEventListener("turbo:before-stream-render", (event) => {
+  if (event.target.tagName !== "TURBO-STREAM") return;
+
+  const action = event.target.getAttribute("action");
+  const target = event.target.getAttribute("target");
+  if (action !== "update" || target !== "record-modal-content") return;
+
+  const original = event.detail.render;
+  event.detail.render = (streamEl) => {
+    original(streamEl);
+    requestAnimationFrame(() => {
+      const el = document.getElementById("record-modal");
+      if (el && window.bootstrap?.Modal) {
+        window.bootstrap.Modal.getOrCreateInstance(el).show();
+      }
+    });
+  };
+});

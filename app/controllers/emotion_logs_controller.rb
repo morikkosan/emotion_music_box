@@ -95,59 +95,64 @@ class EmotionLogsController < ApplicationController
   # 作成
   # =========================
   def create
-    @emotion_log  = current_user.emotion_logs.build(emotion_log_params)
-    hp_percentage = calculate_hp(@emotion_log.emotion)
-    is_today      = @emotion_log.date.to_date == Date.current
+  @emotion_log  = current_user.emotion_logs.build(emotion_log_params)
+  hp_percentage = calculate_hp(@emotion_log.emotion)
+  is_today      = @emotion_log.date.to_date == Date.current
 
-    if @emotion_log.save
-      PushNotifier.send_emotion_log(
-        current_user,
-        emotion:     @emotion_log.emotion,
-        track_name:  @emotion_log.track_name,
-        artist_name: @emotion_log.description.presence || "アーティスト不明",
-        hp:          hp_percentage
-      )
+  if @emotion_log.save
+    PushNotifier.send_emotion_log(
+      current_user,
+      emotion:     @emotion_log.emotion,
+      track_name:  @emotion_log.track_name,
+      artist_name: @emotion_log.description.presence || "アーティスト不明",
+      hp:          hp_percentage
+    )
 
-      respond_to do |format|
-        format.json do
-          render json: {
-            success:      true,
-            message:      "記録が保存されました",
-            redirect_url: emotion_logs_path,
-            hpPercentage: hp_percentage,
-            hp_today:     is_today
-          }
-        end
-        format.turbo_stream do
-          flash.now[:notice] = "記録が保存されました"
-          render turbo_stream: [
-            turbo_stream.replace(
-              "flash-container",
-              partial: "shared/flash",
-              locals: { notice: flash.now[:notice], alert: flash.now[:alert] }
-            ),
-            turbo_stream.redirect_to(emotion_logs_path)
-          ]
-        end
-        format.html { redirect_to emotion_logs_path, notice: "記録が保存されました" }
+    respond_to do |format|
+      format.json do
+        render json: {
+          success:      true,
+          message:      "記録が保存されました",
+          redirect_url: emotion_logs_path,
+          hpPercentage: hp_percentage,
+          hp_today:     is_today
+        }
       end
-    else
-      respond_to do |format|
-        format.json  { render json: { success: false, errors: @emotion_log.errors.full_messages }, status: :unprocessable_entity }
-        format.turbo_stream do
-          render turbo_stream: turbo_stream.replace(
-            "form-container",
-            partial: "emotion_logs/form",
-            locals: { emotion_log: @emotion_log }
-          ), status: :unprocessable_entity
-        end
-        format.html do
-          flash.now[:alert] = @emotion_log.errors.full_messages.join(", ")
-          render :new, status: :unprocessable_entity
-        end
+      format.turbo_stream do
+        flash.now[:notice] = "記録が保存されました"
+        render turbo_stream: [
+          turbo_stream.replace(
+            "flash-container",
+            partial: "shared/flash",
+            locals: { notice: flash.now[:notice], alert: flash.now[:alert] }
+          ),
+          turbo_stream.redirect_to(emotion_logs_path)
+        ]
+      end
+      format.html { redirect_to emotion_logs_path, notice: "記録が保存されました" }
+    end
+
+  else
+    respond_to do |format|
+      format.json do
+        render json: { success: false, errors: @emotion_log.errors.full_messages },
+               status: :unprocessable_entity
+      end
+      format.turbo_stream do
+      render turbo_stream: turbo_stream.replace(
+        "record-modal-content", # ← ここも同じIDに
+        partial: "emotion_logs/form",
+        locals: { emotion_log: @emotion_log }
+      ), status: :unprocessable_entity
+    end
+      format.html do
+        flash.now[:alert] = @emotion_log.errors.full_messages.join(", ")
+        render :new, status: :unprocessable_entity
       end
     end
   end
+end
+
 
   # =========================
   # 編集/更新/削除
@@ -195,13 +200,20 @@ class EmotionLogsController < ApplicationController
   # その他補助
   # =========================
   def form
-    @emotion_log = EmotionLog.new(music_url: params[:music_url], track_name: params[:track_name])
+  @emotion_log = EmotionLog.new(music_url: params[:music_url], track_name: params[:track_name])
 
-    respond_to do |format|
-      format.turbo_stream { render turbo_stream: turbo_stream.replace("modal-content", partial: "emotion_logs/form", locals: { emotion_log: @emotion_log }) }
-      format.html         { redirect_to emotion_logs_path }
+  respond_to do |format|
+    format.turbo_stream do
+      render turbo_stream: turbo_stream.update(
+        "record-modal-content", # ← ここを上と同じに
+        partial: "emotion_logs/form",
+        locals: { emotion_log: @emotion_log }
+      )
     end
+    format.html { redirect_to emotion_logs_path }
   end
+end
+
 
   def form_switch
     @emotion_log = EmotionLog.new(form_switch_params)
