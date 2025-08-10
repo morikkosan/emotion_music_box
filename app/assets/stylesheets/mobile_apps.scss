@@ -10,6 +10,7 @@
 }
 
 
+
 /* ページネーション本体(ul)もリセット・中央寄せ */
 .mobile-pagination-center .pagination {
   display: flex !important;
@@ -22,6 +23,26 @@
   background: none !important;
   box-shadow: none !important;
 }
+
+/* モバイルフォームモーダル幅（<=996px）のときだけ、record-modal を上に持ち上げる */
+@media (max-width: 996px) {
+  /* 5cm ≒ 190px（CSSは96dpi換算） */
+  #record-modal.modal {
+    --mobile-modal-offset: 190px;
+  }
+
+  /* 下側に余白を作って、見かけ上モーダルを上げる */
+  #record-modal .modal-dialog {
+    margin-bottom: calc(var(--mobile-modal-offset) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* モーダルが開いている間だけ、固定フッター等を奥へ下げる */
+  body.modal-open #bottom-player,
+  body.modal-open .mobile-footer {
+    z-index: 1040; /* Bootstrap: backdrop=1050, modal=1055 なのでこれで奥に行く */
+  }
+}
+
 
 
 
