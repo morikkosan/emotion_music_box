@@ -185,20 +185,21 @@ h1 i.bi bi-heart-pulse {
   margin: 1.2em 0 1em 0;
   position: relative;
   z-index: 0;
-  background: rgba(203, 73, 194, 0.3);  /* ←背景の透明紫 */
+  background: rgba(203, 73, 194, 0.3);  /* 背景の透明紫 */
   border-radius: 14px;
   padding: 1em 0.7em 0.6em;
   box-shadow: 0 2px 16px #0cf2;
+  box-sizing: border-box; /* 幅計算の安定化 */
 }
 
 #hp-bar {
   height: 18px;
-  width: 100%;
-  max-width: 100%;
+  width: 0; /* 初期値は0%、JSで%をセット */
   background: linear-gradient(90deg, #3bffce, #1ee4da, #007fff);
   transition: width 0.5s ease-in-out;
   border-radius: 9px;
   margin: 6px 0 3px 0;
+  overflow: hidden; /* バー端がはみ出さないように */
 }
 
 .today_mental_text {
@@ -222,7 +223,7 @@ h1 i.bi bi-heart-pulse {
   text-shadow: 2px 2px 5px black;
   background-color: rgba(0, 0, 0, 0.9);
   padding: 5px 10px;
-  border-radius: 30px; /* ここだけ残す */
+  border-radius: 30px;
   z-index: 0;
 }
 
@@ -230,11 +231,22 @@ h1 i.bi bi-heart-pulse {
   #hp-bar-container {
     width: 98vw !important;
     max-width: 98vw !important;
-    margin-left: -8vw;  /* 必要なら左右中央揃え用に補正 */
+    margin-left: -8vw; /* 必要なら左右中央揃え用に補正 */
     box-sizing: border-box;
-    padding: 0;
+    padding: 0.8em 0.5em; /* モバイル用に少しコンパクト */
+  }
+
+  #hp-bar {
+    height: 16px; /* モバイルで少し低く */
+    border-radius: 8px;
+  }
+
+  #hp-status-text {
+    font-size: 20px;
+    top: -36px;
   }
 }
+
 /* ページネーションのスタイル */
 .pagination {
   position: fixed;      /* 画面全体で固定 */

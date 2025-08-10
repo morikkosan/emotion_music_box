@@ -95,64 +95,72 @@ class EmotionLogsController < ApplicationController
   # 作成
   # =========================
   def create
-  @emotion_log  = current_user.emotion_logs.build(emotion_log_params)
-  hp_percentage = calculate_hp(@emotion_log.emotion)
-  is_today      = @emotion_log.date.to_date == Date.current
+    @emotion_log  = current_user.emotion_logs.build(emotion_log_params)
 
-  if @emotion_log.save
-    PushNotifier.send_emotion_log(
-      current_user,
-      emotion:     @emotion_log.emotion,
-      track_name:  @emotion_log.track_name,
-      artist_name: @emotion_log.description.presence || "アーティスト不明",
-      hp:          hp_percentage
-    )
+    # ★ まずフォームから来た hp を採用（0..100）
+    hp_from_form = params.dig(:emotion_log, :hp)
+    hp_percentage = hp_from_form.present? ? hp_from_form.to_i.clamp(0, 100) : nil
 
-    respond_to do |format|
-      format.json do
-        render json: {
-          success:      true,
-          message:      "記録が保存されました",
-          redirect_url: emotion_logs_path,
-          hpPercentage: hp_percentage,
-          hp_today:     is_today
-        }
-      end
-      format.turbo_stream do
-        flash.now[:notice] = "記録が保存されました"
-        render turbo_stream: [
-          turbo_stream.replace(
-            "flash-container",
-            partial: "shared/flash",
-            locals: { notice: flash.now[:notice], alert: flash.now[:alert] }
-          ),
-          turbo_stream.redirect_to(emotion_logs_path)
-        ]
-      end
-      format.html { redirect_to emotion_logs_path, notice: "記録が保存されました" }
-    end
+    # ★ 無ければ感情から推定（0..100 を返す版）
+    hp_percentage ||= calculate_hp_percentage(@emotion_log.emotion)
 
-  else
-    respond_to do |format|
-      format.json do
-        render json: { success: false, errors: @emotion_log.errors.full_messages },
-               status: :unprocessable_entity
+    is_today = @emotion_log.date.to_date == Date.current
+
+    if @emotion_log.save
+      PushNotifier.send_emotion_log(
+        current_user,
+        emotion:     @emotion_log.emotion,
+        track_name:  @emotion_log.track_name,
+        artist_name: @emotion_log.description.presence || "アーティスト不明",
+        hp:          hp_percentage
+      )
+
+      respond_to do |format|
+        format.json do
+          render json: {
+            success:      true,
+            message:      "記録が保存されました",
+            redirect_url: emotion_logs_path,
+            hpPercentage: hp_percentage,   # ← 0..100 を返す
+            hpDelta:      calculate_hp(@emotion_log.emotion),  # ★ これ1行だけ追加
+
+            hp_today:     is_today
+          }
+        end
+        format.turbo_stream do
+          flash.now[:notice] = "記録が保存されました"
+          render turbo_stream: [
+            turbo_stream.replace(
+              "flash-container",
+              partial: "shared/flash",
+              locals: { notice: flash.now[:notice], alert: flash.now[:alert] }
+            ),
+            turbo_stream.redirect_to(emotion_logs_path)
+          ]
+        end
+        format.html { redirect_to emotion_logs_path, notice: "記録が保存されました" }
       end
-      format.turbo_stream do
-      render turbo_stream: turbo_stream.replace(
-        "record-modal-content", # ← ここも同じIDに
-        partial: "emotion_logs/form",
-        locals: { emotion_log: @emotion_log }
-      ), status: :unprocessable_entity
-    end
-      format.html do
-        flash.now[:alert] = @emotion_log.errors.full_messages.join(", ")
-        render :new, status: :unprocessable_entity
+
+    else
+      respond_to do |format|
+        format.json do
+          render json: { success: false, errors: @emotion_log.errors.full_messages },
+                 status: :unprocessable_entity
+        end
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(
+            "record-modal-content",
+            partial: "emotion_logs/form",
+            locals: { emotion_log: @emotion_log }
+          ), status: :unprocessable_entity
+        end
+        format.html do
+          flash.now[:alert] = @emotion_log.errors.full_messages.join(", ")
+          render :new, status: :unprocessable_entity
+        end
       end
     end
   end
-end
-
 
   # =========================
   # 編集/更新/削除
@@ -166,14 +174,16 @@ end
     @emotion_log = EmotionLog.find(params[:id])
 
     if @emotion_log.update(emotion_log_params)
-      hp_percentage = calculate_hp(@emotion_log.emotion)
+      hp_from_form = params.dig(:emotion_log, :hp)
+      hp_percentage = hp_from_form.present? ? hp_from_form.to_i.clamp(0, 100) : calculate_hp_percentage(@emotion_log.emotion)
       is_today      = @emotion_log.date.to_date == Date.current
 
       render json: {
         success: true,
         message: "記録が更新されました",
         redirect_url: emotion_logs_path,
-        hpPercentage: hp_percentage,
+        hpPercentage: hp_percentage,  # ← 0..100
+        hpDelta:      calculate_hp(@emotion_log.emotion),
         hp_today: is_today
       }
     else
@@ -200,29 +210,25 @@ end
   # その他補助
   # =========================
   def form
-  @emotion_log = EmotionLog.new(music_url: params[:music_url], track_name: params[:track_name])
+    @emotion_log = EmotionLog.new(music_url: params[:music_url], track_name: params[:track_name])
 
-  respond_to do |format|
-    format.turbo_stream do
-      render turbo_stream: turbo_stream.update(
-        "record-modal-content", # ← ここを上と同じに
-        partial: "emotion_logs/form",
-        locals: { emotion_log: @emotion_log }
-      )
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.update(
+          "record-modal-content",
+          partial: "emotion_logs/form",
+          locals: { emotion_log: @emotion_log }
+        )
+      end
+      format.html { redirect_to emotion_logs_path }
     end
-    format.html { redirect_to emotion_logs_path }
   end
-end
-
 
   def form_switch
     @emotion_log = EmotionLog.new(form_switch_params)
     respond_to { |format| format.turbo_stream }
   end
 
-  # =========================
-  # ブックマーク一覧
-  # =========================
   def bookmarks
     Rails.logger.error("PARAMS: #{params.inspect}")
 
@@ -230,8 +236,7 @@ end
     logs = logs.where(emotion: params[:emotion]) if params[:emotion].present?
     logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
 
-    # 自分の投稿もマージ
-    if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs])  # ← ここを修正
+    if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs])
       my = current_user.emotion_logs.includes(:user, :tags)
       my = my.where(emotion: params[:emotion]) if params[:emotion].present?
       my = my.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
@@ -250,21 +255,15 @@ end
       return
     end
 
-     if turbo_frame_request? && request.headers["Turbo-Frame"] == "logs_list_mobile"
-    # ここは <%= turbo_frame_tag "logs_list_mobile" %> を含むパーシャルを返す
-    render partial: "emotion_logs/logs_list_mobile_frame"
-    return
-  end
+    if turbo_frame_request? && request.headers["Turbo-Frame"] == "logs_list_mobile"
+      render partial: "emotion_logs/logs_list_mobile_frame"
+      return
+    end
 
-    # モバイルのフレーム置換対応
     return if render_mobile_frame_if_needed
-
     render choose_view
   end
 
-  # =========================
-  # おすすめ
-  # =========================
   def recommended
     hp       = params[:hp].to_i.clamp(0, 100)
     emotion  = calculate_hp_emotion(hp)
@@ -279,13 +278,9 @@ end
     @recommended_page  = "🔥おすすめ🔥"
 
     return if render_mobile_frame_if_needed
-
     render choose_view
   end
 
-  # =========================
-  # スマホのプレイリストモーダル
-  # =========================
   def playlist_sidebar_modal
     @playlists = current_user.playlists.includes(:playlist_items, :emotion_logs)
     render partial: "emotion_logs/playlist_sidebar", locals: { playlists: @playlists }, formats: [:html]
@@ -293,7 +288,11 @@ end
 
   private
 
-  # ---- 共通: モバイルフレームだけ返す処理 ----
+# ★ 感情 → HP（0..100）へ変換 絶対消さない
+  def calculate_hp(emotion)
+  { "最高" => 50, "気分良い" => 30, "いつも通り" => 0, "イライラ" => -30, "限界" => -50 }[emotion] || 0
+end
+
   def render_mobile_frame_if_needed
     if turbo_frame_request? && params[:view] == "mobile"
       render partial: "emotion_logs/logs_list_mobile_frame", formats: [:html]
@@ -302,7 +301,6 @@ end
     false
   end
 
-  # ---- 共通: ビュー選択 ----
   def choose_view
     (params[:view] == "mobile" || mobile_device?) ? :mobile_index : :index
   end
@@ -311,14 +309,27 @@ end
     request.user_agent.to_s.downcase =~ /mobile|webos|iphone|android/
   end
 
+  # 0..100 → 感情
   def calculate_hp_emotion(hp)
     case hp
-    when 0..1   then "限界"
-    when 2..25  then "イライラ"
-    when 26..50 then "いつも通り"
-    when 51..70 then "気分良い"
+    when 0..1    then "限界"
+    when 2..25   then "イライラ"
+    when 26..50  then "いつも通り"
+    when 51..70  then "気分良い"
     when 71..100 then "最高"
     else "いつも通り"
+    end
+  end
+
+  # ★ 感情 → 0..100（割合）へ正規化
+  def calculate_hp_percentage(emotion)
+    case emotion
+    when "限界"       then 10
+    when "イライラ"   then 30
+    when "いつも通り" then 50
+    when "気分良い"   then 70
+    when "最高"       then 100
+    else 50
     end
   end
 
@@ -335,23 +346,20 @@ end
     case params[:period]
     when "today"    then logs.for_today
     when "week"     then logs.for_week
-    when "month"    then logs.for_month
+    when "month"     then logs.for_month
     when "halfyear" then logs.for_half_year
     when "year"     then logs.for_year
     else logs
     end
   end
 
+  # ★ Strong Params に :hp を追加
   def emotion_log_params
-    params.require(:emotion_log).permit(:date, :emotion, :description, :music_url, :track_name, :tag_names)
+    params.require(:emotion_log).permit(:date, :emotion, :description, :music_url, :track_name, :tag_names, :hp)
   end
 
   def form_switch_params
     params.permit(:track_name, :music_url)
-  end
-
-  def calculate_hp(emotion)
-    { "最高" => 50, "気分良い" => 30, "いつも通り" => 0, "イライラ" => -30, "限界" => -50 }[emotion] || 0
   end
 
   def ensure_owner
