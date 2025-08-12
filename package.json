@@ -25,9 +25,9 @@
     "build:css": "yarn build:css:compile && yarn build:css:prefix",
     "watch:css": "nodemon --watch ./app/assets/stylesheets/ --ext scss --exec \"yarn build:css\"",
     "watch": "concurrently \"yarn watch:js\" \"yarn watch:css\"",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "test": "jest --config jest.config.js",
+    "test:watch": "jest --watch --config jest.config.js",
+    "test:coverage": "jest --coverage --config jest.config.js",
     "test:coverage:html": "jest --coverage --coverageReporters=html --config=jest.config.js && echo 'HTMLレポート: coverage/lcov-report/index.html'"
   },
   "dependencies": {
@@ -50,21 +50,5 @@
   },
   "browserslist": [
     "defaults"
-  ],
-  "jest": {
-    "testEnvironment": "jsdom",
-    "transform": {},
-    "setupFiles": [
-      "<rootDir>/test/setup/polyfills.js"
-    ],
-    "setupFilesAfterEnv": [
-      "<rootDir>/test/setup/jest.setup.js"
-    ],
-    "moduleDirectories": [
-      "node_modules",
-      "<rootDir>/app/javascript"
-    ],
-    "moduleFileExtensions": ["js", "mjs", "jsx", "ts", "tsx", "json"],
-    "testMatch": ["**/test/**/*.test.[jt]s?(x)"]
-  }
+  ]
 }
