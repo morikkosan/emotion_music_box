@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">10% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>1/10</span>
+                <span class='fraction'>10/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>6/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/3</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">10% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>1/10</span>
+                <span class='fraction'>10/10</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -107,40 +107,40 @@
 <a name='L42'></a><a href='#L42'>42</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -150,38 +150,38 @@
 export default class extends Controller {
   static targets = ["icon", "count"]
 &nbsp;
-<span class="fstat-no" title="function not covered" >  co</span>nnect() {
+  connect() {
     // Turbo Frame が読み込まれたら console に通知（開発用デバッグ）
-<span class="cstat-no" title="statement not covered" >    this.element.addEventListener("turbo:frame-load", <span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
+    this.element.addEventListener("turbo:frame-load", () =&gt; {
       //console.log("Turbo frame loaded, targets are available.");
     });
   }
 &nbsp;
-<span class="fstat-no" title="function not covered" >  to</span>ggle(event) {
+  toggle(event) {
     //console.log("📌 toggle() 発火");
 &nbsp;
     // 現在の状態を取得（"true" or "false"）
-    const isBookmarked = <span class="cstat-no" title="statement not covered" >this.iconTarget.dataset.toggled === "true";</span>
+    const isBookmarked = this.iconTarget.dataset.toggled === "true";
     //console.log("🔄 現在の状態:", isBookmarked ? "bookmarked" : "unbookmarked");
 &nbsp;
     // 切り替える画像 URL を設定
-    const newIconSrc = <span class="cstat-no" title="statement not covered" >isBookmarked</span>
+    const newIconSrc = isBookmarked
       ? this.iconTarget.dataset.unbookmarkedUrl
       : this.iconTarget.dataset.bookmarkedUrl;
     //console.log("🖼️ 切り替える画像パス:", newIconSrc);
 &nbsp;
     // アイコン画像を更新
-<span class="cstat-no" title="statement not covered" >    this.iconTarget.src = ""; </span>// 一旦リセット（ブラウザキャッシュ回避）
-<span class="cstat-no" title="statement not covered" >    this.iconTarget.src = newIconSrc;</span>
+    this.iconTarget.src = ""; // 一旦リセット（ブラウザキャッシュ回避）
+    this.iconTarget.src = newIconSrc;
 &nbsp;
     // toggled 状態を切り替え
-<span class="cstat-no" title="statement not covered" >    this.iconTarget.dataset.toggled = isBookmarked ? "false" : "true";</span>
+    this.iconTarget.dataset.toggled = isBookmarked ? "false" : "true";
     //console.log("✅ 新しい状態:", this.iconTarget.dataset.toggled);
 &nbsp;
     // ブックマーク数を更新
-    const currentCount = <span class="cstat-no" title="statement not covered" >parseInt(this.countTarget.innerText, 10);</span>
-    const updatedCount = <span class="cstat-no" title="statement not covered" >isBookmarked ? currentCount - 1 : currentCount + 1;</span>
-<span class="cstat-no" title="statement not covered" >    this.countTarget.innerText = updatedCount;</span>
+    const currentCount = parseInt(this.countTarget.innerText, 10);
+    const updatedCount = isBookmarked ? currentCount - 1 : currentCount + 1;
+    this.countTarget.innerText = updatedCount;
 &nbsp;
     //console.log("🔢 カウント更新:", currentCount, "→", updatedCount);
   }
@@ -193,7 +193,7 @@ export default class extends Controller {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-12T15:12:08.021Z
+                at 2025-08-12T17:26:38.908Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
