@@ -16,6 +16,22 @@ console.log("🔥 Rails UJS is loaded!", Rails);
 
 window.bootstrap = bootstrap;
 
+/* ===========================================================
+   ✅ 追加：Push通知の二重呼び出し防止
+   -----------------------------------------------------------
+   - DOMContentLoaded / turbo:load 両方から呼ばれても 1回だけ実行
+   - ログイン時のみ実行（window.isLoggedIn が true のとき）
+   =========================================================== */
+let __pushSubRequested = false;
+function requestPushOnce() {
+  if (!window.isLoggedIn) return;
+  if (__pushSubRequested) return;
+  __pushSubRequested = true;
+  subscribeToPushNotifications().catch(err => {
+    console.error("Push通知登録エラー:", err);
+  });
+}
+
 /** ▼▼▼ ここから保険 ▼▼▼ **/
 function hideMobileSearchModalSafely() {
   const el = document.getElementById("mobile-super-search-modal");
@@ -51,11 +67,9 @@ registerServiceWorker();
 
 // 重複する関数はここに書かない！！！
 
-// ログインしているユーザーだけ実行
+// ログインしているユーザーだけ実行（※二重防止関数経由）
 document.addEventListener('DOMContentLoaded', () => {
-  if (window.isLoggedIn) {
-    subscribeToPushNotifications();
-  }
+  requestPushOnce();
 });
 
 // Turboローディング制御まとめ
@@ -68,10 +82,8 @@ document.addEventListener("turbo:load", () => {
   const loader = document.getElementById("loading-overlay");
   if (loader) loader.classList.add("view-hidden"); // 非表示
 
-  // Push通知
-  subscribeToPushNotifications().catch(err => {
-    console.error("Push通知登録エラー:", err);
-  });
+  // Push通知（※二重防止関数経由）
+  requestPushOnce();
 
   // HPと日付保存
   const today = new Date().toISOString().slice(0, 10);
@@ -84,17 +96,17 @@ document.addEventListener("turbo:load", () => {
 
   // Turboフレーム内でローディングを非表示
   document.addEventListener("turbo:frame-load", () => {
-    const loader = document.getElementById("loading-overlay");
-    if (loader) loader.classList.add("view-hidden");
+    const loader2 = document.getElementById("loading-overlay");
+    if (loader2) loader2.classList.add("view-hidden");
   });
 
   // Turboフレーム内モーダルにも対応
   const modalFixObserver = new MutationObserver(() => {
     const modal = document.querySelector(".modal.show");
     const modalContent = document.querySelector(".modal-content");
-    const loader = document.getElementById("loading-overlay");
-    if (modal && modalContent && loader) {
-      loader.classList.add("view-hidden");
+    const loader3 = document.getElementById("loading-overlay");
+    if (modal && modalContent && loader3) {
+      loader3.classList.add("view-hidden");
     }
   });
 
