@@ -2,13 +2,18 @@
 module.exports = {
   testEnvironment: "jsdom",
   roots: ["<rootDir>/spec/javascripts"],
-  setupFilesAfterEnv: ["<rootDir>/spec/javascripts/setupTests.js"],
+  setupFiles: [
+    "<rootDir>/test/setup/polyfills.js" // fetchやTextEncoderなどのポリフィル
+  ],
+  setupFilesAfterEnv: [
+    "<rootDir>/spec/javascripts/setupTests.js",
+    "<rootDir>/test/setup/jest.setup.js" // SweetAlertモックやconsole抑制
+  ],
   transform: {
     "^.+\\.js$": "babel-jest"
   },
   moduleFileExtensions: ["js", "json"],
   moduleNameMapper: {
-    // CSS / 画像 import を無害化
     "\\.(css|scss|sass)$": "identity-obj-proxy",
     "\\.(gif|ttf|eot|svg|png|jpe?g|webp)$": "<rootDir>/spec/javascripts/stubs/fileStub.js"
   },
@@ -16,5 +21,11 @@ module.exports = {
     "app/javascript/**/*.js",
     "!app/javascript/**/index.js"
   ],
-  testPathIgnorePatterns: ["/node_modules/", "/tmp/"]
+  testPathIgnorePatterns: ["/node_modules/", "/tmp/"],
+  moduleDirectories: [
+    "node_modules",
+    "<rootDir>/app/javascript"
+  ],
+  // spec/javascripts配下を拾うように修正
+  testMatch: ["**/spec/javascripts/**/*.test.[jt]s?(x)"]
 };
