@@ -3,19 +3,23 @@ module.exports = {
   testEnvironment: "jsdom",
   roots: ["<rootDir>/spec/javascripts"],
   setupFiles: [
-    "<rootDir>/test/setup/polyfills.js" // fetchやTextEncoderなどのポリフィル
+    "<rootDir>/test/setup/polyfills.js"
   ],
   setupFilesAfterEnv: [
     "<rootDir>/spec/javascripts/setupTests.js",
-    "<rootDir>/test/setup/jest.setup.js" // SweetAlertモックやconsole抑制
+    "<rootDir>/test/setup/jest.setup.js"
   ],
   transform: {
-    "^.+\\.js$": "babel-jest"
+    "^.+\\.(js|mjs)$": "babel-jest"
   },
-  moduleFileExtensions: ["js", "json"],
+  moduleFileExtensions: ["js", "json", "mjs"],
   moduleNameMapper: {
     "\\.(css|scss|sass)$": "identity-obj-proxy",
-    "\\.(gif|ttf|eot|svg|png|jpe?g|webp)$": "<rootDir>/spec/javascripts/stubs/fileStub.js"
+    "\\.(gif|ttf|eot|svg|png|jpe?g|webp)$": "<rootDir>/spec/javascripts/stubs/fileStub.js",
+    "^@hotwired/turbo-rails$": "<rootDir>/spec/javascripts/stubs/turboRailsStub.js",
+    "^@rails/ujs$": "<rootDir>/spec/javascripts/stubs/railsUjsStub.js",
+    "^bootstrap$": "<rootDir>/spec/javascripts/stubs/bootstrapStub.js",
+    "^@hotwired/stimulus$": "<rootDir>/spec/javascripts/stubs/stimulusStub.js"
   },
   collectCoverageFrom: [
     "app/javascript/**/*.js",
@@ -26,6 +30,5 @@ module.exports = {
     "node_modules",
     "<rootDir>/app/javascript"
   ],
-  // spec/javascripts配下を拾うように修正
   testMatch: ["**/spec/javascripts/**/*.test.[jt]s?(x)"]
 };
