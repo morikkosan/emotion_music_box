@@ -8,6 +8,7 @@ import "./custom/flash_messages";
 import "./custom/gages_test";
 import "./custom/inline_handlers";
 import "./custom/swal_my_create";
+import { registerServiceWorker } from "./custom/register_service_worker";
 import { subscribeToPushNotifications } from "./custom/push_subscription";
 
 Rails.start();
@@ -45,11 +46,8 @@ window.addEventListener("pageshow", (e) => {
 });
 
 // サービスワーカー登録
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/service-worker.js')
-    .then(reg => console.log('ServiceWorker 登録成功:', reg))
-    .catch(err => console.error('ServiceWorker 登録失敗:', err));
-}
+registerServiceWorker();
+
 
 // 重複する関数はここに書かない！！！
 
