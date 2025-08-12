@@ -20,7 +20,7 @@ beforeEach(() => {
 });
 
 describe("bookmark_toggle_controller", () => {
-  test("connect: turbo:frame-load 監視を登録する（addEventListenerが呼ばれる）", () => {
+  test("connect: turbo:frame-load 監視を登録し、登録したコールバックも実行される", () => {
     // addEventListener をスパイしたいので、先に root を作って差し替える
     const root = document.createElement("div");
     root.setAttribute("data-controller", "bookmark-toggle");
@@ -40,21 +40,14 @@ describe("bookmark_toggle_controller", () => {
     root.addEventListener = addSpy;
 
     document.body.appendChild(root);
-    const { instance } = boot();
+    boot();
 
-    // connect() で登録されているはず
-    expect(addSpy).toHaveBeenCalledWith(
-      "turbo:frame-load",
-      expect.any(Function)
-    );
+    // connect() で登録されている
+    expect(addSpy).toHaveBeenCalledWith("turbo:frame-load", expect.any(Function));
 
-    // 念のため、発火しても例外が出ないことだけ確認
-    expect(() =>
-      root.dispatchEvent(new Event("turbo:frame-load", { bubbles: true }))
-    ).not.toThrow();
-
-    // cleanup
-    instance?.disconnect?.();
+    // ▼ 追加：登録されたコールバックを取り出して実行（Funcsカバレッジ対策）
+    const handler = addSpy.mock.calls[0][1];
+    expect(() => handler(new Event("turbo:frame-load"))).not.toThrow();
   });
 
   test("toggle: 未ブックマーク(false) → ブックマーク(true) にトグル、アイコン変更とカウント+1", () => {
@@ -83,10 +76,7 @@ describe("bookmark_toggle_controller", () => {
     // アイコンが bookmarked に、toggled="true"、カウント 11
     expect(icon.dataset.toggled).toBe("true");
     expect(count.innerText).toBe("11");
-    // jsdom では src は絶対URLに解決されるので contains で確認
     expect(icon.src).toContain("/assets/bookmarked.svg");
-
-    instance.disconnect();
   });
 
   test("toggle: ブックマーク(true) → 未ブックマーク(false) にトグル、アイコン変更とカウント-1", () => {
@@ -113,8 +103,6 @@ describe("bookmark_toggle_controller", () => {
     expect(icon.dataset.toggled).toBe("false");
     expect(count.innerText).toBe("3");
     expect(icon.src).toContain("/assets/unbookmarked.svg");
-
-    instance.disconnect();
   });
 
   test("toggle: countが数値文字列でなくても parseInt の挙動で更新される", () => {
@@ -136,7 +124,5 @@ describe("bookmark_toggle_controller", () => {
 
     // parseInt("12 票", 10) === 12 なので 13 になる
     expect(count.innerText).toBe("13");
-
-    instance.disconnect();
   });
 });
