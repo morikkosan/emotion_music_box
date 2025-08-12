@@ -1,3 +1,4 @@
+
 export async function subscribeToPushNotifications() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     console.warn("PWA通知はこのブラウザでサポートされていません。");
