@@ -19,7 +19,11 @@ module.exports = {
     "^@hotwired/turbo-rails$": "<rootDir>/spec/javascripts/stubs/turboRailsStub.js",
     "^@rails/ujs$": "<rootDir>/spec/javascripts/stubs/railsUjsStub.js",
     "^bootstrap$": "<rootDir>/spec/javascripts/stubs/bootstrapStub.js",
-    "^@hotwired/stimulus$": "<rootDir>/spec/javascripts/stubs/stimulusStub.js"
+    "^@hotwired/stimulus$": "<rootDir>/spec/javascripts/stubs/stimulusStub.js",
+
+    // ▼ 追加: app/javascript/controllers や custom ディレクトリをエイリアス解決
+    '^controllers/(.*)$': '<rootDir>/app/javascript/controllers/$1',
+    '^custom/(.*)$': '<rootDir>/app/javascript/custom/$1'
   },
   collectCoverageFrom: [
     "app/javascript/**/*.js",
