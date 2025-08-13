@@ -10,6 +10,8 @@
  *  - backToSearch() の NG/OK 経路（モーダル hide/show, Turbo.render, Stimulus.enhance）
  *  - fetchAndSwap() の OK/NG 経路とヘッダ
  *  - search() のヘッダ/オプション検証（credentials, Accept）
+ *  - ★ 追加：renderPage の artwork_url 分岐（placeholder/実URLの両側）
+ *  - ★ 追加：backToSearch/fetchAndSwap の “存在しない” 分岐（branchの逆側）
  */
 
 import { Application } from "@hotwired/stimulus";
@@ -357,5 +359,58 @@ describe("search_music_controller (coverage, single file)", () => {
       credentials: "same-origin",
       headers: expect.objectContaining({ Accept: "application/json" }),
     }));
+  });
+
+  // === ★ 追加1: artwork_url の “あり側” を踏む（placeholder の逆分岐）
+  test("renderPage(): artwork_url があれば placeholder ではなく実URLが使われる", () => {
+    controller.searchResults = [
+      {
+        id: 1,
+        title: "Pic Song",
+        user: { username: "Painter" },
+        permalink_url: "https://sc/img",
+        artwork_url: "https://img.example.com/cover.jpg",
+      },
+    ];
+    controller.currentPage = 1;
+    controller.renderPage();
+
+    const img = results.querySelector("img");
+    expect(img).toBeTruthy();
+    // JSDOM は絶対URLに解決することがあるので includes チェック
+    expect(img.src).toContain("https://img.example.com/cover.jpg");
+  });
+
+  // === ★ 追加2: backToSearch() の “存在しない系” 分岐（hide/show/enhance 全スキップ）
+  test("backToSearch(): 既存モーダルなし・新モーダルなし・Stimulusなしでも成功（各処理はスキップ）", async () => {
+    // 既存モーダルなし
+    // 新モーダル/コンテンツも置かない
+    delete window.Stimulus; // undefined
+
+    global.fetch.mockResolvedValue({
+      ok: true,
+      text: async () => "<turbo-stream></turbo-stream>",
+    });
+
+    await controller.backToSearch();
+
+    expect(Turbo.renderStreamMessage).toHaveBeenCalledTimes(1);
+    // hide も show も呼ばれない
+    expect(bootstrap.Modal.getOrCreateInstance).not.toHaveBeenCalled();
+  });
+
+  // === ★ 追加3: fetchAndSwap(): Stimulus 未定義・モーダル未存在 → enhance/show を通らない（212–216 の false側）
+  test("fetchAndSwap(): Stimulus なし・モーダルなし → enhance なし & show なし（でも Turbo は呼ばれる）", async () => {
+    delete window.Stimulus; // undefined
+
+    global.fetch.mockResolvedValue({
+      ok: true,
+      text: async () => "<turbo-stream></turbo-stream>",
+    });
+
+    await controller.fetchAndSwap("/ok");
+
+    expect(Turbo.renderStreamMessage).toHaveBeenCalledTimes(1);
+    expect(bootstrap.Modal.getOrCreateInstance).not.toHaveBeenCalled();
   });
 });
