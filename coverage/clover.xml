@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1755072081394" clover="3.2.0">
-  <project timestamp="1755072081394" name="All files">
-    <metrics statements="1648" coveredstatements="933" conditionals="761" coveredconditionals="347" methods="351" coveredmethods="176" elements="2760" coveredelements="1456" complexity="0" loc="1648" ncloc="1648" packages="3" files="28" classes="28"/>
+<coverage generated="1755074052500" clover="3.2.0">
+  <project timestamp="1755074052500" name="All files">
+    <metrics statements="1648" coveredstatements="1018" conditionals="761" coveredconditionals="387" methods="351" coveredmethods="204" elements="2760" coveredelements="1609" complexity="0" loc="1648" ncloc="1648" packages="3" files="28" classes="28"/>
     <package name="javascript">
       <metrics statements="236" coveredstatements="68" conditionals="99" coveredconditionals="24" methods="37" coveredmethods="8"/>
       <file name="application.js" path="/home/morik/emotion_music_box/app/javascript/application.js">
@@ -245,7 +245,7 @@
       </file>
     </package>
     <package name="javascript.controllers">
-      <metrics statements="1147" coveredstatements="706" conditionals="523" coveredconditionals="248" methods="249" coveredmethods="133"/>
+      <metrics statements="1147" coveredstatements="791" conditionals="523" coveredconditionals="288" methods="249" coveredmethods="161"/>
       <file name="add_song_modal_controller.js" path="/home/morik/emotion_music_box/app/javascript/controllers/add_song_modal_controller.js">
         <metrics statements="11" coveredstatements="11" conditionals="4" coveredconditionals="3" methods="3" coveredmethods="3"/>
         <line num="4" count="11" type="stmt"/>
@@ -802,97 +802,97 @@
         <line num="667" count="241" type="cond" truecount="2" falsecount="0"/>
       </file>
       <file name="mobile_footer_controller.js" path="/home/morik/emotion_music_box/app/javascript/controllers/mobile_footer_controller.js">
-        <metrics statements="39" coveredstatements="1" conditionals="20" coveredconditionals="0" methods="14" coveredmethods="0"/>
-        <line num="11" count="8" type="stmt"/>
-        <line num="15" count="0" type="stmt"/>
-        <line num="16" count="0" type="stmt"/>
-        <line num="18" count="0" type="stmt"/>
-        <line num="19" count="0" type="stmt"/>
-        <line num="22" count="0" type="stmt"/>
-        <line num="26" count="0" type="stmt"/>
-        <line num="27" count="0" type="stmt"/>
-        <line num="32" count="0" type="stmt"/>
-        <line num="33" count="0" type="stmt"/>
-        <line num="38" count="0" type="stmt"/>
-        <line num="39" count="0" type="stmt"/>
-        <line num="44" count="0" type="stmt"/>
-        <line num="45" count="0" type="stmt"/>
-        <line num="50" count="0" type="cond" truecount="0" falsecount="4"/>
-        <line num="51" count="0" type="stmt"/>
-        <line num="57" count="0" type="stmt"/>
-        <line num="60" count="0" type="stmt"/>
-        <line num="63" count="0" type="stmt"/>
-        <line num="64" count="0" type="stmt"/>
-        <line num="65" count="0" type="stmt"/>
-        <line num="66" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="67" count="0" type="stmt"/>
-        <line num="68" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="69" count="0" type="stmt"/>
-        <line num="70" count="0" type="stmt"/>
-        <line num="75" count="0" type="cond" truecount="0" falsecount="4"/>
-        <line num="76" count="0" type="stmt"/>
-        <line num="77" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="79" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="84" count="0" type="stmt"/>
-        <line num="85" count="0" type="stmt"/>
-        <line num="89" count="0" type="stmt"/>
-        <line num="90" count="0" type="stmt"/>
-        <line num="91" count="0" type="stmt"/>
-        <line num="96" count="0" type="stmt"/>
-        <line num="97" count="0" type="stmt"/>
-        <line num="102" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="103" count="0" type="cond" truecount="0" falsecount="2"/>
+        <metrics statements="39" coveredstatements="39" conditionals="20" coveredconditionals="17" methods="14" coveredmethods="14"/>
+        <line num="11" count="9" type="stmt"/>
+        <line num="15" count="9" type="stmt"/>
+        <line num="16" count="9" type="stmt"/>
+        <line num="18" count="9" type="stmt"/>
+        <line num="19" count="9" type="stmt"/>
+        <line num="22" count="9" type="stmt"/>
+        <line num="26" count="1" type="stmt"/>
+        <line num="27" count="1" type="stmt"/>
+        <line num="32" count="1" type="stmt"/>
+        <line num="33" count="1" type="stmt"/>
+        <line num="38" count="1" type="stmt"/>
+        <line num="39" count="1" type="stmt"/>
+        <line num="44" count="1" type="stmt"/>
+        <line num="45" count="1" type="stmt"/>
+        <line num="50" count="11" type="cond" truecount="3" falsecount="1"/>
+        <line num="51" count="11" type="stmt"/>
+        <line num="57" count="32" type="stmt"/>
+        <line num="60" count="32" type="stmt"/>
+        <line num="63" count="32" type="stmt"/>
+        <line num="64" count="32" type="stmt"/>
+        <line num="65" count="161" type="stmt"/>
+        <line num="66" count="161" type="cond" truecount="2" falsecount="0"/>
+        <line num="67" count="160" type="stmt"/>
+        <line num="68" count="160" type="cond" truecount="2" falsecount="0"/>
+        <line num="69" count="31" type="stmt"/>
+        <line num="70" count="31" type="stmt"/>
+        <line num="75" count="32" type="cond" truecount="4" falsecount="0"/>
+        <line num="76" count="1" type="stmt"/>
+        <line num="77" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="79" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="84" count="4" type="stmt"/>
+        <line num="85" count="4" type="stmt"/>
+        <line num="89" count="37" type="stmt"/>
+        <line num="90" count="186" type="stmt"/>
+        <line num="91" count="186" type="stmt"/>
+        <line num="96" count="36" type="stmt"/>
+        <line num="97" count="36" type="stmt"/>
+        <line num="102" count="161" type="cond" truecount="2" falsecount="0"/>
+        <line num="103" count="65" type="cond" truecount="2" falsecount="0"/>
       </file>
       <file name="mobile_super_search_controller.js" path="/home/morik/emotion_music_box/app/javascript/controllers/mobile_super_search_controller.js">
-        <metrics statements="48" coveredstatements="1" conditionals="24" coveredconditionals="0" methods="14" coveredmethods="0"/>
-        <line num="5" count="8" type="stmt"/>
-        <line num="8" count="0" type="stmt"/>
-        <line num="9" count="0" type="stmt"/>
-        <line num="10" count="0" type="stmt"/>
-        <line num="12" count="0" type="stmt"/>
-        <line num="13" count="0" type="stmt"/>
-        <line num="15" count="0" type="stmt"/>
-        <line num="16" count="0" type="stmt"/>
-        <line num="18" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="19" count="0" type="stmt"/>
-        <line num="20" count="0" type="stmt"/>
-        <line num="21" count="0" type="stmt"/>
-        <line num="24" count="0" type="stmt"/>
-        <line num="25" count="0" type="stmt"/>
-        <line num="30" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="31" count="0" type="stmt"/>
-        <line num="32" count="0" type="stmt"/>
-        <line num="33" count="0" type="stmt"/>
-        <line num="34" count="0" type="stmt"/>
-        <line num="42" count="0" type="stmt"/>
-        <line num="43" count="0" type="stmt"/>
-        <line num="44" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="45" count="0" type="stmt"/>
-        <line num="46" count="0" type="stmt"/>
-        <line num="47" count="0" type="stmt"/>
-        <line num="48" count="0" type="stmt"/>
-        <line num="49" count="0" type="stmt"/>
-        <line num="50" count="0" type="stmt"/>
-        <line num="54" count="0" type="stmt"/>
-        <line num="55" count="0" type="stmt"/>
-        <line num="59" count="0" type="stmt"/>
-        <line num="60" count="0" type="stmt"/>
-        <line num="61" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="65" count="0" type="stmt"/>
-        <line num="66" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="71" count="0" type="stmt"/>
-        <line num="72" count="0" type="cond" truecount="0" falsecount="4"/>
-        <line num="73" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="74" count="0" type="stmt"/>
-        <line num="75" count="0" type="stmt"/>
-        <line num="79" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="80" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="81" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="82" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="86" count="0" type="stmt"/>
-        <line num="87" count="0" type="stmt"/>
-        <line num="88" count="0" type="stmt"/>
-        <line num="89" count="0" type="stmt"/>
+        <metrics statements="48" coveredstatements="48" conditionals="24" coveredconditionals="23" methods="14" coveredmethods="14"/>
+        <line num="5" count="9" type="stmt"/>
+        <line num="8" count="15" type="stmt"/>
+        <line num="9" count="15" type="stmt"/>
+        <line num="10" count="15" type="stmt"/>
+        <line num="12" count="15" type="stmt"/>
+        <line num="13" count="15" type="stmt"/>
+        <line num="15" count="15" type="stmt"/>
+        <line num="16" count="15" type="stmt"/>
+        <line num="18" count="15" type="cond" truecount="2" falsecount="0"/>
+        <line num="19" count="9" type="stmt"/>
+        <line num="20" count="9" type="stmt"/>
+        <line num="21" count="9" type="stmt"/>
+        <line num="24" count="9" type="stmt"/>
+        <line num="25" count="9" type="stmt"/>
+        <line num="30" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="31" count="1" type="stmt"/>
+        <line num="32" count="1" type="stmt"/>
+        <line num="33" count="1" type="stmt"/>
+        <line num="34" count="1" type="stmt"/>
+        <line num="42" count="3" type="stmt"/>
+        <line num="43" count="3" type="stmt"/>
+        <line num="44" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="45" count="2" type="stmt"/>
+        <line num="46" count="2" type="stmt"/>
+        <line num="47" count="2" type="stmt"/>
+        <line num="48" count="2" type="stmt"/>
+        <line num="49" count="2" type="stmt"/>
+        <line num="50" count="2" type="stmt"/>
+        <line num="54" count="2" type="stmt"/>
+        <line num="55" count="2" type="stmt"/>
+        <line num="59" count="2" type="stmt"/>
+        <line num="60" count="2" type="stmt"/>
+        <line num="61" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="65" count="2" type="stmt"/>
+        <line num="66" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="71" count="19" type="stmt"/>
+        <line num="72" count="19" type="cond" truecount="4" falsecount="0"/>
+        <line num="73" count="7" type="cond" truecount="2" falsecount="0"/>
+        <line num="74" count="7" type="stmt"/>
+        <line num="75" count="7" type="stmt"/>
+        <line num="79" count="27" type="cond" truecount="2" falsecount="0"/>
+        <line num="80" count="6" type="cond" truecount="2" falsecount="0"/>
+        <line num="81" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="82" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="86" count="4" type="stmt"/>
+        <line num="87" count="4" type="stmt"/>
+        <line num="88" count="4" type="stmt"/>
+        <line num="89" count="4" type="stmt"/>
       </file>
       <file name="modal_controller.js" path="/home/morik/emotion_music_box/app/javascript/controllers/modal_controller.js">
         <metrics statements="49" coveredstatements="47" conditionals="16" coveredconditionals="13" methods="16" coveredmethods="13"/>
