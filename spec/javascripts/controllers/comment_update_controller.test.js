@@ -26,7 +26,7 @@ describe("comment_update_controller", () => {
     // Stimulusコントローラ起動
     app.getControllerForElementAndIdentifier(el, "comment-update");
 
-    // すぐには消えない
+    // すぐには消ない
     expect(el.innerHTML).toBe("コメントが更新されました");
 
     // 2秒進める
