@@ -609,10 +609,16 @@ export default class extends Controller {
     }, 1000);
   }
 
-  formatTime(ms) {
-    const sec = Math.floor((ms || 0) / 1000);
-    return `${Math.floor(sec / 60)}:${(sec % 60).toString().padStart(2, "0")}`;
+    formatTime(ms) {
+    const n = Number(ms);
+    // 未定義/NaN/0以下は "0:00"
+    if (!Number.isFinite(n) || n <= 0) return "0:00";
+    const sec = Math.floor(n / 1000);
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
   }
+
 
   /* ---------- 前後トラック ---------- */
   prevTrack(event) {
