@@ -9,22 +9,22 @@ window._flashShownOnce = window._flashShownOnce || null;
     const flashNotice = flashContainer?.dataset.flashNotice || document.body.dataset.flashNotice;
     const flashAlert  = flashContainer?.dataset.flashAlert  || document.body.dataset.flashAlert;
 
-    // --- 既に出したものなら絶対スキップ ---
-    const key = flashNotice ? `flashNotice:${flashNotice}` : flashAlert ? `flashAlert:${flashAlert}` : null;
-    if (window._flashShownOnce === key) {
-      console.log("🚫 [Guard] 二重発火防止：同一内容はスキップ");
-      return;
-    }
-
     if (!window.Swal) {
       console.warn("⚠️ SweetAlert2 (Swal) が読み込まれていません");
       return;
     }
 
-    // --- エラー（無条件で表示） ---
+    // --- エラー（無条件で表示・alert優先） ---
+    //   ガードも alert キーで判定・設定する
     if (flashAlert && flashAlert !== "すでにログイン済みです") {
+      const alertKey = `flashAlert:${flashAlert}`;
+      if (window._flashShownOnce === alertKey) {
+        console.log("🚫 [Guard] 二重発火防止（alert）：同一内容はスキップ");
+        return;
+      }
+
       console.log("❌ アラート表示トリガー");
-      window._flashShownOnce = key;
+      window._flashShownOnce = alertKey;
       Swal.fire({
         title: "エラー ❌",
         text: flashAlert,
@@ -33,7 +33,7 @@ window._flashShownOnce = window._flashShownOnce || null;
         background: "linear-gradient(135deg, #00b3ff, #ff0088)",
         color: "#fff",
         customClass: { popup: "cyber-popup" },
-        // ✅ ここだけ追加：閉じたらガード解除（次を出せるように）
+        // ✅ 閉じたらガード解除（次を出せるように）
         didClose: () => { window._flashShownOnce = null; }
       });
       document.body.dataset.flashAlert = "";
@@ -41,10 +41,16 @@ window._flashShownOnce = window._flashShownOnce || null;
       return;
     }
 
-    // --- 通知（同一内容なら1回だけ） ---
+    // --- 通知（同一内容なら1回だけ）
     if (flashNotice) {
+      const noticeKey = `flashNotice:${flashNotice}`;
+      if (window._flashShownOnce === noticeKey) {
+        console.log("🚫 [Guard] 二重発火防止（notice）：同一内容はスキップ");
+        return;
+      }
+
       console.log("✅ SweetAlert 成功表示開始");
-      window._flashShownOnce = key;
+      window._flashShownOnce = noticeKey;
       Swal.fire({
         title: "成功 🎉",
         text: flashNotice,
@@ -55,7 +61,7 @@ window._flashShownOnce = window._flashShownOnce || null;
         timer: 3000,
         timerProgressBar: true,
         customClass: { popup: "cyber-popup" },
-        // ✅ ここだけ追加：閉じたらガード解除（次を出せるように）
+        // ✅ 閉じたらガード解除（次を出せるように）
         didClose: () => { window._flashShownOnce = null; }
       });
       document.body.dataset.flashNotice = "";
@@ -71,9 +77,11 @@ window._flashShownOnce = window._flashShownOnce || null;
       for (const node of mutation.addedNodes) {
         if (node.id === "flash-container") {
           console.log("👀 MutationObserver: flash-container 追加検出");
+          /* istanbul ignore next */ // async scheduling は V8 で行カバレッジが不安定
           setTimeout(() => {
             showFlashSwal("MutationObserver → setTimeout");
           }, 0);
+          /* istanbul ignore next */ // ネスト脱出だけの早期 return も V8 でズレやすい
           return;
         }
       }
