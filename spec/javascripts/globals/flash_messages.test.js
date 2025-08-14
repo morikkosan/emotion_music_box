@@ -1,5 +1,5 @@
 /**
- * flash_messages.js 総合テスト（安定化＋行カバレッジ対策）
+ * flash_messages.js 総合テスト（安定化＋行37/114まで到達）
  * - フェイク MutationObserver（明示トリガ）
  * - DOMContentLoaded は捕捉して必要時のみ実行（累積防止）
  * - bodyのdata-*は毎テストで確実にクリア
@@ -263,7 +263,7 @@ describe("custom/flash_messages.js", () => {
     expect(window._flashShownOnce).toBeNull();
   });
 
-  // --- 追加: 行/関数カバレッジを埋めるピンポイント ---
+  // --- 追加: 行37/114 をピンポイントで埋める ---
 
   test("alert の二重表示ガードに引っかかる（直接呼び出し）", () => {
     importModule();
@@ -315,42 +315,61 @@ describe("custom/flash_messages.js", () => {
     expect(document.querySelector("#flash-container")).toBeNull();
   });
 
-  // ★ 追加1: error側の didClose も実行して関数カバレッジを埋める
-  test("errorアラートの didClose を実行するとガードが解除される", async () => {
+  test("DOMContentLoaded: #logout-link が存在しない場合は早期 return（UI副作用なし）", () => {
     importModule();
 
-    const cont = document.createElement("div");
-    cont.id = "flash-container";
-    cont.dataset.flashAlert = "失敗しました";
-    document.body.appendChild(cont);
+    // #logout-link を取り除く
+    const link = document.getElementById("logout-link");
+    link.parentNode.removeChild(link);
 
-    triggerAllAdded(cont);
-    await flushAllTimers();
+    expect(typeof capturedDomReady).toBe("function");
+    capturedDomReady(); // ← ここで if (!logoutLink) return; を通す
 
-    // 最後の呼び出しのオプションを取る（このテストでは1回だけ）
-    const opts = Swal.fire.mock.calls[Swal.fire.mock.calls.length - 1][0];
-    expect(opts.icon).toBe("error");
-
-    // 実際のハンドラ実行
-    expect(typeof opts.didClose).toBe("function");
-    // 念のため、直前のキーを入れてから…
-    window._flashShownOnce = "flashAlert:失敗しました";
-    opts.didClose();
-    expect(window._flashShownOnce).toBeNull();
+    // 何も起きないこと（Swal.fire が増えない/イベント未発火）
+    expect(Swal.fire).toHaveBeenCalledTimes(0);
   });
 
-  // ★ 追加2: logoutダイアログの didClose も実行して関数カバレッジを埋める
-  test("logoutの Swal.didClose 実行でガード解除（安全に動く）", () => {
+  test("hidden.bs.modal: target 未定義でも落ちずに何も起きない（optional chaining の別経路）", () => {
+    importModule();
+
+    window._flashShownOnce = "flashNotice:SOMETHING";
+
+    const ev = new Event("hidden.bs.modal");
+    // target を「未定義」にする（optional chaining の event.target?. 経路を通す）
+    Object.defineProperty(ev, "target", { value: undefined });
+
+    document.dispatchEvent(ev);
+
+    // 何も変化しない
+    expect(window._flashShownOnce).toBe("flashNotice:SOMETHING");
+    const resetLogged = console.log.mock.calls.some((c) => (c[0] || "").includes("モーダル閉じでリセット"));
+    expect(resetLogged).toBe(false);
+  });
+
+  // ★ ここが追加（CSRFメタ無しの else 分岐を踏む）
+  test("logout 確認OK時: csrf meta が無い分岐（authenticity_token 未付与でも submit する）", async () => {
+    // meta を import 前に除去して、 if (csrfTokenMeta) の else 側を通す
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta) meta.parentNode.removeChild(meta);
+
     importModule();
     expect(typeof capturedDomReady).toBe("function");
     capturedDomReady();
 
-    window._flashShownOnce = "dummy";
-    document.getElementById("logout-link").click();
+    const submitSpy = jest
+      .spyOn(HTMLFormElement.prototype, "submit")
+      .mockImplementation(() => {});
 
-    const opts = Swal.fire.mock.calls[0][0];
-    expect(typeof opts.didClose).toBe("function");
-    opts.didClose(); // ← ここを実行して関数カバレッジを満たす
-    expect(window._flashShownOnce).toBeNull();
+    // クリック → Swal.resolve → submit
+    document.getElementById("logout-link").click();
+    await Promise.resolve();
+    await flushAllTimers();
+
+    expect(Swal.fire).toHaveBeenCalledTimes(1);
+    expect(submitSpy).toHaveBeenCalled();
+
+    // authenticity_token が追加されていないことを確認（else 分岐の証跡）
+    const tokenInput = document.querySelector('input[name="authenticity_token"]');
+    expect(tokenInput).toBeNull();
   });
 });
