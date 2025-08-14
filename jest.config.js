@@ -34,5 +34,8 @@ module.exports = {
     "node_modules",
     "<rootDir>/app/javascript"
   ],
-  testMatch: ["**/spec/javascripts/**/*.test.[jt]s?(x)"]
+  testMatch: ["**/spec/javascripts/**/*.test.[jt]s?(x)"],
+
+  // ★ ここに追加（計測をV8に切替。挙動は不変、行ズレが起きにくい）
+  coverageProvider: "v8"
 };
