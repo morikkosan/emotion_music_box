@@ -1,16 +1,9 @@
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js')
-      .then(function(reg) {
-        console.log('[PWA] ServiceWorker 登録成功:', reg);
-      }).catch(function(error) {
-        console.error('[PWA] ServiceWorker 登録失敗:', error);
-      });
-  }
- 
- 
- 
- 
- const VAPID_PUBLIC_KEY = "<%= ENV['VAPID_PUBLIC_KEY'] %>";
+// サービスワーカー登録（共通関数）
+import { registerServiceWorker } from "./register_service_worker";
+registerServiceWorker();
+
+
+  const VAPID_PUBLIC_KEY = "<%= ENV['VAPID_PUBLIC_KEY'] %>";
 
   async function subscribeToPushNotifications() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {

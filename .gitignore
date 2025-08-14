@@ -42,3 +42,9 @@ node_modules/
 
 /vendor/
 /vendor/
+
+# ---- Jest coverage artifacts ----
+coverage/
+coverage/**
+coverage-final.json
+lcov.info

@@ -1,4 +1,4 @@
-// controllers/navigation_controller.js
+// controllers/noonclick_controller.js
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
