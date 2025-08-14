@@ -27,7 +27,11 @@ module.exports = {
   },
   collectCoverageFrom: [
     "app/javascript/**/*.js",
-    "!app/javascript/**/index.js"
+    "!app/javascript/**/index.js",
+
+    // ★ エントリ専用（副作用のみ）のためカバレッジ対象から除外
+    "!app/javascript/**/push_notifications.js",
+    "!app/javascript/**/push_notifications.mjs"
   ],
   testPathIgnorePatterns: ["/node_modules/", "/tmp/"],
   moduleDirectories: [

@@ -96,6 +96,7 @@ function setupInlineHandlers() {
   setupCloseWindowBtn();
   setupPlaylistDeleteBtns();
   setupAccountDeleteBtn();
+  setupAutoSubmitEmotion(); // ★ 追加：セレクトの自動送信を配線
   console.log("setupInlineHandlers ran.");
 }
 
