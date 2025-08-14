@@ -7,15 +7,19 @@ export default class extends Controller {
     this.switchView();
     window.addEventListener("resize", this._switchViewBound);
 
+    // ★ ここを修正: popstate用バインド関数を保持
+    this._highlightBound = this.highlightActiveFooter.bind(this);
+
     // 初回にアクティブフッター判定
     this.highlightActiveFooter();
-    window.addEventListener("popstate", this.highlightActiveFooter.bind(this));
+    window.addEventListener("popstate", this._highlightBound);
   }
 
   disconnect() {
     console.log("[view-switcher] disconnect!!");
     window.removeEventListener("resize", this._switchViewBound);
-    window.removeEventListener("popstate", this.highlightActiveFooter.bind(this));
+    // ★ ここを修正: 同じ参照で解除
+    window.removeEventListener("popstate", this._highlightBound);
   }
 
   switchView() {
