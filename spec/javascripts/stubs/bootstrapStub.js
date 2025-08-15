@@ -1,10 +1,14 @@
 // spec/javascripts/stubs/bootstrapStub.js
 export class Modal {
-  static getInstance() {
+  constructor(/* element, options */) {}
+  show() {}
+  hide() {}
+
+  static getInstance(/* element */) {
     return null;
   }
-  static getOrCreateInstance() {
-    return { show() {}, hide() {} };
+  static getOrCreateInstance(/* element, options */) {
+    return new Modal();
   }
 }
 

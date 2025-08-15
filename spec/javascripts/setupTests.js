@@ -47,4 +47,3 @@ if (!Object.getOwnPropertyDescriptor(HTMLElement.prototype, "innerText")) {
     set(v) { this.textContent = v; }
   });
 }
-
