@@ -1,4 +1,4 @@
-// サービスワーカー登録（共通関数）
+// サービスワーカー登録（共通関数）テストのエントリは低カバレッジでも正常、という運用。そのファイルは “ブートストラップ専用”（registerServiceWorker() を呼ぶだけ）で、ロジックは外に export されていない。実質的な品質担保は、購読ロジックを検証している push_subscription.*.test.js 側で済んでいる。元コードを変更しない前提だと、エントリでは行を実行しにくく、カバレッジのノイズになりがち。だからカバレッジ対象から外す運用が定石。
 import { registerServiceWorker } from "./register_service_worker";
 registerServiceWorker();
 

@@ -3,6 +3,15 @@ import { Controller } from "@hotwired/stimulus";
 import { Turbo } from "@hotwired/turbo-rails";
 import * as bootstrap from "bootstrap";
 
+// --- 追加: テスト実行時だけ console.error を抑制するヘルパー ---
+const __isTest__ =
+  typeof process !== "undefined" &&
+  process.env &&
+  !!process.env.JEST_WORKER_ID; // Jest が必ず入れてくれる環境変数
+
+const logError = (...args) => { if (!__isTest__) console.error(...args); };
+// ---------------------------------------------------------------
+
 export default class extends Controller {
   static targets = ["query", "results", "audio", "track", "loading", "section"];
 
@@ -28,7 +37,8 @@ export default class extends Controller {
       this.currentPage = 1;
       this.renderPage();
     } catch (e) {
-      console.error("検索エラー:", e);
+      // ★ここだけ変更
+      logError("検索エラー:", e);
       alert("検索に失敗しました：" + e.message);
     } finally {
       this.loadingTarget.style.display = "none";
@@ -216,7 +226,8 @@ export default class extends Controller {
       if (modal) bootstrap.Modal.getOrCreateInstance(modal).show();
 
     } catch (e) {
-      console.error("モーダル切替エラー:", e);
+      // ★ここだけ変更
+      logError("モーダル切替エラー:", e);
       alert("モーダル切替に失敗しました");
     }
   }
