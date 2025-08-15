@@ -3,6 +3,9 @@
  */
 const path = require("path");
 const ENTRY = path.join(process.cwd(), "app/javascript/application.js");
+// push モジュールの解決ゆらぎに備えて複数キーでモックする
+const PUSH_NOEXT = path.join(process.cwd(), "app/javascript/custom/push_subscription");
+const PUSH_JS    = `${PUSH_NOEXT}.js`;
 
 const flush = async (n = 2) => { for (let i = 0; i < n; i++) await Promise.resolve(); };
 
@@ -179,5 +182,122 @@ describe("application.js (gap fill)", () => {
     jest.advanceTimersByTime(200);
     await flush();
     expect(cover.classList.contains("view-hidden")).toBe(true);
+  });
+
+  // === ここから追記分（未カバー行をさらに踏みに行く） =====================
+
+  test("requestPushOnce: isLoggedIn で二重実行されない（DOMContentLoaded と turbo:load 両方発火しても 1 回）", async () => {
+    const pushSpy = jest.fn().mockResolvedValue();
+
+    await jest.isolateModulesAsync(async () => {
+      // 解決キーゆらぎ対策：3通りで同じモックを登録
+      jest.doMock("./custom/push_subscription", () => ({ __esModule: true, subscribeToPushNotifications: pushSpy }), { virtual: true });
+      jest.doMock(PUSH_NOEXT,                  () => ({ __esModule: true, subscribeToPushNotifications: pushSpy }), { virtual: true });
+      jest.doMock(PUSH_JS,                     () => ({ __esModule: true, subscribeToPushNotifications: pushSpy }), { virtual: true });
+
+      // ログイン状態を立ててから require
+      global.window.isLoggedIn = true;
+      require(ENTRY);
+    });
+
+    // 2つのイベントを続けて発火
+    document.dispatchEvent(new Event("DOMContentLoaded", { bubbles: true }));
+    document.dispatchEvent(new Event("turbo:load",       { bubbles: true }));
+    await flush();
+
+    expect(pushSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test("HP 初期化: 日付が変わっていたら 50% にリセット", async () => {
+    // 昨日の日付をセット
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    localStorage.setItem("hpDate", yesterday);
+    localStorage.setItem("hpPercentage", "77");
+
+    await jest.isolateModulesAsync(async () => { require(ENTRY); });
+    document.dispatchEvent(new Event("turbo:load", { bubbles: true }));
+    await flush();
+
+    const today = new Date().toISOString().slice(0, 10);
+    expect(localStorage.getItem("hpDate")).toBe(today);
+    expect(localStorage.getItem("hpPercentage")).toBe("50");
+  });
+
+  test("アバター: 画像ドラッグで transform が更新される（pointerdown/move/up）", async () => {
+    document.body.innerHTML = `
+      <div id="loading-overlay"></div>
+      <input type="file" id="avatarInput" />
+      <img id="avatarPreviewInline" />
+      <div id="avatarCropModal"></div>
+      <div id="cropContainer" style="width:120px;height:80px;position:relative;"></div>
+      <img id="cropImage" width="120" height="80" />
+      <button id="cropConfirmBtn" type="button"></button>
+      <input type="text" id="avatarUrlField" />
+    `;
+
+    await jest.isolateModulesAsync(async () => {
+      jest.doMock("bootstrap", () => {
+        class FakeModal { show(){} hide(){} static getInstance(){return null} static getOrCreateInstance(){return new FakeModal()} }
+        return { __esModule: true, Modal: FakeModal, default: { Modal: FakeModal } };
+      });
+      require(ENTRY);
+    });
+
+    document.dispatchEvent(new Event("turbo:load", { bubbles: true }));
+    await flush();
+
+    const box = document.getElementById("cropContainer");
+    const img = document.getElementById("cropImage");
+
+    // 疑似ドラッグ
+    box.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, clientX: 10, clientY: 10, pointerId: 1 }));
+    box.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: 30, clientY: 25, pointerId: 1 }));
+    box.dispatchEvent(new PointerEvent("pointerup",   { bubbles: true, clientX: 30, clientY: 25, pointerId: 1 }));
+    await flush();
+
+    expect(img.style.transform).toMatch(/translate\(/); // 値そのものではなく「変化したこと」を確認
+  });
+
+  test("turbo:before-stream-render: update/record-modal-content 後に record-modal を show", async () => {
+    // requestAnimationFrame が非同期実装になっている環境があるため、
+    // テスト内だけ同期化して確実にコールさせる
+    const rafBak = global.requestAnimationFrame;
+    global.requestAnimationFrame = (cb) => cb();
+
+    let showMock;
+    try {
+      await jest.isolateModulesAsync(async () => {
+        showMock = jest.fn();
+        jest.doMock("bootstrap", () => {
+          class FakeModal { show = showMock; static getOrCreateInstance(){ return new FakeModal(); } }
+          return { __esModule: true, Modal: FakeModal, default: { Modal: FakeModal } };
+        });
+        require(ENTRY);
+      });
+
+      // モーダル本体
+      const modal = document.createElement("div");
+      modal.id = "record-modal";
+      document.body.appendChild(modal);
+
+      // tagName 判定を確実に通すために大文字タグで生成
+      const streamEl = document.createElement("TURBO-STREAM");
+      streamEl.setAttribute("action", "update");
+      streamEl.setAttribute("target", "record-modal-content");
+      document.body.appendChild(streamEl);
+
+      const original = jest.fn();
+      const detail = { render: original };
+      const ev = new CustomEvent("turbo:before-stream-render", { bubbles: true, detail });
+      streamEl.dispatchEvent(ev);
+
+      // ラップ済みの render を実行 → 同期 rAF → show()
+      expect(detail.render).not.toBe(original);
+      detail.render(streamEl);
+
+      expect(showMock).toHaveBeenCalled();
+    } finally {
+      global.requestAnimationFrame = rafBak;
+    }
   });
 });
