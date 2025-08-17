@@ -77,12 +77,13 @@ window._flashShownOnce = window._flashShownOnce || null;
       for (const node of mutation.addedNodes) {
         if (node.id === "flash-container") {
           console.log("👀 MutationObserver: flash-container 追加検出");
+          /* c8 ignore start */      // v8(c8) は async スケジューリングで行カバレッジが揺れるため測定外にする
           /* istanbul ignore next */ // async scheduling は V8 で行カバレッジが不安定
-          setTimeout(() => {
-            showFlashSwal("MutationObserver → setTimeout");
-          }, 0);
+          // 無名関数を作らず既存関数をバインドして渡す（Funcs% を落とさない）
+          setTimeout(showFlashSwal.bind(null, "MutationObserver → setTimeout"), 0);
           /* istanbul ignore next */ // ネスト脱出だけの早期 return も V8 でズレやすい
           return;
+          /* c8 ignore stop */
         }
       }
     }

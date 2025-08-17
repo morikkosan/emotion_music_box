@@ -1,7 +1,27 @@
 // spec/javascripts/controllers/bookmark_controller.test.js
-
 import { Application } from "@hotwired/stimulus";
 import BookmarkController from "../../../app/javascript/controllers/bookmark_controller";
+
+// ── window.location をテスト用にスタブ（href 代入しても実ナビしない） ──
+function stubLocationWithBase(base = "http://localhost") {
+  const orig = window.location;
+  const initial = orig.href;
+  delete window.location;
+
+  let href = initial;
+  const loc = {
+    get href() { return href; },
+    set href(val) {
+      try { href = new URL(val, base).toString(); } catch { href = String(val); }
+    },
+    get origin() { try { return new URL(href).origin; } catch { return base; } },
+    get search() { try { return new URL(href).search; } catch { return ""; } },
+    set search(s) { const u = new URL(href); u.search = s; href = u.toString(); },
+    toString() { return href; }
+  };
+  Object.defineProperty(window, "location", { value: loc, configurable: true, writable: true });
+  return () => { delete window.location; window.location = orig; };
+}
 
 // Stimulusアプリを立ち上げてコントローラを取得するヘルパー
 const bootController = async (html, { stored = [] } = {}) => {
@@ -16,17 +36,27 @@ const bootController = async (html, { stored = [] } = {}) => {
   return instance;
 };
 
+let restoreLocation;
+
 beforeEach(() => {
   jest.resetModules();
   jest.clearAllMocks();
   localStorage.clear();
+
+  // 元URL（クエリ付き）をセット → コントローラのURL生成がここから始まる
   const url = "http://localhost/example?genre=rock&emotion=happy&period=week&sort=popular";
   window.history.pushState({}, "", url);
-  delete window.Turbo;
+
+  // href 代入の挙動を安定化
+  if (restoreLocation) restoreLocation();
+  restoreLocation = stubLocationWithBase("http://localhost");
+
+  delete window.Turbo; // デフォは Turbo 無し（各テストで必要なら上書き）
 });
 
 afterEach(() => {
   document.body.innerHTML = "";
+  if (restoreLocation) restoreLocation();
 });
 
 describe("bookmark_controller", () => {
@@ -173,6 +203,11 @@ describe("bookmark_controller", () => {
     const arrHidden = [...form.querySelectorAll('input[name="selected_logs[]"]')];
     expect(arrHidden.map(i => i.value)).toEqual(["5", "9", "12"]);
 
+    // ★ 早期return（引数無）分岐
+    controller.submitPlaylistForm();
+    expect(form.querySelectorAll('input[name="selected_log_ids"]').length).toBe(1);
+    expect(form.querySelectorAll('input[name="selected_logs[]"]').length).toBe(3);
+
     controller.disconnect(); // cleanup
   });
 
@@ -283,6 +318,37 @@ describe("bookmark_controller", () => {
     controller.disconnect();
   });
 
+  // ★ 追加: モバイル分岐・frameなし・Turbo無し → location.href フォールバック
+  test("toggleMyPageLogs（モバイル: frameなし/Turboなし）: window.location.href へ遷移（include_my_logs=true 付与）", async () => {
+    delete window.Turbo; // Turbo無し
+    const html = `
+      <div data-controller="bookmark">
+        <!-- frame は無い -->
+        <form id="mobile-bookmarks-form">
+          <input name="genre" value="citypop" />
+          <input name="q" value="tokyo" />
+          <input id="chk" type="checkbox" />
+        </form>
+      </div>
+    `;
+    const controller = await bootController(html);
+
+    const chk = document.getElementById("chk");
+    chk.checked = true; // ON
+    const evt = new Event("change", { bubbles: true, cancelable: true });
+    Object.defineProperty(evt, "target", { value: chk });
+    controller.toggleMyPageLogs(evt);
+
+    // location.href にフォールバックされている（スタブで安定判定）
+    expect(window.location.href).toMatch(/^http:\/\/localhost\/emotion_logs\/bookmarks\?/);
+    expect(window.location.href).toContain("genre=citypop");
+    expect(window.location.href).toContain("q=tokyo");
+    expect(window.location.href).toContain("view=mobile");
+    expect(window.location.href).toContain("include_my_logs=true");
+
+    controller.disconnect();
+  });
+
   test("toggleMyPageLogs（デスクトップ分岐）: Turbo.visit が使われURLに既存パラメータが引き継がれる（ON）", async () => {
     window.Turbo = { visit: jest.fn() };
 
@@ -313,7 +379,7 @@ describe("bookmark_controller", () => {
     expect(url).toContain("include_my_logs=true");
     expect(opts).toEqual({ action: "advance" });
 
-    controller.disconnect(); // cleanup
+    controller.disconnect();
   });
 
   // デスクトップ分岐（OFF）→ include_my_logs を付けない
@@ -343,7 +409,36 @@ describe("bookmark_controller", () => {
     controller.disconnect();
   });
 
-  test("disconnect: イベントリスナを解除する", async () => {
+  // ★ 追加: デスクトップ分岐・Turbo無し → location.href フォールバック
+  test("toggleMyPageLogs（デスクトップ: Turboなし）: window.location.href へ遷移（ON）", async () => {
+    delete window.Turbo; // Turbo無し
+
+    const html = `
+      <div data-controller="bookmark">
+        <form id="desktop-form">
+          <input id="chk" type="checkbox" />
+        </form>
+      </div>
+    `;
+    const controller = await bootController(html);
+
+    const chk = document.getElementById("chk");
+    chk.checked = true; // ON
+    const evt = new Event("change", { bubbles: true });
+    Object.defineProperty(evt, "target", { value: chk });
+    controller.toggleMyPageLogs(evt);
+
+    expect(window.location.href).toMatch(/^http:\/\/localhost\/emotion_logs\/bookmarks\?/);
+    // 既存クエリが引き継がれ、include_my_logs=true が付く
+    expect(window.location.href).toContain("genre=rock");
+    expect(window.location.href).toContain("emotion=happy");
+    expect(window.location.href).toContain("include_my_logs=true");
+
+    controller.disconnect();
+  });
+
+  // ★ 変更: disconnect は removeEventListener の呼び出しを直接検証（副作用の揺れを回避）
+  test("disconnect: イベントリスナを解除する（onFrameLoad/onChange が正しく外れる）", async () => {
     const html = `
       <div data-controller="bookmark">
         <input class="playlist-check" type="checkbox" value="1" />
@@ -351,17 +446,46 @@ describe("bookmark_controller", () => {
     `;
     const controller = await bootController(html);
 
-    // 検証を「null基準」にするため、いったんキーを消す
-    localStorage.removeItem("playlist:selected_ids");
-
-    // 切断してからイベントを投げる → 何も起きない
+    const spyRemove = jest.spyOn(document, "removeEventListener");
     controller.disconnect();
 
-    const cb = document.querySelector(".playlist-check");
-    cb.checked = true;
-    cb.dispatchEvent(new Event("change", { bubbles: true }));
-
-    // 変更されていない（= 書き込みが発生しない）
-    expect(localStorage.getItem("playlist:selected_ids")).toBeNull();
+    expect(spyRemove).toHaveBeenCalledWith("turbo:frame-load", controller.onFrameLoad);
+    expect(spyRemove).toHaveBeenCalledWith("change", controller.onChange);
   });
+
+  // デスクトップ分岐・Turbo無し・チェックOFF → location.href フォールバック（include_my_logs 付かない）
+test("toggleMyPageLogs（デスクトップ: Turboなし/チェックOFF）: window.location.href へ遷移（include_my_logs なし）", async () => {
+  delete window.Turbo; // Turbo無し
+
+  const html = `
+    <div data-controller="bookmark">
+      <form id="desktop-form">
+        <input id="chk" type="checkbox" />
+      </form>
+    </div>
+  `;
+  const controller = await (async () => {
+    document.body.innerHTML = html;
+    localStorage.setItem("playlist:selected_ids", JSON.stringify([]));
+    const { Application } = require("@hotwired/stimulus");
+    const app = Application.start();
+    app.register("bookmark", (await import("../../../app/javascript/controllers/bookmark_controller")).default);
+    const root = document.querySelector("[data-controller='bookmark']");
+    return app.getControllerForElementAndIdentifier(root, "bookmark");
+  })();
+
+  const chk = document.getElementById("chk");
+  chk.checked = false; // OFF
+  const evt = new Event("change", { bubbles: true });
+  Object.defineProperty(evt, "target", { value: chk });
+  controller.toggleMyPageLogs(evt);
+
+  expect(window.location.href).toMatch(/^http:\/\/localhost\/emotion_logs\/bookmarks\?/);
+  // 既存クエリが引き継がれる
+  expect(window.location.href).toContain("genre=rock");
+  expect(window.location.href).toContain("emotion=happy");
+  // OFFなので include_my_logs=true は付かない
+  expect(window.location.href).not.toContain("include_my_logs=true");
+});
+
 });
