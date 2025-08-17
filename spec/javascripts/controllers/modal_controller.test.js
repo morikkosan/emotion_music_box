@@ -1,4 +1,3 @@
-// spec/javascripts/controllers/modal_controller.test.js
 /**
  * 対象: app/javascript/controllers/modal_controller.js
  * ねらい:
@@ -13,6 +12,7 @@
  *    ・backdrop/ body を掃除
  *  - turbo:before-stream-render (remove/replace × target=modal-container):
  *    ・開いているモーダルを安全に閉じる
+ *  - 例外系/存在しない系の枝も網羅（dispose が throw / desc 無し / container 無し / 非 Turbo-Stream）
  */
 
 jest.mock("@hotwired/turbo-rails", () => ({}), { virtual: true });
@@ -84,6 +84,7 @@ function stubLocationWithBase(base = "https://example.com") {
 describe("modal_controller", () => {
   let ModalModule;
   let ControllerClass;
+  let ctrl; // コントローラインスタンス
 
   beforeEach(async () => {
     jest.resetModules();
@@ -127,9 +128,9 @@ describe("modal_controller", () => {
     ControllerClass = (await import("../../../app/javascript/controllers/modal_controller.js")).default;
 
     // Stimulusを使わず手動接続
-    const instance = new ControllerClass();
-    instance.element = current;
-    instance.connect();
+    ctrl = new ControllerClass();
+    ctrl.element = current;
+    ctrl.connect();
 
     // 既存モーダルの hidden 発火（hide→次tick）を待つ
     await new Promise((r) => setTimeout(r, 0));
@@ -173,7 +174,7 @@ describe("modal_controller", () => {
     // hidden を人工発火
     current.dispatchEvent(new Event("hidden.bs.modal", { bubbles: true }));
 
-    // 非同期処理はないが、保険でtick待ち
+    // 保険でtick待ち
     await new Promise((r) => setTimeout(r, 0));
 
     // dispose が呼ばれ、要素削除 & container クリア
@@ -221,7 +222,7 @@ describe("modal_controller", () => {
     open.className = "modal show";
     document.body.appendChild(open);
 
-    // (A) remove のケース → ★ DOMに追加してから dispatch（document.listener で拾えるように）
+    // (A) remove のケース
     const streamA = document.createElement("turbo-stream");
     streamA.setAttribute("action", "remove");
     streamA.setAttribute("target", "modal-container");
@@ -267,5 +268,158 @@ describe("modal_controller", () => {
     await new Promise((r) => setTimeout(r, 0));
     expect(document.getElementById("keep-modal")).not.toBeNull();
     stream.remove();
+  });
+
+  test("disconnect: dispose を呼び、hidden リスナを解除する（多重解除でも安全）", () => {
+    const current = document.getElementById("current-modal");
+    const inst = ModalModule.Modal.getInstance(current);
+    const removeSpy = jest.spyOn(current, "removeEventListener");
+
+    ctrl.disconnect();
+
+    expect(inst.dispose).toHaveBeenCalledTimes(1);
+    expect(removeSpy).toHaveBeenCalledWith("hidden.bs.modal", expect.any(Function));
+  });
+
+  // ───────────────────── ここから追加の枝埋め（行 18-34, 38, 52, 62, 74, 83 対応） ─────────────────────
+
+  test("connect: 既存モーダルの getInstance 経路（既にインスタンスあり）＋ hidden 後 dispose が throw しても落ちない", async () => {
+    // 既存のモーダルを再度作成（今回はこちらを検証）
+    const existing = document.createElement("div");
+    existing.id = "existing-modal-gi";
+    existing.className = "modal show";
+    document.body.appendChild(existing);
+
+    // 既存インスタンスを先に作っておく → getInstance 経路に入る
+    const inst = ModalModule.Modal.getOrCreateInstance(existing);
+    jest.spyOn(inst, "dispose").mockImplementation(() => { throw new Error("dispose boom"); });
+
+    // 新たな current（desc はあえて無し → focus 分岐の不在側も踏む）
+    const current = document.createElement("div");
+    current.id = "current-modal-gi";
+    current.className = "modal";
+    current.setAttribute("data-controller", "modal");
+    current.innerHTML = `<div class="modal-dialog"><div class="modal-content"></div></div>`;
+    document.getElementById("modal-container").appendChild(current);
+
+    const c = new ControllerClass();
+    c.element = current;
+    c.connect();
+
+    // hide → hidden (次tick)
+    await new Promise(r => setTimeout(r, 0));
+
+    // 既存は除去済み（dispose は throw でも catch で握りつぶして remove 済）
+    expect(document.getElementById("existing-modal-gi")).toBeNull();
+
+    // current は show 済み
+    expect(ModalModule.Modal.getInstance(current)).toBeTruthy();
+  });
+
+  test("current の hidden ハンドラ: this.bs.dispose が throw しても落ちずに要素と container を片付ける", async () => {
+    // 新しい current（container 無し＝#modal-container 分岐の不在側も踏む）
+    // まず既存 container を消す
+    document.getElementById("modal-container")?.remove();
+
+    const current = document.createElement("div");
+    current.id = "current-modal-throw";
+    current.className = "modal";
+    current.setAttribute("data-controller", "modal");
+    current.innerHTML = `<div class="modal-dialog"><div class="modal-content"></div></div>`;
+    document.body.appendChild(current);
+
+    const c = new ControllerClass();
+    c.element = current;
+    c.connect();
+
+    // this.bs.dispose を throw させる
+    jest.spyOn(c.bs, "dispose").mockImplementation(() => { throw new Error("dispose boom"); });
+
+    // hidden を人工発火
+    current.dispatchEvent(new Event("hidden.bs.modal", { bubbles: true }));
+    await new Promise(r => setTimeout(r, 0));
+
+    // 要素は除去され、container が無くても落ちない
+    expect(document.getElementById("current-modal-throw")).toBeNull();
+  });
+
+  test("turbo:before-cache: dispose が throw しても catch で握りつぶして remove まで到達する", async () => {
+    const x = document.createElement("div");
+    x.id = "modal-cache-throw";
+    x.className = "modal show";
+    document.body.appendChild(x);
+    const inst = ModalModule.Modal.getOrCreateInstance(x);
+    jest.spyOn(inst, "dispose").mockImplementation(() => { throw new Error("boom"); });
+
+    document.dispatchEvent(new Event("turbo:before-cache", { bubbles: true }));
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(document.getElementById("modal-cache-throw")).toBeNull();
+  });
+
+  test("turbo:before-stream-render: 非 Turbo-Stream（target が DIV）では何もしない（isTS=false分岐）", async () => {
+    const keep = document.createElement("div");
+    keep.id = "keep-non-ts";
+    keep.className = "modal show";
+    document.body.appendChild(keep);
+
+    const div = document.createElement("div"); // tagName: DIV
+    document.body.appendChild(div);
+    div.dispatchEvent(new CustomEvent("turbo:before-stream-render", { bubbles: true, cancelable: true }));
+
+    await new Promise(r => setTimeout(r, 0));
+    expect(document.getElementById("keep-non-ts")).not.toBeNull();
+    div.remove();
+  });
+
+  test("turbo:before-stream-render: 条件一致でも dispose が throw しても remove まで到達（catch 分岐）", async () => {
+    const open = document.createElement("div");
+    open.id = "stream-open-throw";
+    open.className = "modal show";
+    document.body.appendChild(open);
+    const inst = ModalModule.Modal.getOrCreateInstance(open);
+    jest.spyOn(inst, "dispose").mockImplementation(() => { throw new Error("boom"); });
+
+    const stream = document.createElement("turbo-stream");
+    stream.setAttribute("action", "remove");
+    stream.setAttribute("target", "modal-container");
+    document.body.appendChild(stream);
+    stream.dispatchEvent(new CustomEvent("turbo:before-stream-render", { bubbles: true, cancelable: true }));
+
+    await new Promise(r => setTimeout(r, 0));
+    expect(document.getElementById("stream-open-throw")).toBeNull();
+    stream.remove();
+  });
+
+  test("connect: desc.focus() が throw しても catch で握りつぶして落ちない（focus 例外分岐）", async () => {
+    const container = document.getElementById("modal-container") || (() => {
+      const c = document.createElement("div");
+      c.id = "modal-container";
+      document.body.appendChild(c);
+      return c;
+    })();
+
+    const current = document.createElement("div");
+    current.id = "current-modal-focus-throw";
+    current.className = "modal";
+    current.setAttribute("data-controller", "modal");
+    current.innerHTML = `
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <textarea id="emotion_log_description"></textarea>
+        </div>
+      </div>
+    `;
+    container.appendChild(current);
+
+    const c = new ControllerClass();
+    c.element = current;
+
+    // rAF 内で呼ばれる focus をわざと throw
+    // requestAnimationFrame は同期実行にしてあるので、この mock で catch 分岐に入る
+    const desc = current.querySelector("#emotion_log_description");
+    jest.spyOn(desc, "focus").mockImplementation(() => { throw new Error("focus boom"); });
+
+    expect(() => c.connect()).not.toThrow();
   });
 });

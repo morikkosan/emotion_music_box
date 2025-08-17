@@ -4,7 +4,6 @@
  * - DOMContentLoaded は捕捉して必要時のみ実行（累積防止）
  * - bodyのdata-*は毎テストで確実にクリア
  */
-
 describe("custom/flash_messages.js", () => {
   let originalLocation;
   let capturedDomReady = null;
@@ -69,6 +68,7 @@ describe("custom/flash_messages.js", () => {
     Object.defineProperty(window, "location", {
       value: { href: "http://localhost/", assign: jest.fn(), replace: jest.fn() },
       writable: true,
+      configurable: true,
     });
 
     // DOMContentLoaded 捕捉（登録はしない）
@@ -87,7 +87,11 @@ describe("custom/flash_messages.js", () => {
   afterEach(() => {
     jest.useRealTimers();
     jest.restoreAllMocks();
-    Object.defineProperty(window, "location", { value: originalLocation });
+    Object.defineProperty(window, "location", {
+      value: originalLocation,
+      writable: true,
+      configurable: true,
+    });
     capturedDomReady = null;
     clearBodyFlashAttrs();
   });
@@ -167,6 +171,9 @@ describe("custom/flash_messages.js", () => {
     expect(document.body.dataset.flashAlert).toBe("");
     expect(document.querySelector("#flash-container")).toBeNull();
     expect(window._flashShownOnce).toBe("flashAlert:失敗しました");
+
+    // error 側 didClose も実行
+    opts.didClose();
   });
 
   test('flashAlert が "すでにログイン済みです" の場合は表示しない', async () => {
@@ -208,6 +215,11 @@ describe("custom/flash_messages.js", () => {
     const opts = Swal.fire.mock.calls[0][0];
     expect(opts.icon).toBe("question");
     expect(opts.showCancelButton).toBe(true);
+
+    // 🔸 ここが追加：logout モーダルの didClose を踏んで関数カバレッジを回収
+    window._flashShownOnce = "dummy"; // 変化が起きたことも確認
+    opts.didClose();
+    expect(window._flashShownOnce).toBeNull();
 
     await Promise.resolve();
     await flushAllTimers();
@@ -256,7 +268,7 @@ describe("custom/flash_messages.js", () => {
     const popupEl = document.createElement("div");
     popupEl.className = "cyber-popup";
 
-    const ev = new Event("hidden.bs.modal");
+    const ev = new Event("hidden.bs.modal", { bubbles: true });
     Object.defineProperty(ev, "target", { value: popupEl });
     document.dispatchEvent(ev);
 
@@ -329,18 +341,18 @@ describe("custom/flash_messages.js", () => {
     expect(Swal.fire).toHaveBeenCalledTimes(0);
   });
 
-  test("hidden.bs.modal: target 未定義でも落ちずに何も起きない（optional chaining の別経路）", () => {
+  test("hidden.bs.modal: Element 以外(Textノード)が target でも落ちずに何も起きない（optional chaining 経路）", () => {
     importModule();
 
     window._flashShownOnce = "flashNotice:SOMETHING";
 
-    const ev = new Event("hidden.bs.modal");
-    // target を「未定義」にする（optional chaining の event.target?. 経路を通す）
-    Object.defineProperty(ev, "target", { value: undefined });
+    // Textノードでイベントを発火（bubbles: true で document まで上げる）
+    const textNode = document.createTextNode("x");
+    document.body.appendChild(textNode);
+    const ev = new Event("hidden.bs.modal", { bubbles: true });
+    textNode.dispatchEvent(ev);
 
-    document.dispatchEvent(ev);
-
-    // 何も変化しない
+    // 何も変化しない（resetログも出ない）
     expect(window._flashShownOnce).toBe("flashNotice:SOMETHING");
     const resetLogged = console.log.mock.calls.some((c) => (c[0] || "").includes("モーダル閉じでリセット"));
     expect(resetLogged).toBe(false);
