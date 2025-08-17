@@ -33,9 +33,36 @@ describe("subscribeToPushNotifications", () => {
     jest.restoreAllMocks();
   });
 
-  test("未対応ブラウザなら何もしない", async () => {
+  test("未対応ブラウザなら何もしない（serviceWorker も PushManager も無い）", async () => {
     delete navigator.serviceWorker;
     delete window.PushManager;
+
+    await subscribeToPushNotifications();
+
+    expect(fetch).not.toHaveBeenCalled();
+    expect(console.warn).toHaveBeenCalledWith(
+      "PWA通知はこのブラウザでサポートされていません。"
+    );
+  });
+
+  // ★ 追加: serviceWorker はあるが PushManager が無い → OR の右側で早期 return
+  test("未対応: serviceWorker はあるが PushManager が無い → 何もしない", async () => {
+    // beforeEach で serviceWorker.ready は設定済み
+    delete window.PushManager; // ← ここだけ無効化
+
+    await subscribeToPushNotifications();
+
+    expect(fetch).not.toHaveBeenCalled();
+    expect(console.warn).toHaveBeenCalledWith(
+      "PWA通知はこのブラウザでサポートされていません。"
+    );
+  });
+
+  // ★ 追加: PushManager はあるが serviceWorker が無い → OR の左側で早期 return
+  test("未対応: PushManager はあるが serviceWorker が無い → 何もしない", async () => {
+    // PushManager は残す
+    Object.defineProperty(global.window, "PushManager", { value: function() {}, configurable: true });
+    delete navigator.serviceWorker; // ← こちらを無効化
 
     await subscribeToPushNotifications();
 

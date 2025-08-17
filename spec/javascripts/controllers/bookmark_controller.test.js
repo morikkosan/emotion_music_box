@@ -437,6 +437,33 @@ describe("bookmark_controller", () => {
     controller.disconnect();
   });
 
+  // ★ 追加: デスクトップ分岐・Turbo はあるが visit 無し → location.href フォールバック
+  test("toggleMyPageLogs（デスクトップ: Turbo はあるが visit なし）: window.location.href へ遷移（ON）", async () => {
+    window.Turbo = {}; // Turboオブジェクトのみ、visit 未定義
+
+    const html = `
+      <div data-controller="bookmark">
+        <form id="desktop-form">
+          <input id="chk" type="checkbox" />
+        </form>
+      </div>
+    `;
+    const controller = await bootController(html);
+
+    const chk = document.getElementById("chk");
+    chk.checked = true; // ON
+    const evt = new Event("change", { bubbles: true });
+    Object.defineProperty(evt, "target", { value: chk });
+    controller.toggleMyPageLogs(evt);
+
+    expect(window.location.href).toMatch(/^http:\/\/localhost\/emotion_logs\/bookmarks\?/);
+    expect(window.location.href).toContain("genre=rock");
+    expect(window.location.href).toContain("emotion=happy");
+    expect(window.location.href).toContain("include_my_logs=true");
+
+    controller.disconnect();
+  });
+
   // ★ 変更: disconnect は removeEventListener の呼び出しを直接検証（副作用の揺れを回避）
   test("disconnect: イベントリスナを解除する（onFrameLoad/onChange が正しく外れる）", async () => {
     const html = `
@@ -454,38 +481,37 @@ describe("bookmark_controller", () => {
   });
 
   // デスクトップ分岐・Turbo無し・チェックOFF → location.href フォールバック（include_my_logs 付かない）
-test("toggleMyPageLogs（デスクトップ: Turboなし/チェックOFF）: window.location.href へ遷移（include_my_logs なし）", async () => {
-  delete window.Turbo; // Turbo無し
+  test("toggleMyPageLogs（デスクトップ: Turboなし/チェックOFF）: window.location.href へ遷移（include_my_logs なし）", async () => {
+    delete window.Turbo; // Turbo無し
 
-  const html = `
-    <div data-controller="bookmark">
-      <form id="desktop-form">
-        <input id="chk" type="checkbox" />
-      </form>
-    </div>
-  `;
-  const controller = await (async () => {
-    document.body.innerHTML = html;
-    localStorage.setItem("playlist:selected_ids", JSON.stringify([]));
-    const { Application } = require("@hotwired/stimulus");
-    const app = Application.start();
-    app.register("bookmark", (await import("../../../app/javascript/controllers/bookmark_controller")).default);
-    const root = document.querySelector("[data-controller='bookmark']");
-    return app.getControllerForElementAndIdentifier(root, "bookmark");
-  })();
+    const html = `
+      <div data-controller="bookmark">
+        <form id="desktop-form">
+          <input id="chk" type="checkbox" />
+        </form>
+      </div>
+    `;
+    const controller = await (async () => {
+      document.body.innerHTML = html;
+      localStorage.setItem("playlist:selected_ids", JSON.stringify([]));
+      const { Application } = require("@hotwired/stimulus");
+      const app = Application.start();
+      app.register("bookmark", (await import("../../../app/javascript/controllers/bookmark_controller")).default);
+      const root = document.querySelector("[data-controller='bookmark']");
+      return app.getControllerForElementAndIdentifier(root, "bookmark");
+    })();
 
-  const chk = document.getElementById("chk");
-  chk.checked = false; // OFF
-  const evt = new Event("change", { bubbles: true });
-  Object.defineProperty(evt, "target", { value: chk });
-  controller.toggleMyPageLogs(evt);
+    const chk = document.getElementById("chk");
+    chk.checked = false; // OFF
+    const evt = new Event("change", { bubbles: true });
+    Object.defineProperty(evt, "target", { value: chk });
+    controller.toggleMyPageLogs(evt);
 
-  expect(window.location.href).toMatch(/^http:\/\/localhost\/emotion_logs\/bookmarks\?/);
-  // 既存クエリが引き継がれる
-  expect(window.location.href).toContain("genre=rock");
-  expect(window.location.href).toContain("emotion=happy");
-  // OFFなので include_my_logs=true は付かない
-  expect(window.location.href).not.toContain("include_my_logs=true");
-});
-
+    expect(window.location.href).toMatch(/^http:\/\/localhost\/emotion_logs\/bookmarks\?/);
+    // 既存クエリが引き継がれる
+    expect(window.location.href).toContain("genre=rock");
+    expect(window.location.href).toContain("emotion=happy");
+    // OFFなので include_my_logs=true は付かない
+    expect(window.location.href).not.toContain("include_my_logs=true");
+  });
 });
