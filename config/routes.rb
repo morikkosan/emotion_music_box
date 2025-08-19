@@ -41,7 +41,6 @@ Rails.application.routes.draw do
   resource :contact, only: [:new, :create], controller: :contacts
 
   get :my_emotion_logs,          to: "emotion_logs#my_emotion_logs"
-  get "jamendo/search",          to: "jamendo#search"
   get "/soundcloud_client_id",   to: "sound_cloud#client_id"
   get "/soundcloud/search",      to: "sound_cloud#search"
   get "tags",                    to: "tags#index"
