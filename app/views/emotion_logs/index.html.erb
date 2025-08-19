@@ -2,6 +2,9 @@
 
   <div id="desktop-view">
 
+    <!-- ▼ 追加：デスクトップ版の「一番上」にフッター -->
+    <%= render "shared/footer" %>
+
     <!-- app/views/emotion_logs/index.html.erb -->
     <% content_for :title, "エモミュ" %>
     <%= render 'shared/header' %>
@@ -170,6 +173,10 @@
 
   <!-- ================= モバイルビュー ================= -->
   <div id="mobile-view">
+
+    <!-- ▼ 追加：モバイル版の「一番上」にフッター -->
+    <%= render "shared/footer" %>
+
     <% content_for :title, "エモミュ" %>
     <div class="container mt-3 position-relative">
 

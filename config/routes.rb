@@ -46,6 +46,10 @@ Rails.application.routes.draw do
   get "tags",                    to: "tags#index"
   get "tags/search",             to: "tags#search"
   get "/terms",                  to: "pages#terms", as: :terms
+  get "/privacy", to: "pages#privacy", as: :privacy
+  get "/cookie",  to: "pages#cookie",  as: :cookie_policy
+
+
 
   post '/line_bot/callback',     to: 'line_bot#callback'
   get  '/line_add_friends',      to: 'line_bot#add_friends', as: 'line_add_friends'
