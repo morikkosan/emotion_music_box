@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RAILS_ENV: test
-      DISABLE_SPRING: 1       # ★ Springを完全無効化（これでエラー消えます）
+      DISABLE_SPRING: 1   # Spring 無効（CIでは不要＆不安定化要因）
 
     services:
       postgres:
@@ -51,7 +51,6 @@ jobs:
           ruby-version: '3.2'
           bundler-cache: true
 
-      # --- Jest 用 (既存を壊さず追加してある想定) ---
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -60,17 +59,16 @@ jobs:
 
       - name: Install JS deps
         run: yarn install --frozen-lockfile
-      # ---------------------------------------------
+
+      - name: Install gems
+        run: bundle install --jobs 4 --retry 3
 
       - name: Show current database.yml
         run: cat config/database.yml
 
-      - name: Prepare database
-        run: |
-          # どちらでもOK：下のどちらか1行で十分
-          bundle exec rails db:prepare
-          # もし上で不安なら従来通りでも可：
-          # bundle exec rails db:create db:schema:load
+      # ★ seedを実行しない（db:prepareはseedも呼ぶためNG）
+      - name: Prepare database (skip seeds)
+        run: bundle exec rails db:create db:schema:load
 
       - name: Run Jest tests
         env:
