@@ -152,3 +152,16 @@
 - **SNSシェア機能（将来的に対応予定）**
   - ユーザーが自分の感情記録やお気に入りの楽曲を、**X、InstagramなどのSNSにシェア**できるよう、各SNSシェアのAPIや**OpenGraphメタ情報**を組み込む。
 
+
+
+spec/javascripts/globals/application.entry.test.js
+…エントリの基本（UJSログ、push二重防止、ローダー、モーダル保険などの主要分岐）
+
+spec/javascripts/globals/application.entry.extra.test.js
+…アバター（Crop確定／Cloudinary 分岐、recommend など周辺UIの追加分）
+
+spec/javascripts/globals/application.entry.toppers.test.js
+…取りこぼし潰し（turbo:before-cache、2つの MutationObserver、初期ログの枝）
+
+spec/javascripts/globals/application.entry.tinygap.test.js ← これを追加
+…最後の微細な枝や条件をピンポイントで踏む“仕上げ”用
