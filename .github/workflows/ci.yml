@@ -51,6 +51,17 @@ jobs:
       - name: Install gems
         run: bundle install --jobs 4 --retry 3
 
+      # ▼▼ ここから“追加” (既存は不変更) ▼▼
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install JS deps
+        run: yarn install --frozen-lockfile
+      # ▲▲ 追加ここまで ▲▲
+
       - name: Show current database.yml
         run: cat config/database.yml
 
@@ -59,6 +70,12 @@ jobs:
           RAILS_ENV: test
         run: |
           bundle exec rails db:create db:schema:load
+
+      # ▼▼ (Jest実行) ▼▼
+      - name: Run Jest tests
+        env:
+          CI: true
+        run: yarn test
 
       - name: Run RSpec tests
         env:
