@@ -191,12 +191,15 @@
 
       <div class="dropdown-menu" data-user-dropdown-target="menu">
         <!-- ✅ IDは付けない / Railsのログアウトパスで -->
-        <%= link_to destroy_user_session_path,
-                    class: "dropdown-item d-flex align-items-center text-danger",
-                    data: { turbo_method: :delete } do %>
-          <%= image_tag "log_out.webp", class: "dropdown-icon me-2", alt: "" %>
-          ログアウト
-        <% end %>
+        <%= button_to destroy_user_session_path,
+              method: :delete,
+              form:  { data: { turbo: false, logout_form: true }, class: "m-0 p-0 d-inline" },
+              class: "dropdown-item d-flex align-items-center text-danger" do %>
+  <%= image_tag "log_out.webp", class: "dropdown-icon me-2", alt: "" %>
+  ログアウト
+<% end %>
+
+
 
         <div class="dropdown-divider"></div>
 
