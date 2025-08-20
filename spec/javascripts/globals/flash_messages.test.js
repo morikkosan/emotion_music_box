@@ -203,63 +203,105 @@ describe("custom/flash_messages.js", () => {
   });
 
   test("DOMContentLoaded 後に logout をクリック → 確認モーダル後、form.submit が呼ばれる (isConfirmed=true)", async () => {
-    importModule();
+  importModule();
 
-    expect(typeof capturedDomReady).toBe("function");
-    capturedDomReady();
+  // ▼ 本番実装に合わせて：logout専用フォームを先にDOMへ
+  const form = document.createElement("form");
+  form.setAttribute("action", "/sign_out");
+  form.setAttribute("method", "post");
+  form.dataset.logoutForm = "true"; // data-logout-form="true"
+  document.body.appendChild(form);
 
-    const submitSpy = jest.spyOn(HTMLFormElement.prototype, "submit").mockImplementation(() => {});
-    document.getElementById("logout-link").click();
+  // DOMContentLoaded をこのタイミングで発火（↑のフォームを拾わせる）
+  expect(typeof capturedDomReady).toBe("function");
+  capturedDomReady();
 
-    expect(Swal.fire).toHaveBeenCalledTimes(1);
-    const opts = Swal.fire.mock.calls[0][0];
-    expect(opts.icon).toBe("question");
-    expect(opts.showCancelButton).toBe(true);
+  // submit() を監視
+  const submitSpy = jest
+    .spyOn(HTMLFormElement.prototype, "submit")
+    .mockImplementation(() => {});
 
-    // 🔸 ここが追加：logout モーダルの didClose を踏んで関数カバレッジを回収
-    window._flashShownOnce = "dummy"; // 変化が起きたことも確認
-    opts.didClose();
-    expect(window._flashShownOnce).toBeNull();
+  // ▼ submitイベントを発火（jsdomでは click だけだと送信されない事がある）
+  form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
 
-    await Promise.resolve();
-    await flushAllTimers();
+  // SweetAlert が開く
+  expect(Swal.fire).toHaveBeenCalledTimes(1);
+  const opts = Swal.fire.mock.calls[0][0];
+  expect(opts.icon).toBe("question");
+  expect(opts.showCancelButton).toBe(true);
 
-    expect(submitSpy).toHaveBeenCalledTimes(1);
-  });
+  // didClose でガード解除も踏む
+  window._flashShownOnce = "dummy";
+  opts.didClose();
+  expect(window._flashShownOnce).toBeNull();
+
+  // resolve → form.submit() が呼ばれる
+  await Promise.resolve();
+  jest.runOnlyPendingTimers();
+  await Promise.resolve();
+
+  expect(submitSpy).toHaveBeenCalledTimes(1);
+});
+
 
   test("logout キャンセル時は submit されない (isConfirmed=false)", async () => {
-    global.Swal = { fire: jest.fn().mockResolvedValue({ isConfirmed: false }) };
+  // Swal をキャンセル解決に差し替え
+  global.Swal = { fire: jest.fn().mockResolvedValue({ isConfirmed: false }) };
 
-    importModule();
-    expect(typeof capturedDomReady).toBe("function");
-    capturedDomReady();
+  importModule();
 
-    const submitSpy = jest.spyOn(HTMLFormElement.prototype, "submit").mockImplementation(() => {});
-    document.getElementById("logout-link").click();
+  // ▼ logout専用フォームを先にDOMへ
+  const form = document.createElement("form");
+  form.setAttribute("action", "/sign_out");
+  form.setAttribute("method", "post");
+  form.dataset.logoutForm = "true";
+  document.body.appendChild(form);
 
-    await Promise.resolve();
-    await flushAllTimers();
+  expect(typeof capturedDomReady).toBe("function");
+  capturedDomReady();
 
-    expect(Swal.fire).toHaveBeenCalledTimes(1);
-    expect(submitSpy).not.toHaveBeenCalled();
-  });
+  const submitSpy = jest
+    .spyOn(HTMLFormElement.prototype, "submit")
+    .mockImplementation(() => {});
 
-  test("Swal 不在で logout クリック → alert が呼ばれ、location.href が書き換わる", () => {
-    delete global.Swal;
+  form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
 
-    importModule();
-    expect(typeof capturedDomReady).toBe("function");
-    capturedDomReady();
+  await Promise.resolve();
+  jest.runOnlyPendingTimers();
+  await Promise.resolve();
 
-    const alertSpy = jest.spyOn(window, "alert").mockImplementation(() => {});
-    const link = document.getElementById("logout-link");
-    link.setAttribute("href", "/logout_now");
+  expect(Swal.fire).toHaveBeenCalledTimes(1);
+  expect(submitSpy).not.toHaveBeenCalled();
+});
 
-    link.click();
 
-    expect(alertSpy).toHaveBeenCalled();
-    expect(window.location.href).toBe("http://localhost/logout_now");
-  });
+  test("Swal 不在で logout submit → alert は出ず、デフォルト送信（preventDefault されない）", () => {
+  delete global.Swal;
+
+  importModule();
+
+  // ▼ logout専用フォームを先にDOMへ
+  const form = document.createElement("form");
+  form.setAttribute("action", "/sign_out");
+  form.setAttribute("method", "post");
+  form.dataset.logoutForm = "true";
+  document.body.appendChild(form);
+
+  expect(typeof capturedDomReady).toBe("function");
+  capturedDomReady();
+
+  // alert は呼ばれない
+  const alertSpy = jest.spyOn(window, "alert").mockImplementation(() => {});
+
+  // preventDefault されていないことを dispatch の戻り値で確認
+  const ev = new Event("submit", { bubbles: true, cancelable: true });
+  const result = form.dispatchEvent(ev);
+
+  expect(alertSpy).not.toHaveBeenCalled();
+  expect(result).toBe(true);                 // = preventDefault されていない
+  expect(ev.defaultPrevented).toBe(false);   // 念のため
+});
+
 
   test("hidden.bs.modal (cyber-popup) で _flashShownOnce がリセット（肯定分岐）", () => {
     importModule();
@@ -360,28 +402,40 @@ describe("custom/flash_messages.js", () => {
 
   // ★ ここが追加（CSRFメタ無しの else 分岐を踏む）
   test("logout 確認OK時: csrf meta が無い分岐（authenticity_token 未付与でも submit する）", async () => {
-    // meta を import 前に除去して、 if (csrfTokenMeta) の else 側を通す
-    const meta = document.querySelector('meta[name="csrf-token"]');
-    if (meta) meta.parentNode.removeChild(meta);
+  // meta を import 前に除去しておく
+  const meta = document.querySelector('meta[name="csrf-token"]');
+  if (meta) meta.parentNode.removeChild(meta);
 
-    importModule();
-    expect(typeof capturedDomReady).toBe("function");
-    capturedDomReady();
+  importModule();
 
-    const submitSpy = jest
-      .spyOn(HTMLFormElement.prototype, "submit")
-      .mockImplementation(() => {});
+  // ▼ logout専用フォームを先にDOMへ
+  const form = document.createElement("form");
+  form.setAttribute("action", "/sign_out");
+  form.setAttribute("method", "post");
+  form.dataset.logoutForm = "true";
+  document.body.appendChild(form);
 
-    // クリック → Swal.resolve → submit
-    document.getElementById("logout-link").click();
-    await Promise.resolve();
-    await flushAllTimers();
+  expect(typeof capturedDomReady).toBe("function");
+  capturedDomReady();
 
-    expect(Swal.fire).toHaveBeenCalledTimes(1);
-    expect(submitSpy).toHaveBeenCalled();
+  const submitSpy = jest
+    .spyOn(HTMLFormElement.prototype, "submit")
+    .mockImplementation(() => {});
 
-    // authenticity_token が追加されていないことを確認（else 分岐の証跡）
-    const tokenInput = document.querySelector('input[name="authenticity_token"]');
-    expect(tokenInput).toBeNull();
-  });
+  // 送信フロー開始
+  form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+
+  await Promise.resolve();
+  jest.runOnlyPendingTimers();
+  await Promise.resolve();
+
+  // Swal が1回開いた後に submit 実行
+  expect(Swal.fire).toHaveBeenCalledTimes(1);
+  expect(submitSpy).toHaveBeenCalled();
+
+  // authenticity_token は追加されない（フォーム経路では生成しない想定）
+  const tokenInput = document.querySelector('input[name="authenticity_token"]');
+  expect(tokenInput).toBeNull();
+});
+
 });
