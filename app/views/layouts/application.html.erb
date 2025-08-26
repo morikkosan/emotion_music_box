@@ -86,7 +86,7 @@
 
 
   <!-- ここから下は元の内容を**絶対に壊さずそのまま**にしてください -->
-  <div id="screen-cover-loading" aria-live="polite" aria-label="ローディング画面">
+ <div id="screen-cover-loading" aria-hidden="true" aria-live="polite" aria-label="ローディング画面">
     <div class="pacman-wrapper" aria-hidden="true">
       <div class="circle-packman-1"></div>
       <div class="loading-text">Now Loading...</div>
@@ -234,6 +234,7 @@
 <div id="mobile-super-search-root" data-turbo-permanent>
   <%= render "emotion_logs/mobile_super_search" %>
 </div>
+
 
 </body>
 </html>

@@ -31,8 +31,7 @@
 
 
 html.preload body { visibility: hidden; }
-js
-コードをコピーする
+
 
 .mobile-only { display: none !important; }
 .desktop-only { display: block !important; }
@@ -46,4 +45,23 @@ body.modal-open #bottom-player {
   z-index: 20000 !important;
 }
 
+
+// showページのプレーヤー高さ
+body.playlist-show-page .bottom-player {
+  position: fixed !important;
+  bottom: 50px !important;      /* デスクトップ時 */
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 2000 !important;
+}
+
+@media (max-width: 996px) {
+  html body .bottom-player {
+    position: fixed !important;  // ← static をねじ伏せる
+    bottom: 80px !important;    // ← 上にずらしたい値
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 2000 !important;    // ← 必要なら
+  }
+}
 
