@@ -272,7 +272,7 @@ document.addEventListener("turbo:load", () => {
           fd.append("file", resizedBlob, "avatar.jpg");
           fd.append("upload_preset", window.CLOUDINARY_UPLOAD_PRESET);
 
-          const res = await axios.post(
+        const res = await axios.post(
             `https://api.cloudinary.com/v1_1/${window.CLOUDINARY_CLOUD_NAME}/upload`,
             fd
           );
@@ -360,31 +360,6 @@ function hideScreenCover() {
   }
 }
 
-// スマホ版プレイリストモーダル
-document.addEventListener("DOMContentLoaded", function() {
-  var btn = document.getElementById("show-playlist-modal-mobile");
-  if (!btn) return;
-  btn.addEventListener("click", function(e) {
-    e.preventDefault();
-
-    var modal = document.getElementById("playlist-modal-mobile");
-    var content = document.getElementById("playlist-modal-content-mobile");
-    if (!modal || !content) return;
-
-    fetch('/emotion_logs/playlist_sidebar_modal', {
-      headers: { 'Accept': 'text/html' }
-    })
-      .then(response => response.text())
-      .then(html => {
-        content.innerHTML = html;
-        modal.style.display = "block";
-        modal.onclick = function(ev) {
-          if (ev.target === modal) modal.style.display = "none";
-        }
-      });
-  });
-});
-
 window.addEventListener("DOMContentLoaded", hideScreenCover);
 window.addEventListener("load", hideScreenCover);
 document.addEventListener("turbo:load", hideScreenCover);
@@ -411,3 +386,77 @@ document.addEventListener("turbo:before-stream-render", (event) => {
     });
   };
 });
+
+/* ===========================================================
+   📱 スマホ版プレイリスト「一覧」モーダル（fetch なし）
+   - フッターの #show-playlist-modal-mobile を毎回確実に動かす
+   - Turbo 遷移のたびに再バインド（重複防止付き）
+   - 画面遷移時に安全に閉じる保険あり
+   =========================================================== */
+// ボタンにクリックをバインド（重複防止）
+function bindMobilePlaylistButton() {
+  const btn = document.getElementById("show-playlist-modal-mobile");
+  if (!btn || btn.dataset.bound === "1") return;
+  btn.dataset.bound = "1";
+
+  btn.addEventListener("click", function(e) {
+    e.preventDefault();
+
+    const modal = document.getElementById("playlist-modal-mobile");
+    if (!modal) return;
+
+    // 開く前に黒幕の残骸だけ軽掃除（他モーダルが開いていれば触らない）
+    try {
+      const anyOpen = document.querySelector(".modal.show");
+      if (!anyOpen) {
+        document.querySelectorAll(".modal-backdrop, .offcanvas-backdrop").forEach(el => el.remove());
+        document.body.classList.remove("modal-open");
+        document.body.style.removeProperty("overflow");
+        document.body.style.removeProperty("padding-right");
+        document.body.style.pointerEvents = "auto";
+      }
+    } catch (_) {}
+
+    const BS = window.bootstrap && window.bootstrap.Modal;
+    if (BS) {
+      BS.getOrCreateInstance(modal, { backdrop: true, keyboard: true }).show();
+    } else {
+      // フォールバック（Bootstrap未ロード時）
+      modal.style.display = "block";
+      modal.classList.add("show");
+      modal.setAttribute("aria-hidden", "false");
+      modal.addEventListener("click", function(ev) {
+        if (ev.target === modal) {
+          modal.classList.remove("show");
+          modal.style.display = "none";
+          modal.setAttribute("aria-hidden", "true");
+        }
+      }, { once: true });
+    }
+  });
+}
+document.addEventListener("DOMContentLoaded", bindMobilePlaylistButton);
+document.addEventListener("turbo:load",      bindMobilePlaylistButton);
+document.addEventListener("turbo:render",    bindMobilePlaylistButton);
+
+// 保険：画面差し替えやキャッシュ保存前、復帰時に必ず閉じる
+function hideMobilePlaylistModalSafely() {
+  const el = document.getElementById("playlist-modal-mobile");
+  const BS = window.bootstrap && window.bootstrap.Modal;
+  if (!el) return;
+
+  try { BS?.getInstance(el)?.hide(); } catch {}
+  el.classList.remove("show");
+  el.style.display = "none";
+  el.setAttribute("aria-hidden", "true");
+
+  document.querySelectorAll(".modal-backdrop").forEach(b => b.remove());
+  document.body.classList.remove("modal-open");
+  document.body.style.removeProperty("overflow");
+  document.body.style.removeProperty("padding-right");
+  document.body.style.pointerEvents = "auto";
+}
+document.addEventListener("turbo:before-render", hideMobilePlaylistModalSafely);
+document.addEventListener("turbo:before-cache",  hideMobilePlaylistModalSafely);
+document.addEventListener("turbo:visit",         hideMobilePlaylistModalSafely);
+window.addEventListener("pageshow", (e) => { if (e.persisted) hideMobilePlaylistModalSafely(); });
