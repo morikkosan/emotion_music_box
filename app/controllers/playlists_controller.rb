@@ -83,36 +83,35 @@ end
   end
 
   def destroy
-    @playlist.destroy
+  @playlist.destroy
+  flash[:notice] = "プレイリストを削除しました。"
 
-    flash[:notice] = "プレイリストを削除しました。"
+  respond_to do |format|
+    format.turbo_stream do
+      # ✅ ここだけ置き換え：まずフラッシュモーダルを出し、OK後にモバイル一覧へ遷移
+      flash_then_redirect = render_to_string(inline: <<~ERB)
+        <turbo-stream action="append" target="flash">
+          <template>
+            <div
+              data-controller="flash-then-redirect"
+              data-flash-then-redirect-message="<%= j flash[:notice] %>"
+              data-flash-then-redirect-url="#{bookmarks_emotion_logs_path(view: 'mobile')}"
+              data-flash-then-redirect-title="削除しました"
+              data-flash-then-redirect-icon="success"
+              data-flash-then-redirect-confirm-text="閉じる"></div>
+          </template>
+        </turbo-stream>
+      ERB
+      render turbo_stream: [flash_then_redirect]
+    end
 
-    respond_to do |format|
-      format.turbo_stream do
-        show_flash = turbo_stream.append("flash", partial: "shared/flash_container", locals: { flash: flash })
-        trigger_flash = render_trigger_flash
-
-        # ⬇️ ここがCSP完全対応
-        redirect_div = render_to_string(inline: <<~ERB)
-          <turbo-stream action="append" target="flash">
-            <template>
-              <div data-controller="redirect" data-redirect-url="#{bookmarks_emotion_logs_path}"></div>
-            </template>
-          </turbo-stream>
-        ERB
-
-        render turbo_stream: [
-          show_flash,
-          trigger_flash,
-          redirect_div
-        ]
-      end
-
-      format.html do
-        redirect_to bookmarks_emotion_logs_path, notice: "プレイリストを削除しました。"
-      end
+    format.html do
+      # HTML直叩き時のフォールバック（従来通り）
+      redirect_to bookmarks_emotion_logs_path, notice: "プレイリストを削除しました。"
     end
   end
+end
+
 
   private
 
