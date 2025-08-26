@@ -1,27 +1,11 @@
-<%# app/views/playlists/_playist_contents.html.erb %>
-
 <% if @playlist.playlist_items.empty? %>
   <p class="text-center">まだ曲が追加されていません。</p>
 <% else %>
   <!-- ★ 親要組織にコントローラをアタッチ -->
   <div class="playlist-container" data-controller="global-player">
 
-    <!-- ★ 1曲目から再生ボタン -->
-    <div class="playlist-playfirst-fixed">
-      <button
-        type="button"
-        class="btn neon_show neon_show-back"
-        data-action="click->global-player#playFirstTrack">
-        <i class="fa fa-play"></i>
-        1曲目から再生
-      </button>
-    </div>
-
     <!-- ★ プレイリスト本体 -->
-    <ul
-      id="<%= dom_id(@playlist, :contents) %>"
-      class="list-unstyled mt-3 playlist-contents"
-    >
+    <ul id="<%= dom_id(@playlist, :contents) %>" class="list-unstyled mt-3 playlist-contents">
       <% @playlist.playlist_items.includes(:emotion_log).each do |item| %>
         <% log = item.emotion_log %>
         <li class="mb-4">
@@ -54,7 +38,7 @@
               </div>
             </div>
 
-            <!-- 右：削除ボタン -->
+            <!-- 右：削除ボタン（曲単位） -->
             <div class="pmx_remove_button">
               <%= button_to raw('<i class="fa fa-trash"></i>'),
                     playlist_playlist_item_path(@playlist, item),
@@ -69,58 +53,6 @@
           </div>
         </li>
       <% end %>
-
-      <!-- ★ 戻る＆プレイリスト削除 -->
-      <li class="d-flex justify-content-center gap-3 mt-4">
-        <%= link_to raw('<i class="fa fa-trash me-1"></i>プレイリストを削除'),
-  playlist_path(@playlist),
-  method: :delete,
-  data: { turbo: false, confirm: "本当にこのプレイリストを削除しますか？" },
-  class: "neon_show neon_show-delete btn" %>
-
-
-      </li>
     </ul>
   </div>
 <% end %>
-
-<!-- ★ 固定ネオン風「曲を追加」ボタン -->
-<button
-  type="button"
-  class="btn neon_show add-song-floating"
-  data-bs-toggle="modal"
-  data-bs-target="#addSongsModal"
-  aria-label="曲を追加">
-  <i class="fa fa-plus-circle me-1"></i> 曲を追加
-</button>
-
-<!-- ★ モーダル定義 -->
-<div class="modal fade"
-     id="addSongsModal"
-     data-controller="add-song-modal"
-     tabindex="-1"
-     aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-
-      <div class="modal-header">
-        <h5 class="modal-title">ブックマーク済みの曲一覧</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-
-      <div class="modal-body" id="addSongsModalBody">
-        <%= render 'playlists/bookmarked_songs', playlist: @playlist %>
-      </div>
-
-      <div class="modal-footer">
-        <button
-          type="button"
-          class="btn btn-secondary"
-          data-bs-dismiss="modal">
-          閉じる
-        </button>
-      </div>
-
-    </div>
-  </div>
-</div>

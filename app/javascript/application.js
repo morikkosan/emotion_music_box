@@ -8,6 +8,7 @@ import "./custom/flash_messages";
 import "./custom/gages_test";
 import "./custom/inline_handlers";
 import "./custom/swal_my_create";
+import "./custom/flash_swal";
 import { registerServiceWorker } from "./custom/register_service_worker";
 import { subscribeToPushNotifications } from "./custom/push_subscription";
 
