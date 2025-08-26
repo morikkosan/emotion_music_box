@@ -1,4 +1,4 @@
-// app/javascript/flash_swal.js
+// app/javascript/custom/flash_swal.js
 (function () {
   // 他モーダルを壊さない掃除（黒幕だけ・開いてるモーダルがあれば何もしない）
   function cleanupModalArtifacts() {
@@ -9,6 +9,8 @@
         document.body.classList.remove("modal-open");
         document.body.style.removeProperty("overflow");
         document.body.style.removeProperty("padding-right");
+        // 念のため：タップ不可状態を解除
+        document.body.style.pointerEvents = "auto";
       }
     } catch (_) {}
   }
@@ -17,7 +19,7 @@
   function rateLimit() {
     const now = performance.now();
     if (now < (window.__flashBlockUntil || 0)) return true;
-    window.__flashBlockUntil = now + 200; // 200ms 以内の連打のみ抑止
+    window.__flashBlockUntil = now + 200;
     return false;
   }
 
@@ -33,7 +35,8 @@
     if (!flashNotice && !flashAlert) return;
     if (!window.Swal || typeof window.Swal.fire !== "function") return;
 
-    cleanupModalArtifacts(); // 黒幕だけ掃除
+    // 表示前に黒幕だけ掃除（他モーダルが開いてたら何もしない）
+    cleanupModalArtifacts();
 
     if (flashAlert && flashAlert !== "すでにログイン済みです") {
       Swal.fire({
@@ -42,9 +45,10 @@
         icon: "error",
         confirmButtonText: "閉じる",
         didClose: () => {
-          // 片付けは閉じた時にだけ（競合回避）
           try { document.body.dataset.flashAlert = ""; } catch (_) {}
           try { flashContainer?.remove(); } catch (_) {}
+          // ★ 閉じた直後に再度軽掃除（バックドロップ残り対策）
+          cleanupModalArtifacts();
         },
       });
       return;
@@ -59,6 +63,8 @@
         didClose: () => {
           try { document.body.dataset.flashNotice = ""; } catch (_) {}
           try { flashContainer?.remove(); } catch (_) {}
+          // ★ 閉じた直後に再度軽掃除
+          cleanupModalArtifacts();
         },
       });
       return;
@@ -105,4 +111,8 @@
       queueMicrotask(() => showFlashSwal("pageshow"));
     }
   });
+
+  // ★ Turbo描画直後にも念のため毎回軽掃除（他モーダルが開いていれば何もしない）
+  document.addEventListener("turbo:load", cleanupModalArtifacts);
+  document.addEventListener("turbo:render", cleanupModalArtifacts);
 })();

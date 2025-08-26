@@ -389,18 +389,17 @@
     <% end %>
 
     <%= link_to "#",
-      id: "show-playlist-modal-mobile",
-      class: "text-center text-white small",
-      data: {
-        "mobile-footer-target": "item",
-        section: "playlist",
-        action: "click->mobile-footer#onPlaylistClick",
-        controller: "playlist-modal",
-        "playlist-modal-modal-id-value": "playlist-modal-mobile",
-        turbo: false
-      } do %>
-      <i class="bi bi-music-note-list fs-4"></i><br>プレイリスト
-    <% end %>
+  id: "show-playlist-modal-mobile",
+  class: "text-center text-white small",
+  data: {
+    "mobile-footer-target": "item",
+    section: "playlist",
+    action: "click->mobile-footer#onPlaylistClick",
+    turbo: false
+  } do %>
+  <i class="bi bi-music-note-list fs-4"></i><br>プレイリスト
+<% end %>
+
   </nav>
 
 

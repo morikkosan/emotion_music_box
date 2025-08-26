@@ -38,7 +38,7 @@ class PlaylistsController < ApplicationController
 
         respond_to do |format|
           format.turbo_stream do
-            # ★ ここがポイント：formats を :html に固定
+            # フラッシュは HTML として部分テンプレートを描画（<turbo-stream> を返す）
             flash_stream = render_to_string(
               partial: "shared/flash_container",
               formats: [:html],
@@ -46,19 +46,19 @@ class PlaylistsController < ApplicationController
             )
 
             render turbo_stream: [
-              # モバイル側モーダル中身の差し替え（入力クリアも兼ねる）
+              # モバイル：モーダル内のリスト差し替え（入力クリアも兼ねる）
               turbo_stream.replace(
                 "playlist-modal-content-mobile",
                 partial: "emotion_logs/playlist_sidebar",
                 locals: { playlists: current_user.playlists.includes(playlist_items: :emotion_log) }
               ),
-              # デスクトップ側サイドバー差し替え
+              # デスクトップ：サイドバー差し替え
               turbo_stream.replace(
                 "playlist-sidebar",
                 partial: "emotion_logs/playlist_sidebar",
                 locals: { playlists: current_user.playlists.includes(playlist_items: :emotion_log) }
               ),
-              # フラッシュはトップレベル <turbo-stream> の文字列をそのまま返す
+              # フラッシュの <turbo-stream> をそのまま返す
               flash_stream
             ]
           end
@@ -119,25 +119,32 @@ class PlaylistsController < ApplicationController
 
   def destroy
     @playlist.destroy
-    flash[:notice] = "プレイリストを削除しました。"
 
     respond_to do |format|
       format.turbo_stream do
-        # 既存の演出は尊重
-        flash_then_redirect = render_to_string(inline: <<~ERB)
-          <turbo-stream action="append" target="flash">
-            <template>
-              <div
-                data-controller="flash-then-redirect"
-                data-flash-then-redirect-message="<%= j flash[:notice] %>"
-                data-flash-then-redirect-url="#{bookmarks_emotion_logs_path(view: 'mobile')}"
-                data-flash-then-redirect-title="削除しました"
-                data-flash-then-redirect-icon="success"
-                data-flash-then-redirect-confirm-text="閉じる"></div>
-            </template>
-          </turbo-stream>
-        ERB
+        message = "プレイリストを削除しました。"
+
+        flash_then_redirect = render_to_string(
+          inline: <<~ERB,
+            <turbo-stream action="append" target="flash">
+              <template>
+                <div
+                  data-controller="flash-then-redirect"
+                  data-flash-then-redirect-message="<%= j message %>"
+                  data-flash-then-redirect-url="<%= j bookmarks_emotion_logs_path(view: 'mobile') %>"
+                  data-flash-then-redirect-title="削除しました"
+                  data-flash-then-redirect-icon="success"
+                  data-flash-then-redirect-confirm-text="閉じる"></div>
+              </template>
+            </turbo-stream>
+          ERB
+          locals: { message: message }
+        )
+
         render turbo_stream: [flash_then_redirect]
+
+        # Turbo経由の遷移にフラッシュを持ち込まない（二重表示防止）
+        flash.discard
       end
 
       format.html do
