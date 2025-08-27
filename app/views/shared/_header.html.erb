@@ -103,17 +103,25 @@
       </div>
 
       <!-- おすすめ🔥 -->
-      <div class="mypage-item">
-        <%# 既存JSのフック用（追加のみ） %>
-        <%= link_to "#",
-                    id: "show-recommendations-btn",
-                    class: "mypage-icon-link go-to-recommended-btn",
-                    data: { no_loader: true } do %>
+      <!-- おすすめ🔥 -->
+<!-- おすすめ🔥 -->
+<!-- おすすめ🔥（デスクトップ/モバイル両対応） -->
+<div class="mypage-item">
+  <%= link_to (mobile_device? ? recommended_emotion_logs_path(view: 'mobile') : recommended_emotion_logs_path),
+              class: "mypage-icon-link",                   # ← レガシーJSの class/id を外す
+              data: {
+                turbo: true,
+                turbo_frame: (mobile_device? ? "logs_list_mobile" : "logs_list"),
+                turbo_action: "advance",
+                no_loader: true
+              } do %>
+    <%= image_tag 'hot.webp', alt: '', class: 'mypage-icon' %>
+    <div class='mypage-text'>おすすめ🔥</div>
+  <% end %>
+</div>
 
-          <%= image_tag 'hot.webp', alt: '', class: 'mypage-icon' %>
-          <div class='mypage-text'>おすすめ🔥</div>
-        <% end %>
-      </div>
+
+
 
       <!-- EMOTION -->
       <div class="mypage-item search-item wide">
