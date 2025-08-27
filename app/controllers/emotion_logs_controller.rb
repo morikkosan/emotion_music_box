@@ -219,7 +219,6 @@ rescue ActiveRecord::InvalidForeignKey => e
 end
 
 
-
   # =========================
   # その他補助
   # =========================
