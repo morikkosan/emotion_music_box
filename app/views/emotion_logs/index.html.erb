@@ -35,13 +35,13 @@
           <!-- ✅ チェックボックス -->
           <label class="bookmark-merge-toggle-label">
           <input type="checkbox"
-          id="mypage-merge-toggle"
-          class="form-check-input"
-          data-action="change->bookmark#toggleMyPageLogs"
-          name="include_my_logs"
-          value="true"
-          <%= 'checked' if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs]) %>>
-
+            id="mypage-merge-toggle"
+            class="form-check-input"
+            data-action="change->bookmark#toggleMyPageLogs"
+            name="include_my_logs"
+            value="true"
+            data-no-loader="true"
+            <%= 'checked' if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs]) %>>
   マイページの投稿も含める
 </label>
 
