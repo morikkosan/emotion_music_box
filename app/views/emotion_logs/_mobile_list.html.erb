@@ -61,11 +61,14 @@
             <%= image_tag "comment_icon.webp", alt: "コメント数", class: "mobile-list-comment-icon" %>
             <span class="ms-1 text-white mobile-list-comment-count"><%= log.comments_count %></span>
           </div>
-          <% if current_user == log.user %>
-            <%= link_to "削除", emotion_log_path(log),
+         <% if current_user == log.user %>
+            <%= form_with url: emotion_log_path(log),
                   method: :delete,
-                  data: { turbo_confirm: "本当に削除しますか？", turbo_stream: true },
-                  class: "btn btn-outline-danger btn-sm px-2 py-1 mobile-list-delete-btn" %>
+                  data: { turbo_confirm: "本当に削除しますか？" },
+                  class: "d-inline" do %>
+              <%= submit_tag "削除",
+                    class: "btn btn-outline-danger btn-sm px-2 py-1 mobile-list-delete-btn" %>
+            <% end %>
           <% else %>
             <%= render "bookmark_buttons", emotion_log: log %>
           <% end %>
