@@ -103,7 +103,6 @@
       </div>
 
       <!-- おすすめ🔥 -->
-      <!-- おすすめ🔥 -->
 <!-- おすすめ🔥 -->
 <!-- おすすめ🔥（デスクトップ/モバイル両対応） -->
 <div class="mypage-item">
@@ -147,14 +146,14 @@
 
       <!-- TAGフォーム -->
       <div class="mypage-item search-item wide position-relative" data-controller="tag-autocomplete">
-        <div class="menu-label menu-label-tag">TAG</div>
+        <div class="menu-label menu-label-tag">GENRE TAG</div>
         <%= form_with url: emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
                       method: :get,
                       data: { turbo_frame: "logs_list" },
                       html: { class: "w-100 h-100 d-flex flex-column justify-content-center align-items-center" } do |f| %>
           <label for="genre_input" class="visually-hidden">ジャンルを入力</label>
           <%= f.text_field :genre,
-                           placeholder: 'Search by genre',
+                           placeholder: 'ジャンル入力→Enter',
                            class: 'form-control no-bottom-radius',
                            id: 'genre_input',
                            value: params[:genre],
