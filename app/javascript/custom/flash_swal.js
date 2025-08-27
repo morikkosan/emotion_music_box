@@ -272,6 +272,7 @@
     }
   });
 
+
   // 4) Turbo遷移直後は黒幕の軽掃除（他モーダルが開いていれば何もしない）
   document.addEventListener("turbo:load", cleanupBackdrops);
 
