@@ -191,20 +191,34 @@ class EmotionLogsController < ApplicationController
     end
   end
 
-  def destroy
-    log = EmotionLog.find(params[:id])
-    dom_key = view_context.dom_id(log)
-    log.destroy
+  # app/controllers/emotion_logs_controller.rb
+def destroy
+  log = EmotionLog.find(params[:id])
+  dom_key = view_context.dom_id(log)
 
-    render turbo_stream: turbo_stream.remove(dom_key) + turbo_stream.append(
-      "modal-container",
-      view_context.tag.div(
-        "",
-        id: "flash-container",
-        data: { flash_notice: "投稿を削除しました", flash_alert: nil }
-      )
+  log.destroy!  # ← CASCADEで playlist_items も自動削除
+
+  render turbo_stream: turbo_stream.remove(dom_key) + turbo_stream.append(
+    "modal-container",
+    view_context.tag.div(
+      "",
+      id: "flash-container",
+      data: { flash_notice: "投稿を削除しました", flash_alert: nil }
     )
-  end
+  )
+rescue ActiveRecord::InvalidForeignKey => e
+  Rails.logger.error("❌ FK violation on destroy: #{e.class}: #{e.message}")
+  render turbo_stream: turbo_stream.append(
+    "modal-container",
+    view_context.tag.div(
+      "",
+      id: "flash-container",
+      data: { flash_notice: nil, flash_alert: "この投稿は関連づけが残っているため削除できませんでした。" }
+    )
+  ), status: :unprocessable_entity
+end
+
+
 
   # =========================
   # その他補助
