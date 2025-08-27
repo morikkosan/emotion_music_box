@@ -64,20 +64,24 @@ class EmotionLogsController < ApplicationController
   # 詳細
   # =========================
   def show
-    @emotion_log = EmotionLog.find(params[:id])
-    @comments = Comment.where(emotion_log_id: @emotion_log.id)
-                       .includes(:user, :comment_reactions)
-                       .order(created_at: :desc)
-                       .page(params[:page]).per(10)
+  @emotion_log = EmotionLog.find(params[:id])
+  @comments = Comment.where(emotion_log_id: @emotion_log.id)
+                     .includes(:user, :comment_reactions)
+                     .order(created_at: :desc)
+                     .page(params[:page]).per(10)
 
-    @reaction_counts = CommentReaction.where(comment_id: @comments.map(&:id)).group(:comment_id, :kind).count
-    @user_reactions  = current_user&.comment_reactions&.where(comment_id: @comments.map(&:id))&.pluck(:comment_id, :kind)&.to_h || {}
+  @reaction_counts = CommentReaction.where(comment_id: @comments.map(&:id)).group(:comment_id, :kind).count
+  @user_reactions  = current_user&.comment_reactions&.where(comment_id: @comments.map(&:id))&.pluck(:comment_id, :kind)&.to_h || {}
 
-    respond_to do |format|
-      format.html
-      format.turbo_stream
+  respond_to do |format|
+    format.html
+    format.turbo_stream do
+      # Turbo Streamで来た場合はHTML表示にリダイレクト（テンプレ未用意でも安全）
+      render turbo_stream: turbo_stream.redirect_to(emotion_log_path(@emotion_log, format: :html))
     end
   end
+end
+
 
   # =========================
   # 新規作成フォーム
@@ -193,17 +197,25 @@ class EmotionLogsController < ApplicationController
 
   # app/controllers/emotion_logs_controller.rb
 def destroy
-  log = EmotionLog.find(params[:id])
-  dom_key = view_context.dom_id(log)
-  log.destroy!  # CASCADEで関連も削除
+  log     = EmotionLog.find(params[:id])
+  base_id = view_context.dom_id(log) # 例: "emotion_log_19840"
+
+  log.destroy!  # CASCADE / dependent が効くので関連も削除
 
   respond_to do |format|
     format.turbo_stream do
-      render turbo_stream: turbo_stream.remove(dom_key) + turbo_stream.append(
-        "modal-container",
-        view_context.tag.div("", id: "flash-container",
-          data: { flash_notice: "投稿を削除しました", flash_alert: nil })
-      )
+      render turbo_stream: [
+        turbo_stream.remove(base_id),               # デスクトップ
+        turbo_stream.remove("#{base_id}_mobile"),   # モバイル
+        turbo_stream.append(
+          "modal-container",
+          view_context.tag.div(
+            "",
+            id: "flash-container",
+            data: { flash_notice: "投稿を削除しました", flash_alert: nil }
+          )
+        )
+      ]
     end
     format.html { redirect_to emotion_logs_path, notice: "投稿を削除しました" }
   end
@@ -213,13 +225,17 @@ rescue ActiveRecord::InvalidForeignKey => e
     format.turbo_stream do
       render turbo_stream: turbo_stream.append(
         "modal-container",
-        view_context.tag.div("", id: "flash-container",
-          data: { flash_notice: nil, flash_alert: "この投稿は関連づけが残っているため削除できませんでした。" })
+        view_context.tag.div(
+          "",
+          id: "flash-container",
+          data: { flash_notice: nil, flash_alert: "この投稿は関連づけが残っているため削除できませんでした。" }
+        )
       ), status: :unprocessable_entity
     end
     format.html { redirect_to emotion_logs_path, alert: "関連づけが残っているため削除できませんでした。" }
   end
 end
+
 
 
 
