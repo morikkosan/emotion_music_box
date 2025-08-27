@@ -64,7 +64,19 @@ class EmotionLogsController < ApplicationController
   # 詳細
   # =========================
   def show
-  @emotion_log = EmotionLog.find(params[:id])
+  @emotion_log = EmotionLog.find_by(id: params[:id])
+  unless @emotion_log
+    respond_to do |format|
+      format.html { redirect_to emotion_logs_path(view: params[:view]), alert: "この投稿は削除されています。" }
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.redirect_to(
+          emotion_logs_path(view: params[:view])
+        ), status: :see_other
+      end
+    end
+    return
+  end
+
   @comments = Comment.where(emotion_log_id: @emotion_log.id)
                      .includes(:user, :comment_reactions)
                      .order(created_at: :desc)
@@ -75,12 +87,10 @@ class EmotionLogsController < ApplicationController
 
   respond_to do |format|
     format.html
-    format.turbo_stream do
-      # Turbo Streamで来た場合はHTML表示にリダイレクト（テンプレ未用意でも安全）
-      render turbo_stream: turbo_stream.redirect_to(emotion_log_path(@emotion_log, format: :html))
-    end
+    format.turbo_stream { render turbo_stream: turbo_stream.redirect_to(emotion_log_path(@emotion_log, format: :html)) }
   end
 end
+
 
 
   # =========================
