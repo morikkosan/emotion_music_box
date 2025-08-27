@@ -8,7 +8,7 @@ class EmotionLog < ApplicationRecord
   has_many :comments,  dependent: :destroy
   has_many :emotion_log_tags, dependent: :destroy
   has_many :tags, through: :emotion_log_tags
-  has_many :playlist_items, dependent: :delete_all
+has_many :playlist_items
   has_many :playlists, through: :playlist_items
 
   # タグ名をまとめて受け取るための仮属性
