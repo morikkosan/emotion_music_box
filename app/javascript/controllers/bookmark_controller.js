@@ -42,48 +42,65 @@ export default class extends Controller {
   }
 
   toggleMyPageLogs(event) {
-    const el = event.target
-    const form = el.form
+  const el = event.target
+  const form = el.form
 
-    const inMobileFrame = !!(
-      document.getElementById("logs_list_mobile")?.contains(this.element) ||
-      el.closest?.("turbo-frame#logs_list_mobile")
-    )
-    const isMobileForm =
-      inMobileFrame ||
-      (form && ["mobile-bookmarks-form", "mobile-search-form"].includes(form.id)) ||
-      (form && form.getAttribute("data-turbo-frame") === "logs_list_mobile")
+  // --- モバイルかどうかの判定（現行ロジックを踏襲） ---
+  const inMobileFrame = !!(
+    document.getElementById("logs_list_mobile")?.contains(this.element) ||
+    el.closest?.("turbo-frame#logs_list_mobile")
+  )
+  const isMobileForm =
+    inMobileFrame ||
+    (form && ["mobile-bookmarks-form", "mobile-search-form"].includes(form.id)) ||
+    (form && form.getAttribute("data-turbo-frame") === "logs_list_mobile")
 
-    if (isMobileForm) {
-      event.preventDefault()
-      event.stopPropagation()
+  // --- モバイル：現行どおりフレーム更新 ---
+  if (isMobileForm) {
+    event.preventDefault()
+    event.stopPropagation()
 
-      const url = new URL("/emotion_logs/bookmarks", window.location.origin)
-      const params = new URLSearchParams(window.location.search)
-      if (form) {
-        for (const [k, v] of new FormData(form).entries()) {
-          if (v != null && v !== "") params.set(k, v)
-        }
+    const url = new URL("/emotion_logs/bookmarks", window.location.origin)
+    const params = new URLSearchParams(window.location.search)
+    if (form) {
+      for (const [k, v] of new FormData(form).entries()) {
+        if (v != null && v !== "") params.set(k, v)
       }
-      if (el.checked) params.set("include_my_logs", "true")
-      else params.delete("include_my_logs")
-
-      params.set("view", "mobile")
-      url.search = params.toString()
-
-      const frame = document.getElementById("logs_list_mobile")
-      if (frame) frame.setAttribute("src", url.toString())
-      else if (window.Turbo?.visit) Turbo.visit(url.toString(), { frame: "logs_list_mobile" })
-      else window.location.href = url.toString()
-      return
     }
+    if (el.checked) params.set("include_my_logs", "true")
+    else params.delete("include_my_logs")
 
-    const base = new URL("/emotion_logs/bookmarks", window.location.origin)
-    const cur  = new URLSearchParams(window.location.search)
-    ;["genre","emotion","sort","period"].forEach(k => { const v = cur.get(k); if (v) base.searchParams.set(k, v) })
-    if (el.checked) base.searchParams.set("include_my_logs", "true")
-    window.Turbo?.visit ? Turbo.visit(base.toString(), { action: "advance" }) : (window.location.href = base.toString())
+    params.set("view", "mobile")
+    url.search = params.toString()
+
+    const frame = document.getElementById("logs_list_mobile")
+    if (frame) frame.setAttribute("src", url.toString())
+    else if (window.Turbo?.visit) Turbo.visit(url.toString(), { frame: "logs_list_mobile" })
+    else window.location.href = url.toString()
+    return
   }
+
+  // --- デスクトップ：フル遷移ではなくフォーム送信で logs_list フレーム更新 ---
+  // フォームがあり、かつ data-turbo-frame="logs_list" が付いている（ERBの現行）場合、
+  // それを優先して部分更新にする。
+  if (form && form.getAttribute("data-turbo-frame") === "logs_list") {
+    event.preventDefault()
+    event.stopPropagation()
+
+    // チェックされている時だけ include_my_logs を送る（未チェックなら送らない = 従来どおり）
+    // チェックボックス自身が form にあるので、特別な細工は不要。単純に submit するだけでOK。
+    form.requestSubmit()
+    return
+  }
+
+  // --- フォームが見つからない非常時のみフォールバックでフル遷移 ---
+  const base = new URL("/emotion_logs/bookmarks", window.location.origin)
+  const cur  = new URLSearchParams(window.location.search)
+  ;["genre","emotion","sort","period"].forEach(k => { const v = cur.get(k); if (v) base.searchParams.set(k, v) })
+  if (el.checked) base.searchParams.set("include_my_logs", "true")
+  window.Turbo?.visit ? Turbo.visit(base.toString(), { action: "advance" }) : (window.location.href = base.toString())
+}
+
 
   // ✅ 送信直前：localStorageに入っている「全ページ分」を
   //  1) selected_log_ids（カンマ区切り文字列）
