@@ -46,7 +46,8 @@
 
   <!-- ロゴ -->
   <div class="text-center mt-4">
-    <%= link_to emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)) do %>
+    <%= link_to emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
+                data: { turbo_frame: "logs_list", turbo_action: "advance", no_loader: true } do %>
       <%= image_tag "logo1.webp",
                     alt: "Emotion List Logo",
                     class: "img-fluid neon-icon logo-main" %>
@@ -94,7 +95,8 @@
       <!-- ホーム -->
       <div class="mypage-item">
         <%= link_to emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
-                    class: 'mypage-icon-link' do %>
+                    class: 'mypage-icon-link',
+                    data: { turbo_frame: "logs_list", turbo_action: "advance", no_loader: true } do %>
           <%= image_tag 'home.webp', alt: '', class: 'mypage-icon' %>
           <div class='mypage-text'>ホーム</div>
         <% end %>
@@ -102,8 +104,12 @@
 
       <!-- おすすめ🔥 -->
       <div class="mypage-item">
+        <%# 既存JSのフック用（追加のみ） %>
         <%= link_to "#",
-                    class: "mypage-icon-link go-to-recommended-btn" do %>
+                    id: "show-recommendations-btn",
+                    class: "mypage-icon-link go-to-recommended-btn",
+                    data: { no_loader: true } do %>
+
           <%= image_tag 'hot.webp', alt: '', class: 'mypage-icon' %>
           <div class='mypage-text'>おすすめ🔥</div>
         <% end %>
@@ -156,7 +162,8 @@
       <!-- マイページ -->
       <div class="mypage-item">
         <%= link_to my_emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
-                    class: 'mypage-icon-link' do %>
+                    class: 'mypage-icon-link',
+                    data: { turbo_frame: "logs_list", turbo_action: "advance", no_loader: true } do %>
           <%= image_tag 'mypage_logo.webp', alt: '', class: 'mypage-icon' %>
           <div class='mypage-text'>マイページ</div>
         <% end %>
@@ -165,7 +172,8 @@
       <!-- お気に入り -->
       <div class="mypage-item">
         <%= link_to bookmarks_emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
-                    class: 'mypage-icon-link' do %>
+                    class: 'mypage-icon-link',
+                    data: { turbo_frame: "logs_list", turbo_action: "advance", no_loader: true } do %>
           <%= image_tag 'favorite.webp', alt: '', class: 'mypage-icon' %>
           <div class='mypage-text'>お気に入りリスト</div>
         <% end %>
