@@ -9,87 +9,92 @@
     <% content_for :title, "エモミュ" %>
     <%= render 'shared/header' %>
 
-    <% if user_signed_in? %>
-      <% if @bookmark_page.present? %>
-        <span class="bookmark_title"><%= @bookmark_page %></span>
-      <% elsif @mypage_title.present? %>
-        <span class="bookmark_title"><%= @mypage_title %></span>
-      <% elsif @recommended_page.present? %>
-        <span class="bookmark_title"><%= @recommended_page %></span>
-      <% else %>
-        <!-- 通常のストレスゲージ -->
-        <br>
-        <div id="hp-bar-container">
-          <span class="today_mental_text">
-            👆Today's stress level <span id="bar-width-display"></span>👆
-          </span>
-          <p id="hp-status-text">メンタル正常</p>
-          <div id="hp-bar"></div>
-        </div>
-      <% end %>
-    <% end %>
-
-    <% if @bookmark_page.present? %>
-      <div data-controller="bookmark" class="bookmark-panel">
-        <div class="bookmark-toolbar">
-
-          <!-- ▼ 追加：デスクトップお気に入り専用のGETフォーム（logs_listフレームを部分更新） -->
-          <form id="desktop-bookmarks-form"
-                action="<%= bookmarks_emotion_logs_path %>"
-                method="get"
-                data-turbo-frame="logs_list"
-                data-no-loader="true">
-            <%= hidden_field_tag :genre,   params[:genre]   if params[:genre].present?  %>
-            <%= hidden_field_tag :emotion, params[:emotion] if params[:emotion].present?%>
-            <%= hidden_field_tag :sort,    params[:sort]    if params[:sort].present?   %>
-            <%= hidden_field_tag :period,  params[:period]  if params[:period].present? %>
-          </form>
-
-          <!-- ✅ チェックボックス -->
-          <label class="bookmark-merge-toggle-label">
-          <input type="checkbox"
-            id="mypage-merge-toggle"
-            class="form-check-input"
-            data-action="change->bookmark#toggleMyPageLogs"
-            name="include_my_logs"
-            value="true"
-            form="desktop-bookmarks-form"
-            data-no-loader="true"
-            <%= 'checked' if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs]) %>>
-  マイページの投稿も含める
-</label>
-
-          <!-- ✅ プレイリスト作成ボタン -->
-          <% if current_user.playlists.count < 12 %>
-          <!-- ★ここを修正：playlist-modal に -->
-          <div data-controller="playlist-modal" data-playlist-modal-id-value="playlist-modal">
-            <button type="button" class="bookmark-playlist-create-btn" data-action="click->playlist-modal#open">
-              プレイリストを作成する
-            </button>
-          </div>
-        <% else %>
-          <button class="btn btn-secondary" disabled>プレイリストは12個まで作成可能です</button>
-        <% end %>
-        </div>
-      </div>
-    <% end %>
-
-    <% if user_signed_in? %>
-      <br><br><br>
-      <div class="main-content">
-        <% if @bookmark_page.present? || @mypage_title.present? %>
-          <div id="playlist-sidebar">
-            <%= render 'emotion_logs/playlist_sidebar',
-              playlists: current_user.playlists.includes(:playlist_items, :emotion_logs) %>
-          </div>
-        <% else %>
-          <%= render 'super_search' %>
-        <% end %>
-      </div>
-    <% end %>  <!-- ←この位置でOK！ -->
+    <!-- ↑↑ ここまでそのまま。ここから下、デスクトップはフレーム内にまとめて入れ替え ↑↑ -->
 
     <!-- turbo_frame_tagの中にはボタンを入れない -->
     <%= turbo_frame_tag "logs_list" do %>
+
+      <!-- ★ デスクトップ：上の帯（タイトル/HPバー）をフレーム内へ移動 ★ -->
+      <% if user_signed_in? %>
+        <% if @bookmark_page.present? %>
+          <span class="bookmark_title"><%= @bookmark_page %></span>
+        <% elsif @mypage_title.present? %>
+          <span class="bookmark_title"><%= @mypage_title %></span>
+        <% elsif @recommended_page.present? %>
+          <span class="bookmark_title"><%= @recommended_page %></span>
+        <% else %>
+          <!-- 通常のストレスゲージ -->
+          <br>
+          <div id="hp-bar-container">
+            <span class="today_mental_text">
+              👆Today's stress level <span id="bar-width-display"></span>👆
+            </span>
+            <p id="hp-status-text">メンタル正常</p>
+            <div id="hp-bar"></div>
+          </div>
+        <% end %>
+      <% end %>
+
+      <!-- ★ デスクトップ：ブクマ用ツールバーもフレーム内へ移動 ★ -->
+      <% if @bookmark_page.present? %>
+        <div data-controller="bookmark" class="bookmark-panel">
+          <div class="bookmark-toolbar">
+
+            <!-- ▼ デスクトップお気に入り専用のGETフォーム（logs_listフレームを部分更新） -->
+            <form id="desktop-bookmarks-form"
+                  action="<%= bookmarks_emotion_logs_path %>"
+                  method="get"
+                  data-turbo-frame="logs_list"
+                  data-no-loader="true">
+              <%= hidden_field_tag :genre,   params[:genre]   if params[:genre].present?  %>
+              <%= hidden_field_tag :emotion, params[:emotion] if params[:emotion].present?%>
+              <%= hidden_field_tag :sort,    params[:sort]    if params[:sort].present?   %>
+              <%= hidden_field_tag :period,  params[:period]  if params[:period].present? %>
+            </form>
+
+            <!-- ✅ チェックボックス（そのまま） -->
+            <label class="bookmark-merge-toggle-label">
+              <input type="checkbox"
+                id="mypage-merge-toggle"
+                class="form-check-input"
+                data-action="change->bookmark#toggleMyPageLogs"
+                name="include_my_logs"
+                value="true"
+                form="desktop-bookmarks-form"
+                data-no-loader="true"
+                <%= 'checked' if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs]) %>>
+              マイページの投稿も含める
+            </label>
+
+            <!-- ✅ プレイリスト作成ボタン（そのまま） -->
+            <% if current_user.playlists.count < 12 %>
+              <div data-controller="playlist-modal" data-playlist-modal-id-value="playlist-modal">
+                <button type="button" class="bookmark-playlist-create-btn" data-action="click->playlist-modal#open">
+                  プレイリストを作成する
+                </button>
+              </div>
+            <% else %>
+              <button class="btn btn-secondary" disabled>プレイリストは12個まで作成可能です</button>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- ★ デスクトップ：メインコンテンツもフレーム内へ移動 ★ -->
+      <% if user_signed_in? %>
+        <br><br><br>
+        <div class="main-content">
+          <% if @bookmark_page.present? || @mypage_title.present? %>
+            <div id="playlist-sidebar">
+              <%= render 'emotion_logs/playlist_sidebar',
+                playlists: current_user.playlists.includes(:playlist_items, :emotion_logs) %>
+            </div>
+          <% else %>
+            <%= render 'super_search' %>
+          <% end %>
+        </div>
+      <% end %>
+
       <div class="scroll-content">
         <div class="row justify-content-center">
           <% @emotion_logs.each do |log| %>
@@ -174,15 +179,14 @@
         </div>
       </div>
 
-      <!-- ▼▼▼ 追加：ページネーションをフレーム内へ移動 ▼▼▼ -->
+      <!-- ページネーションはフレーム内 -->
       <% if user_signed_in? %>
         <%= paginate @emotion_logs %>
       <% end %>
-      <!-- ▲▲▲ ここまで ▲▲▲ -->
 
-    <% end %>
+    <% end %> <!-- /turbo_frame logs_list -->
 
-    <!-- ここから下 turbo_frame_tagの外！絶対外！ -->
+    <!-- ここから下 turbo_frame_tagの外！絶対外！（そのまま） -->
     <% if user_signed_in? %>
       <%= link_to "今日の気持ちを記録する",
         new_emotion_log_path(format: :turbo_stream),
