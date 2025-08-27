@@ -32,6 +32,19 @@
     <% if @bookmark_page.present? %>
       <div data-controller="bookmark" class="bookmark-panel">
         <div class="bookmark-toolbar">
+
+          <!-- ▼ 追加：デスクトップお気に入り専用のGETフォーム（logs_listフレームを部分更新） -->
+          <form id="desktop-bookmarks-form"
+                action="<%= bookmarks_emotion_logs_path %>"
+                method="get"
+                data-turbo-frame="logs_list"
+                data-no-loader="true">
+            <%= hidden_field_tag :genre,   params[:genre]   if params[:genre].present?  %>
+            <%= hidden_field_tag :emotion, params[:emotion] if params[:emotion].present?%>
+            <%= hidden_field_tag :sort,    params[:sort]    if params[:sort].present?   %>
+            <%= hidden_field_tag :period,  params[:period]  if params[:period].present? %>
+          </form>
+
           <!-- ✅ チェックボックス -->
           <label class="bookmark-merge-toggle-label">
           <input type="checkbox"
@@ -40,6 +53,7 @@
             data-action="change->bookmark#toggleMyPageLogs"
             name="include_my_logs"
             value="true"
+            form="desktop-bookmarks-form"
             data-no-loader="true"
             <%= 'checked' if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs]) %>>
   マイページの投稿も含める
@@ -159,11 +173,17 @@
           <% end %>
         </div>
       </div>
+
+      <!-- ▼▼▼ 追加：ページネーションをフレーム内へ移動 ▼▼▼ -->
+      <% if user_signed_in? %>
+        <%= paginate @emotion_logs %>
+      <% end %>
+      <!-- ▲▲▲ ここまで ▲▲▲ -->
+
     <% end %>
 
     <!-- ここから下 turbo_frame_tagの外！絶対外！ -->
     <% if user_signed_in? %>
-      <%= paginate @emotion_logs %>
       <%= link_to "今日の気持ちを記録する",
         new_emotion_log_path(format: :turbo_stream),
         id: "record-button",
