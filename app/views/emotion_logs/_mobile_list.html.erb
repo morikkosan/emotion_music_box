@@ -2,7 +2,7 @@
 
 <%# ----------- ログリスト本体（ページ共通。チェックボックスはお気に入りだけ） ----------- %>
 <% logs.each do |log| %>
-  <%= turbo_frame_tag dom_id(log) do %>
+  <%= turbo_frame_tag "#{dom_id(log)}_mobile" do %>
     <div class="card mb-2 shadow-sm mobile-list-card">
       <div class="card-body py-2 px-2">
 
