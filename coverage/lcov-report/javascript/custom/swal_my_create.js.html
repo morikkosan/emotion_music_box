@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">96.25% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>68/68</span>
+                <span class='fraction'>77/80</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">82.35% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>14/14</span>
+                <span class='fraction'>14/17</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">96.25% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>68/68</span>
+                <span class='fraction'>77/80</span>
             </div>
         
             
@@ -131,8 +131,23 @@
 <a name='L66'></a><a href='#L66'>66</a>
 <a name='L67'></a><a href='#L67'>67</a>
 <a name='L68'></a><a href='#L68'>68</a>
-<a name='L69'></a><a href='#L69'>69</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
@@ -146,7 +161,6 @@
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
@@ -172,6 +186,14 @@
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
@@ -183,7 +205,7 @@
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -191,38 +213,42 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">window.Swal = {
-  fire: function({
-    title = "",
-    text = "",
-    icon = "info",
-    confirmButtonText = "OK",
-    showCancelButton = false,
-    cancelButtonText = "キャンセル"
-  }) {
-    return new Promise((resolve, reject) =&gt; {
-      // ネオン風アイコンにカスタムクラス付与！
-      let iconHtml = "";
-      if (icon === "success") iconHtml = `&lt;span class="cyber-icon success"&gt;✔&lt;/span&gt;`;
-      else if (icon === "error") iconHtml = `&lt;span class="cyber-icon error"&gt;✖&lt;/span&gt;`;
-      else if (icon === "question") iconHtml = `&lt;span class="cyber-icon question"&gt;？&lt;/span&gt;`;
-      else iconHtml = "";
+  fire: function (opts = {}) {
+    const {
+      title = "",
+      text = "",
+      icon = "info",
+      confirmButtonText = "OK",
+      showCancelButton = false,
+      cancelButtonText = "キャンセル",
+      // ★ これをちゃんと受け取り、モーダルが閉じたら呼ぶ
+      didClose = null,
+    } = opts;
 &nbsp;
-      const modalId = "swal-fake-modal";
-      let modalDiv = document.getElementById(modalId);
-      if (modalDiv) modalDiv.remove();
+    // ネオン風アイコン
+    let iconHtml = "";
+    if (icon === "success") iconHtml = `&lt;span class="cyber-icon success"&gt;✔&lt;/span&gt;`;
+    else if (icon === "error") iconHtml = `&lt;span class="cyber-icon error"&gt;✖&lt;/span&gt;`;
+    else if (icon === "question") iconHtml = `&lt;span class="cyber-icon question"&gt;？&lt;/span&gt;`;
 &nbsp;
-      modalDiv = document.createElement("div");
-      modalDiv.innerHTML = `
-      &lt;div class="modal fade" id="${modalId}" tabindex="-1"&gt;
+    const modalId = "swal-fake-modal";
+    let modalDiv = document.getElementById(modalId);
+    if (modalDiv) modalDiv.remove();
+&nbsp;
+    modalDiv = document.createElement("div");
+    modalDiv.innerHTML = `
+      &lt;div class="modal fade" id="${modalId}" tabindex="-1" aria-hidden="true"&gt;
         &lt;div class="modal-dialog modal-dialog-centered"&gt;
           &lt;div class="modal-content cyber-popup"&gt;
             &lt;div class="modal-header border-0"&gt;
@@ -237,33 +263,43 @@
           &lt;/div&gt;
         &lt;/div&gt;
       &lt;/div&gt;
-      `;
-      document.body.appendChild(modalDiv);
+    `;
+    document.body.appendChild(modalDiv);
 &nbsp;
-      // Bootstrapでモーダルを表示
-      const modal = new bootstrap.Modal(modalDiv.querySelector(`#${modalId}`));
-      modal.show();
+    const bsModalEl = modalDiv.querySelector(`#${modalId}`);
+    const modal = new bootstrap.Modal(bsModalEl, { backdrop: true, keyboard: true, focus: true });
 &nbsp;
-      // OK/Cancel処理
-      modalDiv.querySelector(`#${modalId}-ok`).onclick = function () {
+    // ★ ここが肝：Bootstrap モーダルが閉じたら didClose を必ず呼ぶ
+    bsModalEl.addEventListener("hidden.bs.modal", () =&gt; {
+<span class="cstat-no" title="statement not covered" >      try { if (typeof didClose === "function") didClose(); } catch (_) {}</span>
+<span class="cstat-no" title="statement not covered" >      // 後始末</span>
+<span class="cstat-no" title="statement not covered" >      setTimeout(() =&gt; { try { modalDiv.remove(); } catch (_) {} }, 0);</span>
+    });
+&nbsp;
+    modal.show();
+&nbsp;
+    // OK/Cancel/× ボタンは「hide」して resolve → hidden 時に didClose が呼ばれる
+    modalDiv.querySelector(`#${modalId}-ok`).onclick = function () {
+      modal.hide();
+      // SweetAlert2 互換（使っていれば）
+      try { opts.resolve?.({ isConfirmed: true }); } <span class="branch-0 cbranch-no" title="branch not covered" >catch (_) {}</span>
+    };
+&nbsp;
+    if (showCancelButton) {
+      modalDiv.querySelector(`#${modalId}-cancel`).onclick = function () {
         modal.hide();
-        resolve({ isConfirmed: true });
-        setTimeout(() =&gt; modalDiv.remove(), 500);
+        try { opts.resolve?.({ isConfirmed: false }); } <span class="branch-0 cbranch-no" title="branch not covered" >catch (_) {}</span>
       };
-      if (showCancelButton) {
-        modalDiv.querySelector(`#${modalId}-cancel`).onclick = function () {
-          modal.hide();
-          resolve({ isConfirmed: false });
-          setTimeout(() =&gt; modalDiv.remove(), 500);
-        };
-      }
+    }
 &nbsp;
-      // クローズボタン
-      modalDiv.querySelector('.btn-close').onclick = function () {
-        modal.hide();
-        resolve({ isConfirmed: false });
-        setTimeout(() =&gt; modalDiv.remove(), 500);
-      };
+    modalDiv.querySelector(".btn-close").onclick = function () {
+      modal.hide();
+      try { opts.resolve?.({ isConfirmed: false }); } <span class="branch-0 cbranch-no" title="branch not covered" >catch (_) {}</span>
+    };
+&nbsp;
+    // Promise 互換（必要なら呼び出し側で then 可能）
+    return new Promise((resolve) =&gt; {
+      opts.resolve = resolve;
     });
   }
 };
@@ -274,7 +310,7 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-20T11:59:14.083Z
+                at 2025-08-28T09:34:04.276Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
