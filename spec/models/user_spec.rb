@@ -1,23 +1,21 @@
+# spec/models/user_spec.rb
 require 'rails_helper'
 
 RSpec.describe User, type: :model do
   # データの重複対策: テスト前に関連テーブル全削除
   before(:each) do
-  Bookmark.delete_all        # Userに依存 →先に消す
-  CommentReaction.delete_all
-  Comment.delete_all
-  PlaylistItem.delete_all
-  Playlist.delete_all
-  EmotionLogTag.delete_all
-  Tag.delete_all
-  EmotionLog.delete_all
-  Identity.delete_all
-  PushSubscription.delete_all
-  User.delete_all            # 最後にUser
-end
-
-
-
+    Bookmark.delete_all        # Userに依存 →先に消す
+    CommentReaction.delete_all
+    Comment.delete_all
+    PlaylistItem.delete_all
+    Playlist.delete_all
+    EmotionLogTag.delete_all
+    Tag.delete_all
+    EmotionLog.delete_all
+    Identity.delete_all
+    PushSubscription.delete_all
+    User.delete_all            # 最後にUser
+  end
 
   let(:user) { create(:user) }
 
@@ -57,7 +55,8 @@ end
 
   it "avatar_urlがなければデフォルト画像を返す" do
     user = build(:user, avatar_url: nil)
-    expect(user.profile_avatar_url).to eq("default_stick_figure.webp")
+    expected = ActionController::Base.helpers.asset_path("default_stick_figure.webp")
+    expect(user.profile_avatar_url).to eq(expected)
   end
 
   it "profile_completedの初期値はfalseであること" do
