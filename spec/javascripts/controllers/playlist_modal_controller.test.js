@@ -9,7 +9,7 @@
  *   - 50ms 後の hidden input 注入（有/無の分岐）
  *   - hidden.bs.modal 時の後片付け（dispose + 掃除）
  *   - connect() でモーダル未検出の警告分岐
- *   - open() の modalEl=null 早期 return 分岐
+ *   - open() の modalEl=null 早期 return（※仕様変更：warn は出さない）
  *   - close() の getOrCreateInstance 経由分岐
  *   - disconnect() のイベント解除・dispose
  *   - Turbo 事前イベントでのグローバル掃除（remove失敗のフォールバック含む）
@@ -262,19 +262,26 @@ describe("playlist_modal_controller (DOM effects)", () => {
     app2.stop();
   });
 
-  // open(): modalEl=null の早期 return を直接踏む（65–66）
-  test("open(): modalEl が null の場合は warn して何もしない（早期return）", async () => {
-    // 強制的に null にして分岐を踏む
-    controller.modalEl = null;
+  // open(): modalEl=null の早期 return（※仕様変更：warnは出さない）
+  test("open(): 対象モーダル要素がDOMに無い場合は何もせず早期return（warnは出さない仕様）", async () => {
+    // 直前までの warn 呼び出し履歴をクリアして正確に測る
+    jest.clearAllMocks();
     const warnSpy = jest.spyOn(console, "warn");
 
-    // 事前に show状態を作っておき、何も変化しないことを検証
+    // 強制的に null にして、さらに DOM から対象モーダル自体を除去しておく
+    controller.modalEl = null;
+    const existing = document.getElementById("playlist-modal");
+    if (existing) existing.remove();
+
+    // 事前に show状態を作っておき、open() 実行後も変化しないことを検証
     another.classList.add("show");
     another.style.display = "block";
     document.body.classList.add("modal-open");
 
-    controller.open(); // ここで早期 return のはず
-    expect(warnSpy).toHaveBeenCalledWith("[playlist-modal] modalEl が未定義です");
+    controller.open(); // ここで ID 再解決しても見つからない → 早期return
+
+    // ※ 現仕様では warn は出さない
+    expect(warnSpy).not.toHaveBeenCalled();
 
     // DOM に変化がない（show のまま / modal-open のまま）
     expect(another.classList.contains("show")).toBe(true);

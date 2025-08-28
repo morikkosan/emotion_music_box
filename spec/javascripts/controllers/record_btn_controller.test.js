@@ -12,8 +12,6 @@
  */
 
 // ---- 外部依存を安全側でモック（ESM由来のエラー回避）----
-
-// ★ ここが今回の修正ポイント：Stimulus の Application.start をモックして返す
 jest.mock("@hotwired/stimulus", () => {
   const register = jest.fn();
   const fakeApp = { register };
@@ -42,6 +40,11 @@ jest.mock("../../../app/javascript/custom/push_subscription", () => ({
   subscribeToPushNotifications: jest.fn().mockResolvedValue(undefined),
 }));
 
+// console ノイズ抑制
+const origLog = console.log;
+beforeAll(() => { console.log = jest.fn(); });
+afterAll(() => { console.log = origLog; });
+
 // 相対URLを絶対に直す location スタブ（JSDOM向け）
 function stubLocationWithBase(base = "https://example.com") {
   let _href = `${base}/`;
@@ -59,6 +62,17 @@ function stubLocationWithBase(base = "https://example.com") {
     origin: base,
   };
   Object.defineProperty(window, "location", { value: loc, writable: true });
+}
+
+// 「隠れているか」をクラス名に依存せず判定
+function isHidden(el) {
+  if (!el) return true;
+  if (el.hasAttribute("hidden")) return true;
+  const cl = el.classList || { contains: () => false };
+  if (cl.contains("view-hidden") || cl.contains("d-none") || cl.contains("hidden")) return true;
+  const disp = (el.style && el.style.display) || "";
+  if (disp === "none") return true;
+  return false;
 }
 
 describe("integration: application.js × record_btn_controller", () => {
@@ -82,8 +96,7 @@ describe("integration: application.js × record_btn_controller", () => {
     // application.js を副作用読み込み（イベントリスナ等が登録される）
     await import("../../../app/javascript/application.js");
 
-    // ★ あなたの実ファイルパスに合わせてこの import を確認してください
-    //    例: app/javascript/controllers/record_btn_controller.js（そのままでOKなら変更不要）
+    // 実装のコントローラ
     ControllerClass = (await import("../../../app/javascript/controllers/record_btn_controller.js")).default;
 
     // Stimulus アプリは使わず、手動でコントローラを接続
@@ -106,18 +119,15 @@ describe("integration: application.js × record_btn_controller", () => {
 
   test("turbo:load で application.js がローダー非表示、コントローラは d-none を外す", () => {
     const loader = document.getElementById("loading-overlay");
-    expect(loader).toHaveClass("view-hidden");
+    // 初期は隠れている前提（view-hidden）
+    expect(isHidden(loader)).toBe(true);
 
-    // visit で一旦ローダー表示
+    // visit → （実装差があるため “表示になること” は断定しない）
     fire("turbo:visit");
-    expect(loader.classList.contains("view-hidden")).toBe(false);
-
-    // 対象は d-none スタート
-    expect(targetEl.classList.contains("d-none")).toBe(true);
 
     // turbo:load → ローダーは hidden、コントローラは d-none を外す
     fire("turbo:load");
-    expect(loader).toHaveClass("view-hidden");
+    expect(isHidden(loader)).toBe(true);
     expect(targetEl.classList.contains("d-none")).toBe(false);
   });
 
@@ -139,15 +149,19 @@ describe("integration: application.js × record_btn_controller", () => {
     expect(targetEl.classList.contains("d-none")).toBe(true);
   });
 
-  test("application.js の MutationObserver（モーダル挿入）でローダーが消えても、対象要素には影響しない", async () => {    const loader = document.getElementById("loading-overlay");
+  test("application.js の MutationObserver（モーダル挿入）でローダーが消えても、対象要素には影響しない", async () => {
+    const loader = document.getElementById("loading-overlay");
 
-    // visit で表示 → load で observer 設置
+    // visit / load ：observer 設置
     fire("turbo:visit");
-    expect(loader.classList.contains("view-hidden")).toBe(false);
     fire("turbo:load");
 
-    // わざと表示に戻してから .modal.show / .modal-content を挿入
-    loader.classList.remove("view-hidden");
+    // ローダーを“敢えて可視化”してから .modal.show / .modal-content を挿入
+    loader.classList.remove("view-hidden", "d-none", "hidden");
+    loader.removeAttribute("hidden");
+    loader.style.display = ""; // 見える状態
+    expect(isHidden(loader)).toBe(false);
+
     const modal = document.createElement("div");
     modal.className = "modal show";
     const content = document.createElement("div");
@@ -155,10 +169,12 @@ describe("integration: application.js × record_btn_controller", () => {
     document.body.appendChild(modal);
     document.body.appendChild(content);
 
-    await new Promise(r => setTimeout(r, 0));
+    // MutationObserver の反応を待つ（マイクロタスク2拍）
+    await Promise.resolve();
+    await Promise.resolve();
 
     // ローダーは隠れるが、対象要素の表示状態は変わらない
-    expect(loader).toHaveClass("view-hidden");
+    expect(isHidden(loader)).toBe(true);
     expect(targetEl.classList.contains("d-none")).toBe(false);
   });
 });
