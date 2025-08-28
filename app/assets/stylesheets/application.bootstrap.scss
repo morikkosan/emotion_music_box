@@ -65,3 +65,21 @@ body.playlist-show-page .bottom-player {
   }
 }
 
+
+/* ===== モバイル：プレイリスト“一覧”モーダル内は必ずタップ可 ===== */
+#playlist-modal-mobile {
+  #super-search-panel { pointer-events: auto !important; }
+  #playlist-sidebar-home,
+  .filter-box,
+  a,
+  button,
+  .playlist-link {
+    pointer-events: auto !important;
+  }
+}
+
+/* モーダル中はフッターがタップを奪わないように（安全策） */
+.modal-open .mobile-footer { pointer-events: none; }
+
+/* ローディングカバーを隠している時はタップを邪魔しない（保険） */
+#loading-overlay.view-hidden { pointer-events: none !important; }
