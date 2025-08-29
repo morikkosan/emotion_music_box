@@ -39,78 +39,78 @@
   margin: 0;
 }
 
-
-
-
-
-
+// ============================
 // ローディング
+// ============================
 .neon-character-spinbox {
   display: inline-block;
   width: 48px; height: 48px;
   position: relative;
+  z-index: 10001;
+
+  .neon-body {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 60% 40%, #10ffec 60%, #073753 100%);
+    box-shadow: 0 0 16px 4px #1efff7;
+    position: absolute;
+    left: 8px; top: 8px;
+    animation: neon-bounce 0.7s cubic-bezier(.5,0,.5,1) infinite alternate;
+  }
+
+  /* 目 */
+  .neon-eye {
+    position: absolute;
+    top: 12px;
+    width: 5px; height: 5px;
+    background: #fff;
+    border-radius: 50%;
+    opacity: 0.8;
+    box-shadow: 0 0 4px #0ff;
+  }
+  .neon-eye-left  { left: 7px; }
+  .neon-eye-right { left: 16px; }
+
+  /* 手 */
+  .neon-arm {
+    position: absolute;
+    top: 16px; width: 10px; height: 4px;
+    background: #00ffe9;
+    border-radius: 4px;
+    box-shadow: 0 0 4px #2fffcf;
+  }
+  .neon-arm-left  { left: -7px;  transform: rotate(-35deg); }
+  .neon-arm-right { right: -7px; transform: rotate(35deg); }
+
+  /* 足 */
+  .neon-leg {
+    position: absolute;
+    bottom: 0; width: 7px; height: 3px;
+    background: #00ffe9;
+    border-radius: 3px;
+    box-shadow: 0 0 4px #2fffcf;
+    animation: leg-run 0.7s linear infinite alternate; /* 跳ねのタイミングで動かす */
+  }
+  .neon-leg-left  { left: 6px;  animation-delay: 0s; }
+  .neon-leg-right { right: 6px; animation-delay: 0.35s; }
 }
-.neon-body {
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 60% 40%, #10ffec 60%, #073753 100%);
-  box-shadow: 0 0 16px 4px #1efff7;
-  position: absolute;
-  left: 8px; top: 8px;
-  animation: neon-bounce 0.7s cubic-bezier(.5,0,.5,1) infinite alternate;
-}
+
 @keyframes neon-bounce {
   0%   { top: 8px;    transform: scaleY(1); }
   10%  { top: 0px;    transform: scaleY(1.12); }
   15%  { top: -4px;   transform: scaleY(1.1); }
-  25%  { top: -14px;  transform: scaleY(0.94);}
-  45%  { top: -22px;  transform: scaleY(1);}
-  50%  { top: -24px;  transform: scaleY(1.08);}
-  60%  { top: -12px;  transform: scaleY(0.96);}
-  80%  { top: 0px;    transform: scaleY(1.05);}
-  100% { top: 8px;    transform: scaleY(1);}
+  25%  { top: -14px;  transform: scaleY(0.94); }
+  45%  { top: -22px;  transform: scaleY(1); }
+  50%  { top: -24px;  transform: scaleY(1.08); }
+  60%  { top: -12px;  transform: scaleY(0.96); }
+  80%  { top: 0px;    transform: scaleY(1.05); }
+  100% { top: 8px;    transform: scaleY(1); }
 }
-/* 目 */
-.neon-eye {
-  position: absolute;
-  top: 12px;
-  width: 5px; height: 5px;
-  background: #fff;
-  border-radius: 50%;
-  opacity: 0.8;
-  box-shadow: 0 0 4px #0ff;
-}
-.neon-eye-left  { left: 7px; }
-.neon-eye-right { left: 16px; }
-
-/* 手 */
-.neon-arm {
-  position: absolute;
-  top: 16px; width: 10px; height: 4px;
-  background: #00ffe9;
-  border-radius: 4px;
-  box-shadow: 0 0 4px #2fffcf;
-}
-.neon-arm-left  { left: -7px;  transform: rotate(-35deg);}
-.neon-arm-right { right: -7px; transform: rotate(35deg);}
-
-/* 足 */
-.neon-leg {
-  position: absolute;
-  bottom: 0; width: 7px; height: 3px;
-  background: #00ffe9;
-  border-radius: 3px;
-  box-shadow: 0 0 4px #2fffcf;
-  /* 跳ねのタイミングで動かす */
-  animation: leg-run 0.7s linear infinite alternate;
-}
-.neon-leg-left  { left: 6px;  animation-delay: 0s; }
-.neon-leg-right { right: 6px; animation-delay: 0.35s;}
 @keyframes leg-run {
-  0%   { transform: rotate(40deg) translateY(2px);}
-  40%  { transform: rotate(-25deg) translateY(0);}
-  50%  { transform: rotate(-25deg) translateY(2px);}
-  100% { transform: rotate(40deg) translateY(2px);}
+  0%   { transform: rotate(40deg) translateY(2px); }
+  40%  { transform: rotate(-25deg) translateY(0); }
+  50%  { transform: rotate(-25deg) translateY(2px); }
+  100% { transform: rotate(40deg) translateY(2px); }
 }
 
 .loading-spinner-inline {
@@ -127,32 +127,18 @@
   transition: all 0.2s;
 }
 
-
-
-
-.neon-character-spinbox {
-  position: relative;  /* ← これを必ず付ける！（relativeでOK） */
-  z-index: 10001;      /* ← これも大きめにしてみる */
-}
-
-/* モーダルより前面に出す */
-/* 通常時は低い値を設定しておけば、ヘッダーやコンテンツの下に隠れます */
+/* モーダルより前面に出す（通常時は低い値を設定しておけばOK） */
 #bottom-player {
-  z-index: 100;  /* 適当なヘッダーよりも下の値 */
+  z-index: 100;
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
 }
 
-
-
-
-
-
-/* footerフッタースタイル */
-
-
+// ============================
+// footerフッタースタイル
+// ============================
 .footer-flex {
   display: flex;
   justify-content: space-between;
@@ -161,7 +147,6 @@
   font-size: 0.85rem;
   color: #ccc;
   text-decoration: underline;
-
 
   a {
     color: #ddd;
@@ -173,63 +158,263 @@
     }
   }
 }
+.footer-left, .footer-right { padding: 0.3rem 1rem; }
 
-.footer-left,
-.footer-right {
-  padding: 0.3rem 1rem;
-}
-
+// ============================
+// 利用規約、プライバシー、クッキー
+// ============================
 .terms {
-  background-color: #fff;         /* 白背景 */
-  color: #000;                    /* 黒文字 */
-  padding: 2rem;                  /* 内側の余白 */
-  border-radius: 10px;            /* 角を少し丸く */
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15); /* 影をつけて浮かせる */
-  line-height: 1.8;               /* 行間広めで読みやすく */
-  font-size: 1rem;                /* 基本文字サイズ */
+  background-color: #fff;
+  color: #000;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  line-height: 1.8;
+  font-size: 1rem;
   font-family: "Helvetica Neue", Arial, sans-serif;
+
+  h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #333;
+    padding-bottom: 0.5rem;
+  }
+  h2 {
+    font-size: 1.2rem;
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+    color: #222;
+    border-left: 4px solid #007BFF;
+    padding-left: 0.5rem;
+  }
+  p { margin-bottom: 1rem; }
+  ul {
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+    li { margin-bottom: 0.5rem; }
+  }
+  a {
+    color: #007BFF;
+    text-decoration: underline;
+    &:hover { color: #0056b3; }
+  }
 }
 
-.terms h1 {
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
-  border-bottom: 2px solid #333;
-  padding-bottom: 0.5rem;
+/* =========================
+   Legal pages base (Terms/Privacy/Cookie)
+   ========================= */
+.legal-page {
+  background-color: #fff;
+  color: #000;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  line-height: 1.8;
+  font-size: 1rem;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+
+  h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #333;
+    padding-bottom: 0.5rem;
+  }
+  h2 {
+    font-size: 1.2rem;
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+    color: #222;
+    border-left: 4px solid #007BFF;
+    padding-left: 0.5rem;
+  }
+  p { margin-bottom: 1rem; }
+
+  ul {
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+    li { margin-bottom: 0.5rem; }
+  }
+
+  a {
+    color: #007BFF;
+    text-decoration: underline;
+    &:hover { color: #0056b3; }
+  }
+
+  /* Cookie ページの表 */
+  &.cookie {
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.95rem;
+    }
+    th, td { border: 1px solid #ddd; padding: 0.6rem 0.8rem; vertical-align: top; }
+    thead th { background: #f5f7fb; font-weight: 600; }
+    tbody tr:nth-child(even) td { background: #fafafa; }
+  }
+
+  /* Sticky backbar */
+  .legal-backbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    margin: -2rem -2rem 1rem; /* .legal-page の padding と揃える */
+    padding: .6rem 1rem;
+    background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.88));
+    border-bottom: 1px solid rgba(0,0,0,.06);
+    backdrop-filter: blur(6px);
+
+    .btn-wrap {
+      display: flex;
+      gap: .6rem;
+      flex-wrap: wrap;
+    }
+  }
 }
 
-.terms h2 {
-  font-size: 1.2rem;
-  margin-top: 2rem;
-  margin-bottom: 0.5rem;
-  color: #222;
-  border-left: 4px solid #007BFF;
-  padding-left: 0.5rem;
+@media print {
+  .legal-page .legal-backbar { display: none; }
 }
 
-.terms p {
-  margin-bottom: 1rem;
+// ============================
+// Return Button (base)
+// ============================
+.embx-neon-return {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  padding: .72rem 1.2rem;
+  border-radius: 999px;
+  text-decoration: none;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: .02em;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color .15s ease,
+    background .15s ease,
+    border-color .15s ease,
+    transform .12s ease,
+    box-shadow .18s ease,
+    filter .15s ease;
+
+  i { margin-right: .2rem; font-size: 1.1em; vertical-align: -1px; }
+
+  /* Variant: Leaf（やさしい自然色＋軽いネオン） */
+  &.is-leaf {
+    --embx-leaf-accent: #7aff9d;
+    --embx-leaf-text:   #1d3b2a;
+    --embx-leaf-top:    #e9fbf1;
+    --embx-leaf-btm:    #d8f6e5;
+    --embx-leaf-bdr:    #a9efc4;
+
+    color: var(--embx-leaf-text);
+    border: 2px solid var(--embx-leaf-bdr);
+    background: linear-gradient(180deg, var(--embx-leaf-top), var(--embx-leaf-btm));
+    text-shadow: 0 1px 0 rgba(255,255,255,0.75);
+    box-shadow:
+      0 0 0 2px rgba(255,255,255,0.95),
+      0 10px 24px rgba(122,255,157,.22),
+      0 2px 8px rgba(0,0,0,.12),
+      inset 0 0 16px color-mix(in srgb, var(--embx-leaf-accent) 22%, transparent);
+
+    i { color: color-mix(in srgb, var(--embx-leaf-accent) 45%, var(--embx-leaf-text)); }
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -5px;
+      border-radius: inherit;
+      background:
+        radial-gradient(65% 60% at 30% 20%, rgba(122,255,157,.35), transparent 60%),
+        radial-gradient(80% 80% at 70% 80%, rgba(122,255,157,.25), transparent 60%);
+      filter: blur(10px);
+      opacity: .85;
+      z-index: -1;
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      box-shadow: inset 0 0 20px rgba(122,255,157,.22);
+    }
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        0 0 0 2px rgba(255,255,255,0.98),
+        0 12px 28px rgba(122,255,157,.30),
+        0 3px 10px rgba(0,0,0,.16),
+        inset 0 0 20px rgba(122,255,157,.26);
+    }
+    &:active {
+      transform: translateY(0);
+      box-shadow:
+        0 0 0 2px rgba(255,255,255,0.95),
+        0 6px 16px rgba(122,255,157,.25),
+        inset 0 0 22px rgba(122,255,157,.30);
+    }
+    &:focus-visible {
+      outline: none;
+      box-shadow:
+        0 0 0 3px rgba(122,255,157,.75),
+        0 0 0 6px rgba(255,255,255,.85),
+        inset 0 0 18px rgba(122,255,157,.28);
+    }
+  }
+
+  /* Variant: Moss（暗め背景でも映える） */
+  &.is-moss {
+    --embx-moss-accent: #9dff7a;
+    --embx-moss-text:   #0e2a1f;
+    --embx-moss-top:    #dff4e5;
+    --embx-moss-btm:    #cdebd9;
+    --embx-moss-bdr:    #a6e7c0;
+
+    color: var(--embx-moss-text);
+    background: linear-gradient(180deg, var(--embx-moss-top), var(--embx-moss-btm));
+    border: 2px solid var(--embx-moss-bdr);
+    text-shadow: 0 1px 0 rgba(255,255,255,.7);
+    box-shadow:
+      0 0 0 2px rgba(255,255,255,0.95),
+      0 10px 24px rgba(157,255,122,.22),
+      0 2px 8px rgba(0,0,0,.12),
+      inset 0 0 16px color-mix(in srgb, var(--embx-moss-accent) 22%, transparent);
+
+    &::before {
+      content:"";
+      position:absolute;
+      inset:-5px;
+      border-radius:inherit;
+      background:
+        radial-gradient(65% 60% at 30% 20%, rgba(157,255,122,.35), transparent 60%),
+        radial-gradient(80% 80% at 70% 80%, rgba(157,255,122,.25), transparent 60%);
+      filter: blur(10px);
+      opacity:.85;
+      z-index:-1;
+    }
+  }
 }
 
-.terms ul {
-  padding-left: 1.5rem;
-  margin-bottom: 1rem;
+/* A11y / Responsive */
+@media (prefers-reduced-motion: reduce) {
+  .embx-neon-return { transition: none; }
+  .embx-neon-return:hover,
+  .embx-neon-return:active { transform: none; }
+}
+@media (max-width: 575.98px) {
+  .embx-neon-return { font-size: 1.08rem; padding: .82rem 1.25rem; }
 }
 
-.terms ul li {
-  margin-bottom: 0.5rem;
-}
-
-.terms a {
-  color: #007BFF;
-  text-decoration: underline;
-}
-
-.terms a:hover {
-  color: #0056b3;
-}
-
-
-/* ▼ ネオンキャラのサンプルスタイル(適宜調整) */
+// ============================
+// ▼ ネオンキャラのサンプルスタイル(適宜調整)
+//   ※ サンプル側はグローバルのまま維持（既存実装を崩さない）
+// ============================
 .neon-body {
   display: inline-block;
   position: relative;
@@ -253,8 +438,8 @@
   border-radius: 2px;
   top: 16px;
 }
-.neon-arm-left  { left: 0;  transform: rotate(-25deg);}
-.neon-arm-right { right: 0; transform: rotate(25deg);}
+.neon-arm-left  { left: 0;  transform: rotate(-25deg); }
+.neon-arm-right { right: 0; transform: rotate(25deg); }
 .neon-leg {
   position: absolute;
   width: 4px; height: 10px;
@@ -262,24 +447,13 @@
   border-radius: 2px;
   bottom: 0;
 }
-.neon-leg-left  { left: 8px;  transform: rotate(-10deg);}
-.neon-leg-right { right: 8px; transform: rotate(10deg);}
+.neon-leg-left  { left: 8px;  transform: rotate(-10deg); }
+.neon-leg-right { right: 8px; transform: rotate(10deg); }
 
-
-
-
-
-
-
-
-
-/* 色違いの切替などは既存の .toggle-btn.active 等が効いていればOK */
-
-
-
-// indexのスタイルタグ
+// ============================
+// index のスタイル
+// ============================
 // チェックボックスラベル
-// ===== チェックボックスラベル（豪華ver.） =====
 .bookmark-merge-toggle-label {
   background: linear-gradient(135deg, #009688, #4db6ac);
   background-size: 200% 200%;
@@ -309,7 +483,7 @@
   margin-right: 0.5em;
 }
 
-// ===== プレイリスト作成ボタン =====
+// プレイリスト作成ボタン
 .bookmark-playlist-create-btn {
   background: linear-gradient(135deg, #ff7043, #f06292);
   background-size: 200% 200%;
@@ -331,17 +505,15 @@
   transform: scale(1.06);
 }
 
-// ===== 共通アニメーション =====
+// 共通アニメーション
 @keyframes bookmarkNeonGlow {
   0%   { background-position: left center; }
   50%  { background-position: right center; }
   100% { background-position: left center; }
 }
 
-// ===== パネル&ツールバー =====
-.bookmark-panel {
-  margin: 1.5rem 0 2rem 1rem;
-}
+// パネル&ツールバー
+.bookmark-panel { margin: 1.5rem 0 2rem 1rem; }
 .bookmark-toolbar {
   display: flex;
   justify-content: center;
@@ -349,13 +521,10 @@
   gap: 8rem;
 }
 
-// ===== プレイリスト作成フォーム =====
-.bookmark-create-form {
-  margin: 0;
-}
+// プレイリスト作成フォーム
+.bookmark-create-form { margin: 0; }
 
-// ===== チェックボックスサイズ（カスタム） =====
-// ※古い.playlist-check--custom-sizeは使わず、下の新しい方のみ残す！
+// チェックボックスサイズ（カスタム）
 .playlist-check-accent {
   width: 2.2rem;
   height: 2.2rem;
@@ -363,20 +532,16 @@
   box-shadow: 0 0 8px #fff6, 0 0 3px #e800ff;
 }
 
-// ===== コメント数まわり =====
-.comment-count-box {
-  gap: 4px;
-}
-.comment-count-number {
-  font-size: 1rem;
-}
+// コメント数まわり
+.comment-count-box { gap: 4px; }
+.comment-count-number { font-size: 1rem; }
 .comment-icon {
   width: 48px;
   height: 48px;
   display: inline-block;
 }
 
-// ===== ジャケット画像・再生アイコン =====
+// ジャケット画像・再生アイコン
 .music-art-box {
   width: 80px;
   position: relative;
@@ -396,23 +561,17 @@
   cursor: pointer;
 }
 
-// ===== ログ本文 =====
+// ログ本文
 .log-description {
   color: white;
   font-size: 1.1rem;
 }
 
-
 // スマホ版index
-
-// ロゴ画像
 .mobile-logo {
   max-width: 150px;
   width: 100%;
 }
-
-// キャッチコピー
-
 
 // HPバー
 .mobile-hp-bar-container {
@@ -460,7 +619,7 @@
   box-shadow: 0 0 40px #ae5cff80;
 }
 
-// フッター
+// フッター（モバイル）
 .mobile-footer {
   box-shadow: 0 -1px 18px #00b7ff22;
   font-size: 0.99rem;
@@ -482,10 +641,7 @@
   text-shadow: 0 0 8px #cd47d4a0;
 }
 
-// --- 必要に応じて追加 ---
-
-
-/* ボタン */
+// ボタン（検索）
 input[type="submit"].mobile-super-search-btn,
 button[type="submit"].mobile-super-search-btn {
   background: linear-gradient(90deg,#00e7ff,#ae5cff 90%) !important;
