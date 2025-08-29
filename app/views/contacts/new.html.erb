@@ -1,3 +1,5 @@
+<% content_for :body_class, ' no-player' %>
+
 <div class="neon-new-contact-wrapper">
 <%= form_with model: @contact, url: contact_path, local: true, data: { turbo: false }, html: { class: "neon-new-contact-form" } do |f| %>
     <div class="neon-new-form-group">

@@ -83,3 +83,13 @@ body.playlist-show-page .bottom-player {
 
 /* ローディングカバーを隠している時はタップを邪魔しない（保険） */
 #loading-overlay.view-hidden { pointer-events: none !important; }
+
+/* === プレーヤー非表示フラグ用（問い合わせ・プロフィール編集など） === */
+.no-player #bottom-player {
+  display: none !important;
+}
+
+.no-player #hidden-sc-player {
+  display: none !important;
+}
+
