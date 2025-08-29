@@ -18,8 +18,18 @@
           <div>
             <% log.tags.each do |tag| %>
               <% if user_signed_in? %>
-                <%= link_to tag.name, emotion_logs_path(genre: tag.name),
-                      class: "badge bg-primary text-light mobile-list-tag" %>
+                <% mobile_link_params = request.query_parameters.merge(view: "mobile", genre: tag.name) %>
+                <% tag_link_path =
+                     if @bookmark_page.present?
+                       bookmarks_emotion_logs_path(mobile_link_params)
+                     else
+                       emotion_logs_path(mobile_link_params)
+                     end %>
+
+                <%= link_to tag.name,
+                            tag_link_path,
+                            class: "badge bg-primary text-light mobile-list-tag",
+                            data: { turbo_frame: "logs_list_mobile", turbo_action: "advance", no_loader: true } %>
               <% else %>
                 <span class="badge bg-primary text-light mobile-list-tag" title="ログインすると使えます"><%= tag.name %></span>
               <% end %>
@@ -65,7 +75,7 @@
             <%= image_tag "comment_icon.webp", alt: "コメント数", class: "mobile-list-comment-icon" %>
             <span class="ms-1 text-white mobile-list-comment-count"><%= log.comments_count %></span>
           </div>
-         <% if current_user == log.user %>
+          <% if current_user == log.user %>
             <%= form_with url: emotion_log_path(log),
                   method: :delete,
                   data: { turbo_confirm: "本当に削除しますか？" },
