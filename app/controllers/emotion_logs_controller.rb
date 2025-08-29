@@ -63,7 +63,10 @@ class EmotionLogsController < ApplicationController
   # =========================
   # 詳細
   # =========================
-  def show
+  # =========================
+# 詳細
+# =========================
+def show
   @emotion_log = EmotionLog.find_by(id: params[:id])
   unless @emotion_log
     respond_to do |format|
@@ -85,11 +88,18 @@ class EmotionLogsController < ApplicationController
   @reaction_counts = CommentReaction.where(comment_id: @comments.map(&:id)).group(:comment_id, :kind).count
   @user_reactions  = current_user&.comment_reactions&.where(comment_id: @comments.map(&:id))&.pluck(:comment_id, :kind)&.to_h || {}
 
+  # ★ モバイルからのフレーム遷移なら、必ず logs_list_mobile を返す
+  if turbo_frame_request? && params[:view] == "mobile"
+    render partial: "emotion_logs/show_mobile_frame", formats: [:html]
+    return
+  end
+
   respond_to do |format|
     format.html
     format.turbo_stream { render turbo_stream: turbo_stream.redirect_to(emotion_log_path(@emotion_log, format: :html)) }
   end
 end
+
 
 
 
