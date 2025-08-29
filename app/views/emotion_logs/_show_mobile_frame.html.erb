@@ -1,0 +1,7 @@
+<%= turbo_frame_tag "logs_list_mobile" do %>
+  <%= render "emotion_logs/show_mobile",
+        emotion_log: @emotion_log,
+        comments: @comments,
+        reaction_counts: @reaction_counts,
+        user_reactions: @user_reactions %>
+<% end %>
