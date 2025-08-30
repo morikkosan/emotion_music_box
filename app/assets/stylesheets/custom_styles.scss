@@ -105,8 +105,9 @@ a {
 
 h1 {
   color: transparent; /* 文字を透明に設定 */
-  background: linear-gradient(90deg, #ff2994, #af08de); /* グラデーションの色 */
+  background: linear-gradient(90deg, #ff2994, #d4b2dd); /* グラデーションの色 */
   -webkit-background-clip: text; /* 背景を文字の形にクリップ */
+  background-clip: text;          /* 非WebKitでも将来用に一応 */
   -webkit-text-fill-color: transparent; /* 文字を透明に設定 */
   font-family: 'Nunito', sans-serif; /* 丸みの強いフォント */
   font-weight: bold; /* 太字 */
@@ -114,6 +115,7 @@ h1 {
   text-transform: uppercase; /* 大文字に変換 */
   text-shadow: 1px 1px 2px rgba(231, 205, 205, 0.1); /* 軽い影で柔らかさを演出 */
 }
+
 
 h1 i.bi bi-heart-pulse {
   font-size: 30px; /* アイコンのサイズ */
@@ -883,6 +885,29 @@ h1 i.bi bi-heart-pulse {
 @keyframes spin-cyber {
   0% { transform: rotate(0deg);}
   100% { transform: rotate(360deg);}
+}
+
+/* この見出しだけグローバルh1のグラデ系を打ち消して、色を適用する */
+h1.mobile-catchcopy {
+  /* グローバル h1 のグラデ関連を無効化 */
+  background: none;
+  -webkit-background-clip: initial;
+
+  /* WebKitでの文字色は text-fill-color が優先されるため必須 */
+  -webkit-text-fill-color: rgb(215, 205, 216);
+
+  /* 非WebKitやフォールバック向けにも明示 */
+  color: rgb(215, 205, 216);
+
+  /* ここからはあなたの指定どおり */
+  text-shadow: 0 0 8px #1ee4da;
+  font-size: 2rem;
+  font-weight: bold;
+
+  /* 必要なら追加で打ち消し（お好みで） */
+  text-transform: none;
+  letter-spacing: 0;
+  /* margin, line-height なども必要に応じて */
 }
 
 

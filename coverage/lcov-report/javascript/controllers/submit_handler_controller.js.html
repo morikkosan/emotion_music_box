@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>182/182</span>
+                <span class='fraction'>187/187</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>53/53</span>
+                <span class='fraction'>55/55</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>182/182</span>
+                <span class='fraction'>187/187</span>
             </div>
         
             
@@ -245,7 +245,12 @@
 <a name='L180'></a><a href='#L180'>180</a>
 <a name='L181'></a><a href='#L181'>181</a>
 <a name='L182'></a><a href='#L182'>182</a>
-<a name='L183'></a><a href='#L183'>183</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -269,17 +274,17 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">36x</span>
-<span class="cline-any cline-yes">36x</span>
-<span class="cline-any cline-yes">36x</span>
-<span class="cline-any cline-yes">36x</span>
-<span class="cline-any cline-yes">36x</span>
-<span class="cline-any cline-yes">36x</span>
-<span class="cline-any cline-yes">36x</span>
-<span class="cline-any cline-yes">30x</span>
-<span class="cline-any cline-yes">36x</span>
-<span class="cline-any cline-yes">29x</span>
-<span class="cline-any cline-yes">29x</span>
+<span class="cline-any cline-yes">51x</span>
+<span class="cline-any cline-yes">51x</span>
+<span class="cline-any cline-yes">51x</span>
+<span class="cline-any cline-yes">51x</span>
+<span class="cline-any cline-yes">51x</span>
+<span class="cline-any cline-yes">51x</span>
+<span class="cline-any cline-yes">51x</span>
+<span class="cline-any cline-yes">43x</span>
+<span class="cline-any cline-yes">51x</span>
+<span class="cline-any cline-yes">42x</span>
+<span class="cline-any cline-yes">42x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -309,6 +314,16 @@
 <span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">15x</span>
@@ -343,13 +358,10 @@
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
-<span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">12x</span>
-<span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
@@ -375,8 +387,6 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">12x</span>
@@ -467,7 +477,7 @@ export default class extends Controller {
   saveHPBeforeFetch(form) {
     const hp = this.getHPFromForm(form);
     if (hp === null) {
-      console.warn("⚠️ HP入力が見つからない/数値でない");
+      console.log("ℹ️ このフォームにはHP入力が無いので保存しない");
       return;
     }
     localStorage.setItem("hpPercentage", String(hp));
@@ -485,8 +495,18 @@ export default class extends Controller {
     const form     = this.element;
     const formData = new FormData(form);
 &nbsp;
-    // ★★★ ここが超重要：送信直前に保存＆反映 ★★★
+    // ★★★ ここが重要：送信直前に保存＆反映（HP入力がある時だけ）★★★
     this.saveHPBeforeFetch(form);
+&nbsp;
+    // ★★★ 修正点：HP入力が「このフォームにある時だけ」top-level hp を添付 ★★★
+    const hpFromForm = this.getHPFromForm(form);
+    if (Number.isFinite(hpFromForm)) {
+      const hpToSend = Math.min(100, Math.max(0, hpFromForm));
+      formData.set("hp", String(hpToSend)); // top-level 'hp'
+      console.log("🚚 attach top-level hp to FormData:", hpToSend);
+    } else {
+      console.log("🚫 no form HP: do not attach top-level hp");
+    }
 &nbsp;
     fetch(form.action, {
       method: "POST",
@@ -522,8 +542,7 @@ export default class extends Controller {
             }
           }
 &nbsp;
-          // ★ サーバ値での上書きはしない（フォーム値優先で固定） ★
-          // 保険：リダイレクト前にもう一度フォーム値で確定
+          // ★ サーバ値での上書きはしない（フォームHPがある場合はその値で固定）
           const hp = this.getHPFromForm(form);
           if (hp !== null) {
             localStorage.setItem("hpPercentage", String(hp));
@@ -531,9 +550,7 @@ export default class extends Controller {
             console.log("🔁 force keep FORM HP before redirect:", hp);
           }
 &nbsp;
-          // ================================
-          // ★ 追加：フォームにHPが無い時だけ hpDelta(±) を加算
-          // ================================
+          // ★ フォームにHPが無い時だけ、サーバ返却でバーを更新
           const hpInput =
             form.querySelector('[name="emotion_log[hp]"]') ||
             form.querySelector('[name="hp"]') ||
@@ -550,7 +567,6 @@ export default class extends Controller {
             console.log("🧮 hpDelta applied:", data.hpDelta, "=&gt;", next);
           } else if ((!hpInput || hpInput.value === "") &amp;&amp;
                      typeof data.hpPercentage !== "undefined" &amp;&amp; data.hpPercentage !== null) {
-            // 保険：割合が返ってきた場合（フォームHPが無いときのみ採用）
             const p = Math.min(100, Math.max(0, Number(data.hpPercentage)));
             if (Number.isFinite(p)) {
               localStorage.setItem("hpPercentage", String(p));
@@ -558,7 +574,6 @@ export default class extends Controller {
               console.log("✅ used server hpPercentage (fallback):", p);
             }
           }
-          // ================================
 &nbsp;
           // HPバー反映／リダイレクト
           const redirect = () =&gt; { if (data.redirect_url) window.location.href = data.redirect_url; };
@@ -616,7 +631,7 @@ export default class extends Controller {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-17T17:03:17.491Z
+                at 2025-08-29T15:56:07.985Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

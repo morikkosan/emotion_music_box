@@ -7,8 +7,9 @@
         <div class="mb-3">
           <strong>
             <%= link_to playlist.name,
-                        playlist_path(playlist),
-                        class: "text-decoration-none text-dark" %>
+            playlist_path(playlist),
+            class: "playlist-link",
+            data: { turbo_frame: "_top" } %>
           </strong>
           <!-- 曲リストはコメントアウトのままでOK -->
         </div>

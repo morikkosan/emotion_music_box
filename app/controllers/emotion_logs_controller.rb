@@ -64,7 +64,19 @@ class EmotionLogsController < ApplicationController
   # 詳細
   # =========================
   def show
-    @emotion_log = EmotionLog.find(params[:id])
+    @emotion_log = EmotionLog.find_by(id: params[:id])
+    unless @emotion_log
+      respond_to do |format|
+        format.html { redirect_to emotion_logs_path(view: params[:view]), alert: "この投稿は削除されています。" }
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.redirect_to(
+            emotion_logs_path(view: params[:view])
+          ), status: :see_other
+        end
+      end
+      return
+    end
+
     @comments = Comment.where(emotion_log_id: @emotion_log.id)
                        .includes(:user, :comment_reactions)
                        .order(created_at: :desc)
@@ -73,9 +85,15 @@ class EmotionLogsController < ApplicationController
     @reaction_counts = CommentReaction.where(comment_id: @comments.map(&:id)).group(:comment_id, :kind).count
     @user_reactions  = current_user&.comment_reactions&.where(comment_id: @comments.map(&:id))&.pluck(:comment_id, :kind)&.to_h || {}
 
+    # ★ モバイルからのフレーム遷移なら、必ず logs_list_mobile を返す
+    if turbo_frame_request? && params[:view] == "mobile"
+      render partial: "emotion_logs/show_mobile_frame", formats: [:html]
+      return
+    end
+
     respond_to do |format|
       format.html
-      format.turbo_stream
+      format.turbo_stream { render turbo_stream: turbo_stream.redirect_to(emotion_log_path(@emotion_log, format: :html)) }
     end
   end
 
@@ -95,24 +113,24 @@ class EmotionLogsController < ApplicationController
   # 作成
   # =========================
   def create
-    @emotion_log  = current_user.emotion_logs.build(emotion_log_params)
+    attrs = emotion_log_params.to_h
+    attrs.delete("hp")
+    @emotion_log = current_user.emotion_logs.build(attrs)
 
-    # ★ まずフォームから来た hp を採用（0..100）
-    hp_from_form = params.dig(:emotion_log, :hp)
-    hp_percentage = hp_from_form.present? ? hp_from_form.to_i.clamp(0, 100) : nil
-
-    # ★ 無ければ感情から推定（0..100 を返す版）
-    hp_percentage ||= calculate_hp_percentage(@emotion_log.emotion)
-
-    is_today = @emotion_log.date.to_date == Date.current
+    hp_from_form   = params.dig(:emotion_log, :hp).presence || params[:hp].presence
+    hp_percentage  = hp_from_form.present? ? hp_from_form.to_i.clamp(0, 100) : calculate_hp_percentage(@emotion_log.emotion)
+    hp_delta       = calculate_hp(@emotion_log.emotion)
+    is_today       = @emotion_log.date&.to_date == Date.current   # ← nil安全化
 
     if @emotion_log.save
+      Rails.logger.info("🔔 notify hp_delta=#{hp_delta} emotion=#{@emotion_log.emotion} hp_percentage=#{hp_percentage}")
+
       PushNotifier.send_emotion_log(
         current_user,
         emotion:     @emotion_log.emotion,
         track_name:  @emotion_log.track_name,
         artist_name: @emotion_log.description.presence || "アーティスト不明",
-        hp:          hp_percentage
+        hp:          hp_delta  # ← 差分固定
       )
 
       respond_to do |format|
@@ -121,9 +139,8 @@ class EmotionLogsController < ApplicationController
             success:      true,
             message:      "記録が保存されました",
             redirect_url: emotion_logs_path,
-            hpPercentage: hp_percentage,   # ← 0..100 を返す
-            hpDelta:      calculate_hp(@emotion_log.emotion),  # ★ これ1行だけ追加
-
+            hpPercentage: hp_percentage,  # 0..100（メーター用）
+            hpDelta:      hp_delta,       # ±（差分）
             hp_today:     is_today
           }
         end
@@ -140,13 +157,9 @@ class EmotionLogsController < ApplicationController
         end
         format.html { redirect_to emotion_logs_path, notice: "記録が保存されました" }
       end
-
     else
       respond_to do |format|
-        format.json do
-          render json: { success: false, errors: @emotion_log.errors.full_messages },
-                 status: :unprocessable_entity
-        end
+        format.json { render json: { success: false, errors: @emotion_log.errors.full_messages }, status: :unprocessable_entity }
         format.turbo_stream do
           render turbo_stream: turbo_stream.replace(
             "record-modal-content",
@@ -172,19 +185,22 @@ class EmotionLogsController < ApplicationController
 
   def update
     @emotion_log = EmotionLog.find(params[:id])
+    attrs = emotion_log_params.to_h
+    attrs.delete("hp")
 
-    if @emotion_log.update(emotion_log_params)
-      hp_from_form = params.dig(:emotion_log, :hp)
+    if @emotion_log.update(attrs)
+      hp_from_form  = params.dig(:emotion_log, :hp).presence || params[:hp].presence
       hp_percentage = hp_from_form.present? ? hp_from_form.to_i.clamp(0, 100) : calculate_hp_percentage(@emotion_log.emotion)
-      is_today      = @emotion_log.date.to_date == Date.current
+      hp_delta      = calculate_hp(@emotion_log.emotion)
+      is_today      = @emotion_log.date&.to_date == Date.current   # ← nil安全化
 
       render json: {
         success: true,
         message: "記録が更新されました",
         redirect_url: emotion_logs_path,
-        hpPercentage: hp_percentage,  # ← 0..100
-        hpDelta:      calculate_hp(@emotion_log.emotion),
-        hp_today: is_today
+        hpPercentage: hp_percentage,
+        hpDelta:      hp_delta,
+        hp_today:     is_today
       }
     else
       render json: { success: false, errors: @emotion_log.errors.full_messages }, status: :unprocessable_entity
@@ -192,18 +208,43 @@ class EmotionLogsController < ApplicationController
   end
 
   def destroy
-    log = EmotionLog.find(params[:id])
-    dom_key = view_context.dom_id(log)
-    log.destroy
+    log     = EmotionLog.find(params[:id])
+    base_id = view_context.dom_id(log) # 例: "emotion_log_19840"
 
-    render turbo_stream: turbo_stream.remove(dom_key) + turbo_stream.append(
-      "modal-container",
-      view_context.tag.div(
-        "",
-        id: "flash-container",
-        data: { flash_notice: "投稿を削除しました", flash_alert: nil }
-      )
-    )
+    log.destroy!  # CASCADE / dependent が効くので関連も削除
+
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.remove(base_id),               # デスクトップ
+          turbo_stream.remove("#{base_id}_mobile"),   # モバイル
+          turbo_stream.append(
+            "modal-container",
+            view_context.tag.div(
+              "",
+              id: "flash-container",
+              data: { flash_notice: "投稿を削除しました", flash_alert: nil }
+            )
+          )
+        ]
+      end
+      format.html { redirect_to emotion_logs_path, notice: "投稿を削除しました" }
+    end
+  rescue ActiveRecord::InvalidForeignKey => e
+    Rails.logger.error("❌ FK violation on destroy: #{e.class}: #{e.message}")
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.append(
+          "modal-container",
+          view_context.tag.div(
+            "",
+            id: "flash-container",
+            data: { flash_notice: nil, flash_alert: "この投稿は関連づけが残っているため削除できませんでした。" }
+          )
+        ), status: :unprocessable_entity
+      end
+      format.html { redirect_to emotion_logs_path, alert: "関連づけが残っているため削除できませんでした。" }
+    end
   end
 
   # =========================
@@ -288,10 +329,34 @@ class EmotionLogsController < ApplicationController
 
   private
 
-# ★ 感情 → HP（0..100）へ変換 絶対消さない
+  # ★ 感情 → HP（0..100）へ変換（バーと一致：限界=0）
+  def calculate_hp_percentage(emotion)
+    case emotion
+    when "限界"       then 0
+    when "イライラ"   then 30
+    when "いつも通り" then 50
+    when "気分良い"   then 70
+    when "最高"       then 100
+    else 50
+    end
+  end
+
+  # 0..100 → 感情
+  def calculate_hp_emotion(hp)
+    case hp
+    when 0..1    then "限界"
+    when 2..25   then "イライラ"
+    when 26..50  then "いつも通り"
+    when 51..70  then "気分良い"
+    when 71..100 then "最高"
+    else "いつも通り"
+    end
+  end
+
+  # HPの差分（お好みのまま）
   def calculate_hp(emotion)
-  { "最高" => 50, "気分良い" => 30, "いつも通り" => 0, "イライラ" => -30, "限界" => -50 }[emotion] || 0
-end
+    { "最高" => 50, "気分良い" => 30, "いつも通り" => 0, "イライラ" => -30, "限界" => -50 }[emotion] || 0
+  end
 
   def render_mobile_frame_if_needed
     if turbo_frame_request? && params[:view] == "mobile"
@@ -309,30 +374,6 @@ end
     request.user_agent.to_s.downcase =~ /mobile|webos|iphone|android/
   end
 
-  # 0..100 → 感情
-  def calculate_hp_emotion(hp)
-    case hp
-    when 0..1    then "限界"
-    when 2..25   then "イライラ"
-    when 26..50  then "いつも通り"
-    when 51..70  then "気分良い"
-    when 71..100 then "最高"
-    else "いつも通り"
-    end
-  end
-
-  # ★ 感情 → 0..100（割合）へ正規化
-  def calculate_hp_percentage(emotion)
-    case emotion
-    when "限界"       then 10
-    when "イライラ"   then 30
-    when "いつも通り" then 50
-    when "気分良い"   then 70
-    when "最高"       then 100
-    else 50
-    end
-  end
-
   def apply_sort_and_period_filters(logs)
     sort_param = params[:sort].presence || "new"
     logs = case sort_param
@@ -346,14 +387,14 @@ end
     case params[:period]
     when "today"    then logs.for_today
     when "week"     then logs.for_week
-    when "month"     then logs.for_month
+    when "month"    then logs.for_month
     when "halfyear" then logs.for_half_year
     when "year"     then logs.for_year
     else logs
     end
   end
 
-  # ★ Strong Params に :hp を追加
+  # Strong Params（hp は読み取り用途で permit するが、保存には使わない）
   def emotion_log_params
     params.require(:emotion_log).permit(:date, :emotion, :description, :music_url, :track_name, :tag_names, :hp)
   end

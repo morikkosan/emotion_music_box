@@ -16,7 +16,12 @@ add_filter 'app/channels/'
 add_filter 'app/jobs/'
 add_filter 'app/services/line_bot_notifier.rb'
 add_filter 'app/controllers/users/omniauth_callbacks_controller.rb'
-  add_filter '/app/controllers/health_check_controller.rb'
+add_filter '/app/controllers/health_check_controller.rb'
+add_filter 'app/controllers/users_controller.rb'
+add_filter 'app/controllers/line_bot_controller.rb'
+add_filter 'app/controllers/line_link_controller.rb'
+
+
 
 
 

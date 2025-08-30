@@ -145,8 +145,8 @@ describe("submit_handler_controller", () => {
   });
 
   // ---- saveHPBeforeFetch ----
-  test("saveHPBeforeFetch: 保存 & updateHPBar / 未検出は warn", () => {
-    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+  test("saveHPBeforeFetch: 保存 & updateHPBar / 未検出は log", () => {
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
     hpInput.value = "88";
     controller.saveHPBeforeFetch(formEl);
     expect(localStorage.getItem("hpPercentage")).toBe("88");
@@ -154,46 +154,44 @@ describe("submit_handler_controller", () => {
 
     hpInput.remove();
     controller.saveHPBeforeFetch(formEl);
-    expect(warnSpy).toHaveBeenCalled();
+    expect(logSpy).toHaveBeenCalled();
   });
 
   test("saveHPBeforeFetch: updateHPBar 未定義でも例外なく進む(false側)", () => {
-  window.updateHPBar = undefined;      // ← false側に倒す
-  const input = formEl.querySelector('[name="emotion_log[hp]"]');
-  input.value = "77";
-  expect(() => controller.saveHPBeforeFetch(formEl)).not.toThrow();
-  expect(localStorage.getItem("hpPercentage")).toBe("77");
-});
-
-test("hpDelta → hpPercentage を同テスト内で連続で踏む（取りこぼし防止）", async () => {
-  // hpDelta（フォームHP空 → 直前保存は 0 扱い）
-  const input = formEl.querySelector('[name="emotion_log[hp]"]');
-  input.value = "";
-  global.fetch.mockResolvedValueOnce({
-    ok: true, json: async () => ({
-      success: true, message: "OK", hp_today: false, redirect_url: "/tmp1", hpDelta: 7
-    }),
+    window.updateHPBar = undefined;      // ← false側に倒す
+    const input = formEl.querySelector('[name="emotion_log[hp]"]');
+    input.value = "77";
+    expect(() => controller.saveHPBeforeFetch(formEl)).not.toThrow();
+    expect(localStorage.getItem("hpPercentage")).toBe("77");
   });
-  window.Swal.fire = jest.fn().mockResolvedValue({});
-  controller.submit({ preventDefault: () => {} });
-  await drainMicrotasks();
-  expect(localStorage.getItem("hpPercentage")).toBe("57");
 
-  // hpPercentage（遅延リダイレクト分）
-  global.fetch.mockResolvedValueOnce({
-    ok: true, json: async () => ({
-      success: true, message: "OK", hp_today: true, redirect_url: "/tmp2", hpPercentage: 64
-    }),
+  test("hpDelta → hpPercentage を同テスト内で連続で踏む（取りこぼし防止）", async () => {
+    // hpDelta（フォームHP空 → 直前保存は 0 扱い）
+    const input = formEl.querySelector('[name="emotion_log[hp]"]');
+    input.value = "";
+    global.fetch.mockResolvedValueOnce({
+      ok: true, json: async () => ({
+        success: true, message: "OK", hp_today: false, redirect_url: "/tmp1", hpDelta: 7
+      }),
+    });
+    window.Swal.fire = jest.fn().mockResolvedValue({});
+    controller.submit({ preventDefault: () => {} });
+    await drainMicrotasks();
+    expect(localStorage.getItem("hpPercentage")).toBe("57");
+
+    // hpPercentage（遅延リダイレクト分）
+    global.fetch.mockResolvedValueOnce({
+      ok: true, json: async () => ({
+        success: true, message: "OK", hp_today: true, redirect_url: "/tmp2", hpPercentage: 64
+      }),
+    });
+    jest.useFakeTimers();
+    controller.submit({ preventDefault: () => {} });
+    await drainMicrotasks();
+    jest.runOnlyPendingTimers();
+    await drainMicrotasks();
+    expect(localStorage.getItem("hpPercentage")).toBe("64");
   });
-  jest.useFakeTimers();
-  controller.submit({ preventDefault: () => {} });
-  await drainMicrotasks();
-  jest.runOnlyPendingTimers();
-  await drainMicrotasks();
-  expect(localStorage.getItem("hpPercentage")).toBe("64");
-});
-
-
 
   // ---- submit: 成功（hp_today=true）----
   test("submit 成功（hp_today=true）: 前保存→Swal→playlist-toast→再保存→1500ms後 redirect", async () => {

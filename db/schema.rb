@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_06_26_163232) do
+ActiveRecord::Schema[7.2].define(version: 2025_08_27_142947) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -129,6 +129,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_06_26_163232) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["emotion_log_id"], name: "index_playlist_items_on_emotion_log_id"
+    t.index ["playlist_id", "emotion_log_id"], name: "index_playlist_items_on_playlist_and_emotion_log", unique: true
     t.index ["playlist_id"], name: "index_playlist_items_on_playlist_id"
   end
 
@@ -206,7 +207,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_06_26_163232) do
   add_foreign_key "emotion_logs", "users"
   add_foreign_key "identities", "users"
   add_foreign_key "line_link_tokens", "users"
-  add_foreign_key "playlist_items", "emotion_logs"
+  add_foreign_key "playlist_items", "emotion_logs", name: "fk_playlist_items_emotion_logs_cascade", on_delete: :cascade
   add_foreign_key "playlist_items", "playlists"
   add_foreign_key "playlists", "users"
   add_foreign_key "push_subscriptions", "users"

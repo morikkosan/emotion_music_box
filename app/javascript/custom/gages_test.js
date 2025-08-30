@@ -12,35 +12,29 @@ window.updateHPBar = function () {
 
   if (bars.length === 0) return;
 
-  // 親要素の横幅が0なら表示されるまで待つ（先頭バー基準）
-  const track = bars[0].parentElement;
-  if (track && track.offsetWidth === 0) {
-    requestAnimationFrame(() => {
-      if (track.offsetWidth > 0) {
-        window.updateHPBar();
-      } else {
-        const ro = new ResizeObserver(() => {
-          if (track.offsetWidth > 0) {
-            ro.disconnect();
-            window.updateHPBar();
-          }
-        });
-        ro.observe(track);
-      }
-    });
-    return;
+  // ★ 変更点：最初のバーの親幅でブロックしない
+  // まず可視のバーが1つでもあるか見る（desktop/mobile 並存時の対策）
+  const hasVisibleBar = bars.some((b) => {
+    // display:none だと offsetParent が null / getClientRects が 0
+    return b.offsetParent !== null || b.getClientRects().length > 0;
+  });
+
+  // 可視バーがまだ無い（=非表示領域にしか存在しない）場合でも、
+  // 幅は先に反映しておいて、次フレームで再評価する。
+  if (!hasVisibleBar) {
+    // 次フレームでもう一度（view-switcher の表示切替後に走る）
+    requestAnimationFrame(() => window.updateHPBar());
   }
 
   let storedHP = localStorage.getItem("hpPercentage");
-  let hpPercentage = (storedHP !== null && !isNaN(parseFloat(storedHP)))
-    ? parseFloat(storedHP)
-    : 50;
+  let hpPercentage =
+    storedHP !== null && !isNaN(parseFloat(storedHP)) ? parseFloat(storedHP) : 50;
 
   hpPercentage = Math.min(100, Math.max(0, hpPercentage));
   const barWidth = hpPercentage + "%";
 
   // 全バーに反映
-  bars.forEach(b => {
+  bars.forEach((b) => {
     b.style.width = barWidth;
     b.dataset.width = barWidth;
   });
@@ -49,7 +43,7 @@ window.updateHPBar = function () {
   if (barWidthDisplayMobile) barWidthDisplayMobile.innerText = barWidth;
 
   // 文言更新は要素があるときだけ
-  const paint = (color) => bars.forEach(b => (b.style.backgroundColor = color));
+  const paint = (color) => bars.forEach((b) => (b.style.backgroundColor = color));
   if (hpPercentage <= 20) {
     paint("red");
     if (hpStatusText) hpStatusText.innerText = "🆘 ストレス危険 🆘";
@@ -86,7 +80,7 @@ const HP_INPUT_SELECTORS = [
   '[name="hp"]',
   '#hp',
   '#hp-input',
-  '.js-hp-input'
+  '.js-hp-input',
 ].join(",");
 
 function setHPAndRefresh(hpLike) {
@@ -114,12 +108,16 @@ document.addEventListener("input", (e) => {
   }
 });
 
-document.addEventListener("submit", (e) => {
-  const form = e.target;
-  if (!(form instanceof HTMLFormElement)) return;
-  const v = getHPFromDocument(form);
-  if (v !== null) setHPAndRefresh(v);
-}, true);
+document.addEventListener(
+  "submit",
+  (e) => {
+    const form = e.target;
+    if (!(form instanceof HTMLFormElement)) return;
+    const v = getHPFromDocument(form);
+    if (v !== null) setHPAndRefresh(v);
+  },
+  true
+);
 
 document.addEventListener("turbo:submit-end", (e) => {
   const form = e.target;
@@ -137,17 +135,17 @@ document.addEventListener("turbo:submit-end", (e) => {
 // 反映タイミング（ここが肝）
 // ==============================
 // Turbo系は document に
-["DOMContentLoaded", "turbo:load", "turbo:render", "turbo:frame-load"].forEach(evt =>
+["DOMContentLoaded", "turbo:load", "turbo:render", "turbo:frame-load"].forEach((evt) =>
   document.addEventListener(evt, () => window.updateHPBar())
 );
 
 // ブラウザ系は window に
-["pageshow", "resize", "orientationchange"].forEach(evt =>
+["pageshow", "resize", "orientationchange"].forEach((evt) =>
   window.addEventListener(evt, () => window.updateHPBar())
 );
 
 // Bootstrap系UI（モーダル等）は document に（キャプチャでOK）
-["shown.bs.modal", "shown.bs.tab", "shown.bs.offcanvas"].forEach(evt =>
+["shown.bs.modal", "shown.bs.tab", "shown.bs.offcanvas"].forEach((evt) =>
   document.addEventListener(evt, () => window.updateHPBar(), true)
 );
 

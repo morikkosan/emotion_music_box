@@ -31,8 +31,7 @@
 
 
 html.preload body { visibility: hidden; }
-js
-コードをコピーする
+
 
 .mobile-only { display: none !important; }
 .desktop-only { display: block !important; }
@@ -46,4 +45,51 @@ body.modal-open #bottom-player {
   z-index: 20000 !important;
 }
 
+
+// showページのプレーヤー高さ
+body.playlist-show-page .bottom-player {
+  position: fixed !important;
+  bottom: 50px !important;      /* デスクトップ時 */
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 2000 !important;
+}
+
+@media (max-width: 996px) {
+  html body .bottom-player {
+    position: fixed !important;  // ← static をねじ伏せる
+    bottom: 80px !important;    // ← 上にずらしたい値
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 2000 !important;    // ← 必要なら
+  }
+}
+
+
+/* ===== モバイル：プレイリスト“一覧”モーダル内は必ずタップ可 ===== */
+#playlist-modal-mobile {
+  #super-search-panel { pointer-events: auto !important; }
+  #playlist-sidebar-home,
+  .filter-box,
+  a,
+  button,
+  .playlist-link {
+    pointer-events: auto !important;
+  }
+}
+
+/* モーダル中はフッターがタップを奪わないように（安全策） */
+.modal-open .mobile-footer { pointer-events: none; }
+
+/* ローディングカバーを隠している時はタップを邪魔しない（保険） */
+#loading-overlay.view-hidden { pointer-events: none !important; }
+
+/* === プレーヤー非表示フラグ用（問い合わせ・プロフィール編集など） === */
+.no-player #bottom-player {
+  display: none !important;
+}
+
+.no-player #hidden-sc-player {
+  display: none !important;
+}
 

@@ -1,27 +1,29 @@
 window.Swal = {
-  fire: function({
-    title = "",
-    text = "",
-    icon = "info",
-    confirmButtonText = "OK",
-    showCancelButton = false,
-    cancelButtonText = "キャンセル"
-  }) {
-    return new Promise((resolve, reject) => {
-      // ネオン風アイコンにカスタムクラス付与！
-      let iconHtml = "";
-      if (icon === "success") iconHtml = `<span class="cyber-icon success">✔</span>`;
-      else if (icon === "error") iconHtml = `<span class="cyber-icon error">✖</span>`;
-      else if (icon === "question") iconHtml = `<span class="cyber-icon question">？</span>`;
-      else iconHtml = "";
+  fire: function (opts = {}) {
+    const {
+      title = "",
+      text = "",
+      icon = "info",
+      confirmButtonText = "OK",
+      showCancelButton = false,
+      cancelButtonText = "キャンセル",
+      // ★ これをちゃんと受け取り、モーダルが閉じたら呼ぶ
+      didClose = null,
+    } = opts;
 
-      const modalId = "swal-fake-modal";
-      let modalDiv = document.getElementById(modalId);
-      if (modalDiv) modalDiv.remove();
+    // ネオン風アイコン
+    let iconHtml = "";
+    if (icon === "success") iconHtml = `<span class="cyber-icon success">✔</span>`;
+    else if (icon === "error") iconHtml = `<span class="cyber-icon error">✖</span>`;
+    else if (icon === "question") iconHtml = `<span class="cyber-icon question">？</span>`;
 
-      modalDiv = document.createElement("div");
-      modalDiv.innerHTML = `
-      <div class="modal fade" id="${modalId}" tabindex="-1">
+    const modalId = "swal-fake-modal";
+    let modalDiv = document.getElementById(modalId);
+    if (modalDiv) modalDiv.remove();
+
+    modalDiv = document.createElement("div");
+    modalDiv.innerHTML = `
+      <div class="modal fade" id="${modalId}" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content cyber-popup">
             <div class="modal-header border-0">
@@ -36,33 +38,43 @@ window.Swal = {
           </div>
         </div>
       </div>
-      `;
-      document.body.appendChild(modalDiv);
+    `;
+    document.body.appendChild(modalDiv);
 
-      // Bootstrapでモーダルを表示
-      const modal = new bootstrap.Modal(modalDiv.querySelector(`#${modalId}`));
-      modal.show();
+    const bsModalEl = modalDiv.querySelector(`#${modalId}`);
+    const modal = new bootstrap.Modal(bsModalEl, { backdrop: true, keyboard: true, focus: true });
 
-      // OK/Cancel処理
-      modalDiv.querySelector(`#${modalId}-ok`).onclick = function () {
+    // ★ ここが肝：Bootstrap モーダルが閉じたら didClose を必ず呼ぶ
+    bsModalEl.addEventListener("hidden.bs.modal", () => {
+      try { if (typeof didClose === "function") didClose(); } catch (_) {}
+      // 後始末
+      setTimeout(() => { try { modalDiv.remove(); } catch (_) {} }, 0);
+    });
+
+    modal.show();
+
+    // OK/Cancel/× ボタンは「hide」して resolve → hidden 時に didClose が呼ばれる
+    modalDiv.querySelector(`#${modalId}-ok`).onclick = function () {
+      modal.hide();
+      // SweetAlert2 互換（使っていれば）
+      try { opts.resolve?.({ isConfirmed: true }); } catch (_) {}
+    };
+
+    if (showCancelButton) {
+      modalDiv.querySelector(`#${modalId}-cancel`).onclick = function () {
         modal.hide();
-        resolve({ isConfirmed: true });
-        setTimeout(() => modalDiv.remove(), 500);
+        try { opts.resolve?.({ isConfirmed: false }); } catch (_) {}
       };
-      if (showCancelButton) {
-        modalDiv.querySelector(`#${modalId}-cancel`).onclick = function () {
-          modal.hide();
-          resolve({ isConfirmed: false });
-          setTimeout(() => modalDiv.remove(), 500);
-        };
-      }
+    }
 
-      // クローズボタン
-      modalDiv.querySelector('.btn-close').onclick = function () {
-        modal.hide();
-        resolve({ isConfirmed: false });
-        setTimeout(() => modalDiv.remove(), 500);
-      };
+    modalDiv.querySelector(".btn-close").onclick = function () {
+      modal.hide();
+      try { opts.resolve?.({ isConfirmed: false }); } catch (_) {}
+    };
+
+    // Promise 互換（必要なら呼び出し側で then 可能）
+    return new Promise((resolve) => {
+      opts.resolve = resolve;
     });
   }
 };

@@ -1,8 +1,6 @@
-
-
 <%# ----------- ログリスト本体（ページ共通。チェックボックスはお気に入りだけ） ----------- %>
 <% logs.each do |log| %>
-  <%= turbo_frame_tag dom_id(log) do %>
+  <%= turbo_frame_tag "#{dom_id(log)}_mobile" do %>
     <div class="card mb-2 shadow-sm mobile-list-card">
       <div class="card-body py-2 px-2">
 
@@ -20,8 +18,18 @@
           <div>
             <% log.tags.each do |tag| %>
               <% if user_signed_in? %>
-                <%= link_to tag.name, emotion_logs_path(genre: tag.name),
-                      class: "badge bg-primary text-light mobile-list-tag" %>
+                <% mobile_link_params = request.query_parameters.merge(view: "mobile", genre: tag.name) %>
+                <% tag_link_path =
+                     if @bookmark_page.present?
+                       bookmarks_emotion_logs_path(mobile_link_params)
+                     else
+                       emotion_logs_path(mobile_link_params)
+                     end %>
+
+                <%= link_to tag.name,
+                            tag_link_path,
+                            class: "badge bg-primary text-light mobile-list-tag",
+                            data: { turbo_frame: "logs_list_mobile", turbo_action: "advance", no_loader: true } %>
               <% else %>
                 <span class="badge bg-primary text-light mobile-list-tag" title="ログインすると使えます"><%= tag.name %></span>
               <% end %>
@@ -32,9 +40,15 @@
         <!-- 中段：感情 + コメント -->
         <h6 class="mb-1 mt-1 mobile-list-emotion">
           <% if user_signed_in? %>
-            <%= link_to log.emotion, emotion_log_path(log, view: "mobile"), class: "text-decoration-none text-light" %>
+            <%= link_to log.emotion,
+                        emotion_log_path(log, view: "mobile"),
+                        class: "text-decoration-none text-light",
+                        data: { turbo_frame: "logs_list_mobile", turbo_action: "advance" } %>
           <% else %>
-            <%= link_to log.emotion, user_soundcloud_omniauth_authorize_path, class: "text-decoration-none text-light", data: { turbo: false } %>
+            <%= link_to log.emotion,
+                        user_soundcloud_omniauth_authorize_path,
+                        class: "text-decoration-none text-light",
+                        data: { turbo: false } %>
           <% end %>
         </h6>
         <p class="mb-1 mobile-list-desc"><%= log.description.presence || "（一言はありません）" %></p>
@@ -62,10 +76,13 @@
             <span class="ms-1 text-white mobile-list-comment-count"><%= log.comments_count %></span>
           </div>
           <% if current_user == log.user %>
-            <%= link_to "削除", emotion_log_path(log),
+            <%= form_with url: emotion_log_path(log),
                   method: :delete,
-                  data: { turbo_confirm: "本当に削除しますか？", turbo_stream: true },
-                  class: "btn btn-outline-danger btn-sm px-2 py-1 mobile-list-delete-btn" %>
+                  data: { turbo_confirm: "本当に削除しますか？" },
+                  class: "d-inline" do %>
+              <%= submit_tag "削除",
+                    class: "btn btn-outline-danger btn-sm px-2 py-1 mobile-list-delete-btn" %>
+            <% end %>
           <% else %>
             <%= render "bookmark_buttons", emotion_log: log %>
           <% end %>

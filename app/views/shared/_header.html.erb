@@ -14,12 +14,15 @@
 
       <div class="dropdown-menu" data-user-dropdown-target="menu">
         <!-- ✅ IDは付けない / Railsのログアウトパスで -->
-        <%= link_to destroy_user_session_path,
-                    class: "dropdown-item d-flex align-items-center text-danger",
-                    data: { turbo_method: :delete } do %>
-          <%= image_tag "log_out.webp", class: "dropdown-icon me-2", alt: "" %>
-          ログアウト
-        <% end %>
+        <%= button_to destroy_user_session_path,
+              method: :delete,
+              form:  { data: { turbo: false, logout_form: true }, class: "m-0 p-0 d-inline" },
+              class: "dropdown-item d-flex align-items-center text-danger" do %>
+  <%= image_tag "log_out.webp", class: "dropdown-icon me-2", alt: "" %>
+  ログアウト
+<% end %>
+
+
 
         <div class="dropdown-divider"></div>
 
@@ -43,7 +46,8 @@
 
   <!-- ロゴ -->
   <div class="text-center mt-4">
-    <%= link_to emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)) do %>
+    <%= link_to emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
+                data: { turbo_frame: "logs_list", turbo_action: "advance", no_loader: true } do %>
       <%= image_tag "logo1.webp",
                     alt: "Emotion List Logo",
                     class: "img-fluid neon-icon logo-main" %>
@@ -91,20 +95,32 @@
       <!-- ホーム -->
       <div class="mypage-item">
         <%= link_to emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
-                    class: 'mypage-icon-link' do %>
+                    class: 'mypage-icon-link',
+                    data: { turbo_frame: "logs_list", turbo_action: "advance", no_loader: true } do %>
           <%= image_tag 'home.webp', alt: '', class: 'mypage-icon' %>
           <div class='mypage-text'>ホーム</div>
         <% end %>
       </div>
 
       <!-- おすすめ🔥 -->
-      <div class="mypage-item">
-        <%= link_to "#",
-                    class: "mypage-icon-link go-to-recommended-btn" do %>
-          <%= image_tag 'hot.webp', alt: '', class: 'mypage-icon' %>
-          <div class='mypage-text'>おすすめ🔥</div>
-        <% end %>
-      </div>
+<!-- おすすめ🔥 -->
+<!-- おすすめ🔥（デスクトップ/モバイル両対応） -->
+<div class="mypage-item">
+  <%= link_to (mobile_device? ? recommended_emotion_logs_path(view: 'mobile') : recommended_emotion_logs_path),
+              class: "mypage-icon-link",                   # ← レガシーJSの class/id を外す
+              data: {
+                turbo: true,
+                turbo_frame: (mobile_device? ? "logs_list_mobile" : "logs_list"),
+                turbo_action: "advance",
+                no_loader: true
+              } do %>
+    <%= image_tag 'hot.webp', alt: '', class: 'mypage-icon' %>
+    <div class='mypage-text'>おすすめ🔥</div>
+  <% end %>
+</div>
+
+
+
 
       <!-- EMOTION -->
       <div class="mypage-item search-item wide">
@@ -130,14 +146,14 @@
 
       <!-- TAGフォーム -->
       <div class="mypage-item search-item wide position-relative" data-controller="tag-autocomplete">
-        <div class="menu-label menu-label-tag">TAG</div>
+        <div class="menu-label menu-label-tag">GENRE TAG</div>
         <%= form_with url: emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
                       method: :get,
                       data: { turbo_frame: "logs_list" },
                       html: { class: "w-100 h-100 d-flex flex-column justify-content-center align-items-center" } do |f| %>
           <label for="genre_input" class="visually-hidden">ジャンルを入力</label>
           <%= f.text_field :genre,
-                           placeholder: 'Search by genre',
+                           placeholder: 'ジャンル入力→Enter',
                            class: 'form-control no-bottom-radius',
                            id: 'genre_input',
                            value: params[:genre],
@@ -153,7 +169,8 @@
       <!-- マイページ -->
       <div class="mypage-item">
         <%= link_to my_emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
-                    class: 'mypage-icon-link' do %>
+                    class: 'mypage-icon-link',
+                    data: { turbo_frame: "logs_list", turbo_action: "advance", no_loader: true } do %>
           <%= image_tag 'mypage_logo.webp', alt: '', class: 'mypage-icon' %>
           <div class='mypage-text'>マイページ</div>
         <% end %>
@@ -162,7 +179,8 @@
       <!-- お気に入り -->
       <div class="mypage-item">
         <%= link_to bookmarks_emotion_logs_path(view: (mobile_device? ? 'mobile' : nil)),
-                    class: 'mypage-icon-link' do %>
+                    class: 'mypage-icon-link',
+                    data: { turbo_frame: "logs_list", turbo_action: "advance", no_loader: true } do %>
           <%= image_tag 'favorite.webp', alt: '', class: 'mypage-icon' %>
           <div class='mypage-text'>お気に入りリスト</div>
         <% end %>

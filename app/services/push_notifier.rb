@@ -3,10 +3,13 @@ require 'web_push'
 class PushNotifier
   # 感情ログ投稿の通知
   def self.send_emotion_log(user, emotion:, track_name:, artist_name:, hp:)
-    title = "🎵 新しい投稿通知"
-    body  = "#{emotion}な気分で『#{track_name} / #{artist_name}』を投稿しました！(HP: #{hp})"
-    send_web_push(user, title: title, body: body)
-  end
+  delta = hp.to_i
+  sign  = delta >= 0 ? "+#{delta}" : delta.to_s
+  title = "🎵 新しい投稿通知"
+  body  = "#{emotion}な気分で『#{track_name} / #{artist_name}』を投稿しました！(HP: #{sign})"
+  send_web_push(user, title: title, body: body)
+end
+
 
   # コメントされたとき
   def self.send_comment_notification(user, commenter_name:, comment_body:)

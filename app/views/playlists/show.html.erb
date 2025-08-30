@@ -1,5 +1,19 @@
-<%# ===== ★ ここを必ず一番上に追加！★ ===== %>
+<%# ===== ★ 一番上に入れる ★ ===== %>
 <% content_for :body_class, "playlist-show-page" %>
+
+<%# 端末別：戻るリンクの行き先と data-* を事前に用意 %>
+<%
+  back_path =
+    mobile_device? ? bookmarks_emotion_logs_path(view: "mobile") : bookmarks_emotion_logs_path
+
+  back_link_data =
+    if mobile_device?
+      { turbo_frame: "logs_list_mobile", turbo_action: "advance" }
+    else
+      # playlists#show からはフレームが無いので _top でOK（フル遷移）
+      { turbo_frame: "_top", turbo_action: "advance", no_loader: true }
+    end
+%>
 
 <% if @playlist.playlist_items.empty? %>
   <p class="text-center">まだ曲が追加されていません。</p>
@@ -7,7 +21,7 @@
   <!-- プレイリスト全体に Stimulus Controller アタッチ -->
   <div class="playlist-container" data-controller="global-player">
 
-    <!-- 1曲目から再生ボタン（デスクトップ用のみ） -->
+    <!-- 1曲目から再生ボタン（固定・デスクトップ想定だが両端末で表示OK） -->
     <div class="playlist-playfirst-fixed">
       <button
         type="button"
@@ -70,11 +84,13 @@
         </li>
       <% end %>
 
-      <!-- 戻る・プレイリスト削除（デスクトップ用のみ） -->
+      <!-- 戻る・プレイリスト削除（両端末表示） -->
       <li class="d-flex justify-content-center gap-3 mt-4">
         <%= link_to "← プレイリスト一覧に戻る",
-                    bookmarks_emotion_logs_path(view: 'mobile'),
-                    class: "neon_show neon_show-back btn" %>
+                    back_path,
+                    class: "neon_show neon_show-back btn",
+                    data: back_link_data %>
+
         <%= link_to raw('<i class="fa fa-trash me-1"></i>プレイリストを削除'),
                     playlist_path(@playlist),
                     method: :delete,
@@ -83,7 +99,7 @@
       </li>
     </ul>
 
-    <!-- ★ スマホ専用フッターメニュー（4ボタン横並び） -->
+    <!-- ★ フッターメニュー（モバイル・デスクトップどちらでも表示） -->
     <nav class="mobile-footer-menu">
       <button
         type="button"
@@ -91,6 +107,7 @@
         data-action="click->global-player#playFirstTrack">
         <i class="fa fa-play"></i><span>再生</span>
       </button>
+
       <button
         type="button"
         class="footer-btn add"
@@ -99,20 +116,22 @@
         aria-label="曲を追加">
         <i class="fa fa-plus-circle"></i><span>追加</span>
       </button>
-      <a href="<%= bookmarks_emotion_logs_path(view: 'mobile') %>"
-         class="footer-btn back">
-        <i class="fa fa-arrow-left"></i><span>戻る</span>
-      </a>
-      <%= link_to raw('<i class="fa fa-trash"></i>'),
-            playlist_path(@playlist),
-            method: :delete,
-            data: { confirm: "本当にこのプレイリストを削除しますか？" },
-            class: "footer-btn delete" %>
+
+      <%= link_to raw('<i class="fa fa-arrow-left"></i><span>戻る</span>'),
+                  back_path,
+                  class: "footer-btn back",
+                  data: back_link_data %>
+
+      <%= link_to raw('<i class="fa fa-trash"></i><span>削除</span>'),
+                  playlist_path(@playlist),
+                  method: :delete,
+                  data: { confirm: "本当にこのプレイリストを削除しますか？" },
+                  class: "footer-btn delete" %>
     </nav>
   </div>
 <% end %>
 
-<!-- 固定ネオン風「曲を追加」ボタン（デスクトップ用のみ） -->
+<!-- 固定ネオン風「曲を追加」ボタン（両端末で表示OK。CSSで表示切替するならそのまま） -->
 <button
   type="button"
   class="btn neon_show add-song-floating"
@@ -122,7 +141,7 @@
   <i class="fa fa-plus-circle me-1"></i> 曲を追加
 </button>
 
-<!-- モーダル定義（全て省略せず書く） -->
+<!-- モーダル定義 -->
 <div class="modal fade"
      id="addSongsModal"
      data-controller="add-song-modal"
@@ -148,4 +167,3 @@
     </div>
   </div>
 </div>
-

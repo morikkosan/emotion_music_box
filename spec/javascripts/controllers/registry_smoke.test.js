@@ -1,9 +1,8 @@
-// spec/javascripts/controllers/registry_smoke.test.js
 /**
  * 目的:
  *  - controllers/index.js が Stimulus Application に
  *    期待する識別子で register を1回ずつ行っていることを確認。
- *  - 全てのコントローラー検知テスト重複登録や登録漏れを早期検知するスモークテスト。
+ *  - 余計/不足や重複登録を早期検知するスモークテスト。
  */
 
 jest.mock("@hotwired/turbo-rails", () => ({}), { virtual: true });
@@ -19,7 +18,7 @@ jest.mock("@hotwired/stimulus", () => {
     Application: {
       start: jest.fn(() => app),
     },
-    __mockApp: app, // テストから参照するため公開
+    __mockApp: app, // テストから参照
   };
 });
 
@@ -29,6 +28,7 @@ describe("controllers/index.js registration", () => {
   });
 
   test("すべてのコントローラが期待どおりに1回ずつ register される", async () => {
+    // 期待している登録ID一覧（追加: flash-then-redirect）
     const expected = [
       "modal",
       "search-music",
@@ -49,6 +49,7 @@ describe("controllers/index.js registration", () => {
       "redirect",
       "comment-update",
       "mobile-footer",
+      "flash-then-redirect", // ← 追加
     ];
 
     const Stim = require("@hotwired/stimulus");
@@ -60,16 +61,17 @@ describe("controllers/index.js registration", () => {
     // 呼ばれた識別子一覧を取り出す
     const calledIds = app.register.mock.calls.map(args => args[0]);
 
-    // 件数一致
-    expect(calledIds.length).toBe(expected.length);
+    // 差分計算
+    const extras  = calledIds.filter(id => !expected.includes(id));
+    const missing = expected.filter(id => !calledIds.includes(id));
 
-    // 順不同で一致（順序まで縛りたければ toEqual(expected) に）
-    expect(new Set(calledIds)).toEqual(new Set(expected));
+    // 余計/不足なし
+    expect({ extras, missing }).toEqual({ extras: [], missing: [] });
 
     // 各IDが1回ずつ
+    const countMap = calledIds.reduce((m, id) => (m[id] = (m[id] || 0) + 1, m), {});
     expected.forEach(id => {
-      const count = calledIds.filter(x => x === id).length;
-      expect(count).toBe(1);
+      expect(countMap[id] || 0).toBe(1);
     });
   });
 });

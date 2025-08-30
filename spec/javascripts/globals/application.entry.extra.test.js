@@ -122,7 +122,16 @@ describe("application.js (entry extra cover)", () => {
     await jest.isolateModulesAsync(async () => { require(ENTRY); });
     const loader = document.getElementById("loading-overlay");
     loader.classList.add("view-hidden");
-    document.dispatchEvent(new Event("turbo:visit", { bubbles: true }));
+
+    // __scheduleLoader(250) の遅延表示に合わせて、URL付きの CustomEvent を投げる
+    const evt = new CustomEvent("turbo:visit", {
+      bubbles: true,
+      detail: { url: location.href + "?_t=1" } // 同一URL判定を避ける
+    });
+    document.dispatchEvent(evt);
+
+    // 250ms 遅延後に view-hidden が外れることを待つ
+    await waitFor(() => !loader.classList.contains("view-hidden"), { timeout: 1000, step: 10 });
     expect(loader.classList.contains("view-hidden")).toBe(false);
   });
 

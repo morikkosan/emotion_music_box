@@ -3,6 +3,9 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :recoverable,
          :rememberable, :omniauthable, omniauth_providers: [:soundcloud, :google_oauth2]
 
+  # ★ 開発/テストで使う ActiveStorage（本番で使わなくても宣言してOK）
+  has_one_attached :avatar
+
   # 関連
   has_many :emotion_logs, dependent: :destroy
   has_many :identities, dependent: :destroy
@@ -25,9 +28,16 @@ class User < ApplicationRecord
   attr_accessor :cropped_avatar_data
   attr_accessor :remove_avatar
 
-  # プロフィール画像URLを返す（Cloudinary無ければデフォルト画像）
+  # プロフィール画像URLを返す（AS添付→URL→デフォルト の順でフォールバック）
   def profile_avatar_url
-    avatar_url.presence || "default_stick_figure.webp"
+    if respond_to?(:avatar) && avatar.respond_to?(:attached?) && avatar.attached?
+      # host不要で使えるパスを返す（image_tagにそのまま渡せる）
+      Rails.application.routes.url_helpers.rails_blob_path(avatar, only_path: true)
+    elsif avatar_url.present?
+      avatar_url
+    else
+      ActionController::Base.helpers.asset_path('default_stick_figure.webp')
+    end
   end
 
   # --- ここから下は既存のロジックを残してOK ---

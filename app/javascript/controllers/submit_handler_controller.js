@@ -38,7 +38,7 @@ export default class extends Controller {
   saveHPBeforeFetch(form) {
     const hp = this.getHPFromForm(form);
     if (hp === null) {
-      console.warn("⚠️ HP入力が見つからない/数値でない");
+      console.log("ℹ️ このフォームにはHP入力が無いので保存しない");
       return;
     }
     localStorage.setItem("hpPercentage", String(hp));
@@ -56,8 +56,18 @@ export default class extends Controller {
     const form     = this.element;
     const formData = new FormData(form);
 
-    // ★★★ ここが超重要：送信直前に保存＆反映 ★★★
+    // ★★★ ここが重要：送信直前に保存＆反映（HP入力がある時だけ）★★★
     this.saveHPBeforeFetch(form);
+
+    // ★★★ 修正点：HP入力が「このフォームにある時だけ」top-level hp を添付 ★★★
+    const hpFromForm = this.getHPFromForm(form);
+    if (Number.isFinite(hpFromForm)) {
+      const hpToSend = Math.min(100, Math.max(0, hpFromForm));
+      formData.set("hp", String(hpToSend)); // top-level 'hp'
+      console.log("🚚 attach top-level hp to FormData:", hpToSend);
+    } else {
+      console.log("🚫 no form HP: do not attach top-level hp");
+    }
 
     fetch(form.action, {
       method: "POST",
@@ -93,8 +103,7 @@ export default class extends Controller {
             }
           }
 
-          // ★ サーバ値での上書きはしない（フォーム値優先で固定） ★
-          // 保険：リダイレクト前にもう一度フォーム値で確定
+          // ★ サーバ値での上書きはしない（フォームHPがある場合はその値で固定）
           const hp = this.getHPFromForm(form);
           if (hp !== null) {
             localStorage.setItem("hpPercentage", String(hp));
@@ -102,9 +111,7 @@ export default class extends Controller {
             console.log("🔁 force keep FORM HP before redirect:", hp);
           }
 
-          // ================================
-          // ★ 追加：フォームにHPが無い時だけ hpDelta(±) を加算
-          // ================================
+          // ★ フォームにHPが無い時だけ、サーバ返却でバーを更新
           const hpInput =
             form.querySelector('[name="emotion_log[hp]"]') ||
             form.querySelector('[name="hp"]') ||
@@ -121,7 +128,6 @@ export default class extends Controller {
             console.log("🧮 hpDelta applied:", data.hpDelta, "=>", next);
           } else if ((!hpInput || hpInput.value === "") &&
                      typeof data.hpPercentage !== "undefined" && data.hpPercentage !== null) {
-            // 保険：割合が返ってきた場合（フォームHPが無いときのみ採用）
             const p = Math.min(100, Math.max(0, Number(data.hpPercentage)));
             if (Number.isFinite(p)) {
               localStorage.setItem("hpPercentage", String(p));
@@ -129,7 +135,6 @@ export default class extends Controller {
               console.log("✅ used server hpPercentage (fallback):", p);
             }
           }
-          // ================================
 
           // HPバー反映／リダイレクト
           const redirect = () => { if (data.redirect_url) window.location.href = data.redirect_url; };
