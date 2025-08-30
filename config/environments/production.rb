@@ -11,6 +11,13 @@ Rails.application.configure do
   config.assets.css_compressor = :sass      # CSSを圧縮
   config.assets.compile = true          # プリコンパイルしたファイルだけ使う
   config.assets.digest = true               # キャッシュ防止のためファイル名にハッシュをつける
+  # config/environments/production.rb
+
+# 指紋付きアセットを強キャッシュ（壊れません）
+config.public_file_server.headers = {
+  'Cache-Control' => 'public, max-age=31536000, immutable'
+}
+
 
 # HSTSオプションを追加（もしさらに強化したい場合）
   config.ssl_options = { hsts: { expires: 1.year, preload: true, subdomains: true } }

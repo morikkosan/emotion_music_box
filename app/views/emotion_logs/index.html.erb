@@ -218,29 +218,44 @@
       <div class="dropdown-menu" data-user-dropdown-target="menu">
         <!-- ✅ IDは付けない / Railsのログアウトパスで -->
         <%= button_to destroy_user_session_path,
-              method: :delete,
-              form:  { data: { turbo: false, logout_form: true }, class: "m-0 p-0 d-inline" },
-              class: "dropdown-item d-flex align-items-center text-danger" do %>
-  <%= image_tag "log_out.webp", class: "dropdown-icon me-2", alt: "" %>
-  ログアウト
-<% end %>
+      method: :delete,
+      form:  { data: { turbo: false, logout_form: true }, class: "m-0 p-0 d-inline" },
+      class: "dropdown-item d-flex align-items-center text-danger" do %>
+      <%= image_tag "log_out.webp",
+            class: "dropdown-icon me-2", alt: "",
+            loading: "lazy", decoding: "async",
+            width: 24, height: 24 %>
+      ログアウト
+    <% end %>
+
+
 
 
 
         <div class="dropdown-divider"></div>
 
         <%= link_to edit_user_registration_path(view: (mobile_device? ? 'mobile' : nil)),
-                    class: "dropdown-item d-flex align-items-center" do %>
-          <%= image_tag "profile_edit.webp", class: "dropdown-icon me-2", alt: "" %>
-          プロフィール編集
-        <% end %>
+              class: "dropdown-item d-flex align-items-center" do %>
+    <%= image_tag "profile_edit.webp",
+          class: "dropdown-icon me-2", alt: "",
+          loading: "lazy", decoding: "async",
+          width: 24, height: 24 %>
+    プロフィール編集
+  <% end %>
+
+
 
     <%= render "shared/notification_toggle", frame_id: "notification-toggle-mobile" %>
 
-        <%= link_to new_contact_path, class: "dropdown-item d-flex align-items-center" do %>
-          <%= image_tag "form_contact.webp", class: "dropdown-icon me-2", alt: "" %>
-          お問い合わせ
-        <% end %>
+    <%= link_to new_contact_path, class: "dropdown-item d-flex align-items-center" do %>
+      <%= image_tag "form_contact.webp",
+            class: "dropdown-icon me-2", alt: "",
+            loading: "lazy", decoding: "async",
+            width: 24, height: 24 %>
+      お問い合わせ
+    <% end %>
+
+
       </div>
     </div>
   </div>
