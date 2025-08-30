@@ -8,7 +8,7 @@ class EmotionLog < ApplicationRecord
   has_many :comments,  dependent: :destroy
   has_many :emotion_log_tags, dependent: :destroy
   has_many :tags, through: :emotion_log_tags
-has_many :playlist_items
+  has_many :playlist_items
   has_many :playlists, through: :playlist_items
 
   # タグ名をまとめて受け取るための仮属性
@@ -24,9 +24,11 @@ has_many :playlist_items
   validate  :description_must_be_polite
 
   # 「音楽URLが変更されたとき」にアートワークを自動取得する
-  before_save :set_music_art_url, if: -> { music_url_changed? && music_url.present? }
+  # Rails 7+ 推奨の変更検知メソッド
+  before_save :set_music_art_url, if: -> { will_save_change_to_music_url? && music_url.present? }
 
   # スコープ（例：今日／今週／今月の記録を絞り込むなど）
+  # ★ テストが期待しているのは date カラム基準
   scope :for_today,     -> { where(date: Date.current) }
   scope :for_week,      -> { where(date: 1.week.ago.to_date..Date.current) }
   scope :for_month,     -> { where(date: 1.month.ago.to_date..Date.current) }
@@ -97,7 +99,6 @@ has_many :playlist_items
   end
 
   # before_save で呼び出される：artwork_url が取れればそちらを設定
-  # （oEmbed のみで十分なら ユーザーアイコン取得は省略可）
   def set_music_art_url
     fetched = fetch_music_art_url_from_soundcloud
     self.music_art_url = fetched if fetched.present?
