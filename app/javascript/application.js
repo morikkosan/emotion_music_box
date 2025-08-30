@@ -184,7 +184,7 @@ document.addEventListener("turbo:load", () => {
   const submitBtn = document.querySelector('form input[type="submit"]');
 
   if (![fileInput, inlinePreview, avatarUrlField, modalEl, cropContainer, cropImage, confirmBtn].every(Boolean)) {
-    console.warn("⚠️ アバター関連の要素が見つかりません（このページでは不要の可能性あり）");
+    // console.warn("⚠️ アバター関連の要素が見つかりません（このページでは不要の可能性あり）");
     return;
   }
 

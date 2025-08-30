@@ -30,18 +30,36 @@
     <meta name="soundcloud-oauth-token" content="<%= current_user.soundcloud_token %>">
   <% end %>
 
-  <!-- SoundCloud SDK（必須ならこのまま） -->
-  <script src="https://connect.soundcloud.com/sdk/sdk-3.3.2.js"></script>
+  <!-- （任意）SoundCloud SDK：未使用ならコメントアウトでOK。怖ければ残しても動作は同じ -->
+  <!-- <script src="https://connect.soundcloud.com/sdk/sdk-3.3.2.js"></script> -->
 
   <!-- SoundCloud Player API の最適化 -->
   <link rel="dns-prefetch" href="https://w.soundcloud.com">
   <link rel="dns-prefetch" href="https://api.soundcloud.com">
   <link rel="preconnect" href="https://w.soundcloud.com" crossorigin>
   <link rel="preconnect" href="https://api.soundcloud.com" crossorigin>
+  <!-- ✅ preload は crossorigin なし（CORS回避） -->
   <link rel="preload" as="script" href="https://w.soundcloud.com/player/api.js">
+
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 
-  <script src="https://w.soundcloud.com/player/api.js"></script>
+  <% if Rails.env.production? %>
+    <script nonce="<%= content_security_policy_nonce %>">
+      (function(c){
+        if (!c) return;
+        var noop = function(){};
+        c.log   = noop;
+        c.info  = noop;
+        c.debug = noop;
+        // 必要なら warn も無効化
+        // c.warn  = noop;
+        // error は残す（障害時の一次情報）ここは本番でコンソールを出さないようにする
+      })(window.console = window.console || {});
+    </script>
+  <% end %>
+
+  <!-- ✅ player API を defer で非ブロッキング化（機能は変わりません） -->
+  <script defer src="https://w.soundcloud.com/player/api.js"></script>
 
   <!-- Railsのapplication.js（defer必須！） -->
   <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module", defer: true %>
@@ -57,6 +75,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
+  <!-- CDN 最適化 -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 
   <!-- Bootstrap Icons（CSP対応）-->
   <link rel="stylesheet"
@@ -85,7 +106,7 @@
       data-flash-alert="<%= j flash[:alert] %>">
 
   <!-- ここから下は元の内容を**絶対に壊さずそのまま**にしてください -->
- <div id="screen-cover-loading" aria-hidden="true" aria-live="polite" aria-label="ローディング画面">
+  <div id="screen-cover-loading" aria-hidden="true" aria-live="polite" aria-label="ローディング画面">
     <div class="pacman-wrapper" aria-hidden="true">
       <div class="circle-packman-1"></div>
       <div class="loading-text">Now Loading...</div>
@@ -121,90 +142,77 @@
   <!-- ──────────── 下部カスタムプレーヤー & 隠し iframe ──────────── -->
 
   <!-- 1) SoundCloud の iframe（display: none で隠す） -->
-  <iframe id="hidden-sc-player" class="hidden-frame" src="" allow="autoplay" frameborder="no" scrolling="no" width="100%" height="166" aria-hidden="true" tabindex="-1"></iframe>
+ <iframe id="hidden-sc-player" class="hidden-frame" src="" allow="autoplay; encrypted-media" frameborder="no" scrolling="no" width="100%" height="166" aria-hidden="true" tabindex="-1"></iframe>
 
-<!-- ===== 下部カスタムプレーヤー ===== -->
-<div id="bottom-player" class="bottom-player d-none" role="region" aria-label="再生コントロール">
 
-<!-- 上段: 前の曲・次の曲ボタン＆スマホ用タイトル -->
-<div class="bottom-player-top-row">
-  <!-- 左端: canvas -->
-  <canvas id="waveform-anime" width="450" height="44" class="waveform-canvas" aria-hidden="true"></canvas>
+  <!-- ===== 下部カスタムプレーヤー ===== -->
+  <div id="bottom-player" class="bottom-player d-none" role="region" aria-label="再生コントロール">
+    <!-- 上段 -->
+    <div class="bottom-player-top-row">
+      <canvas id="waveform-anime" width="450" height="44" class="waveform-canvas" aria-hidden="true"></canvas>
 
-    <!-- ✅ 曲タイトル（スマホ専用） -->
-  <span id="track-title-top" class="track-title-top-inline d-md-none" aria-live="polite"></span>
-  <small id="track-artist-mobile"
-        class="track-artist d-md-none"
-        aria-live="polite"></small>
+      <span id="track-title-top" class="track-title-top-inline d-md-none" aria-live="polite"></span>
+      <small id="track-artist-mobile" class="track-artist d-md-none" aria-live="polite"></small>
 
- <!-- 真ん中: ボタン・曲タイトル（曲タイトルはスマホ時のみ） -->
-<div class="player-center-btns">
-  <!-- ✅ 曲タイトル（スマホ専用） -->
+      <div class="player-center-btns">
+        <button id="prev-track-button"
+          class="btn btn-link text-white bottom-player-button"
+          data-action="click->global-player#prevTrack"
+          type="button"
+          aria-label="前の曲へ">
+          <i class="fa fa-step-backward" aria-hidden="true"></i>
+        </button>
+        <button id="next-track-button"
+          class="btn btn-link text-white next-track-btn"
+          data-action="click->global-player#nextTrack"
+          type="button"
+          aria-label="次の曲へ">
+          <i class="fa fa-step-forward" aria-hidden="true"></i>
+        </button>
+      </div>
 
-  <button id="prev-track-button"
-    class="btn btn-link text-white bottom-player-button"
-    data-action="click->global-player#prevTrack"
-    type="button"
-    aria-label="前の曲へ">
-    <i class="fa fa-step-backward" aria-hidden="true"></i>
-  </button>
-
-  <button id="next-track-button"
-    class="btn btn-link text-white next-track-btn"
-    data-action="click->global-player#nextTrack"
-    type="button"
-    aria-label="次の曲へ">
-    <i class="fa fa-step-forward" aria-hidden="true"></i>
-  </button>
-</div>
-
-  <!-- 右端: 空白スペース（flexの空白要素 -->
-  <div class="bottom-player-flex-gap"></div>
-</div>
-
-  <!-- 下段: プレーヤー本体 -->
-  <div class="bottom-player-controls">
-    <!-- 再生／停止ボタン -->
-    <button id="play-pause-button"
-            class="btn btn-link text-white me-3 play-pause-btn"
-            data-action="click->global-player#togglePlayPause"
-            type="button"
-            aria-label="再生">
-      <i id="play-pause-icon" class="fa fa-play" aria-hidden="true"></i>
-      <span id="play-btn-spinner" class="play-btn-spinner" aria-hidden="true">
-        <span class="loading-spinner-inline"></span>
-      </span>
-    </button>
-
-    <!-- 曲情報（デフォルトは下段のみ。スマホでは隠す） -->
-    <div id="track-info" class="track-info-box" aria-live="polite">
-      <span class="loading-spinner-inline" id="loading-spinner" aria-hidden="true"></span>
-      <span id="track-title" class="track-title">
-        <span class="neon-wave" aria-hidden="true">
-          <span>N</span><span>O</span><span>W</span>
-          <span>&nbsp;</span>
-          <span>L</span><span>O</span><span>A</span><span>D</span><span>I</span><span>N</span><span>G</span>
-          <span>.</span><span>.</span><span>.</span>
-        </span>
-      </span>
-      <span class="neon-character-spinbox" aria-hidden="true">
-        <span class="neon-body">
-          <span class="neon-eye neon-eye-left"></span>
-          <span class="neon-eye neon-eye-right"></span>
-          <span class="neon-arm neon-arm-left"></span>
-          <span class="neon-arm neon-arm-right"></span>
-          <span class="neon-leg neon-leg-left"></span>
-          <span class="neon-leg neon-leg-right"></span>
-        </span>
-      </span>
-      <small id="track-artist" class="track-artist"></small>
+      <div class="bottom-player-flex-gap"></div>
     </div>
 
-      <!-- 時間・シークバー -->
+    <!-- 下段 -->
+    <div class="bottom-player-controls">
+      <button id="play-pause-button"
+              class="btn btn-link text-white me-3 play-pause-btn"
+              data-action="click->global-player#togglePlayPause"
+              type="button"
+              aria-label="再生">
+        <i id="play-pause-icon" class="fa fa-play" aria-hidden="true"></i>
+        <span id="play-btn-spinner" class="play-btn-spinner" aria-hidden="true">
+          <span class="loading-spinner-inline"></span>
+        </span>
+      </button>
+
+      <div id="track-info" class="track-info-box" aria-live="polite">
+        <span class="loading-spinner-inline" id="loading-spinner" aria-hidden="true"></span>
+        <span id="track-title" class="track-title">
+          <span class="neon-wave" aria-hidden="true">
+            <span>N</span><span>O</span><span>W</span>
+            <span>&nbsp;</span>
+            <span>L</span><span>O</span><span>A</span><span>D</span><span>I</span><span>N</span><span>G</span>
+            <span>.</span><span>.</span><span>.</span>
+          </span>
+        </span>
+        <span class="neon-character-spinbox" aria-hidden="true">
+          <span class="neon-body">
+            <span class="neon-eye neon-eye-left"></span>
+            <span class="neon-eye neon-eye-right"></span>
+            <span class="neon-arm neon-arm-left"></span>
+            <span class="neon-arm neon-arm-right"></span>
+            <span class="neon-leg neon-leg-left"></span>
+            <span class="neon-leg neon-leg-right"></span>
+          </span>
+        </span>
+        <small id="track-artist" class="track-artist"></small>
+      </div>
+
       <div class="bottom-player-seekbar">
         <span id="current-time" class="current-time" aria-live="off">0:00</span>
 
-        <!-- ✅ 視覚的には非表示のラベル（関連付け済み） -->
         <label for="seek-bar" class="visually-hidden">再生位置（シーク）</label>
         <input id="seek-bar"
           type="range"
@@ -217,7 +225,6 @@
         <span id="duration" class="duration" aria-live="off">0:00</span>
       </div>
 
-      <!-- シャッフル・リピート・音量 -->
       <div class="bottom-player-extra-controls">
         <button id="shuffle-button" class="btn btn-link toggle-btn me-1 bottom-player-toggle-btn"
           data-action="click->global-player#toggleShuffle" type="button"
@@ -231,7 +238,6 @@
         </button>
         <i class="fa fa-volume-up volume-icon" aria-hidden="true"></i>
 
-        <!-- ✅ 視覚的には非表示のラベル（関連付け済み） -->
         <label for="volume-bar" class="visually-hidden">音量</label>
         <input id="volume-bar"
           type="range"
@@ -242,16 +248,14 @@
       </div>
     </div>
   </div>
+
   <div id="modal-container"></div>
   <div id="playlist-modal-root" data-turbo-permanent>
-<%= render "emotion_logs/playlist_modal",
-           playlist: Playlist.new,
-           modal_id: "playlist-modal" %>
-
-</div>
-<div id="mobile-super-search-root" data-turbo-permanent>
-  <%= render "emotion_logs/mobile_super_search" %>
-</div>
+    <%= render "emotion_logs/playlist_modal", playlist: Playlist.new, modal_id: "playlist-modal" %>
+  </div>
+  <div id="mobile-super-search-root" data-turbo-permanent>
+    <%= render "emotion_logs/mobile_super_search" %>
+  </div>
 
 </body>
 </html>
