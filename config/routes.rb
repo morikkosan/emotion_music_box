@@ -46,18 +46,17 @@ Rails.application.routes.draw do
   get "tags",                    to: "tags#index"
   get "tags/search",             to: "tags#search"
   get "/terms",                  to: "pages#terms", as: :terms
-  get "/privacy", to: "pages#privacy", as: :privacy
-  get "/cookie",  to: "pages#cookie",  as: :cookie_policy
+  get "/privacy",                to: "pages#privacy", as: :privacy
+  get "/cookie",                 to: "pages#cookie",  as: :cookie_policy
 
-
-
-  post '/line_bot/callback',     to: 'line_bot#callback'
-  get  '/line_add_friends',      to: 'line_bot#add_friends', as: 'line_add_friends'
-  get  '/line_link',             to: 'line_link#link'
+  post '/line_bot/callback',      to: 'line_bot#callback'
+  get  '/line_add_friends',       to: 'line_bot#add_friends', as: 'line_add_friends'
+  get  '/line_link',              to: 'line_link#link'
   post '/users/create_line_link', to: 'users#create_line_link', as: :create_line_link
 
   # PWA／ヘルスチェック
-  get "up",             to: "rails/health#show",        as: :rails_health_check
+  # ▼▼▼ ここを rails/health#show ではなく Rack 応答にして DB を絶対起こさない ▼▼▼
+  get "up",             to: proc { [200, { "Content-Type" => "text/plain" }, ["OK"]] }, as: :rails_health_check
   get "service-worker", to: "rails/pwa#service_worker", as: :pwa_service_worker
   get "manifest",       to: "rails/pwa#manifest",       as: :pwa_manifest
 
@@ -72,8 +71,8 @@ Rails.application.routes.draw do
   patch 'enable_push_notifications',  to: 'notifications#enable'
   patch 'disable_push_notifications', to: 'notifications#disable'
 
-  get "notifications/test/:id",  to: "notifications#test"
-  get "/notifications/test",     to: "notifications#debug_emotion", as: :debug_emotion_notifications  # ← 元: push_notification#debug_emotion
+  get "notifications/test/:id",   to: "notifications#test"
+  get "/notifications/test",      to: "notifications#debug_emotion", as: :debug_emotion_notifications  # ← 元: push_notification#debug_emotion
   get "notifications/public_key", to: "notifications#public_key"
 
   if Rails.env.test? || Rails.env.development?
