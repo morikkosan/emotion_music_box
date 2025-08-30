@@ -18,13 +18,17 @@ export default class extends Controller {
   connect () {
     this.currentPage = 1;
     this.searchResults = [];
+    // ★ ローディングを必ず非表示で初期化（出っぱなし防止）
+    this._toggleLoading(false);
   }
 
   async search () {
     const q = this.queryTarget.value.trim();
     if (!q) { alert("検索ワードを入力してください"); return; }
 
-    this.loadingTarget.style.display = "";
+    // ★ ここでローディングON（is-hidden除去 + 入力/ボタンdisable）
+    this._toggleLoading(true);
+
     try {
       const res = await fetch(`/soundcloud/search?q=${encodeURIComponent(q)}`, {
         headers: { Accept: "application/json" },
@@ -41,7 +45,8 @@ export default class extends Controller {
       logError("検索エラー:", e);
       alert("検索に失敗しました：" + e.message);
     } finally {
-      this.loadingTarget.style.display = "none";
+      // ★ ここでローディングOFF（is-hidden付与 + 入力/ボタンenable）
+      this._toggleLoading(false);
     }
   }
 
@@ -230,5 +235,22 @@ export default class extends Controller {
       logError("モーダル切替エラー:", e);
       alert("モーダル切替に失敗しました");
     }
+  }
+
+  // ===== ここが今回の“唯一の追加ロジック”です =====
+  _toggleLoading(show) {
+    // aria-busy: 支援技術に「処理中」を伝える
+    if (this.hasSectionTarget) {
+      this.sectionTarget.setAttribute("aria-busy", show ? "true" : "false");
+    }
+    if (this.hasLoadingTarget) {
+      // is-hidden の付け外しで表示切り替え（!important でも確実）
+      this.loadingTarget.classList.toggle("is-hidden", !show);
+    }
+
+    // 入力欄と検索ボタンの活性/非活性
+    if (this.hasQueryTarget) this.queryTarget.disabled = !!show;
+    const btn = this.element.querySelector('[data-action~="search-music#search"]');
+    if (btn) btn.disabled = !!show;
   }
 }

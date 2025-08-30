@@ -1,20 +1,25 @@
 <!-- app/views/emotion_logs/_search_form.html.erb -->
 <div data-controller="search-music"
-    data-search-music-target="section"
-    class="p-4">
-  <!-- ① ローディング -->
-  <div data-search-music-target="loading"
-     class="text-center mb-3 is-hidden">
-  <span class="spinner-border" role="status"></span>
-</div>
+     data-search-music-target="section"
+     class="p-4">
 
+  <!-- ① ローディング：NEONだけ -->
+  <div data-search-music-target="loading"
+       class="text-center mb-3 is-hidden"
+       role="status" aria-live="polite" aria-atomic="true" aria-label="検索中">
+    <span class="neon-wave" aria-hidden="true">
+      <span>N</span><span>O</span><span>W</span><span>&nbsp;</span>
+      <span>L</span><span>O</span><span>A</span><span>D</span><span>I</span><span>N</span><span>G</span>
+      <span>.</span><span>.</span><span>.</span>
+    </span>
+  </div>
 
   <!-- ② 検索フォーム -->
   <div class="input-group mb-3">
     <input type="text"
-          class="form-control"
-          placeholder="曲名やアーティスト名を入力"
-          data-search-music-target="query">
+           class="form-control"
+           placeholder="曲名やアーティスト名を入力"
+           data-search-music-target="query">
     <button type="button"
             class="btn btn-primary"
             data-action="search-music#search">
@@ -38,7 +43,7 @@
             data: { search_music_target: "track" } %>
     </div>
     <div class="d-grid">
-    <p class="text-success fw-bold">曲が決まるといいね🎵</p>
+      <p class="text-success fw-bold">曲が決まるといいね🎵</p>
     </div>
   <% end %>
 </div>

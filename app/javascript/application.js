@@ -207,135 +207,168 @@ document.addEventListener("turbo:load", () => {
   cropContainer.style.cursor = "grab";
   cropContainer.style.touchAction = "none";
 
-  fileInput.addEventListener("change", e => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // === 重複バインド防止：ファイル選択 ===
+  if (!fileInput.dataset.bound) {
+    fileInput.dataset.bound = "1";
 
-    const maxSize = 2 * 1024 * 1024;
-    if (file.size > maxSize) {
-      alert("ファイルサイズは2MB以内にしてください。");
-      fileInput.value = "";
-      return;
-    }
+    fileInput.addEventListener("change", e => {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
-    if (!allowedTypes.includes(file.type)) {
-      alert("ファイル形式はJPEGまたはPNGのみ許可されています。");
-      fileInput.value = "";
-      return;
-    }
+      // ✅ 事前の2MB制限を撤廃（この後のクロップ＆縮小で小さくなるため）
+      //    ここではサイズで弾かない
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      cropImage.src = reader.result;
-      startX = 0;
-      startY = 0;
-      updateTransform();
-      modal.show();
-    };
-    reader.readAsDataURL(file);
-  });
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+      if (!allowedTypes.includes(file.type)) {
+        alert("ファイル形式はJPEGまたはPNGのみ許可されています。");
+        fileInput.value = "";
+        return;
+      }
 
-  cropContainer.addEventListener("pointerdown", e => {
-    e.preventDefault();
-    isDragging = true;
-    dragStartX = e.clientX;
-    dragStartY = e.clientY;
-    cropContainer.setPointerCapture(e.pointerId);
-    cropContainer.style.cursor = "grabbing";
-  });
-
-  cropContainer.addEventListener("pointermove", e => {
-    if (!isDragging) return;
-    const dx = e.clientX - dragStartX;
-    const dy = e.clientY - dragStartY;
-    startX += dx;
-    startY += dy;
-    dragStartX = e.clientX;
-    dragStartY = e.clientY;
-    updateTransform();
-  });
-
-  cropContainer.addEventListener("pointerup", e => {
-    if (isDragging) {
-      isDragging = false;
-      cropContainer.releasePointerCapture(e.pointerId);
-      cropContainer.style.cursor = "grab";
-    }
-  });
-
-  async function resizeImage(sourceImage, maxSize = 300) {
-    return new Promise((resolve) => {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      const scale = Math.min(maxSize / sourceImage.width, maxSize / sourceImage.height);
-      canvas.width = sourceImage.width * scale;
-      canvas.height = sourceImage.height * scale;
-      ctx.drawImage(sourceImage, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.9);
+      const reader = new FileReader();
+      reader.onload = () => {
+        cropImage.src = reader.result;
+        startX = 0;
+        startY = 0;
+        updateTransform();
+        modal.show();
+      };
+      reader.readAsDataURL(file);
     });
   }
 
-  confirmBtn.addEventListener("click", async () => {
-    if (submitBtn) submitBtn.disabled = true;
+  // === 重複バインド防止：ドラッグ操作 ===
+  if (!cropContainer.dataset.bound) {
+    cropContainer.dataset.bound = "1";
 
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    canvas.width = 80;
-    canvas.height = 80;
+    cropContainer.addEventListener("pointerdown", e => {
+      e.preventDefault();
+      isDragging = true;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      cropContainer.setPointerCapture(e.pointerId);
+      cropContainer.style.cursor = "grabbing";
+    });
 
-    const viewWidth = cropContainer.clientWidth;
-    const viewHeight = cropContainer.clientHeight;
-    const scaleX = cropImage.naturalWidth / cropImage.clientWidth;
-    const scaleY = cropImage.naturalHeight / cropImage.clientHeight;
-    const sx = startX * -1 * scaleX;
-    const sy = startY * -1 * scaleY;
+    cropContainer.addEventListener("pointermove", e => {
+      if (!isDragging) return;
+      const dx = e.clientX - dragStartX;
+      const dy = e.clientY - dragStartY;
+      startX += dx;
+      startY += dy;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      updateTransform();
+    });
 
-    ctx.drawImage(
-      cropImage,
-      sx, sy,
-      viewWidth * scaleX, viewHeight * scaleY,
-      0, 0,
-      canvas.width, canvas.height
-    );
+    cropContainer.addEventListener("pointerup", e => {
+      if (isDragging) {
+        isDragging = false;
+        cropContainer.releasePointerCapture(e.pointerId);
+        cropContainer.style.cursor = "grab";
+      }
+    });
+  }
 
-    const dataUrl = canvas.toDataURL("image/png");
-    inlinePreview.src = dataUrl;
-    avatarUrlField.value = "";
-    modal.hide();
+  // ★ 拡大しない・品質0.85のリサイズ関数に修正
+  async function resizeImage(sourceImage, maxSize = 300) {
+    return new Promise((resolve) => {
+      const srcW = sourceImage.width;
+      const srcH = sourceImage.height;
 
-    if (window.CLOUDINARY_CLOUD_NAME && window.CLOUDINARY_UPLOAD_PRESET) {
-      try {
-        inlinePreview.classList.add("loading");
+      // 拡大禁止：scale は最大でも 1
+      const scaleByW = maxSize / srcW;
+      const scaleByH = maxSize / srcH;
+      const scale = Math.min(1, Math.min(scaleByW, scaleByH));
 
-        const tempImage = new window.Image();
-        tempImage.onload = async () => {
-          const resizedBlob = await resizeImage(tempImage, 300);
-          const fd = new FormData();
-          fd.append("file", resizedBlob, "avatar.jpg");
-          fd.append("upload_preset", window.CLOUDINARY_UPLOAD_PRESET);
+      const dstW = Math.max(1, Math.round(srcW * scale));
+      const dstH = Math.max(1, Math.round(srcH * scale));
 
-        const res = await axios.post(
-            `https://api.cloudinary.com/v1_1/${window.CLOUDINARY_CLOUD_NAME}/upload`,
-            fd
-          );
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = dstW;
+      canvas.height = dstH;
 
-          inlinePreview.src = res.data.secure_url;
-          avatarUrlField.value = res.data.secure_url;
-          if (submitBtn) submitBtn.disabled = false;
+      ctx.drawImage(sourceImage, 0, 0, dstW, dstH);
+
+      // JPEGで再エンコード（圧縮）
+      canvas.toBlob(
+        (blob) => resolve(blob),
+        "image/jpeg",
+        0.85 // 画質はお好みで 0.8〜0.9
+      );
+    });
+  }
+
+  // === 重複バインド防止：確定ボタン ===
+  if (!confirmBtn.dataset.bound) {
+    confirmBtn.dataset.bound = "1";
+
+    confirmBtn.addEventListener("click", async () => {
+      if (submitBtn) submitBtn.disabled = true;
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = 80;
+      canvas.height = 80;
+
+      const viewWidth = cropContainer.clientWidth;
+      const viewHeight = cropContainer.clientHeight;
+      const scaleX = cropImage.naturalWidth / cropImage.clientWidth;
+      const scaleY = cropImage.naturalHeight / cropImage.clientHeight;
+      const sx = startX * -1 * scaleX;
+      const sy = startY * -1 * scaleY;
+
+      ctx.drawImage(
+        cropImage,
+        sx, sy,
+        viewWidth * scaleX, viewHeight * scaleY,
+        0, 0,
+        canvas.width, canvas.height
+      );
+
+      const dataUrl = canvas.toDataURL("image/png");
+      inlinePreview.src = dataUrl;
+      avatarUrlField.value = "";
+
+      // ▼ フォーカスを外してからモーダルを閉じる（aria-hidden 警告対策）
+      try { confirmBtn.blur(); } catch(_) {}
+      try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch(_) {}
+      modal.hide();
+
+      if (window.CLOUDINARY_CLOUD_NAME && window.CLOUDINARY_UPLOAD_PRESET) {
+        try {
+          inlinePreview.classList.add("loading");
+
+          const tempImage = new window.Image();
+          tempImage.onload = async () => {
+            const resizedBlob = await resizeImage(tempImage, 300);
+            const fd = new FormData();
+            fd.append("file", resizedBlob, "avatar.jpg");
+            fd.append("upload_preset", window.CLOUDINARY_UPLOAD_PRESET);
+
+            const res = await axios.post(
+              `https://api.cloudinary.com/v1_1/${window.CLOUDINARY_CLOUD_NAME}/upload`,
+              fd
+            );
+
+            inlinePreview.src = res.data.secure_url;
+            avatarUrlField.value = res.data.secure_url;
+            if (submitBtn) submitBtn.disabled = false;
+            inlinePreview.classList.remove("loading");
+          };
+          tempImage.src = dataUrl;
+        } catch (err) {
+          console.error("Cloudinary upload failed", err);
           inlinePreview.classList.remove("loading");
-        };
-        tempImage.src = dataUrl;
-      } catch (err) {
-        console.error("Cloudinary upload failed", err);
-        inlinePreview.classList.remove("loading");
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      } else {
+        avatarUrlField.value = dataUrl;
         if (submitBtn) submitBtn.disabled = false;
       }
-    } else {
-      avatarUrlField.value = dataUrl;
-      if (submitBtn) submitBtn.disabled = false;
-    }
-  });
+    });
+  }
 
   const removeAvatarBtn = document.getElementById("removeAvatarBtn");
   const removeAvatarCheckbox = document.getElementById("removeAvatarCheckbox");
