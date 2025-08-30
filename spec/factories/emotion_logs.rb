@@ -1,9 +1,10 @@
+# spec/factories/emotion_logs.rb
 FactoryBot.define do
   factory :emotion_log do
     association :user
     emotion { "気分良い" }
     description { "テスト投稿" }
-    date { Time.zone.today }  # ← ここを Date.today から Time.zone.today に変更
+    date { Time.zone.today }        # ← ここが超重要
     music_url { "https://soundcloud.com/example-track" }
     track_name { "Test Song" }
     music_art_url { "https://i1.sndcdn.com/artworks-abc123-t500x500.jpg" }
