@@ -1,5 +1,4 @@
-<!-- app/views/comments/create.turbo_stream.erb -->
-<%= turbo_stream.prepend "comments",
+<%= turbo_stream.prepend "comments-list",
       partial: "comments/comment",
       locals: { comment: @comment } %>
 

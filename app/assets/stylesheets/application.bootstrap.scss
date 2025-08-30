@@ -93,3 +93,27 @@ body.playlist-show-page .bottom-player {
   display: none !important;
 }
 
+
+/* フッタープレーヤーの高さぶんだけ下に余白を常に確保 */
+:root { --footer-player-h: 84px; } /* 実高さに合わせて 76〜96px で調整可 */
+
+.emotion-log-show {
+  padding-bottom: calc(var(--footer-player-h) + env(safe-area-inset-bottom, 0px));
+}
+
+/* もし body に no-player が付くケースがあれば余白ゼロに戻す（保険） */
+body.no-player .emotion-log-show {
+  padding-bottom: 0 !important;
+}
+
+/* ===== モバイル詳細ページ：ページネーションの固定化を禁止 & 中央寄せ ===== */
+.emotion-log-show .pagination {
+  position: static !important;   /* fixed/sticky を無効化 */
+  inset: auto !important;        /* top/right/bottom/left を無効化 */
+  float: none !important;
+  display: flex;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  white-space: normal !important;
+  gap: .25rem;
+}
