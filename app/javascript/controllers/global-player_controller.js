@@ -29,6 +29,7 @@ export default class extends Controller {
 
     this.iframeElement   = document.getElementById("hidden-sc-player");
     this.bottomPlayer    = document.getElementById("bottom-player");
+    this.playPauseButton = document.getElementById("play-pause-button"); // ★A11y: ボタン要素
     this.playPauseIcon   = document.getElementById("play-pause-icon");
     this.trackTitleEl    = document.getElementById("track-title");
     this.trackTitleTopEl = document.getElementById("track-title-top");
@@ -67,14 +68,7 @@ export default class extends Controller {
       }
     });
 
-    // ===== 重要：クリック/入力ハンドラは Stimulus の data-action に一本化 =====
-    // 下記のような addEventListener は二重トグルの原因になるため付けない
-    // this.volumeBar?.addEventListener("input",  (e) => this.changeVolume(e));
-    // this.seekBar  ?.addEventListener("input",  (e) => this.seek(e));
-    // document.getElementById("prev-track-button")?.addEventListener("click", this.prevTrack.bind(this));
-    // document.getElementById("next-track-button")?.addEventListener("click", this.nextTrack.bind(this));
-    // document.getElementById("shuffle-button")?.addEventListener("click", this.toggleShuffle.bind(this));
-    // document.getElementById("repeat-button") ?.addEventListener("click", this.toggleRepeat.bind(this));
+    // （クリック/入力ハンドラは Stimulus の data-action を使用）
 
     // 外部検索から再生
     window.addEventListener("play-from-search", (e) => {
@@ -103,8 +97,36 @@ export default class extends Controller {
       repeatBtn.setAttribute("aria-pressed", String(this.isRepeat));
     }
 
+    // ★A11y 初期ラベル
+    this.setPlayPauseAria(false);
+    this.updateSeekAria(0, 0, 0);
+    this.updateVolumeAria(this.volumeBar?.value ?? "100");
+
     this.restorePlayerState();
     console.log("[connect] global-player controller initialized");
+  }
+
+  // ---------- A11y: ヘルパ ----------
+  setPlayPauseAria(isPlaying) {
+    if (!this.playPauseButton) return;
+    this.playPauseButton.setAttribute("aria-label", isPlaying ? "一時停止" : "再生");
+  }
+
+  updateSeekAria(percent, posMs, durMs) {
+    if (!this.seekBar) return;
+    const p = Math.max(0, Math.min(100, Math.round(percent)));
+    this.seekBar.setAttribute("aria-valuenow", String(p));
+    // 例: "1:23 / 3:45"
+    const current = this.formatTime(posMs);
+    const total   = this.formatTime(durMs);
+    this.seekBar.setAttribute("aria-valuetext", durMs ? `${current} / ${total}` : current);
+  }
+
+  updateVolumeAria(valueStr) {
+    if (!this.volumeBar) return;
+    const v = String(valueStr);
+    this.volumeBar.setAttribute("aria-valuenow", v);
+    this.volumeBar.setAttribute("aria-valuetext", `${v}%`);
   }
 
   // -------------- 状態保存 / 復元 -----------------
@@ -147,6 +169,10 @@ export default class extends Controller {
 
       this.widget.seekTo(state.position);
       if (!state.isPlaying) this.widget.pause();
+      // ★A11y 復元後のラベル
+      this.setPlayPauseAria(state.isPlaying);
+      const percent = dur ? Math.round((state.position / dur) * 100) : 0; // ← 丸め
+      this.updateSeekAria(percent, state.position, dur);
     });
   }
 
@@ -196,7 +222,9 @@ export default class extends Controller {
             this.bindWidgetEvents();
             this.startProgressTracking();
             this.changeVolume({ target: this.volumeBar });
+
             this.updateTrackIcon(this.currentTrackId, state.isPlaying);
+            this.setPlayPauseAria(state.isPlaying); // ★A11y
           });
         });
       }, 150);
@@ -326,7 +354,9 @@ export default class extends Controller {
   // -------------- UI 表示 -----------------
   showLoadingUI() {
     this.playPauseIcon?.classList.add("is-hidden");
-    this.playPauseIcon?.closest("button")?.setAttribute("disabled", "disabled"); // ←追加
+    this.playPauseButton?.setAttribute("disabled", "disabled");
+    this.playPauseButton?.setAttribute("aria-disabled", "true"); // ★A11y
+    this.bottomPlayer?.setAttribute("aria-busy", "true");        // ★A11y
     this.loadingArea?.classList.remove("is-hidden");
     this.neonCharacter?.classList.remove("is-hidden");
 
@@ -347,7 +377,9 @@ export default class extends Controller {
 
   hideLoadingUI() {
     this.playPauseIcon?.classList.remove("is-hidden");
-    this.playPauseIcon?.closest("button")?.removeAttribute("disabled"); // ←追加
+    this.playPauseButton?.removeAttribute("disabled");
+    this.playPauseButton?.setAttribute("aria-disabled", "false"); // ★A11y
+    this.bottomPlayer?.setAttribute("aria-busy", "false");        // ★A11y
     this.loadingArea?.classList.add("is-hidden");
     this.neonCharacter?.classList.add("is-hidden");
     this.trackTitleEl?.classList.remove("is-hidden");
@@ -359,6 +391,7 @@ export default class extends Controller {
     this.currentTimeEl && (this.currentTimeEl.textContent = "0:00");
     this.durationEl && (this.durationEl.textContent = "0:00");
     this.seekBar && (this.seekBar.value = 0);
+    this.updateSeekAria(0, 0, 0); // ★A11y
 
     if (this.hasPlayIconTarget) {
       this.playIconTargets.forEach((icn) => {
@@ -368,6 +401,7 @@ export default class extends Controller {
     }
     this.playPauseIcon?.classList.add("fa-play");
     this.playPauseIcon?.classList.remove("fa-pause");
+    this.setPlayPauseAria(false); // ★A11y
     this.showLoadingUI();
   }
 
@@ -445,6 +479,7 @@ export default class extends Controller {
           this.startProgressTracking();
           this.changeVolume({ target: this.volumeBar });
           this.updateTrackIcon(this.currentTrackId, true);
+          this.setPlayPauseAria(true); // ★A11y
           this.savePlayerState();
         });
       }, 100);
@@ -461,12 +496,10 @@ export default class extends Controller {
     // ここでSC.Widgetを強制的に再生成（iframeがあれば）
     if (!this.widget) {
       this.iframeElement = document.getElementById("hidden-sc-player");
-      // iframeが存在し、src属性が空でなければ
       if (this.iframeElement && this.iframeElement.src && this.iframeElement.src !== "") {
         try {
           this.widget = SC.Widget(this.iframeElement);
           this.bindWidgetEvents(); // 必ずイベントも再バインド
-          // 状態がlocalStorageに保存されていれば復元
           if (typeof this.restorePlayerState === "function") {
             this.restorePlayerState();
           }
@@ -484,24 +517,30 @@ export default class extends Controller {
     this.widget.isPaused((paused) => {
       console.log("paused?", paused);
       paused ? this.widget.play() : this.widget.pause();
+      // ★A11y: 実際の状態反映は onPlay/onPause で確定
       setTimeout(() => this.savePlayerState(), 500);
     });
   }
 
   seek(event) {
     if (!this.widget) return;
-    const percent = event.target.value;
+    const raw = Number(event.target.value);
+    const percent = Math.max(0, Math.min(100, Math.round(raw))); // ← 0–100にクランプ＆丸め
     this.widget.getDuration((dur) => {
       if (!dur) return;
-      this.widget.seekTo((percent / 100) * dur);
+      const newMs = (percent / 100) * dur;
+      this.widget.seekTo(newMs);
+      this.updateSeekAria(percent, newMs, dur); // 丸めた値でA11y同期
       this.savePlayerState();
     });
   }
 
   changeVolume(event) {
     if (!this.widget) return;
-    const vol = event.target.value / 100;
-    this.widget.setVolume(vol * 100);
+    const raw = Number(event.target.value);
+    const percent = Math.max(0, Math.min(100, Math.round(raw))); // ← 0–100にクランプ＆丸め
+    this.widget.setVolume(percent); // SCは0–100で受け取る
+    this.updateVolumeAria(String(percent)); // A11y同期
   }
 
   onPlayIconClick(event) {
@@ -524,10 +563,11 @@ export default class extends Controller {
 
   /* ---------- 再生イベント ---------- */
   onPlay = () => {
-    console.log("onPlayイベント発火！"); // ★ここ追加
+    console.log("onPlayイベント発火！");
 
     this.playPauseIcon?.classList.replace("fa-play", "fa-pause");
     this.updateTrackIcon(this.currentTrackId, true);
+    this.setPlayPauseAria(true); // ★A11y
     this.playStartedAt = Date.now();
     this.startWaveformAnime();
 
@@ -543,10 +583,11 @@ export default class extends Controller {
   };
 
   onPause = () => {
-    console.log("onPauseイベント発火！"); // ★ここ追加
+    console.log("onPauseイベント発火！");
 
     this.playPauseIcon?.classList.replace("fa-pause", "fa-play");
     this.updateTrackIcon(this.currentTrackId, false);
+    this.setPlayPauseAria(false); // ★A11y
     this.stopWaveformAnime();
     this.savePlayerState();
   };
@@ -563,6 +604,7 @@ export default class extends Controller {
 
     this.playPauseIcon?.classList.replace("fa-pause", "fa-play");
     this.updateTrackIcon(this.currentTrackId, false);
+    this.setPlayPauseAria(false); // ★A11y
     clearInterval(this.progressInterval);
     this.playStartedAt = null;
 
@@ -617,9 +659,12 @@ export default class extends Controller {
       this.widget.getPosition((pos) => {
         this.widget.getDuration((dur) => {
           if (!dur) return;
-          this.seekBar       && (this.seekBar.value                   = (pos / dur) * 100);
-          this.currentTimeEl && (this.currentTimeEl.textContent       = this.formatTime(pos));
-          this.durationEl    && (this.durationEl.textContent          = this.formatTime(dur));
+          const percent = Math.round((pos / dur) * 100); // ← 最初に丸める
+          if (this.seekBar) this.seekBar.value = String(percent);
+          if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(pos);
+          if (this.durationEl) this.durationEl.textContent = this.formatTime(dur);
+          // ★A11y: 丸めた値を渡す
+          this.updateSeekAria(percent, pos, dur);
         });
       });
       this.savePlayerState();
@@ -628,7 +673,6 @@ export default class extends Controller {
 
   formatTime(ms) {
     const n = Number(ms);
-    // 未定義/NaN/0以下は "0:00"
     if (!Number.isFinite(n) || n <= 0) return "0:00";
     const sec = Math.floor(n / 1000);
     const m = Math.floor(sec / 60);

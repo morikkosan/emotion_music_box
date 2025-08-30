@@ -138,7 +138,7 @@
 }
 
 /* ────────── スマホ対応 ────────── */
-//* ────────── 共通：ボトムプレーヤー ────────── */
+/* ────────── 共通：ボトムプレーヤー ────────── */
 /* （この部分は絶対に変更しません。省略も一切しません） */
 
 /* ...省略なしの既存コード...（ここまであなたが送ったままです）... */
@@ -179,7 +179,6 @@
   left: 50% !important;
   top: 15px !important;
   transform: translateX(-250%) !important;
-  /* -20%で中央より左へ20%だけ移動します */
   color: #bbb !important;
   font-size: 13px !important;
   max-width: 110px !important;
@@ -188,7 +187,7 @@
   text-overflow: ellipsis !important;
   z-index: 9999 !important;
   display: inline-block !important;
-  // background: yellow !important;  /* テスト用 */
+   /* background: yellow !important;  テスト用 */
 }
 
 
@@ -360,4 +359,11 @@
 #repeat-button[aria-pressed="false"].active {
   color: rgba(255, 255, 255, 0.45) !important;
   text-shadow: none !important;
+}
+
+
+/* iframeやローディング要素を確実に隠す */
+.is-hidden,
+.hidden-frame {
+  display: none !important;
 }
