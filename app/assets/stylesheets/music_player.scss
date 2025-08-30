@@ -320,3 +320,44 @@
   }
 }
 /* ここまで全て、**省略なし**・**他は絶対に変えない**完全回答 */
+
+/* ====== シャッフル／リピートの見た目だけを明確化（配置は一切変更しない） ====== */
+/* 基本のトランジション */
+#shuffle-button,
+#repeat-button {
+  transition: color .15s ease, text-shadow .2s ease;
+}
+
+/* OFF（aria-pressed="false"）→ 目立たない白グレーに */
+#shuffle-button[aria-pressed="false"],
+#repeat-button[aria-pressed="false"] {
+  color: rgba(255, 255, 255, 0.45) !important; /* 暗め */
+  text-shadow: none !important;
+}
+
+/* OFFのときホバーで少しだけ明るく（押せることだけ示す） */
+#shuffle-button[aria-pressed="false"]:hover,
+#repeat-button[aria-pressed="false"]:hover {
+  color: rgba(255, 255, 255, 0.75) !important;
+  text-shadow: none !important;
+}
+
+/* ON（aria-pressed="true"）→ ネオンでクッキリ */
+#shuffle-button[aria-pressed="true"],
+#repeat-button[aria-pressed="true"] {
+  color: #10ffec !important;
+  text-shadow: 0 0 6px rgba(16, 255, 236, 0.6), 0 0 14px rgba(16, 255, 236, 0.35) !important;
+}
+
+/* FontAwesomeアイコンはボタンの色をそのまま継承 */
+#shuffle-button i,
+#repeat-button i {
+  pointer-events: none; /* クリックはボタンに確実に届くように（見た目だけ） */
+}
+
+/* 既存の .active が残っていても「オフ色」を強制する保険 */
+#shuffle-button[aria-pressed="false"].active,
+#repeat-button[aria-pressed="false"].active {
+  color: rgba(255, 255, 255, 0.45) !important;
+  text-shadow: none !important;
+}
