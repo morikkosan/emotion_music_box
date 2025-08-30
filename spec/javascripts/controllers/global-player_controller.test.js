@@ -306,30 +306,31 @@ describe("global_player_controller", () => {
     expect(controller.widget.setVolume).toHaveBeenCalledWith(50);
   });
 
-  test("startProgressTracking: 1秒ごとに時間/シークが更新される", () => {
-    buildDOM();
-    const { controller } = startStimulusAndGetController();
+ test("startProgressTracking: 1秒ごとに時間/シークが更新される", () => {
+  buildDOM();
+  const { controller } = startStimulusAndGetController();
 
-    const iframe = document.getElementById("hidden-sc-player");
-    iframe.src = "https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fabc&auto_play=false";
+  const iframe = document.getElementById("hidden-sc-player");
+  iframe.src = "https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fabc&auto_play=false";
 
-    jest.spyOn(controller, "restorePlayerState").mockImplementation(() => {}); // 念のため
+  jest.spyOn(controller, "restorePlayerState").mockImplementation(() => {}); // 念のため
 
-    controller.togglePlayPause();
-    jest.advanceTimersByTime(5);
+  controller.togglePlayPause();
+  jest.advanceTimersByTime(5);
 
-    controller.widget.__setDuration(90000); // 90s
-    controller.widget.__setPosition(30000); // 30s
+  controller.widget.__setDuration(90000); // 90s
+  controller.widget.__setPosition(30000); // 30s
 
-    controller.startProgressTracking();
-    jest.advanceTimersByTime(1000);
+  controller.startProgressTracking();
+  jest.advanceTimersByTime(1000);
 
-    expect(document.getElementById("current-time").textContent).toBe("0:30");
-    expect(document.getElementById("duration").textContent).toBe("1:30");
+  expect(document.getElementById("current-time").textContent).toBe("0:30");
+  expect(document.getElementById("duration").textContent).toBe("1:30");
 
-    const seekBar = document.getElementById("seek-bar");
-    expect(parseFloat(seekBar.value)).toBeCloseTo((30000 / 90000) * 100, 5);
-  });
+  const seekBar = document.getElementById("seek-bar");
+  const expectedPercent = Math.round((30000 / 90000) * 100); // ← コントローラ側の丸め（Math.round）に合わせる
+  expect(Number(seekBar.value)).toBe(expectedPercent);
+});
 
   test("updateTrackIcon: 対象トラックだけが pause アイコン、それ以外は play", () => {
     buildDOM();
@@ -1171,22 +1172,27 @@ test("onFinish: 5〜32 秒再生 → 権利制限アラート + 次曲なしで 
 
 // ===== ここから “extra-2” の追加テスト（UI/イベント細部） =====
 describe("global_player_controller extra-2", () => {
-  test("show/hideLoadingUI: 近傍のボタン disabled をトグル（closest('button') 経路）", () => {
-    buildDOM();
-    const { controller } = startStimulusAndGetController();
+  test("show/hideLoadingUI: #play-pause-button を disabled トグル（実装仕様に一致）", () => {
+  buildDOM();
 
-    // play-pause-icon をボタンでラップして closest('button') が拾えるようにする
-    const icon = document.getElementById("play-pause-icon");
-    const btn = document.createElement("button");
-    icon.parentNode.insertBefore(btn, icon);
-    btn.appendChild(icon);
+  // ★ connect 前に #play-pause-button を DOM に追加しておく（実装はこれを参照）
+  const icon = document.getElementById("play-pause-icon");
+  const realBtn = document.createElement("button");
+  realBtn.id = "play-pause-button";
+  // どこでも良いが分かりやすくアイコン直前に置く
+  icon.parentNode.insertBefore(realBtn, icon);
 
-    controller.showLoadingUI();
-    expect(btn.getAttribute("disabled")).toBe("disabled");
+  const { controller } = startStimulusAndGetController();
 
-    controller.hideLoadingUI();
-    expect(btn.hasAttribute("disabled")).toBe(false);
-  });
+  controller.showLoadingUI();
+  expect(realBtn.getAttribute("disabled")).toBe("disabled");
+  expect(realBtn.getAttribute("aria-disabled")).toBe("true");
+
+  controller.hideLoadingUI();
+  expect(realBtn.hasAttribute("disabled")).toBe(false);
+  expect(realBtn.getAttribute("aria-disabled")).toBe("false");
+});
+
 
   test("connect: body が playlist-show-page のとき localStorage をクリアする", () => {
     // 事前にフラグと保存をセット
