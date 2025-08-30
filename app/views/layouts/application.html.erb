@@ -84,7 +84,6 @@
       data-flash-notice="<%= j flash[:notice] %>"
       data-flash-alert="<%= j flash[:alert] %>">
 
-
   <!-- ここから下は元の内容を**絶対に壊さずそのまま**にしてください -->
  <div id="screen-cover-loading" aria-hidden="true" aria-live="polite" aria-label="ローディング画面">
     <div class="pacman-wrapper" aria-hidden="true">
@@ -112,7 +111,7 @@
       <div class="d-flex">
         <div class="toast-body">emomu を保存しました！</div>
         <button type="button" class="btn-close btn-close-white me-2 m-auto"
-                data-bs-dismiss="toast"></button>
+                data-bs-dismiss="toast" aria-label="閉じる"></button>
       </div>
     </div>
   </div>
@@ -122,66 +121,73 @@
   <!-- ──────────── 下部カスタムプレーヤー & 隠し iframe ──────────── -->
 
   <!-- 1) SoundCloud の iframe（display: none で隠す） -->
-  <iframe id="hidden-sc-player" class="hidden-frame" src="" allow="autoplay" frameborder="no" scrolling="no" width="100%" height="166"></iframe>
+  <iframe id="hidden-sc-player" class="hidden-frame" src="" allow="autoplay" frameborder="no" scrolling="no" width="100%" height="166" aria-hidden="true" tabindex="-1"></iframe>
 
 <!-- ===== 下部カスタムプレーヤー ===== -->
-<div id="bottom-player" class="bottom-player d-none">
+<div id="bottom-player" class="bottom-player d-none" role="region" aria-label="再生コントロール">
 
 <!-- 上段: 前の曲・次の曲ボタン＆スマホ用タイトル -->
 <div class="bottom-player-top-row">
   <!-- 左端: canvas -->
-  <canvas id="waveform-anime" width="450" height="44" class="waveform-canvas"></canvas>
+  <canvas id="waveform-anime" width="450" height="44" class="waveform-canvas" aria-hidden="true"></canvas>
 
     <!-- ✅ 曲タイトル（スマホ専用） -->
-  <span id="track-title-top" class="track-title-top-inline d-md-none"></span>
-  <small id="track-artist-mobile" class="track-artist d-md-none" style="position: absolute; left: 8px; top: 26px; font-size: 12px; color: #bbb; z-index: 9999;"></small>
+  <span id="track-title-top" class="track-title-top-inline d-md-none" aria-live="polite"></span>
+  <small id="track-artist-mobile"
+        class="track-artist d-md-none"
+        aria-live="polite"></small>
+
  <!-- 真ん中: ボタン・曲タイトル（曲タイトルはスマホ時のみ） -->
 <div class="player-center-btns">
   <!-- ✅ 曲タイトル（スマホ専用） -->
-  <span id="track-title-top" class="track-title-top-inline d-md-none"></span>
+
   <button id="prev-track-button"
     class="btn btn-link text-white bottom-player-button"
-    data-action="click->global-player#prevTrack">
-    <i class="fa fa-step-backward"></i>
+    data-action="click->global-player#prevTrack"
+    type="button"
+    aria-label="前の曲へ">
+    <i class="fa fa-step-backward" aria-hidden="true"></i>
   </button>
 
   <button id="next-track-button"
     class="btn btn-link text-white next-track-btn"
-    data-action="click->global-player#nextTrack">
-    <i class="fa fa-step-forward"></i>
+    data-action="click->global-player#nextTrack"
+    type="button"
+    aria-label="次の曲へ">
+    <i class="fa fa-step-forward" aria-hidden="true"></i>
   </button>
 </div>
-
 
   <!-- 右端: 空白スペース（flexの空白要素 -->
   <div class="bottom-player-flex-gap"></div>
 </div>
-
 
   <!-- 下段: プレーヤー本体 -->
   <div class="bottom-player-controls">
     <!-- 再生／停止ボタン -->
     <button id="play-pause-button"
             class="btn btn-link text-white me-3 play-pause-btn"
-            data-action="click->global-player#togglePlayPause">
-      <i id="play-pause-icon" class="fa fa-play"></i>
-      <span id="play-btn-spinner" class="play-btn-spinner">
+            data-action="click->global-player#togglePlayPause"
+            type="button"
+            aria-label="再生">
+      <i id="play-pause-icon" class="fa fa-play" aria-hidden="true"></i>
+      <span id="play-btn-spinner" class="play-btn-spinner" aria-hidden="true">
         <span class="loading-spinner-inline"></span>
       </span>
     </button>
 
     <!-- 曲情報（デフォルトは下段のみ。スマホでは隠す） -->
-    <div id="track-info" class="track-info-box">
-      <span class="loading-spinner-inline" id="loading-spinner"></span>
+    <div id="track-info" class="track-info-box" aria-live="polite">
+      <span class="loading-spinner-inline" id="loading-spinner" aria-hidden="true"></span>
       <span id="track-title" class="track-title">
-        <span class="neon-wave">
+        <span class="neon-wave" aria-hidden="true">
           <span>N</span><span>O</span><span>W</span>
           <span>&nbsp;</span>
           <span>L</span><span>O</span><span>A</span><span>D</span><span>I</span><span>N</span><span>G</span>
           <span>.</span><span>.</span><span>.</span>
         </span>
       </span>
-      <span class="neon-character-spinbox">
+      <span class="neon-character-spinbox" aria-hidden="true">
         <span class="neon-body">
           <span class="neon-eye neon-eye-left"></span>
           <span class="neon-eye neon-eye-right"></span>
@@ -196,31 +202,43 @@
 
       <!-- 時間・シークバー -->
       <div class="bottom-player-seekbar">
-        <span id="current-time" class="current-time">0:00</span>
+        <span id="current-time" class="current-time" aria-live="off">0:00</span>
+
+        <!-- ✅ 視覚的には非表示のラベル（関連付け済み） -->
+        <label for="seek-bar" class="visually-hidden">再生位置（シーク）</label>
         <input id="seek-bar"
           type="range"
           min="0" max="100" value="0"
           class="seek-bar"
-          data-action="input->global-player#seek">
-        <span id="duration" class="duration">0:00</span>
+          data-action="input->global-player#seek"
+          aria-label="再生位置（シーク）"
+          aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="0:00">
+
+        <span id="duration" class="duration" aria-live="off">0:00</span>
       </div>
 
       <!-- シャッフル・リピート・音量 -->
       <div class="bottom-player-extra-controls">
         <button id="shuffle-button" class="btn btn-link toggle-btn me-1 bottom-player-toggle-btn"
-          data-action="click->global-player#toggleShuffle" type="button">
-          <i class="fa fa-random"></i>
+          data-action="click->global-player#toggleShuffle" type="button"
+          aria-pressed="false" aria-label="シャッフルの切り替え">
+          <i class="fa fa-random" aria-hidden="true"></i>
         </button>
         <button id="repeat-button" class="btn btn-link toggle-btn me-2 repeat-btn"
-          data-action="click->global-player#toggleRepeat" type="button">
-          <i class="fa fa-repeat"></i>
+          data-action="click->global-player#toggleRepeat" type="button"
+          aria-pressed="false" aria-label="リピートの切り替え">
+          <i class="fa fa-repeat" aria-hidden="true"></i>
         </button>
-        <i class="fa fa-volume-up volume-icon"></i>
+        <i class="fa fa-volume-up volume-icon" aria-hidden="true"></i>
+
+        <!-- ✅ 視覚的には非表示のラベル（関連付け済み） -->
+        <label for="volume-bar" class="visually-hidden">音量</label>
         <input id="volume-bar"
           type="range"
           min="0" max="100" value="100"
           class="volume-bar"
-          data-action="input->global-player#changeVolume">
+          data-action="input->global-player#changeVolume"
+          aria-label="音量" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%">
       </div>
     </div>
   </div>
@@ -234,7 +252,6 @@
 <div id="mobile-super-search-root" data-turbo-permanent>
   <%= render "emotion_logs/mobile_super_search" %>
 </div>
-
 
 </body>
 </html>
