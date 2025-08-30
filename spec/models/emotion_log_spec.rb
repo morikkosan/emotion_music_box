@@ -1,13 +1,16 @@
+# spec/models/emotion_log_spec.rb
 require 'rails_helper'
 
 RSpec.describe EmotionLog, type: :model do
+  include ActiveSupport::Testing::TimeHelpers
 
   before(:each) do
+    # 依存順に削除して外部キー制約を回避
     CommentReaction.delete_all
     Comment.delete_all
     Bookmark.delete_all
-    PlaylistItem.delete_all   # ← これが必須
-    EmotionLogTag.delete_all  # ← タグの中間も
+    PlaylistItem.delete_all
+    EmotionLogTag.delete_all
     Tag.delete_all
     EmotionLog.delete_all
   end
@@ -32,7 +35,7 @@ RSpec.describe EmotionLog, type: :model do
     end
 
     it "未来の日付は無効となること" do
-      log = build(:emotion_log, user: user, date: Date.tomorrow)
+      log = build(:emotion_log, user: user, date: Time.zone.tomorrow)
       expect(log).not_to be_valid
       expect(log.errors[:date]).to include("は未来の日付を選択できません")
     end
@@ -51,8 +54,17 @@ RSpec.describe EmotionLog, type: :model do
 
   describe "スコープ" do
     describe ".for_today" do
-      let!(:today_log) { create(:emotion_log, date: Date.today) }
-      let!(:yesterday_log) { create(:emotion_log, date: Date.yesterday) }
+      # テスト中の“今日”とTZを固定してフレークを防止
+      around do |example|
+        Time.use_zone('Asia/Tokyo') do
+          travel_to Time.zone.local(2024, 1, 1, 12, 0, 0) do
+            example.run  # ← これが必須
+          end
+        end
+      end
+
+      let!(:today_log)     { create(:emotion_log, date: Time.zone.today) }
+      let!(:yesterday_log) { create(:emotion_log, date: Time.zone.yesterday) }
 
       it "今日の投稿だけを返す" do
         expect(EmotionLog.for_today).to include(today_log)
@@ -61,6 +73,15 @@ RSpec.describe EmotionLog, type: :model do
     end
 
     describe ".newest" do
+      # 生成順の安定化（任意だが一応固定）
+      around do |example|
+        Time.use_zone('Asia/Tokyo') do
+          travel_to Time.zone.local(2024, 1, 2, 12, 0, 0) do
+            example.run
+          end
+        end
+      end
+
       let!(:older_log) { create(:emotion_log, created_at: 1.day.ago) }
       let!(:newer_log) { create(:emotion_log, created_at: Time.current) }
 
@@ -70,8 +91,17 @@ RSpec.describe EmotionLog, type: :model do
     end
 
     describe ".for_week" do
-      let!(:this_week_log) { create(:emotion_log, date: 3.days.ago) }
-      let!(:old_log) { create(:emotion_log, date: 2.weeks.ago) }
+      # “今日”を固定して from..to の境界ブレを防止
+      around do |example|
+        Time.use_zone('Asia/Tokyo') do
+          travel_to Time.zone.local(2024, 1, 7, 12, 0, 0) do
+            example.run
+          end
+        end
+      end
+
+      let!(:this_week_log) { create(:emotion_log, date: Time.zone.today - 3.days) }
+      let!(:old_log)       { create(:emotion_log, date: Time.zone.today - 2.weeks) }
 
       it "今週の投稿だけ返す" do
         expect(EmotionLog.for_week).to include(this_week_log)
@@ -122,16 +152,14 @@ RSpec.describe EmotionLog, type: :model do
   end
 
   describe "#bookmark_users" do
-  it "ブックマークしたユーザーが取得できること" do
-    log = create(:emotion_log, user: user)      # 対象の投稿（EmotionLog）
-    user1 = create(:user)                       # ブックマークするユーザー1
-    user2 = create(:user)                       # ブックマークするユーザー2
-    create(:bookmark, emotion_log: log, user: user1) # user1がブックマーク
-    create(:bookmark, emotion_log: log, user: user2) # user2がブックマーク
+    it "ブックマークしたユーザーが取得できること" do
+      log   = create(:emotion_log, user: user)
+      user1 = create(:user)
+      user2 = create(:user)
+      create(:bookmark, emotion_log: log, user: user1)
+      create(:bookmark, emotion_log: log, user: user2)
 
-    expect(log.bookmark_users).to contain_exactly(user1, user2)
+      expect(log.bookmark_users).to contain_exactly(user1, user2)
+    end
   end
-end
-
-
 end

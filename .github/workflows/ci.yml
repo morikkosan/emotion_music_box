@@ -12,6 +12,8 @@ jobs:
     env:
       RAILS_ENV: test
       DISABLE_SPRING: 1   # Spring 無効（CIでは不要＆不安定化要因）
+      TZ: Asia/Tokyo
+
 
     services:
       postgres:
