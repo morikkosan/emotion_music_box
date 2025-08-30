@@ -55,7 +55,7 @@ export default class extends Controller {
     this.waveformCtx     = this.waveformCanvas?.getContext("2d");
     this.waveformAnimating = false;
 
-    // シークバー
+    // ===== シークバー（mousedown/up はここで管理。input は data-action に任せる）=====
     this.seekBar?.addEventListener("mousedown", () => {
       this.isSeeking = true;
       clearInterval(this.progressInterval);
@@ -66,16 +66,15 @@ export default class extends Controller {
         this.startProgressTracking();
       }
     });
-    this.volumeBar?.addEventListener("input",  (e) => this.changeVolume(e));
-    this.seekBar  ?.addEventListener("input",  (e) => this.seek(e));
 
-    // 前後トラック
-    document.getElementById("prev-track-button")?.addEventListener("click", this.prevTrack.bind(this));
-    document.getElementById("next-track-button")?.addEventListener("click", this.nextTrack.bind(this));
-
-    // シャッフル / リピート
-    document.getElementById("shuffle-button")?.addEventListener("click", this.toggleShuffle.bind(this));
-    document.getElementById("repeat-button") ?.addEventListener("click", this.toggleRepeat.bind(this));
+    // ===== 重要：クリック/入力ハンドラは Stimulus の data-action に一本化 =====
+    // 下記のような addEventListener は二重トグルの原因になるため付けない
+    // this.volumeBar?.addEventListener("input",  (e) => this.changeVolume(e));
+    // this.seekBar  ?.addEventListener("input",  (e) => this.seek(e));
+    // document.getElementById("prev-track-button")?.addEventListener("click", this.prevTrack.bind(this));
+    // document.getElementById("next-track-button")?.addEventListener("click", this.nextTrack.bind(this));
+    // document.getElementById("shuffle-button")?.addEventListener("click", this.toggleShuffle.bind(this));
+    // document.getElementById("repeat-button") ?.addEventListener("click", this.toggleRepeat.bind(this));
 
     // 外部検索から再生
     window.addEventListener("play-from-search", (e) => {
@@ -91,6 +90,18 @@ export default class extends Controller {
         this.waveformCanvas.height = this.waveformCanvas.offsetHeight;
       }
     });
+
+    // 初期の見た目をフラグと同期（HTML側に active が残っていても上書き）
+    const shuffleBtn = document.getElementById("shuffle-button");
+    if (shuffleBtn) {
+      shuffleBtn.classList.toggle("active", this.isShuffle);
+      shuffleBtn.setAttribute("aria-pressed", String(this.isShuffle));
+    }
+    const repeatBtn = document.getElementById("repeat-button");
+    if (repeatBtn) {
+      repeatBtn.classList.toggle("active", this.isRepeat);
+      repeatBtn.setAttribute("aria-pressed", String(this.isRepeat));
+    }
 
     this.restorePlayerState();
     console.log("[connect] global-player controller initialized");
@@ -284,13 +295,21 @@ export default class extends Controller {
   // -------------- シャッフル / リピート -----------------
   toggleShuffle() {
     this.isShuffle = !this.isShuffle;
-    document.getElementById("shuffle-button")?.classList.toggle("active", this.isShuffle);
+    const btn = document.getElementById("shuffle-button");
+    if (btn) {
+      btn.classList.toggle("active", this.isShuffle);
+      btn.setAttribute("aria-pressed", String(this.isShuffle));
+    }
     this.updatePlaylistOrder();
   }
 
   toggleRepeat() {
     this.isRepeat = !this.isRepeat;
-    document.getElementById("repeat-button")?.classList.toggle("active", this.isRepeat);
+    const btn = document.getElementById("repeat-button");
+    if (btn) {
+      btn.classList.toggle("active", this.isRepeat);
+      btn.setAttribute("aria-pressed", String(this.isRepeat));
+    }
   }
 
   updatePlaylistOrder() {
@@ -434,41 +453,40 @@ export default class extends Controller {
 
   // -------------- プレイ/ポーズトグル -----------------
   togglePlayPause(event) {
-  console.log("togglePlayPause発火", event);
-  console.log("this.widget", this.widget);
+    console.log("togglePlayPause発火", event);
+    console.log("this.widget", this.widget);
 
-  event?.stopPropagation();
+    event?.stopPropagation();
 
-  // ここでSC.Widgetを強制的に再生成（iframeがあれば）
-  if (!this.widget) {
-    this.iframeElement = document.getElementById("hidden-sc-player");
-    // iframeが存在し、src属性が空でなければ
-    if (this.iframeElement && this.iframeElement.src && this.iframeElement.src !== "") {
-      try {
-        this.widget = SC.Widget(this.iframeElement);
-        this.bindWidgetEvents(); // 必ずイベントも再バインド
-        // 状態がlocalStorageに保存されていれば復元
-        if (typeof this.restorePlayerState === "function") {
-          this.restorePlayerState();
+    // ここでSC.Widgetを強制的に再生成（iframeがあれば）
+    if (!this.widget) {
+      this.iframeElement = document.getElementById("hidden-sc-player");
+      // iframeが存在し、src属性が空でなければ
+      if (this.iframeElement && this.iframeElement.src && this.iframeElement.src !== "") {
+        try {
+          this.widget = SC.Widget(this.iframeElement);
+          this.bindWidgetEvents(); // 必ずイベントも再バインド
+          // 状態がlocalStorageに保存されていれば復元
+          if (typeof this.restorePlayerState === "function") {
+            this.restorePlayerState();
+          }
+        } catch (e) {
+          alert("プレイヤーの初期化に失敗しました。もう一度曲を選んでください。");
+          return;
         }
-      } catch (e) {
-        alert("プレイヤーの初期化に失敗しました。もう一度曲を選んでください。");
+      } else {
+        alert("プレイヤーが初期化されていません。もう一度曲を選んでください。");
         return;
       }
-    } else {
-      alert("プレイヤーが初期化されていません。もう一度曲を選んでください。");
-      return;
     }
+
+    // ここからは「this.widget」が必ず有効な状態
+    this.widget.isPaused((paused) => {
+      console.log("paused?", paused);
+      paused ? this.widget.play() : this.widget.pause();
+      setTimeout(() => this.savePlayerState(), 500);
+    });
   }
-
-  // ここからは「this.widget」が必ず有効な状態
-  this.widget.isPaused((paused) => {
-    console.log("paused?", paused);
-    paused ? this.widget.play() : this.widget.pause();
-    setTimeout(() => this.savePlayerState(), 500);
-  });
-}
-
 
   seek(event) {
     if (!this.widget) return;
@@ -502,12 +520,11 @@ export default class extends Controller {
       return;
     }
     this.loadAndPlay(event);
-}
-
+  }
 
   /* ---------- 再生イベント ---------- */
   onPlay = () => {
-      console.log("onPlayイベント発火！"); // ★ここ追加
+    console.log("onPlayイベント発火！"); // ★ここ追加
 
     this.playPauseIcon?.classList.replace("fa-play", "fa-pause");
     this.updateTrackIcon(this.currentTrackId, true);
@@ -526,7 +543,7 @@ export default class extends Controller {
   };
 
   onPause = () => {
-      console.log("onPauseイベント発火！"); // ★ここ追加
+    console.log("onPauseイベント発火！"); // ★ここ追加
 
     this.playPauseIcon?.classList.replace("fa-pause", "fa-play");
     this.updateTrackIcon(this.currentTrackId, false);
@@ -609,7 +626,7 @@ export default class extends Controller {
     }, 1000);
   }
 
-    formatTime(ms) {
+  formatTime(ms) {
     const n = Number(ms);
     // 未定義/NaN/0以下は "0:00"
     if (!Number.isFinite(n) || n <= 0) return "0:00";
@@ -618,7 +635,6 @@ export default class extends Controller {
     const s = sec % 60;
     return `${m}:${s.toString().padStart(2, "0")}`;
   }
-
 
   /* ---------- 前後トラック ---------- */
   prevTrack(event) {
