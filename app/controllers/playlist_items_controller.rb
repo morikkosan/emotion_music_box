@@ -1,34 +1,38 @@
+# app/controllers/playlist_items_controller.rb
 class PlaylistItemsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_playlist
-  before_action :set_playlist_item, only: [ :destroy ]
+  before_action :set_playlist_item, only: [:destroy]
 
   def create
     @item = @playlist.playlist_items.build(emotion_log_id: params[:emotion_log_id])
 
     if @item.save
       respond_to do |format|
-        format.html do
-          redirect_to playlist_path(@playlist), notice: "曲を追加しました"
-        end
-
+        format.html { redirect_to playlist_path(@playlist), notice: "曲を追加しました" }
         format.turbo_stream do
-          # モーダル内の一覧部分を再レンダー
-          render turbo_stream: turbo_stream.replace(
-            "addSongsModalBody",
-            partial: "playlists/bookmarked_songs",
-            locals: { playlist: @playlist }
-          )
+          render turbo_stream: [
+            # ① プレイリスト本体（UL）を最新に
+            turbo_stream.replace(
+              helpers.dom_id(@playlist, :contents),
+              partial: "playlists/playlist_contents",
+              locals: { playlist: @playlist }
+            ),
+            # ② モーダル内の「ブックマーク済みの曲一覧」を最新に
+            turbo_stream.replace(
+              "addSongsModalBody",
+              partial: "playlists/bookmarked_songs",
+              locals: { playlist: @playlist }
+            )
+          ]
         end
       end
-
     else
       respond_to do |format|
         format.html do
           redirect_to playlist_path(@playlist),
-            alert: "曲の追加に失敗しました: #{@item.errors.full_messages.join(', ')}"
+                      alert: "曲の追加に失敗しました: #{@item.errors.full_messages.join(', ')}"
         end
-
         format.turbo_stream do
           render turbo_stream: [
             turbo_stream.replace(
@@ -51,16 +55,22 @@ class PlaylistItemsController < ApplicationController
     @playlist_item.destroy
 
     respond_to do |format|
-      format.html do
-        redirect_to playlist_path(@playlist), notice: "曲をプレイリストから削除しました。"
-      end
-
+      format.html { redirect_to playlist_path(@playlist), notice: "曲をプレイリストから削除しました。" }
       format.turbo_stream do
-        render turbo_stream: turbo_stream.replace(
-          helpers.dom_id(@playlist, :contents),
-          partial: "playlists/playlist_contents",
-          locals: { playlist: @playlist }
-        )
+        render turbo_stream: [
+          # ① プレイリスト本体（UL）を最新に
+          turbo_stream.replace(
+            helpers.dom_id(@playlist, :contents),
+            partial: "playlists/playlist_contents",
+            locals: { playlist: @playlist }
+          ),
+          # ② モーダル側も更新（削除した曲を候補に戻す）
+          turbo_stream.replace(
+            "addSongsModalBody",
+            partial: "playlists/bookmarked_songs",
+            locals: { playlist: @playlist }
+          )
+        ]
       end
     end
   end
