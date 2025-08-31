@@ -221,3 +221,32 @@ html.preload body { visibility: visible !important; }
     pointer-events: none !important;
   }
 }
+
+/* =========================================================
+   強制表示・最終手段（スマホ幅）
+   - Turbo Frame や hidden 属性も可視化
+   ========================================================= */
+@media (max-width: 768px) {
+  /* すべての hidden を可視化（緊急用） */
+  [hidden] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    pointer-events: auto !important;
+  }
+
+  /* Turbo Frame を必ず表示 */
+  turbo-frame#logs_list_mobile,
+  #logs_list_mobile {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    contain: none !important;
+  }
+
+  /* 念のため、親の切替も固定 */
+  #desktop-view { display: none !important; }
+  #mobile-view  { display: block !important; }
+}

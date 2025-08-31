@@ -17,13 +17,17 @@ console.log("🔥 Rails UJS is loaded!", Rails);
 window.bootstrap = bootstrap;
 
 /* ===========================================================
-   ✅ 追加：Push通知の二重呼び出し防止
-   -----------------------------------------------------------
-   - DOMContentLoaded / turbo:load 両方から呼ばれても 1回だけ実行
-   - ログイン時のみ実行（window.isLoggedIn が true のとき）
+   🛠 デバッグフラグ：URLに ?nosw=1 が付いていたら
+   この端末・このブラウザだけ SW/Push を無効化
+   =========================================================== */
+const DEBUG_NO_SW = new URLSearchParams(location.search).has("nosw");
+
+/* ===========================================================
+   ✅ Push通知の二重呼び出し防止 + nosw時は未実行
    =========================================================== */
 let __pushSubRequested = false;
 function requestPushOnce() {
+  if (DEBUG_NO_SW) return;            // ← デバッグ時は登録しない（この端末だけ）
   if (!window.isLoggedIn) return;
   if (__pushSubRequested) return;
   __pushSubRequested = true;
@@ -61,9 +65,31 @@ window.addEventListener("pageshow", (e) => {
   if (e.persisted) hideMobileSearchModalSafely();
 });
 
-// サービスワーカー登録
-registerServiceWorker();
-
+/* ===========================================================
+   🔔 サービスワーカー登録（nosw時はこの端末だけ解除）
+   =========================================================== */
+if (DEBUG_NO_SW) {
+  // この端末のこのブラウザだけ SW を解除＆キャッシュ掃除
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistrations?.()
+      .then(regs => Promise.all(regs.map(r => r.unregister())))
+      .then(() => {
+        if (window.caches?.keys) {
+          caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
+        }
+        // 1回だけ SW なしで再読込（ループ防止）
+        if (!sessionStorage.getItem("nosw_once_reloaded")) {
+          sessionStorage.setItem("nosw_once_reloaded", "1");
+          location.reload();
+        }
+      })
+      .catch(err => console.warn("SW unregister failed:", err));
+  }
+  console.log("NO_SWモード：この端末のこのブラウザではSW未登録（デバッグ用）");
+} else {
+  // 通常運用：これまでどおり SW 有効
+  registerServiceWorker();
+}
 
 // 重複する関数はここに書かない！！！
 
@@ -73,8 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-
-// Turboローディング制御まとめ
 // ===== Turboローディング制御（遅延 + スキップ対応）=====
 let __loaderTimer = null;
 let __skipNextLoader = false;
@@ -142,7 +166,6 @@ document.addEventListener("turbo:load", () => {
     localStorage.setItem("hpPercentage", "50");
     localStorage.setItem("hpDate", today);
   }
-
 
   // Turboフレーム内モーダルにも対応
   const modalFixObserver = new MutationObserver(() => {
@@ -215,9 +238,7 @@ document.addEventListener("turbo:load", () => {
       const file = e.target.files?.[0];
       if (!file) return;
 
-      // ✅ 事前の2MB制限を撤廃（この後のクロップ＆縮小で小さくなるため）
-      //    ここではサイズで弾かない
-
+      // ここではサイズで弾かない（後で縮小）
       const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
       if (!allowedTypes.includes(file.type)) {
         alert("ファイル形式はJPEGまたはPNGのみ許可されています。");
@@ -270,7 +291,7 @@ document.addEventListener("turbo:load", () => {
     });
   }
 
-  // ★ 拡大しない・品質0.85のリサイズ関数に修正
+  // ★ 拡大しない・品質0.85のリサイズ関数
   async function resizeImage(sourceImage, maxSize = 300) {
     return new Promise((resolve) => {
       const srcW = sourceImage.width;
@@ -331,7 +352,7 @@ document.addEventListener("turbo:load", () => {
       inlinePreview.src = dataUrl;
       avatarUrlField.value = "";
 
-      // ▼ フォーカスを外してからモーダルを閉じる（aria-hidden 警告対策）
+      // ▼ フォーカスを外してからモーダルを閉じる（aria-hidden 対策）
       try { confirmBtn.blur(); } catch(_) {}
       try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch(_) {}
       modal.hide();
@@ -465,9 +486,6 @@ document.addEventListener("turbo:before-stream-render", (event) => {
 
 /* ===========================================================
    📱 スマホ版プレイリスト「一覧」モーダル（fetch なし）
-   - フッターの #show-playlist-modal-mobile を毎回確実に動かす
-   - Turbo 遷移のたびに再バインド（重複防止付き）
-   - 画面遷移時に安全に閉じる保険あり
    =========================================================== */
 // ボタンにクリックをバインド（重複防止）
 function bindMobilePlaylistButton() {
