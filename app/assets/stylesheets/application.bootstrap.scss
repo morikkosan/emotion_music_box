@@ -2,7 +2,6 @@
 
 // すべての @use はファイルの本当の先頭に！コメントもOK
 @use "bootstrap/scss/bootstrap";
-@use "bootstrap-icons/font/bootstrap-icons";
 @use "components/floating_button";
 @use "components/neon_buttons" as *;
 @use "custom_styles";
