@@ -189,3 +189,35 @@ html.preload body { visibility: visible !important; }
     pointer-events: none !important;
   }
 }
+
+/* =========================================================
+   🔥最優先ワンショット：iPhoneで必ず中身を表示する
+   - モバイル幅では .view-hidden を「全域で」無効化
+   - デスクトップビューは強制非表示、モバイルは強制表示
+   - かぶりやすいオーバーレイは無効化
+   ========================================================= */
+@media (max-width: 768px) {
+  /* 1) どの要素に付いていても .view-hidden を無効化（親ごと殺しているケースを救う） */
+  .view-hidden {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    height: auto !important;
+    pointer-events: auto !important;
+  }
+
+  /* 2) ビューの強制切替（JSが死んでいても確実に出す） */
+  #desktop-view { display: none !important; }
+  #mobile-view  { display: block !important; }
+
+  /* 3) 画面を覆う残骸は無効化（真っ黒/タップ不可を防ぐ） */
+  #loading-overlay,
+  #screen-cover-loading,
+  .modal-backdrop,
+  .offcanvas-backdrop {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+}
