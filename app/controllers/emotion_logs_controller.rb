@@ -1,7 +1,10 @@
 # app/controllers/emotion_logs_controller.rb
 class EmotionLogsController < ApplicationController 
+  # ▼▼ show も例外化（index/show は未ログインOK。show は下の ensure_logged_in_for_show が処理）
   before_action :authenticate_user!, except: %i[index show]
   before_action :ensure_owner, only: %i[edit update destroy]
+  # ▼▼ 未ログインで show に来たら SoundCloud 認可へ飛ばす
+  before_action :ensure_logged_in_for_show, only: %i[show]
 
   # =========================
   # 一覧
@@ -406,5 +409,16 @@ class EmotionLogsController < ApplicationController
   def ensure_owner
     @emotion_log = EmotionLog.find(params[:id])
     head :forbidden unless @emotion_log.user == current_user
+  end
+
+  # ▼▼ 未ログインの show アクセスを SoundCloud 認可へ転送（ログイン後は index 固定）
+  def ensure_logged_in_for_show
+    return if user_signed_in?
+
+    if turbo_frame_request? || request.format.turbo_stream?
+      render turbo_stream: turbo_stream.redirect_to(user_soundcloud_omniauth_authorize_path), status: :see_other
+    else
+      redirect_to user_soundcloud_omniauth_authorize_path, status: :see_other
+    end
   end
 end

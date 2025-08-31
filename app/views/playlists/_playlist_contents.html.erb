@@ -1,16 +1,15 @@
 <% if @playlist.playlist_items.empty? %>
   <p class="text-center">まだ曲が追加されていません。</p>
 <% else %>
-  <!-- ★ 親要組織にコントローラをアタッチ -->
+  <!-- 親要素にコントローラをアタッチ -->
   <div class="playlist-container" data-controller="global-player">
-
-    <!-- ★ プレイリスト本体 -->
+    <!-- プレイリスト本体 -->
     <ul id="<%= dom_id(@playlist, :contents) %>" class="list-unstyled mt-3 playlist-contents">
       <% @playlist.playlist_items.includes(:emotion_log).each do |item| %>
         <% log = item.emotion_log %>
-        <li class="mb-4">
+        <!-- 行ごとに id を付与（差し替え/削除に便利） -->
+        <li class="mb-4" id="<%= dom_id(log) %>">
           <div class="pmx_playlist_row d-flex align-items-center">
-
             <!-- 左：アートワーク＋再生アイコン -->
             <div class="pmx_cover_wrapper me-3">
               <%= image_tag(
@@ -38,18 +37,14 @@
               </div>
             </div>
 
-            <!-- 右：削除ボタン（曲単位） -->
+            <!-- 右：削除ボタン（※ data-turbo-frame は付けない） -->
             <div class="pmx_remove_button">
               <%= button_to raw('<i class="fa fa-trash"></i>'),
                     playlist_playlist_item_path(@playlist, item),
                     method: :delete,
-                    data: {
-                      turbo_confirm: "本当にこの曲を削除しますか？",
-                      turbo_frame: dom_id(@playlist, :contents)
-                    },
+                    data: { turbo_confirm: "本当にこの曲を削除しますか？" },
                     class: "btn btn-danger btn-sm" %>
             </div>
-
           </div>
         </li>
       <% end %>

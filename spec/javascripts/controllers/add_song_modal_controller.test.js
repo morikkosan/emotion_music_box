@@ -1,88 +1,48 @@
 // spec/javascripts/controllers/add_song_modal_controller.test.js
 /**
  * 対象: app/javascript/controllers/add_song_modal_controller.js
- * 確認:
- *  - connect(): #addSongsModal があれば bootstrap.Modal.getOrCreateInstance が呼ばれる
- *  - connect(): hidden.bs.modal 発火で window.location.reload() が呼ばれる
- *  - connect(): #addSongsModal が無ければ何もしない
- *  - hideItem(): クリック起点から最寄りの li[data-add-song-modal-target='item'] を remove する
+ * 期待する振る舞い（現実装に合わせる）:
+ *  - connect(): 何もしない（クラッシュしない）
+ *  - onSubmitStart(): 送信ボタンをロック＆文言を「追加中...」に変更
+ *  - onSubmitEnd(): 成功時は該当 li を remove、ボタンは元に戻す。失敗時は li 残す＆ボタン復元
+ *  - hideItem(): onSubmitEnd と同じ挙動（エイリアス）
  */
 
 jest.mock("@hotwired/turbo-rails", () => ({}), { virtual: true });
 jest.mock("@rails/ujs", () => ({ __esModule: true, default: { start: () => {} } }));
 
-// bootstrap をモック（getOrCreateInstance の呼び出し検証用）
-jest.mock("bootstrap", () => {
-  const Modal = {
-    getOrCreateInstance: jest.fn(() => ({})),
-  };
-  return { __esModule: true, Modal };
-});
-
-// Stimulus は Controller だけあれば十分
+// Stimulus は Controller だけモックすればOK
 jest.mock("@hotwired/stimulus", () => ({
   __esModule: true,
   Controller: class {},
 }));
 
-// 相対URLを扱っても落ちないよう location スタブ
-function stubLocationWithBase(base = "https://example.com") {
-  let _href = `${base}/`;
-  const loc = {
-    get href() { return _href; },
-    set href(val) {
-      if (typeof val === "string" && /^https?:\/\//i.test(val)) _href = val;
-      else if (typeof val === "string" && val.startsWith("/")) _href = `${base}${val}`;
-      else _href = `${base}/${val || ""}`;
-    },
-    assign(val) { this.href = val; },
-    replace(val) { this.href = val; },
-    reload: jest.fn(), // ← テストで監視したい
-    toString() { return this.href; },
-    origin: base,
-  };
-  Object.defineProperty(window, "location", { value: loc, writable: true });
-}
-
-describe("add_song_modal_controller", () => {
+describe("add_song_modal_controller (new behavior)", () => {
   let ControllerClass;
-  let modalEl;
   let containerEl;
 
   beforeEach(async () => {
     jest.resetModules();
+
     // DOM 準備
     document.body.innerHTML = `
-      <div id="modal-container">
-        <!-- data-controller は任意（このテストでは手動 new/connect する） -->
-        <div id="controller-root"></div>
-      </div>
+      <div id="controller-root"></div>
 
-      <!-- モーダル本体（存在するケース用） -->
-      <div id="addSongsModal" class="modal">
-        <div class="modal-dialog"><div class="modal-content"></div></div>
-      </div>
-
-      <!-- hideItem の検証用リスト -->
       <ul id="song-list">
-        <li data-add-song-modal-target="item">
-          <form>
-            <button id="remove-btn-1" type="button">remove</button>
+        <li data-add-song-modal-target="item" id="li-1">
+          <form id="form-1">
+            <button id="btn-1" type="submit">追加</button>
           </form>
         </li>
-        <li data-add-song-modal-target="item">
-          <form>
-            <button id="remove-btn-2" type="button">remove</button>
+        <li data-add-song-modal-target="item" id="li-2">
+          <form id="form-2">
+            <button id="btn-2" type="submit">追加</button>
           </form>
         </li>
       </ul>
     `;
 
-    stubLocationWithBase();
-
-    modalEl = document.getElementById("addSongsModal");
     containerEl = document.getElementById("controller-root");
-
     ControllerClass = (await import("../../../app/javascript/controllers/add_song_modal_controller.js")).default;
   });
 
@@ -98,41 +58,71 @@ describe("add_song_modal_controller", () => {
     return instance;
   }
 
-  test("connect(): モーダルがあれば getOrCreateInstance が呼ばれる & hidden で reload()", () => {
-    const { Modal } = require("bootstrap");
-    const inst = connectController();
-
-    // ① 生成が呼ばれる
-    expect(Modal.getOrCreateInstance).toHaveBeenCalledTimes(1);
-    expect(Modal.getOrCreateInstance).toHaveBeenCalledWith(modalEl);
-
-    // ② hidden.bs.modal を発火 → reload が呼ばれる
-    const before = window.location.reload.mock.calls.length;
-    modalEl.dispatchEvent(new Event("hidden.bs.modal", { bubbles: true }));
-    expect(window.location.reload).toHaveBeenCalledTimes(before + 1);
+  test("connect(): 何もしない（例外が出ない）", () => {
+    expect(() => connectController()).not.toThrow();
   });
 
-  test("connect(): モーダルが無ければ何もしない（getOrCreateInstance 不呼び出し）", async () => {
-    const { Modal } = require("bootstrap");
-    // モーダルを消してから接続
-    modalEl.remove();
-
-    connectController();
-
-    expect(Modal.getOrCreateInstance).not.toHaveBeenCalled();
-    expect(window.location.reload).not.toHaveBeenCalled();
-  });
-
-  test("hideItem(): クリック起点から最寄りの li[data-add-song-modal-target='item'] を remove", () => {
+  test("onSubmitStart(): ボタンをロック＆文言変更", () => {
     const controller = connectController();
+    const form = document.getElementById("form-1");
+    const btn = document.getElementById("btn-1");
 
-    const btn1 = document.getElementById("remove-btn-1");
-    expect(document.querySelectorAll("li[data-add-song-modal-target='item']").length).toBe(2);
+    controller.onSubmitStart({ target: form });
 
-    controller.hideItem({ target: btn1 });
+    expect(btn.disabled).toBe(true);
+    expect(btn.textContent).toBe("追加中...");
+    expect(btn.dataset._locked).toBe("1");
+    expect(btn.dataset._orig).toBe("追加");
+  });
 
-    expect(document.querySelectorAll("li[data-add-song-modal-target='item']").length).toBe(1);
-    // もう片方は残っている
-    expect(document.getElementById("remove-btn-2")).not.toBeNull();
+  test("onSubmitEnd(): 成功時に li を remove＆ボタン復元", () => {
+    const controller = connectController();
+    const form = document.getElementById("form-1");
+    const btn = document.getElementById("btn-1");
+
+    // start → end の流れを再現
+    controller.onSubmitStart({ target: form });
+    expect(btn.disabled).toBe(true);
+
+    controller.onSubmitEnd({ target: form, detail: { success: true } });
+
+    // li が1つ消える
+    expect(document.getElementById("li-1")).toBeNull();
+    expect(document.getElementById("li-2")).not.toBeNull();
+
+    // ボタンは復元
+    expect(btn.disabled).toBe(false);
+    expect(btn.textContent).toBe("追加");
+    expect(btn.dataset._locked).toBeUndefined();
+    expect(btn.dataset._orig).toBeUndefined();
+  });
+
+  test("onSubmitEnd(): 失敗時は li 残し＆ボタン復元のみ", () => {
+    const controller = connectController();
+    const form = document.getElementById("form-1");
+    const btn = document.getElementById("btn-1");
+
+    controller.onSubmitStart({ target: form });
+    controller.onSubmitEnd({ target: form, detail: { success: false } });
+
+    // li は残る
+    expect(document.getElementById("li-1")).not.toBeNull();
+    expect(document.getElementById("li-2")).not.toBeNull();
+
+    // ボタンは復元
+    expect(btn.disabled).toBe(false);
+    expect(btn.textContent).toBe("追加");
+    expect(btn.dataset._locked).toBeUndefined();
+    expect(btn.dataset._orig).toBeUndefined();
+  });
+
+  test("hideItem(): 成功時は onSubmitEnd と同じ動作（li remove）", () => {
+    const controller = connectController();
+    const form = document.getElementById("form-1");
+
+    controller.hideItem({ target: form, detail: { success: true } });
+
+    expect(document.getElementById("li-1")).toBeNull();
+    expect(document.getElementById("li-2")).not.toBeNull();
   });
 });
