@@ -152,3 +152,40 @@ body.no-player .emotion-log-show {
 
 /* ▼ preloadで真っ黒のまま止まらないように可視化へ反転 */
 html.preload body { visibility: visible !important; }
+
+
+/* =========================================================
+   モバイル時：#mobile-view配下やモバイル系の中身も必ず見えるようにする
+   - .view-hidden を強制解除
+   - よく残留する全画面カバー(#loading-overlay / .modal-backdrop)も無効化
+   - #mobile-view ラッパが無い構成でも .mobile-container/.mobile-index を救済
+   ========================================================= */
+@media (max-width: 768px) {
+  /* 中身の .view-hidden を解除（display/opacity/visibility/height/pointer） */
+  #mobile-view .view-hidden,
+  .mobile-container .view-hidden,
+  .mobile-index .view-hidden {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    height: auto !important;
+    pointer-events: auto !important;
+  }
+
+  /* モバイル系の主要コンテナ自体を必ず表示（ラッパが無い場合の保険） */
+  .mobile-container,
+  .mobile-index,
+  .emotion-log-show {
+    display: block !important;
+    min-height: 60vh !important;
+  }
+
+  /* 残留しやすいカバー要素を一時的に無効化（緊急回避） */
+  #loading-overlay,
+  .modal-backdrop {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+}
