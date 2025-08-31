@@ -1,3 +1,4 @@
+# spec/controllers/emotion_logs_controller_spec.rb
 require 'rails_helper'
 
 RSpec.describe EmotionLogsController, type: :controller do
@@ -66,10 +67,22 @@ RSpec.describe EmotionLogsController, type: :controller do
   end
 
   describe "GET #show" do
-    it "指定したEmotionLogが取得できる" do
-      get :show, params: { id: log1.id }
-      expect(assigns(:emotion_log)).to eq(log1)
-      expect(response).to have_http_status(:success)
+    context "未ログイン" do
+      it "SoundCloud 認可へリダイレクトし、@emotion_log は nil" do
+        get :show, params: { id: log1.id }
+        expect(response).to redirect_to(user_soundcloud_omniauth_authorize_path)
+        expect(assigns(:emotion_log)).to be_nil
+      end
+    end
+
+    context "ログイン済み" do
+      before { sign_in user }
+
+      it "指定したEmotionLogが取得できる" do
+        get :show, params: { id: log1.id }, format: :html
+        expect(assigns(:emotion_log)).to eq(log1)
+        expect(response).to have_http_status(:success)
+      end
     end
   end
 
@@ -260,7 +273,7 @@ RSpec.describe EmotionLogsController, type: :controller do
     end
   end
 
-    describe "#apply_sort_and_period_filters" do
+  describe "#apply_sort_and_period_filters" do
     controller do
       public :apply_sort_and_period_filters
     end
@@ -291,7 +304,6 @@ RSpec.describe EmotionLogsController, type: :controller do
       controller.apply_sort_and_period_filters(logs)
     end
 
-    # period も同じように
     it "period=today で logs.for_today" do
       expect(logs).to receive(:newest).and_return(logs)
       allow(controller).to receive(:params).and_return(ActionController::Parameters.new(period: "today"))
@@ -299,35 +311,34 @@ RSpec.describe EmotionLogsController, type: :controller do
       controller.apply_sort_and_period_filters(logs)
     end
 
-  it "period=week で logs.for_week" do
-    expect(logs).to receive(:newest).and_return(logs)
-    allow(controller).to receive(:params).and_return(ActionController::Parameters.new(period: "week"))
-    expect(logs).to receive(:for_week).and_return(logs)
-    controller.apply_sort_and_period_filters(logs)
-  end
+    it "period=week で logs.for_week" do
+      expect(logs).to receive(:newest).and_return(logs)
+      allow(controller).to receive(:params).and_return(ActionController::Parameters.new(period: "week"))
+      expect(logs).to receive(:for_week).and_return(logs)
+      controller.apply_sort_and_period_filters(logs)
+    end
 
-  it "period=month で logs.for_month" do
-    expect(logs).to receive(:newest).and_return(logs)
-    allow(controller).to receive(:params).and_return(ActionController::Parameters.new(period: "month"))
-    expect(logs).to receive(:for_month).and_return(logs)
-    controller.apply_sort_and_period_filters(logs)
-  end
+    it "period=month で logs.for_month" do
+      expect(logs).to receive(:newest).and_return(logs)
+      allow(controller).to receive(:params).and_return(ActionController::Parameters.new(period: "month"))
+      expect(logs).to receive(:for_month).and_return(logs)
+      controller.apply_sort_and_period_filters(logs)
+    end
 
-  it "period=halfyear で logs.for_half_year" do
-    expect(logs).to receive(:newest).and_return(logs)
-    allow(controller).to receive(:params).and_return(ActionController::Parameters.new(period: "halfyear"))
-    expect(logs).to receive(:for_half_year).and_return(logs)
-    controller.apply_sort_and_period_filters(logs)
-  end
+    it "period=halfyear で logs.for_half_year" do
+      expect(logs).to receive(:newest).and_return(logs)
+      allow(controller).to receive(:params).and_return(ActionController::Parameters.new(period: "halfyear"))
+      expect(logs).to receive(:for_half_year).and_return(logs)
+      controller.apply_sort_and_period_filters(logs)
+    end
 
-  it "period=year で logs.for_year" do
-    expect(logs).to receive(:newest).and_return(logs)
-    allow(controller).to receive(:params).and_return(ActionController::Parameters.new(period: "year"))
-    expect(logs).to receive(:for_year).and_return(logs)
-    controller.apply_sort_and_period_filters(logs)
+    it "period=year で logs.for_year" do
+      expect(logs).to receive(:newest).and_return(logs)
+      allow(controller).to receive(:params).and_return(ActionController::Parameters.new(period: "year"))
+      expect(logs).to receive(:for_year).and_return(logs)
+      controller.apply_sort_and_period_filters(logs)
+    end
   end
-end
-
 
   describe "GET #recommended" do
     before { sign_in user }
