@@ -30,7 +30,7 @@
 }
 
 
-html.preload body { visibility: hidden; }
+// html.preload body { visibility: hidden; }
 
 
 .mobile-only { display: none !important; }
@@ -117,3 +117,38 @@ body.no-player .emotion-log-show {
   white-space: normal !important;
   gap: .25rem;
 }
+
+/* =========================================================
+   JSが落ちてもモバイルを必ず表示させる緊急フォールバック
+   - 768px以下は #mobile-view を強制表示
+   - .view-hidden の抑え込みも含む（opacity/visibility等も反転）
+   - preloadの黒画面も可視化に修正
+   ========================================================= */
+
+#desktop-view { display: block; }
+#mobile-view  { display: none; }
+
+@media (max-width: 768px) {
+  /* ▼ 通常の切替（モバイル幅では必ずモバイルを出す） */
+  #desktop-view { display: none !important; }
+  #mobile-view  { display: block !important; }
+
+  /* ▼ view-switcher 等が .view-hidden を付けても表示が消えないように上書き */
+  #mobile-view.view-hidden {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    height: auto !important;
+    pointer-events: auto !important;
+  }
+  #desktop-view.view-hidden {
+    display: none !important;
+  }
+
+  /* ▼ 補助クラスにも保険（既存の .mobile-only / .desktop-only と整合） */
+  .desktop-only { display: none !important; }
+  .mobile-only  { display: block !important; }
+}
+
+/* ▼ preloadで真っ黒のまま止まらないように可視化へ反転 */
+html.preload body { visibility: visible !important; }
