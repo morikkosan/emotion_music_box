@@ -10,6 +10,7 @@ class CommentsController < ApplicationController
       user: current_user
     )
 
+
     respond_to do |format|
       if @comment.save
         # ← 🔧 ここで再取得して関連も読み込む（特に comment_reactions）
