@@ -1,7 +1,5 @@
 // application.bootstrap.scss
-
-// すべての @use はファイルの本当の先頭に！コメントもOK
-@use "bootstrap/scss/bootstrap";
+// すべての @use はファイルの本当の先頭に！コメントはOK
 @use "components/floating_button";
 @use "components/neon_buttons" as *;
 @use "custom_styles";
@@ -17,8 +15,11 @@
 @use "swal_flash_craft";
 @use "music_player";
 
-// 外部CSSのみはそのあと
-@import url("https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/cyborg/bootstrap.min.css");
+// 外部CSSのみはそのあと（CDN Bootswatch）
+
+/* =========================================================
+   ここから “スマホ表示が出ない” 対策を含むあなたのCSS（全部）
+   ========================================================= */
 
 .view-hidden {
   display: none !important;
@@ -28,9 +29,7 @@
   pointer-events: none !important;
 }
 
-
 // html.preload body { visibility: hidden; }
-
 
 .mobile-only { display: none !important; }
 .desktop-only { display: block !important; }
@@ -40,15 +39,12 @@
   .mobile-only { display: block !important; }
 }
 
-body.modal-open #bottom-player {
-  z-index: 20000 !important;
-}
-
+body.modal-open #bottom-player { z-index: 20000 !important; }
 
 // showページのプレーヤー高さ
 body.playlist-show-page .bottom-player {
   position: fixed !important;
-  bottom: 50px !important;      /* デスクトップ時 */
+  bottom: 50px !important; /* デスクトップ時 */
   left: 0 !important;
   right: 0 !important;
   z-index: 2000 !important;
@@ -57,13 +53,12 @@ body.playlist-show-page .bottom-player {
 @media (max-width: 996px) {
   html body .bottom-player {
     position: fixed !important;  // ← static をねじ伏せる
-    bottom: 80px !important;    // ← 上にずらしたい値
+    bottom: 80px !important;     // ← 上にずらしたい値
     left: 0 !important;
     right: 0 !important;
     z-index: 2000 !important;    // ← 必要なら
   }
 }
-
 
 /* ===== モバイル：プレイリスト“一覧”モーダル内は必ずタップ可 ===== */
 #playlist-modal-mobile {
@@ -84,14 +79,8 @@ body.playlist-show-page .bottom-player {
 #loading-overlay.view-hidden { pointer-events: none !important; }
 
 /* === プレーヤー非表示フラグ用（問い合わせ・プロフィール編集など） === */
-.no-player #bottom-player {
-  display: none !important;
-}
-
-.no-player #hidden-sc-player {
-  display: none !important;
-}
-
+.no-player #bottom-player { display: none !important; }
+.no-player #hidden-sc-player { display: none !important; }
 
 /* フッタープレーヤーの高さぶんだけ下に余白を常に確保 */
 :root { --footer-player-h: 84px; } /* 実高さに合わせて 76〜96px で調整可 */
@@ -101,15 +90,13 @@ body.playlist-show-page .bottom-player {
 }
 
 /* もし body に no-player が付くケースがあれば余白ゼロに戻す（保険） */
-body.no-player .emotion-log-show {
-  padding-bottom: 0 !important;
-}
+body.no-player .emotion-log-show { padding-bottom: 0 !important; }
 
 /* ===== モバイル詳細ページ：ページネーションの固定化を禁止 & 中央寄せ ===== */
 .emotion-log-show .pagination {
   position: static !important;   /* fixed/sticky を無効化 */
   inset: auto !important;        /* top/right/bottom/left を無効化 */
-  float: none !important;
+  float: none !important;        /* ← タイポ修正（!重要 → !important） */
   display: flex;
   flex-wrap: wrap !important;
   justify-content: center !important;
@@ -140,9 +127,7 @@ body.no-player .emotion-log-show {
     height: auto !important;
     pointer-events: auto !important;
   }
-  #desktop-view.view-hidden {
-    display: none !important;
-  }
+  #desktop-view.view-hidden { display: none !important; }
 
   /* ▼ 補助クラスにも保険（既存の .mobile-only / .desktop-only と整合） */
   .desktop-only { display: none !important; }
@@ -151,7 +136,6 @@ body.no-player .emotion-log-show {
 
 /* ▼ preloadで真っ黒のまま止まらないように可視化へ反転 */
 html.preload body { visibility: visible !important; }
-
 
 /* =========================================================
    モバイル時：#mobile-view配下やモバイル系の中身も必ず見えるようにする
@@ -248,4 +232,115 @@ html.preload body { visibility: visible !important; }
   /* 念のため、親の切替も固定 */
   #desktop-view { display: none !important; }
   #mobile-view  { display: block !important; }
+}
+
+/* =========================================================
+   ここから “もう一つのカスタム” 全部
+   ========================================================= */
+
+.user-dropdown:hover .dropdown-menu { display: block; }
+
+/* （BS3想定の）ページネーション */
+.pagination>li>a {
+  border: none;
+  color: #696969;
+}
+.pagination>.active>a {
+  background: #93c9ff;
+  border-radius: 15px;
+}
+.pagination>li>a:hover {
+  border-radius: 15px;
+}
+
+/* （BS5想定の）ページネーションも一緒に効かせておくと安全 */
+.pagination .page-link {
+  border: none;
+  color: #696969;
+}
+.pagination .page-item.active .page-link {
+  background: #93c9ff;
+  border-color: #93c9ff;
+  color: #fff;
+  border-radius: 15px;
+}
+.pagination .page-link:hover { border-radius: 15px; }
+
+// アバター画像
+.rounded-circle {
+  border-radius: 50%;
+  border: 2px solid #e600ff;
+  box-shadow: 0 0 8px rgba(230, 0, 255, 0.6);
+}
+#cropContainer {
+  position: relative;
+  width: 80px;   /* トリミング枠のサイズ */
+  height: 80px;
+  overflow: hidden;
+  border: 2px solid #ccc; /* 任意で見えるように */
+}
+#cropImage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  max-width: none;
+  max-height: none;
+  cursor: grab;
+}
+#avatarPreviewInline {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+// スーパーサーチ (mobile)
+.mobile-super-search-modal-content {
+  background: #141824;
+  color: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 20px #0006;
+}
+.mobile-form-label {
+  font-size: 1.06em;
+  font-weight: 600;
+  margin-bottom: 0.5em;
+  color: #c6f6fa;
+}
+.mobile-form-select,
+.mobile-form-control {
+  border-radius: 8px;
+  background: #202d36;
+  color: #fff;
+  border: 1px solid #364b6b;
+  padding: 0.55em 0.9em;
+  font-size: 1em;
+}
+.mobile-form-autocomplete { position: relative; }
+.mobile-tag-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  z-index: 9999;
+  margin: 0;
+  border-radius: 0 0 12px 12px;
+  background: #232b3a;
+  border: 1px solid #2b3d4d;
+  box-shadow: 0 2px 16px #0014;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.mobile-super-search-btn:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 24px #ae5cff80;
+}
+.mobile-reset-btn { min-width: 92px; }
+@media (max-width: 520px) {
+  .mobile-super-search-modal-content {
+    border-radius: 0;
+    box-shadow: none;
+  }
 }
