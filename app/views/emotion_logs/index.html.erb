@@ -228,10 +228,6 @@
       ログアウト
     <% end %>
 
-
-
-
-
         <div class="dropdown-divider"></div>
 
         <%= link_to edit_user_registration_path(view: (mobile_device? ? 'mobile' : nil)),
@@ -243,8 +239,6 @@
     プロフィール編集
   <% end %>
 
-
-
     <%= render "shared/notification_toggle", frame_id: "notification-toggle-mobile" %>
 
     <%= link_to new_contact_path, class: "dropdown-item d-flex align-items-center" do %>
@@ -255,12 +249,10 @@
       お問い合わせ
     <% end %>
 
-
       </div>
     </div>
   </div>
 <% end %>
-
 
       <div class="text-start mt-2 px-3">
         <%= link_to emotion_logs_path do %>
@@ -288,8 +280,6 @@
       <% end %>
     </div>
 
-
-    
     <!-- turbo_frame_tagの中にはボタンを入れない -->
     <%= turbo_frame_tag "logs_list_mobile" do %>
       <%# index.html.erb 内、@bookmark_page.present? のモバイル分岐ブロックをこのまま置き換え %>
@@ -338,7 +328,7 @@
   <span class="bookmark_title"><%= @mypage_title %></span>
 <% elsif @recommended_page.present? %>
   <span class="bookmark_title"><%= @recommended_page %></span>
-<% else %>
+<% elsif user_signed_in? %>
   <div class="mobile-hp-bar-container">
     <div class="mobile-hp-bar" id="hp-bar"></div>
     <span class="mobile_today_mental_text">
@@ -404,7 +394,6 @@
   <i class="bi bi-search fs-4"></i><br>検索
 </button>
 
-
     <%= link_to my_emotion_logs_path,
       class: "text-center text-white small",
       data: {
@@ -442,7 +431,6 @@
 <% end %>
 
   </nav>
-
 
       <!-- index.html.erb のモバイル用モーダル -->
 <div id="playlist-modal-mobile" class="modal" tabindex="-1">
