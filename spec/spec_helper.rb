@@ -28,7 +28,7 @@ add_filter 'app/controllers/line_link_controller.rb'
 
     add_group 'Lib', 'lib'
 
-  # ...必要に応じて他も
+  # ...必要に応じて他
 end
 
 # Given that it is always loaded, you are encouraged to keep this file as
