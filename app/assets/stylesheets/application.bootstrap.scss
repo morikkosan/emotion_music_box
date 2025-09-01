@@ -1,5 +1,3 @@
-// application.bootstrap.scss
-
 // すべての @use はファイルの本当の先頭に！コメントもOK
 @use "bootstrap/scss/bootstrap";
 @use "bootstrap-icons/font/bootstrap-icons";
@@ -18,8 +16,9 @@
 @use "swal_flash_craft";
 @use "music_player";
 
-// 外部CSSのみはそのあと
-@import url("https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/cyborg/bootstrap.min.css");
+// ✅ Bootswatch(Cyborg)のCDN取り込みは一旦停止（重複読み込みを回避）
+//   見た目だけの差分で、機能・クラスはそのまま。
+// @import url("https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/cyborg/bootstrap.min.css");
 
 .view-hidden {
   display: none !important;
@@ -29,9 +28,7 @@
   pointer-events: none !important;
 }
 
-
 // html.preload body { visibility: hidden; }
-
 
 .mobile-only { display: none !important; }
 .desktop-only { display: block !important; }
@@ -45,7 +42,6 @@ body.modal-open #bottom-player {
   z-index: 20000 !important;
 }
 
-
 // showページのプレーヤー高さ
 body.playlist-show-page .bottom-player {
   position: fixed !important;
@@ -58,13 +54,12 @@ body.playlist-show-page .bottom-player {
 @media (max-width: 996px) {
   html body .bottom-player {
     position: fixed !important;  // ← static をねじ伏せる
-    bottom: 80px !important;    // ← 上にずらしたい値
+    bottom: 80px !important;     // ← 上にずらしたい値
     left: 0 !important;
     right: 0 !important;
     z-index: 2000 !important;    // ← 必要なら
   }
 }
-
 
 /* ===== モバイル：プレイリスト“一覧”モーダル内は必ずタップ可 ===== */
 #playlist-modal-mobile {
@@ -85,14 +80,8 @@ body.playlist-show-page .bottom-player {
 #loading-overlay.view-hidden { pointer-events: none !important; }
 
 /* === プレーヤー非表示フラグ用（問い合わせ・プロフィール編集など） === */
-.no-player #bottom-player {
-  display: none !important;
-}
-
-.no-player #hidden-sc-player {
-  display: none !important;
-}
-
+.no-player #bottom-player { display: none !important; }
+.no-player #hidden-sc-player { display: none !important; }
 
 /* フッタープレーヤーの高さぶんだけ下に余白を常に確保 */
 :root { --footer-player-h: 84px; } /* 実高さに合わせて 76〜96px で調整可 */
@@ -102,9 +91,7 @@ body.playlist-show-page .bottom-player {
 }
 
 /* もし body に no-player が付くケースがあれば余白ゼロに戻す（保険） */
-body.no-player .emotion-log-show {
-  padding-bottom: 0 !important;
-}
+body.no-player .emotion-log-show { padding-bottom: 0 !important; }
 
 /* ===== モバイル詳細ページ：ページネーションの固定化を禁止 & 中央寄せ ===== */
 .emotion-log-show .pagination {
@@ -141,9 +128,7 @@ body.no-player .emotion-log-show {
     height: auto !important;
     pointer-events: auto !important;
   }
-  #desktop-view.view-hidden {
-    display: none !important;
-  }
+  #desktop-view.view-hidden { display: none !important; }
 
   /* ▼ 補助クラスにも保険（既存の .mobile-only / .desktop-only と整合） */
   .desktop-only { display: none !important; }
@@ -153,39 +138,19 @@ body.no-player .emotion-log-show {
 /* ▼ preloadで真っ黒のまま止まらないように可視化へ反転 */
 html.preload body { visibility: visible !important; }
 
-
 /* =========================================================
-   モバイル時：#mobile-view配下やモバイル系の中身も必ず見えるようにする
-   - .view-hidden を強制解除
-   - よく残留する全画面カバー(#loading-overlay / .modal-backdrop)も無効化
-   - #mobile-view ラッパが無い構成でも .mobile-container/.mobile-index を救済
+   ローディングカバー（screen-cover-loading）の安全な非表示
    ========================================================= */
-@media (max-width: 768px) {
-  /* 中身の .view-hidden を解除（display/opacity/visibility/height/pointer） */
-  #mobile-view .view-hidden,
-  .mobile-container .view-hidden,
-  .mobile-index .view-hidden {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    height: auto !important;
-    pointer-events: auto !important;
-  }
-
-  /* モバイル系の主要コンテナ自体を必ず表示（ラッパが無い場合の保険） */
-  .mobile-container,
-  .mobile-index,
-  .emotion-log-show {
-    display: block !important;
-    min-height: 60vh !important;
-  }
-
-  /* 残留しやすいカバー要素を一時的に無効化（緊急回避） */
-  #loading-overlay,
-  .modal-backdrop {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-  }
+#screen-cover-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000; /* 最上位 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+#screen-cover-loading.hide { opacity: 0; transition: opacity .2s ease; }
+#screen-cover-loading.view-hidden { display: none !important; }
+
+/* （参考）SoundCloud隠しiframeの保険 */
+.hidden-frame { display: none !important; width: 0 !important; height: 0 !important; }
