@@ -41,30 +41,10 @@
   <!-- ✅ preload は crossorigin なし（CORS回避） -->
   <link rel="preload" as="script" href="https://w.soundcloud.com/player/api.js">
 
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <!-- ❌ 外部Bootstrapの重複を停止（アプリの application.css に一本化） -->
+  <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"> -->
 
-  <% if Rails.env.production? %>
-    <script nonce="<%= content_security_policy_nonce %>">
-      (function(c){
-        if (!c) return;
-        var noop = function(){};
-        c.log   = noop;
-        c.info  = noop;
-        c.debug = noop;
-        // 必要なら warn も無効化
-        // c.warn  = noop;
-        // error は残す（障害時の一次情報）ここは本番でコンソールを出さないようにする
-      })(window.console = window.console || {});
-    </script>
-  <% end %>
-
-  <!-- ✅ player API を defer で非ブロッキング化（機能は変わりません） -->
-  <script defer src="https://w.soundcloud.com/player/api.js"></script>
-
-  <!-- Railsのapplication.js（defer必須！） -->
-  <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module", defer: true %>
-
-  <!-- RailsのCSS -->
+  <!-- RailsのCSS（唯一のスタイルシート） -->
   <%= stylesheet_link_tag "application", "data-turbo-track": "reload", media: "all" %>
 
   <!-- Font Awesome（CSP対応）-->
@@ -83,29 +63,46 @@
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-  <!-- GSAP, SweetAlert2, Axios（deferで安全） -->
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.8/axios.min.js"></script>
+  <% if Rails.env.production? %>
+    <script nonce="<%= content_security_policy_nonce %>">
+      (function(c){
+        if (!c) return;
+        var noop = function(){};
+        c.log   = noop;
+        c.info  = noop;
+        c.debug = noop;
+        // 必要なら warn も無効化
+        // c.warn  = noop;
+        // error は残す（障害時の一次情報）
+      })(window.console = window.console || {});
+    </script>
+  <% end %>
+
+  <!-- ✅ player API を defer で非ブロッキング化（機能は変わりません） -->
+  <script defer src="https://w.soundcloud.com/player/api.js"></script>
+
+  <!-- Railsのapplication.js（defer必須！） -->
+  <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module", defer: true %>
 
   <!-- ✅ グローバル変数 -->
   <script nonce="<%= content_security_policy_nonce %>">
-    window.SOUNDCLOUD_CLIENT_ID = "<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>";
-    window.soundcloudToken      = "<%= ENV['SOUNDCLOUD_OAUTH_TOKEN'] %>";
-    window.CLOUDINARY_CLOUD_NAME = "<%= ENV['CLOUDINARY_CLOUD_NAME'] %>";
-    window.CLOUDINARY_UPLOAD_PRESET = "<%= ENV['CLOUDINARY_UPLOAD_PRESET'] %>";
-    window.VAPID_PUBLIC_KEY = "<%= ENV['VAPID_PUBLIC_KEY'] %>";
-    window.isLoggedIn = <%= current_user.present? ? 'true' : 'false' %>;
+    window.SOUNDCLOUD_CLIENT_ID    = "<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>";
+    window.soundcloudToken         = "<%= ENV['SOUNDCLOUD_OAUTH_TOKEN'] %>";
+    window.CLOUDINARY_CLOUD_NAME   = "<%= ENV['CLOUDINARY_CLOUD_NAME'] %>";
+    window.CLOUDINARY_UPLOAD_PRESET= "<%= ENV['CLOUDINARY_UPLOAD_PRESET'] %>";
+    window.VAPID_PUBLIC_KEY        = "<%= ENV['VAPID_PUBLIC_KEY'] %>";
+    window.isLoggedIn              = <%= current_user.present? ? 'true' : 'false' %>;
   </script>
 
   <%= yield :head %>
   <%= Sentry.get_trace_propagation_meta.html_safe %>
-  </head>
+</head>
 <body class="<%= content_for?(:body_class) ? yield(:body_class) : '' %>"
       data-controller="view-switcher global-player"
       data-flash-notice="<%= j flash[:notice] %>"
       data-flash-alert="<%= j flash[:alert] %>">
 
-  <!-- ここから下は元の内容を**絶対に壊さずそのまま**にしてください -->
+  <!-- ローディングカバー -->
   <div id="screen-cover-loading" aria-hidden="true" aria-live="polite" aria-label="ローディング画面">
     <div class="pacman-wrapper" aria-hidden="true">
       <div class="circle-packman-1"></div>
@@ -125,10 +122,10 @@
 
   <!-- ✅ 保存完了トースト(簡易型ポップアップ) -->
   <div aria-live="polite" aria-atomic="true"
-     class="z-1080 position-fixed top-0 end-0 p-3">
+       class="z-1080 position-fixed top-0 end-0 p-3">
     <div id="save-toast"
-        class="toast align-items-center text-white bg-success border-0"
-        role="alert" aria-live="assertive" aria-atomic="true">
+         class="toast align-items-center text-white bg-success border-0"
+         role="alert" aria-live="assertive" aria-atomic="true">
       <div class="d-flex">
         <div class="toast-body">emomu を保存しました！</div>
         <button type="button" class="btn-close btn-close-white me-2 m-auto"
@@ -142,8 +139,9 @@
   <!-- ──────────── 下部カスタムプレーヤー & 隠し iframe ──────────── -->
 
   <!-- 1) SoundCloud の iframe（display: none で隠す） -->
- <iframe id="hidden-sc-player" class="hidden-frame" src="" allow="autoplay; encrypted-media" frameborder="no" scrolling="no" width="100%" height="166" aria-hidden="true" tabindex="-1"></iframe>
-
+  <iframe id="hidden-sc-player" class="hidden-frame" src="" allow="autoplay; encrypted-media"
+          frameborder="no" scrolling="no" width="100%" height="166"
+          aria-hidden="true" tabindex="-1"></iframe>
 
   <!-- ===== 下部カスタムプレーヤー ===== -->
   <div id="bottom-player" class="bottom-player d-none" role="region" aria-label="再生コントロール">
@@ -256,6 +254,5 @@
   <div id="mobile-super-search-root" data-turbo-permanent>
     <%= render "emotion_logs/mobile_super_search" %>
   </div>
-
 </body>
 </html>

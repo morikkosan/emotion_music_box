@@ -1,11 +1,7 @@
 <div data-controller="view-switcher">
 
   <div id="desktop-view">
-
-    <!-- ▼ 追加：デスクトップ版の「一番上」にフッター -->
-    <%= render "shared/footer" %>
-
-    <!-- app/views/emotion_logs/index.html.erb -->
+    <!-- ❌ 追加していた「一番上のフッター」は削除（フッターはlayoutで一元管理） -->
     <% content_for :title, "エモミュ" %>
     <%= render 'shared/header' %>
 
@@ -194,65 +190,59 @@
         data: { controller: "record-btn", action: "click->record-btn#hide", turbo_prefetch: false },
         class: "btn btn-primary floating-btn" %>
     <% end %>
-
   </div> <!-- #desktop-view -->
 
   <!-- ================= モバイルビュー ================= -->
   <div id="mobile-view">
-
-    <!-- ▼ 追加：モバイル版の「一番上」にフッター -->
-    <%= render "shared/footer" %>
+    <!-- ❌ 追加していた「一番上のフッター」は削除（フッターはlayoutで一元管理） -->
 
     <% content_for :title, "エモミュ" %>
     <div class="container mt-3 position-relative">
 
+      <% if user_signed_in? %>
+        <div class="user-dropdown-wrapper">
+          <div class="user-dropdown" data-controller="user-dropdown">
+            <div class="user-bar" data-action="click->user-dropdown#toggle">
+              <%= image_tag current_user.profile_avatar_url, size: "32x32", class: "rounded-circle", alt: current_user.name %>
+              <span class="ms-2 text-white"><%= current_user.name %></span>
+            </div>
 
-        <% if user_signed_in? %>
-  <div class="user-dropdown-wrapper">
-    <div class="user-dropdown" data-controller="user-dropdown">
-      <div class="user-bar" data-action="click->user-dropdown#toggle">
-        <%= image_tag current_user.profile_avatar_url, size: "32x32", class: "rounded-circle", alt: current_user.name %>
-        <span class="ms-2 text-white"><%= current_user.name %></span>
-      </div>
+            <div class="dropdown-menu" data-user-dropdown-target="menu">
+              <%= button_to destroy_user_session_path,
+                    method: :delete,
+                    form:  { data: { turbo: false, logout_form: true }, class: "m-0 p-0 d-inline" },
+                    class: "dropdown-item d-flex align-items-center text-danger" do %>
+                <%= image_tag "log_out.webp",
+                      class: "dropdown-icon me-2", alt: "",
+                      loading: "lazy", decoding: "async",
+                      width: 24, height: 24 %>
+                ログアウト
+              <% end %>
 
-      <div class="dropdown-menu" data-user-dropdown-target="menu">
-        <!-- ✅ IDは付けない / Railsのログアウトパスで -->
-        <%= button_to destroy_user_session_path,
-      method: :delete,
-      form:  { data: { turbo: false, logout_form: true }, class: "m-0 p-0 d-inline" },
-      class: "dropdown-item d-flex align-items-center text-danger" do %>
-      <%= image_tag "log_out.webp",
-            class: "dropdown-icon me-2", alt: "",
-            loading: "lazy", decoding: "async",
-            width: 24, height: 24 %>
-      ログアウト
-    <% end %>
+              <div class="dropdown-divider"></div>
 
-        <div class="dropdown-divider"></div>
+              <%= link_to edit_user_registration_path(view: (mobile_device? ? 'mobile' : nil)),
+                    class: "dropdown-item d-flex align-items-center" do %>
+                <%= image_tag "profile_edit.webp",
+                      class: "dropdown-icon me-2", alt: "",
+                      loading: "lazy", decoding: "async",
+                      width: 24, height: 24 %>
+                プロフィール編集
+              <% end %>
 
-        <%= link_to edit_user_registration_path(view: (mobile_device? ? 'mobile' : nil)),
-              class: "dropdown-item d-flex align-items-center" do %>
-    <%= image_tag "profile_edit.webp",
-          class: "dropdown-icon me-2", alt: "",
-          loading: "lazy", decoding: "async",
-          width: 24, height: 24 %>
-    プロフィール編集
-  <% end %>
+              <%= render "shared/notification_toggle", frame_id: "notification-toggle-mobile" %>
 
-    <%= render "shared/notification_toggle", frame_id: "notification-toggle-mobile" %>
-
-    <%= link_to new_contact_path, class: "dropdown-item d-flex align-items-center" do %>
-      <%= image_tag "form_contact.webp",
-            class: "dropdown-icon me-2", alt: "",
-            loading: "lazy", decoding: "async",
-            width: 24, height: 24 %>
-      お問い合わせ
-    <% end %>
-
-      </div>
-    </div>
-  </div>
-<% end %>
+              <%= link_to new_contact_path, class: "dropdown-item d-flex align-items-center" do %>
+                <%= image_tag "form_contact.webp",
+                      class: "dropdown-icon me-2", alt: "",
+                      loading: "lazy", decoding: "async",
+                      width: 24, height: 24 %>
+                お問い合わせ
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
 
       <div class="text-start mt-2 px-3">
         <%= link_to emotion_logs_path do %>
@@ -260,6 +250,7 @@
         <% end %>
       </div>
       <br><br>
+
       <% unless user_signed_in? %>
         <div class="text-center mt-5 mb-4">
           <h1 class="mobile-catchcopy">音楽とストレスを支配する</h1>
@@ -282,166 +273,132 @@
 
     <!-- turbo_frame_tagの中にはボタンを入れない -->
     <%= turbo_frame_tag "logs_list_mobile" do %>
-      <%# index.html.erb 内、@bookmark_page.present? のモバイル分岐ブロックをこのまま置き換え %>
-<% if @bookmark_page.present? %>
-  <div class="bookmark_title"><%= @bookmark_page %></div>
-  <div data-controller="bookmark" class="bookmark-panel">
-    <div class="bookmark-toolbar">
+      <% if @bookmark_page.present? %>
+        <div class="bookmark_title"><%= @bookmark_page %></div>
+        <div data-controller="bookmark" class="bookmark-panel">
+          <div class="bookmark-toolbar">
+            <form id="mobile-bookmarks-form"
+                  action="<%= bookmarks_emotion_logs_path(view: 'mobile') %>"
+                  method="get"
+                  data-turbo-frame="logs_list_mobile">
+              <input type="hidden" name="view" value="mobile">
+              <%= hidden_field_tag :genre,   params[:genre]   if params[:genre].present?  %>
+              <%= hidden_field_tag :emotion, params[:emotion] if params[:emotion].present?%>
+              <%= hidden_field_tag :sort,    params[:sort]    if params[:sort].present?   %>
+              <%= hidden_field_tag :period,  params[:period]  if params[:period].present? %>
+            </form>
 
-      <!-- ▼ モバイルお気に入り専用のGETフォーム（turbo-frameで部分更新） -->
-      <form id="mobile-bookmarks-form"
-            action="<%= bookmarks_emotion_logs_path(view: 'mobile') %>"
-            method="get"
-            data-turbo-frame="logs_list_mobile">
-        <input type="hidden" name="view" value="mobile">
-        <%= hidden_field_tag :genre,   params[:genre]   if params[:genre].present?  %>
-        <%= hidden_field_tag :emotion, params[:emotion] if params[:emotion].present?%>
-        <%= hidden_field_tag :sort,    params[:sort]    if params[:sort].present?   %>
-        <%= hidden_field_tag :period,  params[:period]  if params[:period].present? %>
-      </form>
+            <label class="bookmark-merge-toggle-label">
+              <input type="checkbox"
+                id="mypage-merge-toggle-mobile"
+                class="form-check-input"
+                name="include_my_logs"
+                value="true"
+                form="mobile-bookmarks-form"
+                data-action="change->bookmark#toggleMyPageLogs"
+                <%= 'checked' if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs]) %>>
+              マイページの投稿も含める
+            </label>
 
-      <label class="bookmark-merge-toggle-label">
-        <input type="checkbox"
-          id="mypage-merge-toggle-mobile"
-          class="form-check-input"
-          name="include_my_logs"
-          value="true"
-          form="mobile-bookmarks-form"
-          data-action="change->bookmark#toggleMyPageLogs"
-          <%= 'checked' if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs]) %>>
-        マイページの投稿も含める
-      </label>
-
-      <% if current_user.playlists.count < 12 %>
-        <div data-controller="playlist-modal" data-playlist-modal-id-value="playlist-modal-mobile">
-          <button type="button" class="bookmark-playlist-create-btn" data-action="click->playlist-modal#open">
-            プレイリストを作成する
-          </button>
+            <% if current_user.playlists.count < 12 %>
+              <div data-controller="playlist-modal" data-playlist-modal-id-value="playlist-modal-mobile">
+                <button type="button" class="bookmark-playlist-create-btn" data-action="click->playlist-modal#open">
+                  プレイリストを作成する
+                </button>
+              </div>
+            <% else %>
+              <button class="btn btn-secondary" disabled>プレイリストは12個まで作成可能です</button>
+            <% end %>
+          </div>
         </div>
-      <% else %>
-        <button class="btn btn-secondary" disabled>プレイリストは12個まで作成可能です</button>
+      <% elsif @mypage_title.present? %>
+        <span class="bookmark_title"><%= @mypage_title %></span>
+      <% elsif @recommended_page.present? %>
+        <span class="bookmark_title"><%= @recommended_page %></span>
+      <% elsif user_signed_in? %>
+        <div class="mobile-hp-bar-container">
+          <div class="mobile-hp-bar" id="hp-bar"></div>
+          <span class="mobile_today_mental_text">
+            👆Today's stress level <span id="bar-width-display-mobile"></span>👆
+          </span>
+        </div>
       <% end %>
 
-    </div>
-  </div>
-<% elsif @mypage_title.present? %>
-  <span class="bookmark_title"><%= @mypage_title %></span>
-<% elsif @recommended_page.present? %>
-  <span class="bookmark_title"><%= @recommended_page %></span>
-<% elsif user_signed_in? %>
-  <div class="mobile-hp-bar-container">
-    <div class="mobile-hp-bar" id="hp-bar"></div>
-    <span class="mobile_today_mental_text">
-      👆Today's stress level <span id="bar-width-display-mobile"></span>👆
-    </span>
-  </div>
-<% end %>
+      <div class="mobile-pagination-center">
+        <%= paginate @emotion_logs,
+          params: request.query_parameters.merge(view: "mobile") %>
+      </div>
 
-            <div class="mobile-pagination-center">
-            <%= paginate @emotion_logs,
-              params: request.query_parameters.merge(view: "mobile") %>
-            </div>
       <div class="mobile-content pb-5 px-3 mt-4">
         <%= render partial: "emotion_logs/mobile_list", locals: { logs: @emotion_logs } %>
         <div class="player-space-spacer"></div>
       </div>
     <% end %>
+
     <!-- turbo_frame_tagの外に出したボタン -->
     <% if user_signed_in? %>
       <div class="w-100 text-center my-4 record-mobile-btn-wrap">
         <%= link_to "今日の気持ちを記録する",
           new_emotion_log_path(format: :turbo_stream),
-        id: "record-button-mobile",
+          id: "record-button-mobile",
           class: "record-mobile-button",
           data: { controller: "record-btn", action: "click->record-btn#hide", turbo_prefetch: false } %>
       </div>
     <% end %>
 
     <% if user_signed_in? %>
-       <nav
-    class="mobile-footer fixed-bottom bg-dark text-white d-flex justify-content-evenly py-2"
-    data-controller="mobile-footer"
-  >
-    <%= link_to emotion_logs_path,
-      class: "text-center text-white small",
-      data: {
-        "mobile-footer-target": "item",
-        section: "home",
-        action: "click->mobile-footer#onClick",
-        turbo_frame: "logs_list_mobile",
-        turbo_action: "advance"
-      } do %>
-      <i class="bi bi-house fs-4"></i><br>ホーム
-    <% end %>
+      <nav
+        class="mobile-footer fixed-bottom bg-dark text-white d-flex justify-content-evenly py-2"
+        data-controller="mobile-footer">
+        <%= link_to emotion_logs_path,
+          class: "text-center text-white small",
+          data: { "mobile-footer-target": "item", section: "home", action: "click->mobile-footer#onClick", turbo_frame: "logs_list_mobile", turbo_action: "advance" } do %>
+          <i class="bi bi-house fs-4"></i><br>ホーム
+        <% end %>
 
-    <%= link_to recommended_emotion_logs_path,
-      class: "text-center text-white small",
-      data: {
-        "mobile-footer-target": "item",
-        section: "recommended",
-        action: "click->mobile-footer#onClick",
-        turbo_frame: "logs_list_mobile",
-        turbo_action: "advance"
-      } do %>
-      <i class="bi bi-fire fs-4"></i><br>おすすめ🔥
-    <% end %>
+        <%= link_to recommended_emotion_logs_path,
+          class: "text-center text-white small",
+          data: { "mobile-footer-target": "item", section: "recommended", action: "click->mobile-footer#onClick", turbo_frame: "logs_list_mobile", turbo_action: "advance" } do %>
+          <i class="bi bi-fire fs-4"></i><br>おすすめ🔥
+        <% end %>
 
-    <button type="button"
-  class="text-center text-white small btn btn-link p-0"
-  data-controller="mobile-super-search"
-  data-mobile-super-search-modal-id-value="mobile-super-search-modal"
-  data-action="click->mobile-super-search#open">
-  <i class="bi bi-search fs-4"></i><br>検索
-</button>
+        <button type="button"
+          class="text-center text-white small btn btn-link p-0"
+          data-controller="mobile-super-search"
+          data-mobile-super-search-modal-id-value="mobile-super-search-modal"
+          data-action="click->mobile-super-search#open">
+          <i class="bi bi-search fs-4"></i><br>検索
+        </button>
 
-    <%= link_to my_emotion_logs_path,
-      class: "text-center text-white small",
-      data: {
-        "mobile-footer-target": "item",
-        section: "mypage",
-        action: "click->mobile-footer#onClick",
-        turbo_frame: "logs_list_mobile",
-        turbo_action: "advance"
-      } do %>
-      <i class="bi bi-person fs-4"></i><br>マイページ
-    <% end %>
+        <%= link_to my_emotion_logs_path,
+          class: "text-center text-white small",
+          data: { "mobile-footer-target": "item", section: "mypage", action: "click->mobile-footer#onClick", turbo_frame: "logs_list_mobile", turbo_action: "advance" } do %>
+          <i class="bi bi-person fs-4"></i><br>マイページ
+        <% end %>
 
-    <%= link_to bookmarks_emotion_logs_path(view: "mobile"),
-      class: "text-center text-white small",
-      data: {
-        "mobile-footer-target": "item",
-        section: "bookmarks",
-        action: "click->mobile-footer#onClick",
-        turbo_frame: "logs_list_mobile",
-        turbo_action: "advance"
-      } do %>
-      <i class="bi bi-heart fs-4"></i><br>お気に入り
-    <% end %>
+        <%= link_to bookmarks_emotion_logs_path(view: "mobile"),
+          class: "text-center text-white small",
+          data: { "mobile-footer-target": "item", section: "bookmarks", action: "click->mobile-footer#onClick", turbo_frame: "logs_list_mobile", turbo_action: "advance" } do %>
+          <i class="bi bi-heart fs-4"></i><br>お気に入り
+        <% end %>
 
-    <%= link_to "#",
-  id: "show-playlist-modal-mobile",
-  class: "text-center text-white small",
-  data: {
-    "mobile-footer-target": "item",
-    section: "playlist",
-    action: "click->mobile-footer#onPlaylistClick",
-    turbo: false
-  } do %>
-  <i class="bi bi-music-note-list fs-4"></i><br>プレイリスト
-<% end %>
+        <%= link_to "#",
+          id: "show-playlist-modal-mobile",
+          class: "text-center text-white small",
+          data: { "mobile-footer-target": "item", section: "playlist", action: "click->mobile-footer#onPlaylistClick", turbo: false } do %>
+          <i class="bi bi-music-note-list fs-4"></i><br>プレイリスト
+        <% end %>
+      </nav>
 
-  </nav>
-
-      <!-- index.html.erb のモバイル用モーダル -->
-<div id="playlist-modal-mobile" class="modal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content" id="playlist-modal-content-mobile">
-      <%= render 'emotion_logs/playlist_sidebar',
-            playlists: current_user.playlists.includes(:playlist_items, :emotion_logs) %>
-    </div>
-  </div>
-</div>
-
+      <!-- モバイル用モーダル -->
+      <div id="playlist-modal-mobile" class="modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content" id="playlist-modal-content-mobile">
+            <%= render 'emotion_logs/playlist_sidebar',
+                  playlists: current_user.playlists.includes(:playlist_items, :emotion_logs) %>
+          </div>
+        </div>
+      </div>
     <% end %>
   </div>
 </div>
