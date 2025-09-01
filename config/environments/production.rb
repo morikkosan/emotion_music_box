@@ -67,7 +67,7 @@ Rails.application.configure do
   config.active_support.disallowed_deprecation = :raise
   config.active_support.disallowed_deprecation_warnings = []
 
-  # ====== ここから【メール送信（SendGrid）】の“確実に届く”設定 ======
+  # ====== ここから【メール送信（SendGrid / Yahoo From）】 ======
 
   # 実際に送信する
   config.action_mailer.perform_deliveries = true
@@ -75,9 +75,9 @@ Rails.application.configure do
   # 不達原因の把握のため、まず true（安定後に false へ戻してOK）
   config.action_mailer.raise_delivery_errors = true
 
-  # 差出人のデフォルト（ダブル保険。ApplicationMailer と一致）
+  # 差出人のデフォルト（ApplicationMailer と一致：Single Sender の Yahoo）
   config.action_mailer.default_options = {
-    from: "Emotion Music Box <no-reply@moriappli-emotion.com>"
+    from: "yuki mori <morikko0124@yahoo.co.jp>"
   }
 
   # キャッシュは不要
@@ -86,12 +86,11 @@ Rails.application.configure do
   # 配送方法を SMTP（SendGrid）に
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
-    # Render の「Environment」画面で下記を設定してください
     address:              ENV.fetch("SMTP_ADDRESS", "smtp.sendgrid.net"),
     port:                 ENV.fetch("SMTP_PORT", 587).to_i,
-    user_name:            ENV.fetch("SMTP_USERNAME", "apikey"),   # SendGridは "apikey" 固定
-    password:             ENV.fetch("SMTP_PASSWORD"),             # SendGrid の API Key
-    domain:               ENV.fetch("SMTP_DOMAIN", "moriappli-emotion.com"),
+    user_name:            ENV.fetch("SMTP_USERNAME", "apikey"),                 # SendGridは "apikey" 固定
+    password:             ENV.fetch("SMTP_PASSWORD") { ENV.fetch("SENDGRID_API_KEY") }, # ← フォールバック
+    domain:               ENV.fetch("SMTP_DOMAIN", "moriappli-emotion.com"),    # HELO用（任意）
     authentication:       :plain,
     enable_starttls_auto: true,
     open_timeout:         10,
