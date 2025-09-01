@@ -16,9 +16,8 @@
 @use "swal_flash_craft";
 @use "music_player";
 
-// ✅ Bootswatch(Cyborg)のCDN取り込みは一旦停止（重複読み込みを回避）
-//   見た目だけの差分で、機能・クラスはそのまま。
-// @import url("https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/cyborg/bootstrap.min.css");
+// 🔴 外部テーマCSS（Bootswatch等）は読み込まない（競合防止）
+// @import url("...bootswatch...");  ← 使わない
 
 .view-hidden {
   display: none !important;
@@ -28,24 +27,22 @@
   pointer-events: none !important;
 }
 
-// html.preload body { visibility: hidden; }
-
+/* 補助クラス */
 .mobile-only { display: none !important; }
 .desktop-only { display: block !important; }
 
 @media (max-width: 768px) {
   .desktop-only { display: none !important; }
-  .mobile-only { display: block !important; }
+  .mobile-only  { display: block !important; }
 }
 
-body.modal-open #bottom-player {
-  z-index: 20000 !important;
-}
+/* モーダル時もフッタープレーヤーは前面維持（従来どおり） */
+body.modal-open #bottom-player { z-index: 20000 !important; }
 
-// showページのプレーヤー高さ
+/* showページのプレーヤー高さ（従来どおり） */
 body.playlist-show-page .bottom-player {
   position: fixed !important;
-  bottom: 50px !important;      /* デスクトップ時 */
+  bottom: 50px !important;
   left: 0 !important;
   right: 0 !important;
   z-index: 2000 !important;
@@ -53,11 +50,11 @@ body.playlist-show-page .bottom-player {
 
 @media (max-width: 996px) {
   html body .bottom-player {
-    position: fixed !important;  // ← static をねじ伏せる
-    bottom: 80px !important;     // ← 上にずらしたい値
+    position: fixed !important;
+    bottom: 80px !important;
     left: 0 !important;
     right: 0 !important;
-    z-index: 2000 !important;    // ← 必要なら
+    z-index: 2000 !important;
   }
 }
 
@@ -66,37 +63,28 @@ body.playlist-show-page .bottom-player {
   #super-search-panel { pointer-events: auto !important; }
   #playlist-sidebar-home,
   .filter-box,
-  a,
-  button,
-  .playlist-link {
-    pointer-events: auto !important;
-  }
+  a, button, .playlist-link { pointer-events: auto !important; }
 }
 
-/* モーダル中はフッターがタップを奪わないように（安全策） */
+/* モーダル中はフッターがタップを奪わない */
 .modal-open .mobile-footer { pointer-events: none; }
 
-/* ローディングカバーを隠している時はタップを邪魔しない（保険） */
+/* ローディングカバーを隠している時はタップ阻害なし */
 #loading-overlay.view-hidden { pointer-events: none !important; }
 
-/* === プレーヤー非表示フラグ用（問い合わせ・プロフィール編集など） === */
-.no-player #bottom-player { display: none !important; }
+/* プレーヤー非表示フラグ */
+.no-player #bottom-player,
 .no-player #hidden-sc-player { display: none !important; }
 
-/* フッタープレーヤーの高さぶんだけ下に余白を常に確保 */
-:root { --footer-player-h: 84px; } /* 実高さに合わせて 76〜96px で調整可 */
-
-.emotion-log-show {
-  padding-bottom: calc(var(--footer-player-h) + env(safe-area-inset-bottom, 0px));
-}
-
-/* もし body に no-player が付くケースがあれば余白ゼロに戻す（保険） */
+/* フッタープレーヤー高さの余白 */
+:root { --footer-player-h: 84px; }
+.emotion-log-show { padding-bottom: calc(var(--footer-player-h) + env(safe-area-inset-bottom, 0px)); }
 body.no-player .emotion-log-show { padding-bottom: 0 !important; }
 
-/* ===== モバイル詳細ページ：ページネーションの固定化を禁止 & 中央寄せ ===== */
+/* モバイル詳細：ページネーション調整 */
 .emotion-log-show .pagination {
-  position: static !important;   /* fixed/sticky を無効化 */
-  inset: auto !important;        /* top/right/bottom/left を無効化 */
+  position: static !important;
+  inset: auto !important;
   float: none !important;
   display: flex;
   flex-wrap: wrap !important;
@@ -106,51 +94,84 @@ body.no-player .emotion-log-show { padding-bottom: 0 !important; }
 }
 
 /* =========================================================
-   JSが落ちてもモバイルを必ず表示させる緊急フォールバック
-   - 768px以下は #mobile-view を強制表示
-   - .view-hidden の抑え込みも含む（opacity/visibility等も反転）
-   - preloadの黒画面も可視化に修正
+   ▼▼ ここが今回の修正ポイント ▼▼
+   「view-switcher コンテナが存在するページ限定」で
+   デスクトップ/モバイルの強制切替を適用する。
+   （＝他ページでは一切隠さない → フッターだけ現象を防止）
    ========================================================= */
 
-#desktop-view { display: block; }
-#mobile-view  { display: none; }
+/* デフォルトでは何もしない（グローバルには隠さない） */
+/* #desktop-view, #mobile-view へのグローバル指定は置かない */
+
+/* view-switcher が付与されたページだけ切替 */
+[data-controller~="view-switcher"] #desktop-view { display: block; }
+[data-controller~="view-switcher"] #mobile-view  { display: none; }
 
 @media (max-width: 768px) {
-  /* ▼ 通常の切替（モバイル幅では必ずモバイルを出す） */
-  #desktop-view { display: none !important; }
-  #mobile-view  { display: block !important; }
+  [data-controller~="view-switcher"] #desktop-view { display: none !important; }
+  [data-controller~="view-switcher"] #mobile-view  { display: block !important; }
 
-  /* ▼ view-switcher 等が .view-hidden を付けても表示が消えないように上書き */
-  #mobile-view.view-hidden {
+  /* ▼ モバイル時、モバイル側の .view-hidden を解除（view-switcher配下のみ） */
+  [data-controller~="view-switcher"] #mobile-view.view-hidden {
     display: block !important;
     opacity: 1 !important;
     visibility: visible !important;
     height: auto !important;
     pointer-events: auto !important;
   }
-  #desktop-view.view-hidden { display: none !important; }
+  [data-controller~="view-switcher"] #desktop-view.view-hidden {
+    display: none !important;
+  }
 
-  /* ▼ 補助クラスにも保険（既存の .mobile-only / .desktop-only と整合） */
+  /* 補助（既存 .mobile-only / .desktop-only と整合） */
   .desktop-only { display: none !important; }
   .mobile-only  { display: block !important; }
+
+  /* 残留しやすいカバー要素の緊急無効化は“最低限” */
+  #loading-overlay,
+  .modal-backdrop {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
 }
 
-/* ▼ preloadで真っ黒のまま止まらないように可視化へ反転 */
+/* ▼ preloadで真っ黒にならない保険 */
 html.preload body { visibility: visible !important; }
 
-/* =========================================================
-   ローディングカバー（screen-cover-loading）の安全な非表示
-   ========================================================= */
-#screen-cover-loading {
-  position: fixed;
-  inset: 0;
-  z-index: 2147483000; /* 最上位 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-#screen-cover-loading.hide { opacity: 0; transition: opacity .2s ease; }
-#screen-cover-loading.view-hidden { display: none !important; }
+/* ==== ここより下は、あなたの既存スタイル（ページ固有など） ==== */
 
-/* （参考）SoundCloud隠しiframeの保険 */
-.hidden-frame { display: none !important; width: 0 !important; height: 0 !important; }
+/* ドロップダウン等（あなたの既存CSSがあればそのまま） */
+.user-dropdown:hover .dropdown-menu { display: block; }
+
+/* ページネーションの装飾（既存） */
+.pagination>li>a { border: none; color: #696969; }
+.pagination>.active>a { background: #93c9ff; border-radius: 15px; }
+.pagination>li>a:hover { border-radius: 15px; }
+
+/* アバター編集（既存） */
+.rounded-circle { border-radius: 50%; border: 2px solid #e600ff; box-shadow: 0 0 8px rgba(230,0,255,.6); }
+#cropContainer { position: relative; width: 80px; height: 80px; overflow: hidden; border: 2px solid #ccc; }
+#cropImage { position: absolute; top: 0; left: 0; user-select: none; -webkit-user-select: none; max-width: none; max-height: none; cursor: grab; }
+#avatarPreviewInline { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; }
+
+/* モバイルスーパーサーチ（既存） */
+.mobile-super-search-modal-content { background: #141824; color: #fff; border-radius: 18px; box-shadow: 0 4px 20px #0006; }
+.mobile-form-label { font-size: 1.06em; font-weight: 600; margin-bottom: .5em; color: #c6f6fa; }
+.mobile-form-select, .mobile-form-control {
+  border-radius: 8px; background: #202d36; color: #fff; border: 1px solid #364b6b;
+  padding: .55em .9em; font-size: 1em;
+}
+.mobile-form-autocomplete { position: relative; }
+.mobile-tag-suggestions {
+  position: absolute; top: 100%; left: 0; width: 100%; z-index: 9999; margin: 0;
+  border-radius: 0 0 12px 12px; background: #232b3a; border: 1px solid #2b3d4d;
+  box-shadow: 0 2px 16px #0014; max-height: 180px; overflow-y: auto;
+}
+.mobile-super-search-btn:hover { transform: scale(1.04); box-shadow: 0 0 24px #ae5cff80; }
+.mobile-reset-btn { min-width: 92px; }
+
+@media (max-width: 520px) {
+  .mobile-super-search-modal-content { border-radius: 0; box-shadow: none; }
+}
