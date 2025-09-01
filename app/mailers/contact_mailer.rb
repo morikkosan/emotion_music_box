@@ -1,4 +1,3 @@
-# app/mailers/contact_mailer.rb
 class ContactMailer < ApplicationMailer
   def notify_admin
     @contact = params[:contact]  # Contact or {name:, email:, message:}
@@ -10,9 +9,8 @@ class ContactMailer < ApplicationMailer
     @message = message
 
     mail(
-      to: "morikko0124@gmail.com",
+      to: "morikko0124@yahoo.co.jp",
       subject: "【お問い合わせ】新規メッセージが届きました",
-      # From は ApplicationMailer（Yahoo）を継承
       reply_to: email.presence || "morikko0124@yahoo.co.jp",
       message_id: "<contact-#{SecureRandom.hex(16)}@moriappli-emotion.com>"
     )
