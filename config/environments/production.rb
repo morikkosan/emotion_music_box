@@ -67,7 +67,7 @@ Rails.application.configure do
   config.active_support.disallowed_deprecation = :raise
   config.active_support.disallowed_deprecation_warnings = []
 
-  # ====== ここから【メール送信（SendGrid / Yahoo From）】 ======
+  # ====== ここから【メール送信（Yahoo SMTP 版）】 ======
 
   # 実際に送信する
   config.action_mailer.perform_deliveries = true
@@ -75,7 +75,7 @@ Rails.application.configure do
   # 不達原因の把握のため、まず true（安定後に false へ戻してOK）
   config.action_mailer.raise_delivery_errors = true
 
-  # 差出人のデフォルト（ApplicationMailer と一致：Single Sender の Yahoo）
+  # 差出人のデフォルト（ApplicationMailer と一致：Yahoo）
   config.action_mailer.default_options = {
     from: "yuki mori <morikko0124@yahoo.co.jp>"
   }
@@ -83,19 +83,31 @@ Rails.application.configure do
   # キャッシュは不要
   config.action_mailer.perform_caching = false
 
-  # 配送方法を SMTP（SendGrid）に
+  # Yahoo SMTP（推奨：暗黙TLS/465）
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
-    address:              ENV.fetch("SMTP_ADDRESS", "smtp.sendgrid.net"),
-    port:                 ENV.fetch("SMTP_PORT", 587).to_i,
-    user_name:            ENV.fetch("SMTP_USERNAME", "apikey"),                 # SendGridは "apikey" 固定
-    password:             ENV.fetch("SMTP_PASSWORD") { ENV.fetch("SENDGRID_API_KEY") }, # ← フォールバック
-    domain:               ENV.fetch("SMTP_DOMAIN", "moriappli-emotion.com"),    # HELO用（任意）
-    authentication:       :plain,
-    enable_starttls_auto: true,
+    address:              "smtp.mail.yahoo.co.jp",  # 日本Yahoo
+    port:                 465,                      # 暗黙TLS
+    user_name:            ENV.fetch("YAHOO_USER"),  # 例: "morikko0124@yahoo.co.jp"
+    password:             ENV.fetch("YAHOO_PASSWORD"),
+    authentication:       :login,                   # :plain でも可（通る方を）
+    ssl:                  true,                     # 465は暗黙TLS
+    enable_starttls_auto: false,                    # 465ではSTARTTLSを使わない
     open_timeout:         10,
     read_timeout:         10
   }
+
+  # --- もし465で通らない場合の代替（コメント解除して使用） ---
+  # config.action_mailer.smtp_settings = {
+  #   address:              "smtp.mail.yahoo.co.jp",
+  #   port:                 587,                      # STARTTLS
+  #   user_name:            ENV.fetch("YAHOO_USER"),
+  #   password:             ENV.fetch("YAHOO_PASSWORD"),
+  #   authentication:       :login,                   # :plain でも可
+  #   enable_starttls_auto: true,
+  #   open_timeout:         10,
+  #   read_timeout:         10
+  # }
 
   # ====== メール設定 ここまで ======
 end
