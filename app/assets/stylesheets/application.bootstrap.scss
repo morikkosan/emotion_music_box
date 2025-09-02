@@ -31,7 +31,7 @@
 .mobile-only { display: none !important; }
 .desktop-only { display: block !important; }
 
-@media (max-width: 768px) {
+@media (max-width: 996px) {
   .desktop-only { display: none !important; }
   .mobile-only  { display: block !important; }
 }
@@ -174,4 +174,67 @@ html.preload body { visibility: visible !important; }
 
 @media (max-width: 520px) {
   .mobile-super-search-modal-content { border-radius: 0; box-shadow: none; }
+}
+
+
+/* =========================================================
+  ▼▼ モバイル背景の安定化（iOS Safari対策込み）9/3寝る前に行った ▼▼
+  - 背景を body に設定している場合でも縮み/タイル化を防ぐ
+  - view-switcher 配下のみ副作用を最小化
+   ========================================================= */
+@media (max-width: 768px) {
+  /* ビューポートの高さ基準を安定させる */
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+  }
+
+  /* モバイル側のラッパを確実に全高化＆横はみ出し防止 */
+  [data-controller~="view-switcher"] #mobile-view {
+    position: relative;
+    min-height: 100vh;   /* 旧端末向け */
+    min-height: 100dvh;  /* iOS 16+／Android Chrome */
+    overflow-x: hidden;
+    background: transparent !important; /* ラッパに余計な背景があれば無効化 */
+  }
+
+  /* 背景が body にある想定の“汎用”安定化（画像パスは触らない） */
+  body {
+    background-attachment: scroll !important;  /* iOSの fixed バグ回避 */
+    background-size: cover !important;         /* 全面カバーで縮み防止 */
+    background-position: center center !important;
+    background-repeat: no-repeat !important;   /* タイル化防止 */
+  }
+
+  /* もし container 側に背景が設定されていた場合は打ち消してラッパで見せる */
+  [data-controller~="view-switcher"] #mobile-view .container,
+  [data-controller~="view-switcher"] #mobile-view .mobile-content {
+    background: transparent !important;
+    background-image: none !important;
+  }
+
+  /* Safari の描画安定の小手先（副作用なし） */
+  [data-controller~="view-switcher"] #mobile-view {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+  }
+}
+
+/* モバイル全面背景を #mobile-view の擬似要素で表示（fixedバグ回避） */
+@media (max-width: 768px) {
+  [data-controller~="view-switcher"] #mobile-view::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    /* ここに“今使ってる背景画像”を指定（例：bodyの background-image と同じもの） */
+    background-image: inherit;          /* body と同じ指定を継承できるならこれでOK */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+  }
 }
