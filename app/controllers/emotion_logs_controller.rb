@@ -29,8 +29,8 @@ class EmotionLogsController < ApplicationController
       @emotion_logs = @emotion_logs.joins(:tags).where(tags: { name: params[:genre] })
     end
 
-    # 並び替え・期間 + 重複排除 + ページング
-    @emotion_logs = apply_sort_and_period_filters(@emotion_logs)
+    # 並び替え・期間 + 重複排除 + ページング（index は従来通り new をデフォルト）
+    @emotion_logs = apply_sort_and_period_filters(@emotion_logs, default_sort: "new")
                       .distinct
                       .page(params[:page]).per(7)
 
@@ -51,7 +51,7 @@ class EmotionLogsController < ApplicationController
     logs = logs.where(emotion: params[:emotion]) if params[:emotion].present?
     logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
 
-    @emotion_logs = apply_sort_and_period_filters(logs)
+    @emotion_logs = apply_sort_and_period_filters(logs, default_sort: "new")
                       .distinct
                       .page(params[:page]).per(7)
 
@@ -287,7 +287,8 @@ class EmotionLogsController < ApplicationController
       logs = EmotionLog.where(id: (logs.pluck(:id) + my.pluck(:id)).uniq).includes(:user, :tags)
     end
 
-    @emotion_logs = apply_sort_and_period_filters(logs)
+    # ★ デフォルトを「ブクマ数順（likes）」へ変更
+    @emotion_logs = apply_sort_and_period_filters(logs, default_sort: "likes")
                       .distinct
                       .page(params[:page]).per(7)
 
@@ -309,12 +310,20 @@ class EmotionLogsController < ApplicationController
   end
 
   def recommended
-    hp       = params[:hp].to_i.clamp(0, 100)
-    emotion  = calculate_hp_emotion(hp)
-    logs     = EmotionLog.includes(:user, :bookmarks, :tags).where(emotion: emotion)
-    logs     = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
+    # ★ 直近の自分の投稿から感情を決定（なければ hp → fallback）
+    last_emotion = current_user.emotion_logs.order(created_at: :desc).limit(1).pluck(:emotion).first
+    if last_emotion.present?
+      emotion = last_emotion
+    else
+      hp_val  = params[:hp].to_i.clamp(0, 100)
+      emotion = calculate_hp_emotion(hp_val).presence || "いつも通り"
+    end
 
-    @emotion_logs = apply_sort_and_period_filters(logs)
+    logs = EmotionLog.includes(:user, :bookmarks, :tags).where(emotion: emotion)
+    logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
+
+    # ★ デフォルトを「ブクマ数順（likes）」へ
+    @emotion_logs = apply_sort_and_period_filters(logs, default_sort: "likes")
                       .distinct
                       .page(params[:page]).per(7)
 
@@ -377,8 +386,9 @@ class EmotionLogsController < ApplicationController
     request.user_agent.to_s.downcase =~ /mobile|webos|iphone|android/
   end
 
-  def apply_sort_and_period_filters(logs)
-    sort_param = params[:sort].presence || "new"
+  # ▼▼ default_sort を受け取れるように変更
+  def apply_sort_and_period_filters(logs, default_sort: "new")
+    sort_param = params[:sort].presence || default_sort
     logs = case sort_param
            when "new"      then logs.newest
            when "old"      then logs.oldest

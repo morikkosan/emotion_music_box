@@ -48,7 +48,7 @@ class EmotionLog < ApplicationRecord
         "COUNT(bookmarks.id) AS bookmarks_count"
       )
       .group("emotion_logs.id, users.id, users.name, users.avatar_url")
-      .order("COUNT(bookmarks.id) DESC")
+      .order("COUNT(bookmarks.id) DESC, emotion_logs.created_at DESC, emotion_logs.id DESC")
   }
 
   scope :by_comments, -> {
@@ -61,7 +61,7 @@ class EmotionLog < ApplicationRecord
         "COUNT(comments.id) AS comments_count"
       )
       .group("emotion_logs.id, users.id, users.name, users.avatar_url")
-      .order("COUNT(comments.id) DESC")
+      .order("COUNT(comments.id) DESC, emotion_logs.created_at DESC, emotion_logs.id DESC")
   }
 
   # ==== モデル内メソッド ====
