@@ -67,47 +67,26 @@ Rails.application.configure do
   config.active_support.disallowed_deprecation = :raise
   config.active_support.disallowed_deprecation_warnings = []
 
-  # ====== ここから【メール送信（Yahoo SMTP 版）】 ======
+  # ====== ここから【メール送信（Resend 固定）】 ======
 
   # 実際に送信する
   config.action_mailer.perform_deliveries = true
 
-  # 不達原因の把握のため、まず true（安定後に false へ戻してOK）
+  # 不達時に例外を出す（初期導入時は true 推奨）
   config.action_mailer.raise_delivery_errors = true
-
-  # 差出人のデフォルト（ApplicationMailer と一致：Yahoo）
-  config.action_mailer.default_options = {
-    from: "yuki mori <morikko0124@yahoo.co.jp>"
-  }
 
   # キャッシュは不要
   config.action_mailer.perform_caching = false
 
-  # Yahoo SMTP（推奨：暗黙TLS/465）
-  config.action_mailer.delivery_method = :smtp
-  config.action_mailer.smtp_settings = {
-    address:              "smtp.mail.yahoo.co.jp",  # 日本Yahoo
-    port:                 465,                      # 暗黙TLS
-    user_name:            ENV.fetch("YAHOO_USER"),  # 例: "morikko0124@yahoo.co.jp"
-    password:             ENV.fetch("YAHOO_PASSWORD"),
-    authentication:       :login,                   # :plain でも可（通る方を）
-    ssl:                  true,                     # 465は暗黙TLS
-    enable_starttls_auto: false,                    # 465ではSTARTTLSを使わない
-    open_timeout:         10,
-    read_timeout:         10
-  }
+  # ★ Resend を配送方法に指定（SMTPは使いません）
+  config.action_mailer.delivery_method = :resend
 
-  # --- もし465で通らない場合の代替（コメント解除して使用） ---
-  # config.action_mailer.smtp_settings = {
-  #   address:              "smtp.mail.yahoo.co.jp",
-  #   port:                 587,                      # STARTTLS
-  #   user_name:            ENV.fetch("YAHOO_USER"),
-  #   password:             ENV.fetch("YAHOO_PASSWORD"),
-  #   authentication:       :login,                   # :plain でも可
-  #   enable_starttls_auto: true,
-  #   open_timeout:         10,
-  #   read_timeout:         10
-  # }
+  # From は環境変数から。ドメイン未認証の間は sandbox 用の from を使う
+  # 例: RESEND_FROM=onboarding@resend.dev
+  # 認証後: RESEND_FROM="Emotion Music Box <no-reply@moriappli-emotion.com>"
+  config.action_mailer.default_options = {
+    from: ENV.fetch("RESEND_FROM", "onboarding@resend.dev")
+  }
 
   # ====== メール設定 ここまで ======
 end
