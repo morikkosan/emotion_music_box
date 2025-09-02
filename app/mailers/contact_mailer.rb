@@ -1,18 +1,17 @@
 class ContactMailer < ApplicationMailer
+  # with(contact: Contact) を受け取る想定
   def notify_admin
-    @contact = params[:contact]  # Contact or {name:, email:, message:}
+    contact = params.fetch(:contact)
 
-    name    = @contact.respond_to?(:name)    ? @contact.name    : @contact[:name]
-    email   = @contact.respond_to?(:email)   ? @contact.email   : @contact[:email]
-    message = @contact.respond_to?(:message) ? @contact.message : @contact[:message]
-    @name = name
-    @message = message
+    # ★ これを追加（テンプレが @contact.* を参照できるようにする）
+    @contact = contact
+
+    reply_to_addr = @contact.email.presence || ENV["RESEND_REPLY_TO"]
 
     mail(
-      to: "morikko0124@yahoo.co.jp",
-      subject: "【お問い合わせ】新規メッセージが届きました",
-      reply_to: email.presence || "morikko0124@yahoo.co.jp",
-      message_id: "<contact-#{SecureRandom.hex(16)}@moriappli-emotion.com>"
+      to: ENV.fetch("CONTACT_TO", "morikko0124@yahoo.co.jp"),
+      reply_to: reply_to_addr,
+      subject: "[EMOMU] お問い合わせ"
     )
   end
 end

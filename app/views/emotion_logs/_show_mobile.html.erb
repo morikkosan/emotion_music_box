@@ -28,9 +28,11 @@
         <% end %>
       </div>
     </div>
+
     <div class="card-body text-center py-2 px-2 mobile-card-body">
       <p class="mb-1 mobile-emotion-text"><strong>感情:</strong> <%= @emotion_log.emotion %></p>
       <p class="mb-1 mobile-diary-text"><strong>日記:</strong> <%= @emotion_log.description %></p>
+
       <% if current_user == @emotion_log.user %>
         <%= button_to '編集',
               edit_emotion_log_path(@emotion_log, format: :turbo_stream),
@@ -38,8 +40,28 @@
               class: 'btn btn-danger btn-sm mobile-edit-btn',
               method: :get %>
       <% end %>
+
+      <%# ▼▼ デスクトップと同じTwitter共有ボタン（X）をモバイルにも追加 ▼▼ %>
+      <% page_url   = request.original_url %>
+      <% tweet_text = "今日の感情は #{@emotion_log.emotion}！！ この気分できいた曲は #{@emotion_log.track_name}！" %>
+      <% hashtag    = " #EmotionMusicBox #エモミュ" %>
+      <% share_text = "#{tweet_text}#{hashtag}" %>
+      <% tweet_url  = "https://twitter.com/intent/tweet?text=#{CGI.escape(share_text)}&url=#{CGI.escape(page_url)}" %>
+
+      <div class="mt-2">
+        <%= link_to tweet_url,
+              target: "_blank",
+              rel: "noopener",
+              class: "btn btn-dark btn-sm d-flex align-items-center gap-1 tweet-share-btn",
+              id: "tweet-share-btn-mobile" do %>
+          <i class="bi bi-twitter-x tweet-icon"></i>
+          この曲をシェアする
+        <% end %>
+      </div>
+      <%# ▲▲ ここまで共有ボタン ▲▲ %>
+
       <% if @emotion_log.music_art_url.present? %>
-        <div class="music-art-wrapper">
+        <div class="music-art-wrapper mt-2">
           <%= image_tag @emotion_log.music_art_url, alt: "ジャケット画像", class: "music-art-img mobile-music-art-img" %>
         </div>
       <% end %>
@@ -77,11 +99,11 @@
           <!-- 上：戻る（root）＋ページネーション（中央） -->
           <div class="d-flex align-items-center justify-content-between my-2">
             <div class="flex-shrink-0">
-        <%= link_to "← 一覧に戻る",
-                    root_path,
-                    class: "btn neon_show neon_show-back btn-sm",
-                    data: { turbo: false } %>
-      </div>
+              <%= link_to "← 一覧に戻る",
+                          root_path,
+                          class: "btn neon_show neon_show-back btn-sm",
+                          data: { turbo: false } %>
+            </div>
             <nav class="flex-grow-1 d-flex justify-content-center">
               <div class="d-flex flex-wrap justify-content-center">
                 <%= paginate @comments, params: request.query_parameters.merge(view: "mobile") %>
