@@ -25,6 +25,16 @@ export default class extends Controller {
     } catch (_) {}
   }
 
+  // === 追加：旧 iframe を安全に破棄（SCのpostMessage先を断つ）===
+  _safeNukeIframe(iframe) {
+    try {
+      if (!iframe) return;
+      iframe.src = "about:blank";           // 内部処理を停止
+      iframe.removeAttribute("src");        // 参照を切る
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe); // DOMから除去
+    } catch (_) {}
+  }
+
   cleanup = () => {
     clearInterval(this.progressInterval);
 
@@ -46,6 +56,13 @@ export default class extends Controller {
       } catch (_) {}
       this.widget = null;
     }
+
+    // ★追加：旧iframeを「空→除去」してpostMessageノイズを抑止
+    try {
+      const old = document.getElementById("hidden-sc-player");
+      this._safeNukeIframe(old);
+      this.iframeElement = null;
+    } catch (_) {}
   };
 
   setArtist(text) {
@@ -502,8 +519,17 @@ export default class extends Controller {
   // -------------- iframe差し替え -----------------
   replaceIframeWithNew() {
     const oldIframe = document.getElementById("hidden-sc-player");
-    if (!oldIframe) return null;
-    const parent = oldIframe.parentNode;
+    const parent =
+      (oldIframe && oldIframe.parentNode) ||
+      (this.bottomPlayer && this.bottomPlayer.parentNode) ||
+      document.body;
+
+    // 旧iframeがあれば安全破棄（空→除去）
+    if (oldIframe) {
+      this._safeNukeIframe(oldIframe);
+    }
+
+    // 新規 iframe 作成（属性は従来通り）
     const newIframe = document.createElement("iframe");
     newIframe.id = "hidden-sc-player";
     newIframe.classList.add("is-hidden");
@@ -512,7 +538,8 @@ export default class extends Controller {
     newIframe.scrolling = "no";
     newIframe.width = "100%";
     newIframe.height = "166";
-    parent.replaceChild(newIframe, oldIframe);
+
+    parent.appendChild(newIframe);
     return newIframe;
   }
 

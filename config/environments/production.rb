@@ -1,4 +1,4 @@
-# config/environments/production.rb
+# /config/environments/production.rb
 require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
@@ -81,12 +81,11 @@ Rails.application.configure do
   # ★ Resend を配送方法に指定（SMTPは使いません）
   config.action_mailer.delivery_method = :resend
 
-  # From は環境変数から。ドメイン未認証の間は sandbox 用の from を使う
-  # 例: RESEND_FROM=onboarding@resend.dev
-  # 認証後: RESEND_FROM="Emotion Music Box <no-reply@moriappli-emotion.com>"
-  config.action_mailer.default_options = {
-    from: ENV.fetch("RESEND_FROM", "onboarding@resend.dev")
-  }
+  # ✅ From は ApplicationMailer に集約するので、ここでの default_options[:from] 指定は不要
+  # （二重管理を避けるためコメントアウト or 削除）
+  # config.action_mailer.default_options = {
+  #   from: ENV.fetch("RESEND_FROM", "onboarding@resend.dev")
+  # }
 
   # ====== メール設定 ここまで ======
 end

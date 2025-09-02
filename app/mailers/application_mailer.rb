@@ -1,7 +1,8 @@
-# app/mailers/application_mailer.rb
+# /app/mailers/application_mailer.rb
 class ApplicationMailer < ActionMailer::Base
-  # ドメイン認証が済むまでの暫定 → "onboarding@resend.dev"
-  # 認証後は no-reply@moriappli-emotion.com に切替
-  default from: "Emotion Music Box <no-reply@moriappli-emotion.com>"
+  # From は ENV で一元管理（Render 環境変数 RESEND_FROM）
+  # 例: RESEND_FROM="Emotion Music Box <no-reply@moriappli-emotion.com>"
+  default from: ENV.fetch("RESEND_FROM")
+
   layout "mailer"
 end
