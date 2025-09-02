@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <body>
+    <h1>【お問い合わせ内容】</h1>
+    <hr>
+    <p><strong>お名前:</strong> <%= @contact.name %></p>
+    <p><strong>メール:</strong> <%= @contact.email.presence || "(未入力)" %></p>
+    <p><strong>内容:</strong></p>
+    <pre style="white-space: pre-wrap; font-family: inherit;"><%= @contact.message %></pre>
+  </body>
+</html>

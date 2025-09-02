@@ -1,13 +1,16 @@
+# /app/models/contact.rb
 class Contact
   include ActiveModel::Model
+  include ActiveModel::Attributes
 
-  attr_accessor :name, :email, :message
+  attribute :name, :string
+  attribute :email, :string
+  attribute :message, :string
 
-  validates :name,    presence: true, length: { minimum: 2, maximum: 10 }
-  validates :email,   presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :message, presence: true, length: { minimum: 5, maximum: 200 }
+  validates :name, presence: true, length: { maximum: 100 }
+  validates :email, presence: true, length: { maximum: 255 }
+  validates :message, presence: true, length: { maximum: 2000 }
 
-  def persisted?
-    false
-  end
+  # 必要なら簡易メール形式チェック（厳格にしすぎると弾きすぎるので控えめに）
+  validates_format_of :email, with: /\A[^@\s]+@[^@\s]+\z/
 end
