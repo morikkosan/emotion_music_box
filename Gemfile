@@ -51,6 +51,9 @@ gem "oauth2", "~> 2.0"
 gem "omniauth-oauth2"
 gem 'rqrcode'
 gem 'rqrcode_svg'
+gem 'resend'
+
+
 
 
 
