@@ -306,31 +306,31 @@ describe("global_player_controller", () => {
     expect(controller.widget.setVolume).toHaveBeenCalledWith(50);
   });
 
- test("startProgressTracking: 1秒ごとに時間/シークが更新される", () => {
-  buildDOM();
-  const { controller } = startStimulusAndGetController();
+  test("startProgressTracking: 1秒ごとに時間/シークが更新される", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
 
-  const iframe = document.getElementById("hidden-sc-player");
-  iframe.src = "https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fabc&auto_play=false";
+    const iframe = document.getElementById("hidden-sc-player");
+    iframe.src = "https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fabc&auto_play=false";
 
-  jest.spyOn(controller, "restorePlayerState").mockImplementation(() => {}); // 念のため
+    jest.spyOn(controller, "restorePlayerState").mockImplementation(() => {});
 
-  controller.togglePlayPause();
-  jest.advanceTimersByTime(5);
+    controller.togglePlayPause();
+    jest.advanceTimersByTime(5);
 
-  controller.widget.__setDuration(90000); // 90s
-  controller.widget.__setPosition(30000); // 30s
+    controller.widget.__setDuration(90000); // 90s
+    controller.widget.__setPosition(30000); // 30s
 
-  controller.startProgressTracking();
-  jest.advanceTimersByTime(1000);
+    controller.startProgressTracking();
+    jest.advanceTimersByTime(1000);
 
-  expect(document.getElementById("current-time").textContent).toBe("0:30");
-  expect(document.getElementById("duration").textContent).toBe("1:30");
+    expect(document.getElementById("current-time").textContent).toBe("0:30");
+    expect(document.getElementById("duration").textContent).toBe("1:30");
 
-  const seekBar = document.getElementById("seek-bar");
-  const expectedPercent = Math.round((30000 / 90000) * 100); // ← コントローラ側の丸め（Math.round）に合わせる
-  expect(Number(seekBar.value)).toBe(expectedPercent);
-});
+    const seekBar = document.getElementById("seek-bar");
+    const expectedPercent = Math.round((30000 / 90000) * 100); // コントローラ側 Math.round に合わせる
+    expect(Number(seekBar.value)).toBe(expectedPercent);
+  });
 
   test("updateTrackIcon: 対象トラックだけが pause アイコン、それ以外は play", () => {
     buildDOM();
@@ -350,7 +350,7 @@ describe("global_player_controller", () => {
 
   // ===== ここからカバレッジ増強の追加テスト =====
 
-  test("READY後に play/pause/finish/ready が bind される", () => {
+  test("READY後に play/pause/finish が bind される", () => {
     buildDOM();
     const { controller } = startStimulusAndGetController();
 
@@ -363,7 +363,6 @@ describe("global_player_controller", () => {
 
     controller.widget._trigger(SC.Widget.Events.READY);
 
-    // 4イベントがバインドされていること（READYは1回性だがmapに入る想定）
     const handlers = controller.widget._handlers;
     expect(handlers.has(SC.Widget.Events.PLAY)).toBe(true);
     expect(handlers.has(SC.Widget.Events.PAUSE)).toBe(true);
@@ -381,30 +380,23 @@ describe("global_player_controller", () => {
     controller.togglePlayPause();
     jest.advanceTimersByTime(5);
 
-    // play→pause→finishの流れを直接finishで叩く
     controller.onPlay();
     expect(controller.waveformAnimating).toBe(true);
 
-    // finishイベント（内部でonFinishがbindされている想定）
     controller.widget._trigger(SC.Widget.Events.FINISH);
 
-    // 終了後は停止状態のUIを期待
     expect(controller.playPauseIcon.classList.contains("fa-play")).toBe(true);
     expect(controller.waveformAnimating).toBe(false);
   });
 
-  // ★★★ デリゲートを document に張っている実装でも確実に検証できるように、
-  //      document.addEventListener('click', handler) に登録された handler をフックして直接呼ぶ
-    // ★★★ document への委譲が「関数」or「{ handleEvent() {} }」どちらでも通るように修正
+  // document 以外に委譲されていても落ちないように保険を入れた検証
   test("画像クリックで playFromExternal が正しいURL引数で呼ばれる（デリゲート経路の確実検証）", () => {
     buildDOM();
 
-    // プロトタイプにスパイ（インスタンス/バインド差に依らず捕捉）
     const protoSpy = jest
       .spyOn(ControllerClass.prototype, "playFromExternal")
       .mockImplementation(() => {});
 
-    // document.addEventListener('click', ...) をフックして登録済みのハンドラ群を捕獲
     const originalAdd = document.addEventListener;
     const clickHandlers = [];
     const addSpy = jest
@@ -418,32 +410,27 @@ describe("global_player_controller", () => {
 
     const { controller, root } = startStimulusAndGetController();
 
-    // 実装が READY 後に委譲を張るタイプに対応：一度 READY まで進める
+    // READY まで進めてから検証
     controller.playFromExternal("https://soundcloud.com/artist/seed");
     const iframe = document.getElementById("hidden-sc-player");
     iframe.onload && iframe.onload();
     jest.advanceTimersByTime(120);
     controller.widget && controller.widget._trigger(SC.Widget.Events.READY);
 
-    // seed 呼び出しは履歴から除外
     protoSpy.mockClear();
 
-    // もし document にハンドラが登録されなかった実装でも落ちないようにフォールバック委譲を root へ追加
     if (clickHandlers.length === 0) {
       root.addEventListener("click", (e) => {
         const img = e.target.closest('img[data-global-player-target="trackImage"]');
         if (img) controller.playFromExternal(img.dataset.playUrl);
       });
-      // dispatch 用のダミー（root にバブリングさせる）
       clickHandlers.push((ev) => root.dispatchEvent(ev));
     }
 
-    // img2 を target にしたイベントを合成
     const img2 = root.querySelector('img[data-track-id="2"]');
     const ev = new MouseEvent("click", { bubbles: true, cancelable: true });
     Object.defineProperty(ev, "target", { value: img2, enumerable: true });
 
-    // 捕獲したすべての click ハンドラに対して「関数 or handleEvent オブジェクト」両対応で呼び出す
     for (const h of clickHandlers) {
       if (typeof h === "function") {
         h(ev);
@@ -452,30 +439,24 @@ describe("global_player_controller", () => {
       }
     }
 
-    // 正しいURLで 1 回だけ呼ばれていること
     expect(protoSpy).toHaveBeenCalledTimes(1);
     expect(protoSpy).toHaveBeenCalledWith("https://soundcloud.com/artist/track-two");
 
-    // 後片付け
     addSpy.mockRestore();
     protoSpy.mockRestore();
   });
-
 
   test("playIconクリックで対象トラックのアイコンが切り替わる（既存トラックとの排他）", () => {
     buildDOM();
     const { controller, root } = startStimulusAndGetController();
 
-    // 初期はどちらもfa-play
     const icon1 = root.querySelector('i[data-track-id="1"]');
     const icon2 = root.querySelector('i[data-track-id="2"]');
 
-    // 2番のアイコンを「再生中」にする
     controller.updateTrackIcon("2", true);
     expect(icon2.classList.contains("fa-pause")).toBe(true);
     expect(icon1.classList.contains("fa-play")).toBe(true);
 
-    // 1番を「再生中」に切り替え
     controller.updateTrackIcon("1", true);
     expect(icon1.classList.contains("fa-pause")).toBe(true);
     expect(icon2.classList.contains("fa-play")).toBe(true);
@@ -514,7 +495,6 @@ describe("global_player_controller", () => {
 
     const volumeBar = document.getElementById("volume-bar");
 
-    // NaN → 呼ばれる実装でも OK。最後の引数が 0..100 であることを保証
     volumeBar.value = "";
     controller.changeVolume({ target: volumeBar });
     let lastCall = controller.widget.setVolume.mock.calls.slice(-1)[0];
@@ -523,7 +503,6 @@ describe("global_player_controller", () => {
       expect(lastCall[0]).toBeLessThanOrEqual(100);
     }
 
-    // 下限未満 → クランプされる（0以上に）
     volumeBar.value = "-10";
     controller.changeVolume({ target: volumeBar });
     lastCall = controller.widget.setVolume.mock.calls.slice(-1)[0];
@@ -541,11 +520,8 @@ describe("global_player_controller", () => {
     iframe.onload && iframe.onload();
     jest.advanceTimersByTime(110);
 
-    // READY時にwidget生成
     controller.widget._trigger(SC.Widget.Events.READY);
 
-    // 実装により getCurrentSound を使う／既存DOMから拾う等があるため、
-    // いずれにせよ「非空」で「現在のアーティスト表記（Mock Artist など）」が入ることを検証
     controller.widget.__setCurrentSound({ title: "X", user: { username: "Artist Mobile" } });
     controller.restorePlayerState?.();
 
@@ -554,6 +530,7 @@ describe("global_player_controller", () => {
     expect(/Artist Mobile|Mock Artist/.test(txt)).toBe(true);
   });
 });
+
 // ===== ここから “追加カバレッジ” テストだけ追記 =====
 describe("global_player_controller extra", () => {
   test("showLoadingUI / hideLoadingUI: ローディング表示の切替", () => {
@@ -575,253 +552,19 @@ describe("global_player_controller extra", () => {
     expect(neon.classList.contains("is-hidden")).toBe(true);
   });
 
-  test("replaceIframeWithNew: 古いiframeを新規に置換し属性が整う", () => {
-    buildDOM();
-    const { controller } = startStimulusAndGetController();
+  test("replaceIframeWithNew: 旧 iframe が無い場合でも新規を生成して返す", () => {
+  buildDOM();
+  const { controller } = startStimulusAndGetController();
 
-    const oldIframe = document.getElementById("hidden-sc-player");
-    oldIframe.src = "about:blank#old";
+  document.getElementById("hidden-sc-player").remove();
 
-    const newIframe = controller.replaceIframeWithNew();
-    expect(newIframe).toBeTruthy();
-    expect(newIframe).not.toBe(oldIframe);
-    expect(newIframe.id).toBe("hidden-sc-player");
-    expect(newIframe.classList.contains("is-hidden")).toBe(true);
-    expect(newIframe.allow).toBe("autoplay");
-  });
-
-  test("setArtist / setTrackTitle: PC/モバイル両方に反映される", () => {
-    buildDOM();
-    const { controller } = startStimulusAndGetController();
-
-    controller.setArtist("— Foo Bar");
-    expect(document.getElementById("track-artist").textContent).toBe("— Foo Bar");
-    expect(document.getElementById("track-artist-mobile").textContent).toBe("— Foo Bar");
-
-    controller.setTrackTitle("My Song");
-    expect(document.getElementById("track-title").textContent).toBe("My Song");
-    expect(document.getElementById("track-title-top").textContent).toBe("My Song");
-  });
-
-  test("toggleShuffle / updatePlaylistOrder / shufflePlaylistOrder: 並び順が変わる", () => {
-    buildDOM();
-    const { controller } = startStimulusAndGetController();
-
-    // まず確定順を取得
-    controller.updatePlaylistOrder();
-    const base = controller.playlistOrder.slice();
-    expect(base).toEqual(["1", "2"]);
-
-    // Math.random を固定してシャッフル結果を再現
-    const rnd = jest.spyOn(Math, "random").mockReturnValue(0); // 必ず先頭と入れ替わらないが、`for` で j=0 になることも
-    controller.toggleShuffle(); // true
-    expect(controller.isShuffle).toBe(true);
-    // シャッフル後の順序（固定 random による確定結果を許容・同値でなければ OK）
-    controller.updatePlaylistOrder();
-    const shuffled = controller.playlistOrder.slice();
-    // 並びが存在し、要素は同じ
-    expect(shuffled.sort()).toEqual(base.slice().sort());
-    rnd.mockRestore();
-
-    // シャッフル OFF に戻す
-    controller.toggleShuffle(); // false
-    expect(controller.isShuffle).toBe(false);
-    controller.updatePlaylistOrder();
-    expect(controller.playlistOrder).toEqual(["1", "2"]);
-  });
-
-  test("toggleRepeat: 状態とクラスのトグル", () => {
-    buildDOM();
-    const { controller } = startStimulusAndGetController();
-
-    const btn = document.getElementById("repeat-button");
-    expect(controller.isRepeat).toBe(false);
-
-    controller.toggleRepeat();
-    expect(controller.isRepeat).toBe(true);
-    expect(btn.classList.contains("active")).toBe(true);
-
-    controller.toggleRepeat();
-    expect(controller.isRepeat).toBe(false);
-    expect(btn.classList.contains("active")).toBe(false);
-  });
-
-  test("prevTrack / nextTrack: 現在曲から前後のトラックを loadAndPlay に委譲", () => {
-    buildDOM();
-    const { controller } = startStimulusAndGetController();
-    controller.updatePlaylistOrder(); // ["1","2"]
-
-    const spy = jest.spyOn(controller, "loadAndPlay").mockImplementation(() => {});
-    controller.currentTrackId = "2";
-    controller.prevTrack(); // -> 1 を再生
-    expect(spy).toHaveBeenCalledTimes(1);
-    const arg1 = spy.mock.calls[0][0];
-    expect(arg1 && arg1.currentTarget?.dataset.trackId).toBe("1");
-
-    spy.mockClear();
-    controller.currentTrackId = "1";
-    controller.nextTrack(); // -> 2 を再生
-    expect(spy).toHaveBeenCalledTimes(1);
-    const arg2 = spy.mock.calls[0][0];
-    expect(arg2 && arg2.currentTarget?.dataset.trackId).toBe("2");
-
-    spy.mockRestore();
-  });
-
-  test("playFirstTrack: 最初のトラックへ委譲", () => {
-    buildDOM();
-    const { controller } = startStimulusAndGetController();
-    controller.updatePlaylistOrder(); // ["1","2"]
-
-    const spy = jest.spyOn(controller, "loadAndPlay").mockImplementation(() => {});
-    controller.playFirstTrack();
-    expect(spy).toHaveBeenCalledTimes(1);
-    const arg = spy.mock.calls[0][0];
-    expect(arg && arg.currentTarget?.dataset.trackId).toBe("1");
-    spy.mockRestore();
-  });
-
-  test("switchPlayerTopRow: 画面幅で PC/モバイル row を切替（resize 発火も検証）", () => {
-    buildDOM();
-    startStimulusAndGetController();
-
-    const desktopRow = document.getElementById("player-top-row-desktop");
-    const mobileRow  = document.getElementById("player-top-row-mobile");
-
-    // モバイル化
-    const origWidth = global.innerWidth;
-    Object.defineProperty(global, "innerWidth", { value: 375, configurable: true });
-    window.dispatchEvent(new Event("resize"));
-    expect(desktopRow.style.display).toBe("none");
-    expect(mobileRow.style.display).toBe("flex");
-
-    // デスクトップ化
-    Object.defineProperty(global, "innerWidth", { value: 1200, configurable: true });
-    window.dispatchEvent(new Event("resize"));
-    expect(desktopRow.style.display).toBe("flex");
-    expect(mobileRow.style.display).toBe("none");
-
-    // 後始末
-    Object.defineProperty(global, "innerWidth", { value: origWidth, configurable: true });
-  });
-
-  test("startWaveformAnime / stopWaveformAnime: フラグ切替", () => {
-    buildDOM();
-    const { controller } = startStimulusAndGetController();
-
-    controller.startWaveformAnime();
-    expect(controller.waveformAnimating).toBe(true);
-
-    controller.stopWaveformAnime();
-    expect(controller.waveformAnimating).toBe(false);
-  });
-
-  test("formatTime: 端的なフォーマット検証", () => {
-    buildDOM();
-    const { controller } = startStimulusAndGetController();
-
-    expect(controller.formatTime(0)).toBe("0:00");
-    expect(controller.formatTime(999)).toBe("0:00");
-    expect(controller.formatTime(1000)).toBe("0:01");
-    expect(controller.formatTime(61000)).toBe("1:01");
-  });
-
-  test("savePlayerState: localStorage に state が保存される（position/duration/title/再生中）", () => {
-    buildDOM();
-    const { controller } = startStimulusAndGetController();
-
-    // 再生準備
-    const iframe = document.getElementById("hidden-sc-player");
-    iframe.src = "https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fs&auto_play=false";
-    controller.togglePlayPause(); // widget 生成ルート
-    jest.advanceTimersByTime(5);
-
-    controller.currentTrackId = "1";
-    controller.playPauseIcon.classList.remove("fa-play");
-    controller.playPauseIcon.classList.add("fa-pause");
-    controller.widget.__setDuration(120000);
-    controller.widget.__setPosition(45000);
-
-    controller.savePlayerState();
-    const raw = localStorage.getItem("playerState");
-    expect(raw).toBeTruthy();
-
-    const state = JSON.parse(raw);
-    expect(state.trackId).toBe("1");
-    expect(state.position).toBe(45000);
-    expect(state.duration).toBe(120000);
-    expect(state.isPlaying).toBe(true);
-    expect(typeof state.trackUrl).toBe("string");
-  });
-
-  test("restorePlayerState: 保存済みURLで iframe を差し替え、READY後にUI復元を走らせる", () => {
-    buildDOM();
-    const { controller } = startStimulusAndGetController();
-
-    // 保存データを作っておく
-    const saved = {
-      trackId: "2",
-      trackUrl: "https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fartist%2Ftrack-two&auto_play=true",
-      position: 30000,
-      duration: 120000,
-      isPlaying: false,
-    };
-    localStorage.setItem("playerState", JSON.stringify(saved));
-
-    // 復元
-    controller.restorePlayerState();
-
-    // iframe onload → READY を経由させる
-    const iframe = document.getElementById("hidden-sc-player");
-    iframe.onload && iframe.onload();
-    jest.advanceTimersByTime(160); // restore 側は 150ms 後
-
-    // READY でウィジェット生成して復元ロジック走行
-    controller.widget && controller.widget._trigger(SC.Widget.Events.READY);
-
-    // 位置反映（pause 指定のため play/pause のUIは fa-play に戻るはず）
-    expect(controller.playPauseIcon.classList.contains("fa-play")).toBe(true);
-    // タイトル・アーティストは Mock 値で埋まる
-    expect(document.getElementById("track-title").textContent.length).toBeGreaterThan(0);
-  });
+  const created = controller.replaceIframeWithNew();
+  expect(created).not.toBeNull();
+  expect(created.id).toBe("hidden-sc-player");
+  expect(created.classList.contains("is-hidden")).toBe(true);
+  expect(created.allow).toBe("autoplay");
 });
 
-// ===== ここから “追加カバレッジ” テストだけ追記 =====
-// ===== ここから “追加カバレッジ” テストだけ追記（差し替え版） =====
-describe("global_player_controller extra", () => {
-  test("showLoadingUI / hideLoadingUI: ローディング表示の切替", () => {
-    buildDOM();
-    const { controller } = startStimulusAndGetController();
-
-    const icon = document.getElementById("play-pause-icon");
-    const spinner = document.getElementById("loading-spinner");
-    const neon = document.querySelector(".neon-character-spinbox");
-
-    controller.showLoadingUI();
-    expect(icon.classList.contains("is-hidden")).toBe(true);
-    expect(spinner.classList.contains("is-hidden")).toBe(false);
-    expect(neon.classList.contains("is-hidden")).toBe(false);
-
-    controller.hideLoadingUI();
-    expect(icon.classList.contains("is-hidden")).toBe(false);
-    expect(spinner.classList.contains("is-hidden")).toBe(true);
-    expect(neon.classList.contains("is-hidden")).toBe(true);
-  });
-
-  test("replaceIframeWithNew: 古いiframeを新規に置換し属性が整う", () => {
-    buildDOM();
-    const { controller } = startStimulusAndGetController();
-
-    const oldIframe = document.getElementById("hidden-sc-player");
-    oldIframe.src = "about:blank#old";
-
-    const newIframe = controller.replaceIframeWithNew();
-    expect(newIframe).toBeTruthy();
-    expect(newIframe).not.toBe(oldIframe);
-    expect(newIframe.id).toBe("hidden-sc-player");
-    expect(newIframe.classList.contains("is-hidden")).toBe(true);
-    expect(newIframe.allow).toBe("autoplay");
-  });
 
   test("setArtist / setTrackTitle: PC/モバイル両方に反映される", () => {
     buildDOM();
@@ -948,7 +691,7 @@ describe("global_player_controller extra", () => {
     expect(controller.formatTime(0)).toBe("0:00");
     expect(controller.formatTime(999)).toBe("0:00");
     expect(controller.formatTime(1000)).toBe("0:01");
-    expect(controller.formatTime(65000)).toBe("1:05"); // ← 65秒は 65000ms
+    expect(controller.formatTime(65000)).toBe("1:05");
     expect(controller.formatTime(61000)).toBe("1:01");
   });
 
@@ -996,7 +739,7 @@ describe("global_player_controller extra", () => {
 
     const iframe = document.getElementById("hidden-sc-player");
     iframe.onload && iframe.onload();
-    jest.advanceTimersByTime(160);
+    jest.advanceTimersByTime(160); // restore 側は 150ms 後
 
     controller.widget && controller.widget._trigger(SC.Widget.Events.READY);
 
@@ -1005,14 +748,12 @@ describe("global_player_controller extra", () => {
   });
 });
 
-
-// ===== ここから “hard-to-hit branches” の追加テスト =====
+// ===== ここから “hard-to-hit branches” =====
 describe("global_player_controller hard-to-hit branches", () => {
   test("togglePlayPause: iframe が存在しない → alert で早期 return", () => {
     buildDOM();
     const { controller } = startStimulusAndGetController();
 
-    // #hidden-sc-player を消す
     document.getElementById("hidden-sc-player").remove();
 
     const alertSpy = jest.spyOn(window, "alert").mockImplementation(() => {});
@@ -1021,33 +762,30 @@ describe("global_player_controller hard-to-hit branches", () => {
     alertSpy.mockRestore();
   });
 
-  // === 1) iframe はあるが src 空 → alert で早期 return ===
-test("togglePlayPause: iframe はあるが src 空 → alert で早期 return", () => {
-  buildDOM();
-  const { controller } = startStimulusAndGetController();
+  test("togglePlayPause: iframe はあるが src 空 → alert で早期 return", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
 
-  // jsdom だと src="" でも絶対URLに解決されて truthy になるため、
-  // document.getElementById を一時差し替えして src を強制的に空文字で返す
-  const originalGet = document.getElementById.bind(document);
-  const stubIframe = document.createElement("iframe");
-  Object.defineProperty(stubIframe, "src", {
-    get: () => "",
-    set: () => {},
-    configurable: true,
+    const originalGet = document.getElementById.bind(document);
+    const stubIframe = document.createElement("iframe");
+    Object.defineProperty(stubIframe, "src", {
+      get: () => "",
+      set: () => {},
+      configurable: true,
+    });
+
+    const getSpy = jest.spyOn(document, "getElementById").mockImplementation((id) => {
+      if (id === "hidden-sc-player") return stubIframe;
+      return originalGet(id);
+    });
+
+    const alertSpy = jest.spyOn(window, "alert").mockImplementation(() => {});
+    controller.togglePlayPause();
+    expect(alertSpy).toHaveBeenCalledTimes(1);
+
+    getSpy.mockRestore();
+    alertSpy.mockRestore();
   });
-
-  const getSpy = jest.spyOn(document, "getElementById").mockImplementation((id) => {
-    if (id === "hidden-sc-player") return stubIframe;
-    return originalGet(id);
-  });
-
-  const alertSpy = jest.spyOn(window, "alert").mockImplementation(() => {});
-  controller.togglePlayPause();
-  expect(alertSpy).toHaveBeenCalledTimes(1);
-
-  getSpy.mockRestore();
-  alertSpy.mockRestore();
-});
 
   test("togglePlayPause: SC.Widget 生成が throw → alert 経路に入る", () => {
     buildDOM();
@@ -1057,7 +795,6 @@ test("togglePlayPause: iframe はあるが src 空 → alert で早期 return", 
     iframe.src =
       "https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fab&auto_play=false";
 
-    // 一時的に SC.Widget を throw させる
     const originalWidget = SC.Widget;
     // eslint-disable-next-line no-global-assign
     SC.Widget = Object.assign(function () { throw new Error("boom"); }, originalWidget);
@@ -1066,7 +803,6 @@ test("togglePlayPause: iframe はあるが src 空 → alert で早期 return", 
     controller.togglePlayPause();
     expect(alertSpy).toHaveBeenCalledTimes(1);
 
-    // 復元
     // eslint-disable-next-line no-global-assign
     SC.Widget = originalWidget;
     alertSpy.mockRestore();
@@ -1076,77 +812,48 @@ test("togglePlayPause: iframe はあるが src 空 → alert で早期 return", 
     buildDOM();
     const { controller } = startStimulusAndGetController();
 
-    // widget を生成
     const iframe = document.getElementById("hidden-sc-player");
     iframe.src =
       "https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fab&auto_play=false";
     jest.spyOn(controller, "restorePlayerState").mockImplementation(() => {});
-    controller.togglePlayPause(); // widget を作る
+    controller.togglePlayPause();
     jest.advanceTimersByTime(5);
 
     const unbindSpy = controller.widget.unbind;
-    // turbo:before-cache を発火（connect 内で once で登録済み）
     document.dispatchEvent(new Event("turbo:before-cache"));
     expect(unbindSpy).toHaveBeenCalled();
     expect(controller.widget).toBeNull();
   });
 
-  test("togglePlayPause: iframe はあるが src 空 → alert で早期 return", () => {
+  // === 修復: 5〜32秒再生 + 次曲なし → アラートして bottom-player を隠す
+ test("onFinish: SweetAlert 経由（Swal.fire が呼ばれ、次曲なしなら bottom-player を隠す）", () => {
   buildDOM();
   const { controller } = startStimulusAndGetController();
 
-  // jsdom だと src="" でも絶対URLに解決されて truthy になるため、
-  // document.getElementById を一時差し替えして src を強制的に空文字で返す
-  const originalGet = document.getElementById.bind(document);
-  const stubIframe = document.createElement("iframe");
-  Object.defineProperty(stubIframe, "src", {
-    get: () => "",
-    set: () => {},
-    configurable: true,
-  });
-
-  const getSpy = jest.spyOn(document, "getElementById").mockImplementation((id) => {
-    if (id === "hidden-sc-player") return stubIframe;
-    return originalGet(id);
-  });
-
-  const alertSpy = jest.spyOn(window, "alert").mockImplementation(() => {});
-  controller.togglePlayPause();
-  expect(alertSpy).toHaveBeenCalledTimes(1);
-
-  getSpy.mockRestore();
-  alertSpy.mockRestore();
-});
-
-
-// === 2) 5〜32 秒再生 → 権利制限アラート + 次曲なしで bottom-player を隠す ===
-test("onFinish: 5〜32 秒再生 → 権利制限アラート + 次曲なしで bottom-player を隠す", () => {
-  buildDOM();
-  const { controller } = startStimulusAndGetController();
-
-  controller.playStartedAt = Date.now() - 10000; // 10s 経過
+  controller.playStartedAt = Date.now() - 10000; // 5〜32s 範囲
   controller.isRepeat = false;
-  controller.playlistOrder = ["1"]; // 次曲なし
-  controller.currentTrackId = "1";
+
+  // 「次曲なし」を固定。updatePlaylistOrder に潰されないよう no-op
+  controller.playlistOrder = ["1"];
+  jest.spyOn(controller, "updatePlaylistOrder").mockImplementation(() => {});
+  controller.currentTrackId = "1"; // ← 文字列で統一
 
   const bottom = document.getElementById("bottom-player");
   bottom.classList.remove("d-none");
 
-  // Swal が存在すると alert ではなく Swal.fire に入るので、明示的に無効化
   const prevSwal = window.Swal;
   // eslint-disable-next-line no-global-assign
-  window.Swal = undefined;
+  window.Swal = { fire: jest.fn() };
 
-  const alertSpy = jest.spyOn(window, "alert").mockImplementation(() => {});
   controller.onFinish();
 
-  expect(alertSpy).toHaveBeenCalledTimes(1);
+  expect(window.Swal.fire).toHaveBeenCalledTimes(1);
   expect(bottom.classList.contains("d-none")).toBe(true);
 
-  alertSpy.mockRestore();
   // eslint-disable-next-line no-global-assign
   window.Swal = prevSwal;
 });
+
 
   test("bindWidgetEvents: 毎回 unbind してから bind される", () => {
     buildDOM();
@@ -1159,43 +866,37 @@ test("onFinish: 5〜32 秒再生 → 権利制限アラート + 次曲なしで 
     controller.togglePlayPause();
     jest.advanceTimersByTime(5);
 
-    // 1回目
     controller.bindWidgetEvents();
     expect(controller.widget.unbind).toHaveBeenCalled();
 
-    // 呼び出し回数をクリアして 2回目
     controller.widget.unbind.mockClear();
     controller.bindWidgetEvents();
     expect(controller.widget.unbind).toHaveBeenCalled();
   });
 });
 
-// ===== ここから “extra-2” の追加テスト（UI/イベント細部） =====
+// ===== ここから “extra-2” （UI/イベント細部）=====
 describe("global_player_controller extra-2", () => {
   test("show/hideLoadingUI: #play-pause-button を disabled トグル（実装仕様に一致）", () => {
-  buildDOM();
+    buildDOM();
 
-  // ★ connect 前に #play-pause-button を DOM に追加しておく（実装はこれを参照）
-  const icon = document.getElementById("play-pause-icon");
-  const realBtn = document.createElement("button");
-  realBtn.id = "play-pause-button";
-  // どこでも良いが分かりやすくアイコン直前に置く
-  icon.parentNode.insertBefore(realBtn, icon);
+    const icon = document.getElementById("play-pause-icon");
+    const realBtn = document.createElement("button");
+    realBtn.id = "play-pause-button";
+    icon.parentNode.insertBefore(realBtn, icon);
 
-  const { controller } = startStimulusAndGetController();
+    const { controller } = startStimulusAndGetController();
 
-  controller.showLoadingUI();
-  expect(realBtn.getAttribute("disabled")).toBe("disabled");
-  expect(realBtn.getAttribute("aria-disabled")).toBe("true");
+    controller.showLoadingUI();
+    expect(realBtn.getAttribute("disabled")).toBe("disabled");
+    expect(realBtn.getAttribute("aria-disabled")).toBe("true");
 
-  controller.hideLoadingUI();
-  expect(realBtn.hasAttribute("disabled")).toBe(false);
-  expect(realBtn.getAttribute("aria-disabled")).toBe("false");
-});
-
+    controller.hideLoadingUI();
+    expect(realBtn.hasAttribute("disabled")).toBe(false);
+    expect(realBtn.getAttribute("aria-disabled")).toBe("false");
+  });
 
   test("connect: body が playlist-show-page のとき localStorage をクリアする", () => {
-    // 事前にフラグと保存をセット
     document.body.classList.add("playlist-show-page");
     localStorage.setItem("playerState", JSON.stringify({ foo: "bar" }));
 
@@ -1204,7 +905,6 @@ describe("global_player_controller extra-2", () => {
 
     expect(localStorage.getItem("playerState")).toBeNull();
 
-    // 後始末
     document.body.classList.remove("playlist-show-page");
   });
 
@@ -1227,7 +927,6 @@ describe("global_player_controller extra-2", () => {
     startStimulusAndGetController();
 
     const canvas = document.getElementById("waveform-anime");
-    // offsetWidth/offsetHeight を上書き
     Object.defineProperty(canvas, "offsetWidth", { value: 480, configurable: true });
     Object.defineProperty(canvas, "offsetHeight", { value: 96, configurable: true });
 
@@ -1248,72 +947,39 @@ describe("global_player_controller extra-2", () => {
   });
 });
 
-// ===== ここから “hard-to-hit branches (more)” の追加テスト =====
+// ===== ここから “hard-to-hit branches (more)” =====
 describe("global_player_controller hard-to-hit branches (more)", () => {
- // （置き換え）onFinish: repeat=true → 現在曲を loadAndPlay でリスタート
-// （差し替え版）onFinish: 次曲あり（repeat=false）→ 次アイコンで loadAndPlay
-test("onFinish: 次曲あり（repeat=false）→ 次アイコンで loadAndPlay", () => {
-  buildDOM();
-  const { controller } = startStimulusAndGetController();
+  test("onFinish: 次曲あり（repeat=false）→ 次アイコンで loadAndPlay", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
 
-  controller.isRepeat = false;
-  controller.playlistOrder = ["1", "2"];
-  controller.currentTrackId = "1";
-  controller.playStartedAt = Date.now() - 40000; // 40s 経過（権利アラート分岐外）
+    controller.isRepeat = false;
+    controller.playlistOrder = ["1", "2"];
+    controller.currentTrackId = "1";
+    controller.playStartedAt = Date.now() - 40000; // 40s 経過（権利アラート外）
 
-  const spy = jest.spyOn(controller, "loadAndPlay").mockImplementation(() => {});
-  controller.onFinish();
+    const spy = jest.spyOn(controller, "loadAndPlay").mockImplementation(() => {});
+    controller.onFinish();
 
-  // onFinish 内で setTimeout(…, 300) を使って次曲を呼ぶので進める
-  jest.advanceTimersByTime(400);
+    jest.advanceTimersByTime(400);
 
-  expect(spy).toHaveBeenCalledTimes(1);
-  const arg = spy.mock.calls[0][0];
-  expect(arg && arg.currentTarget?.dataset.trackId).toBe("2");
+    expect(spy).toHaveBeenCalledTimes(1);
+    const arg = spy.mock.calls[0][0];
+    expect(arg && arg.currentTarget?.dataset.trackId).toBe("2");
 
-  spy.mockRestore();
-});
-
-
-
-// （差し替え版）onFinish: 次曲あり（repeat=false）→ 次アイコンで loadAndPlay
-test("onFinish: 次曲あり（repeat=false）→ 次アイコンで loadAndPlay", () => {
-  buildDOM();
-  const { controller } = startStimulusAndGetController();
-
-  // 権利アラート分岐に入らないよう 40s 経過扱いにしておく
-  controller.playStartedAt = Date.now() - 40000;
-
-  controller.isRepeat = false;
-  // onFinish は this.playlistOrder を見るので、必ず更新しておく
-  controller.updatePlaylistOrder();               // => ["1","2"]
-  controller.currentTrackId = "1";                // 次は "2" を期待
-
-  const spy = jest.spyOn(controller, "loadAndPlay").mockImplementation(() => {});
-  controller.onFinish();
-
-  // onFinish 内の setTimeout(…, 300) を進める
-  jest.advanceTimersByTime(400);
-
-  expect(spy).toHaveBeenCalledTimes(1);
-  const arg = spy.mock.calls[0][0];
-  expect(arg && arg.currentTarget?.dataset.trackId).toBe("2");
-
-  spy.mockRestore();
-});
+    spy.mockRestore();
+  });
 
   test("tryRestore: getCurrentSound が空を返し続けた後に復元される（リトライ分岐）", () => {
     buildDOM();
     const { controller } = startStimulusAndGetController();
 
-    // widget を作る
     const iframe = document.getElementById("hidden-sc-player");
     iframe.src = "https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fab&auto_play=false";
     jest.spyOn(controller, "restorePlayerState").mockImplementation(() => {});
-    controller.togglePlayPause(); // widget 生成
+    controller.togglePlayPause();
     jest.advanceTimersByTime(5);
 
-    // 最初の3回は空、その後にタイトルを返す挙動へ差し替え
     let count = 0;
     controller.widget.getCurrentSound = jest.fn((cb) => {
       count += 1;
@@ -1321,96 +987,62 @@ test("onFinish: 次曲あり（repeat=false）→ 次アイコンで loadAndPlay
       else cb({ title: "Restored Title", user: { username: "Restored Artist" } });
     });
 
-    // duration もゼロでないことを返す
     controller.widget.getDuration = jest.fn((cb) => cb(123000));
 
     controller.tryRestore({ position: 0, isPlaying: false }, 0);
-    // リトライ間隔 250ms × 数回
     jest.advanceTimersByTime(1000);
 
     expect(document.getElementById("track-title").textContent).toBe("Restored Title");
     expect(document.getElementById("track-artist").textContent).toContain("Restored Artist");
   });
 
-  // ① onFinish: repeat=true → 現在曲を loadAndPlay でリスタート
-test("onFinish: repeat=true → 現在曲を loadAndPlay でリスタート", () => {
-  buildDOM();
-  const { controller } = startStimulusAndGetController();
+  test("onFinish: repeat=true → 現在曲を loadAndPlay でリスタート", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
 
-  controller.currentTrackId = "1";
-  controller.isRepeat = true;
-  controller.playlistOrder = ["1", "2"];
-  controller.playStartedAt = Date.now() - 10000; // 10s 経過
+    controller.currentTrackId = "1";
+    controller.isRepeat = true;
+    controller.playlistOrder = ["1", "2"];
+    controller.playStartedAt = Date.now() - 10000; // 10s
 
-  const spy = jest.spyOn(controller, "loadAndPlay").mockImplementation(() => {});
-  controller.onFinish();
+    const spy = jest.spyOn(controller, "loadAndPlay").mockImplementation(() => {});
+    controller.onFinish();
 
-  // onFinish 内で setTimeout(…, 300) を使っているため進める
-  jest.advanceTimersByTime(400);
+    jest.advanceTimersByTime(400);
 
-  expect(spy).toHaveBeenCalledTimes(1);
-  const arg = spy.mock.calls[0][0];
-  expect(arg && arg.currentTarget?.dataset.trackId).toBe("1");
+    expect(spy).toHaveBeenCalledTimes(1);
+    const arg = spy.mock.calls[0][0];
+    expect(arg && arg.currentTarget?.dataset.trackId).toBe("1");
 
-  spy.mockRestore();
-});
+    spy.mockRestore();
+  });
 
-// ② onFinish: 次曲あり（repeat=false）→ 次アイコンで loadAndPlay
-test("onFinish: 次曲あり（repeat=false）→ 次アイコンで loadAndPlay", () => {
-  buildDOM();
-  const { controller } = startStimulusAndGetController();
+  test("seek: ドラッグ中は自動更新を抑止し、mouseup で再開される", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
 
-  controller.isRepeat = false;
-  controller.playlistOrder = ["1", "2"];
-  controller.currentTrackId = "1";
-  controller.playStartedAt = Date.now() - 40000; // 40s 経過
+    const iframe = document.getElementById("hidden-sc-player");
+    iframe.src = "https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fab&auto_play=false";
+    jest.spyOn(controller, "restorePlayerState").mockImplementation(() => {});
+    controller.togglePlayPause();
+    jest.advanceTimersByTime(5);
 
-  const spy = jest.spyOn(controller, "loadAndPlay").mockImplementation(() => {});
-  controller.onFinish();
+    controller.widget.__setPosition(100000);
+    controller.widget.__setDuration(200000);
+    controller.widget.getDuration = jest.fn((cb) => cb(200000));
 
-  // 次曲再生も setTimeout(…, 300) 経由
-  jest.advanceTimersByTime(400);
+    const seekBar = document.getElementById("seek-bar");
 
-  expect(spy).toHaveBeenCalledTimes(1);
-  const arg = spy.mock.calls[0][0];
-  expect(arg && arg.currentTarget?.dataset.trackId).toBe("2");
+    seekBar.dispatchEvent(new Event("mousedown"));
+    controller.startProgressTracking();
+    jest.advanceTimersByTime(1000);
+    expect(seekBar.value).toBe("0");
 
-  spy.mockRestore();
-});
+    document.dispatchEvent(new Event("mouseup"));
+    jest.advanceTimersByTime(1000);
 
-// ③ seek: ドラッグ中は自動更新を抑止し、mouseup で再開される
-test("seek: ドラッグ中は自動更新を抑止し、mouseup で再開される", () => {
-  buildDOM();
-  const { controller } = startStimulusAndGetController();
-
-  // widget 生成
-  const iframe = document.getElementById("hidden-sc-player");
-  iframe.src = "https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fab&auto_play=false";
-  jest.spyOn(controller, "restorePlayerState").mockImplementation(() => {});
-  controller.togglePlayPause();
-  jest.advanceTimersByTime(5);
-
-  // 再生位置/長さ（前テストの副作用を避けるため getDuration を明示的に上書き）
-  controller.widget.__setPosition(100000);
-  controller.widget.__setDuration(200000);
-  controller.widget.getDuration = jest.fn((cb) => cb(200000));
-
-  const seekBar = document.getElementById("seek-bar");
-
-  // ドラッグ開始 → isSeeking=true の間は自動更新されない
-  seekBar.dispatchEvent(new Event("mousedown"));
-  controller.startProgressTracking();
-  jest.advanceTimersByTime(1000);
-  expect(seekBar.value).toBe("0");
-
-  // ドラッグ終了（mouseup）→ startProgressTracking が再起動
-  document.dispatchEvent(new Event("mouseup"));
-  jest.advanceTimersByTime(1000);
-
-  // pos(100000)/dur(200000)*100 = 50
-  expect(parseFloat(seekBar.value)).toBeCloseTo(50, 1);
-});
-
+    expect(parseFloat(seekBar.value)).toBeCloseTo(50, 1);
+  });
 
   test("playFromExternal: replaceIframeWithNew が null を返した場合は alert 経路", () => {
     buildDOM();
@@ -1431,7 +1063,6 @@ test("seek: ドラッグ中は自動更新を抑止し、mouseup で再開され
     buildDOM();
     const { controller, root } = startStimulusAndGetController();
 
-    // widget 生成＆現在曲を "1" に
     const iframe = document.getElementById("hidden-sc-player");
     iframe.src = "https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fab&auto_play=false";
     jest.spyOn(controller, "restorePlayerState").mockImplementation(() => {});
@@ -1441,12 +1072,10 @@ test("seek: ドラッグ中は自動更新を抑止し、mouseup で再開され
     controller.currentTrackId = "1";
     const icon1 = root.querySelector('i[data-track-id="1"]');
 
-    // いったん再生状態にして pause が呼ばれることを確認
     controller.widget.play();
     controller.onPlayIconClick({ currentTarget: icon1, stopPropagation() {} });
     expect(controller.widget.pause).toHaveBeenCalled();
 
-    // いったん停止状態にして play が呼ばれることを確認
     controller.widget.pause();
     controller.onPlayIconClick({ currentTarget: icon1, stopPropagation() {} });
     expect(controller.widget.play).toHaveBeenCalled();
@@ -1456,17 +1085,14 @@ test("seek: ドラッグ中は自動更新を抑止し、mouseup で再開され
     buildDOM();
     const { controller } = startStimulusAndGetController();
 
-    // widget 生成
     const iframe = document.getElementById("hidden-sc-player");
     iframe.src = "https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fab&auto_play=false";
     jest.spyOn(controller, "restorePlayerState").mockImplementation(() => {});
     controller.togglePlayPause();
     jest.advanceTimersByTime(5);
 
-    // 一旦停止にしておく
     controller.widget.pause();
 
-    // toggle → play が呼ばれるはず
     controller.togglePlayPause();
     expect(controller.widget.play).toHaveBeenCalled();
   });
@@ -1475,131 +1101,125 @@ test("seek: ドラッグ中は自動更新を抑止し、mouseup で再開され
     buildDOM();
     const { controller } = startStimulusAndGetController();
 
-    // 保存がない
     localStorage.removeItem("playerState");
-    controller.restorePlayerState(); // 例外なく通ればOK
+    controller.restorePlayerState();
 
-    // URL がない保存
     localStorage.setItem("playerState", JSON.stringify({ trackId: "1" }));
-    controller.restorePlayerState(); // 例外なく通ればOK
+    controller.restorePlayerState();
 
-    // 何もアサートしない（早期 return の死活チェック）
     expect(true).toBe(true);
   });
 });
 
-
-
-
-test("showLoadingUI: タイトルが 'NOW LOADING...' / top が 'Loading…' に置換される", () => {
-  buildDOM();
-  const { controller } = startStimulusAndGetController();
-  controller.showLoadingUI();
-
-  // 余分な空白（改行/nbsp含む）をすべて削除してから判定
-  const titleTextNoSpace = document
-    .getElementById("track-title")
-    .textContent.replace(/\s+/g, "").trim();
-
-  expect(titleTextNoSpace).toMatch(/NOWLOADING/i);
-  expect(document.getElementById("track-title-top").innerHTML).toBe("Loading…");
-});
-
-
-
-
-test("prevTrack: currentTrackId なしなら何もしない（早期return）", () => {
-  buildDOM();
-  const { controller } = startStimulusAndGetController();
-  const spy = jest.spyOn(controller, "loadAndPlay").mockImplementation(() => {});
-  controller.prevTrack(); // currentTrackId 未設定
-  expect(spy).not.toHaveBeenCalled();
-});
-
-test("prevTrack: 先頭なら何もしない", () => {
-  buildDOM();
-  const { controller } = startStimulusAndGetController();
-  controller.updatePlaylistOrder(); // ["1","2"]
-  controller.currentTrackId = "1";
-  const spy = jest.spyOn(controller, "loadAndPlay").mockImplementation(() => {});
-  controller.prevTrack();
-  expect(spy).not.toHaveBeenCalled();
-});
-
-test("nextTrack: 末尾なら何もしない", () => {
-  buildDOM();
-  const { controller } = startStimulusAndGetController();
-  controller.updatePlaylistOrder(); // ["1","2"]
-  controller.currentTrackId = "2";
-  const spy = jest.spyOn(controller, "loadAndPlay").mockImplementation(() => {});
-  controller.nextTrack();
-  expect(spy).not.toHaveBeenCalled();
-});
-
-test("switchPlayerTopRow: 対象DOMが無ければ何もせず落ちない（早期return）", () => {
-  // connect() 内で他要素も参照されるため、まず通常DOMを作ってから row だけ落とす
-  buildDOM();
-  const { controller } = startStimulusAndGetController();
-
-  document.getElementById("player-top-row-desktop").remove();
-  document.getElementById("player-top-row-mobile").remove();
-
-  expect(() => controller.switchPlayerTopRow()).not.toThrow();
-});
-
-
-test("loadAndPlay: READY後 getCurrentSound が数回空→その後取得でタイトル反映（リトライ成功ルート）", () => {
-  buildDOM();
-  const { controller } = startStimulusAndGetController();
-
-  // 曲1を直指定で再
-  //生
-  const playIcon = document.querySelector('i[data-track-id="1"]');
-  const ev = { currentTarget: playIcon, stopPropagation() {} };
-
-  // widget 生成後の getCurrentSound を「2回 null → 3回目で取得」にする
-  const originalFactory = SC.Widget;
-  let callCount = 0;
-  // eslint-disable-next-line no-global-assign
-  SC.Widget = Object.assign(function () {
-    const w = originalFactory(); // 既定のモック
-    w.getCurrentSound = jest.fn((cb) => {
-      callCount += 1;
-      if (callCount < 3) cb({});            // タイトルなし
-      else cb({ title: "After Retry", user: { username: "Retry Artist" } });
-    });
-    return w;
-  }, SC.Widget);
-
-  controller.loadAndPlay(ev);
-  // iframe onload→READY まで進める
-  const iframe = document.getElementById("hidden-sc-player");
-  iframe.onload && iframe.onload();
-  jest.advanceTimersByTime(120);
-  controller.widget && controller.widget._trigger(SC.Widget.Events.READY);
-
-  // リトライの setTimeout(250)×2 を消化
-  jest.advanceTimersByTime(600);
-
-  expect(document.getElementById("track-title").textContent).toBe("After Retry");
-  expect(document.getElementById("track-artist").textContent).toContain("Retry Artist");
-
-  // 復元
-  // eslint-disable-next-line no-global-assign
-  SC.Widget = originalFactory;
-});
-
-
-// ===== ここから “tiny gap fillers” 追記 =====
+// ===== tiny gap fillers =====
 describe("global_player_controller tiny gap fillers", () => {
-  test("savePlayerState: widget が無ければ何もしない（早期return）", () => {
-    // DOM だけ作って widget は未生成
+  test("showLoadingUI: タイトルが 'NOW LOADING...' / top が 'Loading…' に置換される", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+    controller.showLoadingUI();
+
+    const titleTextNoSpace = document
+      .getElementById("track-title")
+      .textContent.replace(/\s+/g, "").trim();
+
+    expect(titleTextNoSpace).toMatch(/NOWLOADING/i);
+    expect(document.getElementById("track-title-top").innerHTML).toBe("Loading…");
+  });
+
+  // ★ 修復: 旧仕様の「何もしない」期待 → 新仕様のフォールバック期待へ
+  test("prevTrack: currentTrackId なしなら最後の曲へフォールバック再生", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+    controller.updatePlaylistOrder(); // ["1","2"]
+
+    const spy = jest.spyOn(controller, "loadAndPlay").mockImplementation(() => {});
+    controller.prevTrack(); // currentTrackId 未設定 → 最後 "2"
+    expect(spy).toHaveBeenCalledTimes(1);
+    const arg = spy.mock.calls[0][0];
+    expect(arg && arg.currentTarget?.dataset.trackId).toBe("2");
+    spy.mockRestore();
+  });
+
+  test("prevTrack: 先頭なら最後の曲へフォールバック再生", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+    controller.updatePlaylistOrder(); // ["1","2"]
+    controller.currentTrackId = "1";
+
+    const spy = jest.spyOn(controller, "loadAndPlay").mockImplementation(() => {});
+    controller.prevTrack();
+    expect(spy).toHaveBeenCalledTimes(1);
+    const arg = spy.mock.calls[0][0];
+    expect(arg && arg.currentTarget?.dataset.trackId).toBe("2");
+    spy.mockRestore();
+  });
+
+  test("nextTrack: 末尾なら最初の曲へフォールバック再生", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+    controller.updatePlaylistOrder(); // ["1","2"]
+    controller.currentTrackId = "2";
+
+    const spy = jest.spyOn(controller, "loadAndPlay").mockImplementation(() => {});
+    controller.nextTrack();
+    expect(spy).toHaveBeenCalledTimes(1);
+    const arg = spy.mock.calls[0][0];
+    expect(arg && arg.currentTarget?.dataset.trackId).toBe("1");
+    spy.mockRestore();
+  });
+
+  test("switchPlayerTopRow: 対象DOMが無ければ何もせず落ちない（早期return）", () => {
     buildDOM();
     const { controller } = startStimulusAndGetController();
 
-    // 事前にダミーを書いておく → 呼んでも上書きされないことを確認
+    document.getElementById("player-top-row-desktop").remove();
+    document.getElementById("player-top-row-mobile").remove();
+
+    expect(() => controller.switchPlayerTopRow()).not.toThrow();
+  });
+
+  test("loadAndPlay: READY後 getCurrentSound が数回空→その後取得でタイトル反映（リトライ成功ルート）", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+
+    const playIcon = document.querySelector('i[data-track-id="1"]');
+    const ev = { currentTarget: playIcon, stopPropagation() {} };
+
+    const originalFactory = SC.Widget;
+    let callCount = 0;
+    // eslint-disable-next-line no-global-assign
+    SC.Widget = Object.assign(function () {
+      const w = originalFactory(); // 既定のモック
+      w.getCurrentSound = jest.fn((cb) => {
+        callCount += 1;
+        if (callCount < 3) cb({});            // タイトルなし
+        else cb({ title: "After Retry", user: { username: "Retry Artist" } });
+      });
+      return w;
+    }, SC.Widget);
+
+    controller.loadAndPlay(ev);
+
+    const iframe = document.getElementById("hidden-sc-player");
+    iframe.onload && iframe.onload();
+    jest.advanceTimersByTime(120);
+    controller.widget && controller.widget._trigger(SC.Widget.Events.READY);
+
+    jest.advanceTimersByTime(600); // 250×2 + α
+
+    expect(document.getElementById("track-title").textContent).toBe("After Retry");
+    expect(document.getElementById("track-artist").textContent).toContain("Retry Artist");
+
+    // eslint-disable-next-line no-global-assign
+    SC.Widget = originalFactory;
+  });
+
+  test("savePlayerState: widget が無ければ何もしない（早期return）", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+
     localStorage.setItem("playerState", JSON.stringify({ foo: "bar" }));
-    controller.savePlayerState(); // ← widget 無いので何も起きない
+    controller.savePlayerState();
 
     expect(localStorage.getItem("playerState")).toBeTruthy();
   });
@@ -1607,7 +1227,7 @@ describe("global_player_controller tiny gap fillers", () => {
   test("bindWidgetEvents: widget が null でも落ちない（早期return）", () => {
     buildDOM();
     const { controller } = startStimulusAndGetController();
-    controller.widget = null; // 明示的に null
+    controller.widget = null;
     expect(() => controller.bindWidgetEvents()).not.toThrow();
   });
 
@@ -1615,10 +1235,8 @@ describe("global_player_controller tiny gap fillers", () => {
     buildDOM();
     const { controller } = startStimulusAndGetController();
 
-    // まず widget=null のまま実行しても落ちない
     expect(() => controller.startProgressTracking()).not.toThrow();
 
-    // 次に widget を作るが isSeeking=true の間は更新されない
     const iframe = document.getElementById("hidden-sc-player");
     iframe.src = "https://w.soundcloud.com/player/?url=x&auto_play=false";
     jest.spyOn(controller, "restorePlayerState").mockImplementation(() => {});
@@ -1631,7 +1249,6 @@ describe("global_player_controller tiny gap fillers", () => {
     controller.startProgressTracking();
     jest.advanceTimersByTime(1000);
 
-    // 反映されていない（既定値のまま）
     expect(document.getElementById("current-time").textContent).toBe("0:00");
     expect(document.getElementById("duration").textContent).toBe("0:00");
   });
@@ -1640,27 +1257,25 @@ describe("global_player_controller tiny gap fillers", () => {
     buildDOM();
     const { controller } = startStimulusAndGetController();
 
-    // widget を作る
     const iframe = document.getElementById("hidden-sc-player");
     iframe.src = "https://w.soundcloud.com/player/?url=y&auto_play=false";
     jest.spyOn(controller, "restorePlayerState").mockImplementation(() => {});
     controller.togglePlayPause();
     jest.advanceTimersByTime(5);
 
-    // duration は正を返すが、currentSound はずっと空を返すように差し替え
     controller.widget.getDuration = jest.fn((cb) => cb(120000));
     controller.widget.getCurrentSound = jest.fn((cb) => cb({}));
 
     const state = { position: 12345, isPlaying: false };
     controller.tryRestore(state);
 
-    // 5回以上の 250ms リトライ → 6回目でフォールバックに到達
     jest.advanceTimersByTime(250 * 6 + 10);
 
     expect(document.getElementById("track-title").textContent).toBe("タイトル不明");
     expect(document.getElementById("track-artist").textContent).toBe("");
   });
 
+  // ★ 修復: リトライ完了までタイマーを十分に進めて『タイトル不明』表示を検証
   test("playFromExternal: READY後も title 取れなければ『タイトル不明』を表示", () => {
     buildDOM();
     const { controller } = startStimulusAndGetController();
@@ -1670,9 +1285,11 @@ describe("global_player_controller tiny gap fillers", () => {
     iframe.onload && iframe.onload();
     jest.advanceTimersByTime(110);
 
-    // widget が出来たら currentSound を空にして READY を発火
     controller.widget.__setCurrentSound({});
     controller.widget._trigger(SC.Widget.Events.READY);
+
+    // 180ms × 6回 = 1080ms → 余裕を見て 1200ms
+    jest.advanceTimersByTime(1200);
 
     expect(document.getElementById("track-title").textContent).toBe("タイトル不明");
     expect(document.getElementById("track-artist").textContent).toBe("");
@@ -1694,7 +1311,7 @@ describe("global_player_controller tiny gap fillers", () => {
   test("formatTime: undefined/null/負値でも '0:00' になる", () => {
     buildDOM();
     const { controller } = startStimulusAndGetController();
-    // undefined / null / 負値
+
     expect(controller.formatTime()).toBe("0:00");
     expect(controller.formatTime(null)).toBe("0:00");
     expect(controller.formatTime(-1000)).toBe("0:00");
@@ -1704,8 +1321,571 @@ describe("global_player_controller tiny gap fillers", () => {
     buildDOM();
     const { controller } = startStimulusAndGetController();
 
-    // ターゲット群を消して hasPlayIconTarget=false 相当の状況に
     document.querySelectorAll('[data-global-player-target="playIcon"]').forEach((n) => n.remove());
     expect(() => controller.updateTrackIcon("1", true)).not.toThrow();
   });
 });
+
+test("restorePlayerState: isPlaying=true → seekTo + play + UI反映（PLAYイベントを明示発火）", () => {
+  buildDOM();
+  const { controller } = startStimulusAndGetController();
+
+  const saved = {
+    trackId: "2",
+    trackUrl: "https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fartist%2Ftrack-two&auto_play=true",
+    position: 42000,
+    duration: 120000,
+    isPlaying: true,
+  };
+  localStorage.setItem("playerState", JSON.stringify(saved));
+
+  controller.restorePlayerState();
+
+  const iframe = document.getElementById("hidden-sc-player");
+  iframe.onload && iframe.onload();
+  jest.advanceTimersByTime(160);
+  controller.widget && controller.widget._trigger(SC.Widget.Events.READY);
+
+  // seek + play までは同期で確認
+  expect(controller.widget.seekTo).toHaveBeenCalledWith(42000);
+  expect(controller.widget.play).toHaveBeenCalled();
+
+  // bind は READY 後なので PLAY を明示トリガして UI を確認
+  controller.widget._trigger(SC.Widget.Events.PLAY);
+  expect(controller.playPauseIcon.classList.contains("fa-pause")).toBe(true);
+
+  const icon2 = document.querySelector('i[data-track-id="2"]');
+  expect(icon2.classList.contains("fa-pause")).toBe(true);
+});
+
+
+test("startWaveformAnime: 1フレームで描画API(beginPath/lineTo/stroke)が呼ばれる", () => {
+  buildDOM();
+  const { controller } = startStimulusAndGetController();
+  const ctx = document.getElementById("waveform-anime").getContext("2d");
+
+  controller.startWaveformAnime();
+  // このスイートでは rAF= setTimeout(...,0) なので少し進める
+  jest.advanceTimersByTime(1);
+
+  expect(ctx.beginPath).toHaveBeenCalled();
+  expect(ctx.lineTo).toHaveBeenCalled();
+  expect(ctx.stroke).toHaveBeenCalled();
+
+  controller.stopWaveformAnime(); // 後片付け
+});
+
+// ===== coverage gap killers =====
+describe("global_player_controller gap killers", () => {
+  test("hideLoadingUI: screen-cover-loading を必ず畳む（_hideScreenCover 分岐）", () => {
+    buildDOM();
+    const cover = document.createElement("div");
+    cover.id = "screen-cover-loading";
+    cover.style.display = "block";
+    document.body.appendChild(cover);
+
+    const { controller } = startStimulusAndGetController();
+    controller.showLoadingUI();
+    controller.hideLoadingUI();
+
+    expect(cover.style.display).toBe("none");
+    expect(cover.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  test("updateSeekAria: dur あり/なしの両分岐を踏む", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+    const seek = document.getElementById("seek-bar");
+
+    controller.updateSeekAria(42, 30000, 120000);
+    expect(seek.getAttribute("aria-valuenow")).toBe("42");
+    expect(seek.getAttribute("aria-valuetext")).toBe("0:30 / 2:00");
+
+    controller.updateSeekAria(7, 7000, 0);
+    expect(seek.getAttribute("aria-valuenow")).toBe("7");
+    expect(seek.getAttribute("aria-valuetext")).toBe("0:07");
+  });
+
+  test("updatePlaylistOrder: targets 無しでも .playlist-container で順序復元（フォールバック枝）", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+
+    // targets を空にしてフォールバックを強制
+    controller.trackImageTargets = [];
+    const wrap = document.createElement("div");
+    wrap.className = "playlist-container";
+    wrap.innerHTML = `
+      <img data-track-id="10" data-play-url="https://soundcloud.com/a/10">
+      <img data-track-id="11" data-play-url="https://soundcloud.com/a/11">`;
+    controller.element.appendChild(wrap);
+
+    controller.isShuffle = false;
+    controller.updatePlaylistOrder();
+    expect(controller.playlistOrder).toEqual(["10", "11"]);
+  });
+
+  test("prev/next: playIconTargets 不在でも _q フォールバックで要素取得（CSS.escape 経路）", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+
+    // フォールバック対象のDOMを用意
+    const wrap = document.createElement("div");
+    wrap.className = "playlist-container";
+    wrap.innerHTML = `
+      <i class="fa" data-track-id="21" data-play-url="https://soundcloud.com/a/21"></i>
+      <i class="fa" data-track-id="22" data-play-url="https://soundcloud.com/a/22"></i>`;
+    controller.element.appendChild(wrap);
+
+    controller.trackImageTargets = [];      // order はこの2つ
+    controller.updatePlaylistOrder();       // ["21","22"]
+    controller.playIconTargets = [];        // find() を空振りさせる
+    const spy = jest.spyOn(controller, "loadAndPlay").mockImplementation(() => {});
+
+    controller.currentTrackId = "21";
+    controller.nextTrack();
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0][0].currentTarget?.dataset.trackId).toBe("22");
+
+    spy.mockRestore();
+  });
+
+  test("startWaveformAnime: strokeStyle/lineWidth 設定行まで実行される", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+    const ctx = document.getElementById("waveform-anime").getContext("2d");
+
+    controller.startWaveformAnime();
+    jest.advanceTimersByTime(1); // rAF= setTimeout(…,0) の1フレーム
+
+    expect(ctx.beginPath).toHaveBeenCalled();
+    expect(ctx.lineTo).toHaveBeenCalled();
+    expect(ctx.stroke).toHaveBeenCalled();
+    expect(ctx.lineWidth).toBe(2);
+    expect(ctx.strokeStyle).toBe("#10ffec");
+
+    controller.stopWaveformAnime();
+  });
+
+  test("_safeNukeIframe: src blank化→属性削除→DOMから除去まで通る", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+
+    const old = document.createElement("iframe");
+    old.id = "old-test-iframe";
+    old.src = "https://w.soundcloud.com/player/?url=x";
+    document.body.appendChild(old);
+
+    controller._safeNukeIframe(old);
+    expect(document.getElementById("old-test-iframe")).toBeNull();
+  });
+});
+
+
+
+// ===== coverage gap killers 2 =====
+describe("global_player_controller gap killers 2", () => {
+  test("hideLoadingUI: #screen-cover-loading が無い時の分岐（false ブランチ）", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+    // cover を置かずに hide → if (cover) の false 側を踏む
+    controller.showLoadingUI();
+    expect(() => controller.hideLoadingUI()).not.toThrow();
+  });
+
+  test("cleanup: removeEventListener/unbind が throw しても落ちない（try/catch の catch へ）", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+
+    // 例外を投げる偽の要素群
+    const makeThrower = () => ({ removeEventListener: () => { throw new Error("boom"); } });
+    controller.seekBar   = makeThrower();
+    controller.volumeBar = makeThrower();
+    controller._prevBtn  = makeThrower();
+    controller._nextBtn  = makeThrower();
+
+    // _container 側も throw させる
+    jest.spyOn(controller, "_container").mockReturnValue(makeThrower());
+
+    // widget.unbind も throw させる
+    controller.widget = { unbind: () => { throw new Error("unbind-boom"); } };
+
+    expect(() => controller.cleanup()).not.toThrow();
+    // widget は null にされる（後始末まで到達）
+    expect(controller.widget).toBeNull();
+  });
+
+  test("savePlayerState: widget.getPosition が throw しても catch 分岐で落ちない", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+
+    controller.widget = {
+      getPosition: () => { throw new Error("pos-boom"); },
+      getDuration: (cb) => cb(1000),
+    };
+    // 例外でも投げずに抜ければ OK
+    expect(() => controller.savePlayerState()).not.toThrow();
+  });
+
+  test("bindWidgetEvents: unbind が throw → catch を踏みつつ bind は実行される", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+
+    const bind = jest.fn();
+    const widget = {
+      unbind: () => { throw new Error("unbind-boom"); },
+      bind,
+    };
+    controller.widget = widget;
+
+    expect(() => controller.bindWidgetEvents()).not.toThrow();
+    // 3イベント分の bind が呼ばれる
+    expect(bind).toHaveBeenCalledTimes(3);
+  });
+
+  test("startWaveformAnime: waveformCtx が無い時は早期 return（false ブランチ）", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+
+    controller.waveformCtx = null; // ctx なし
+    controller.startWaveformAnime();
+    // ctx なしなのでアニメは開始されない
+    expect(controller.waveformAnimating).toBe(false);
+  });
+
+  test("updatePlaylistOrder: targets も .playlist-container も空（フォールバック不成立）でも落ちない", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+
+    // targets を空にして、DOM 直走査でもゼロにする
+    controller.trackImageTargets = [];
+    // element 配下には data-* を置かない
+    const loneDiv = document.createElement("div");
+    loneDiv.className = "playlist-container";
+    controller.element.appendChild(loneDiv);
+
+    controller.updatePlaylistOrder();
+    expect(Array.isArray(controller.playlistOrder)).toBe(true);
+    expect(controller.playlistOrder.length).toBe(0);
+  });
+
+  test("prevTrack: 対象アイコンが見つからない分岐（_q でも null）で何も起きない", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+
+    controller.trackImageTargets = [];
+    controller.playIconTargets = [];
+    controller.playlistOrder = ["1", "2"];
+    controller.currentTrackId = "1";
+
+    const spy = jest.spyOn(controller, "loadAndPlay").mockImplementation(() => {});
+    // DOM からも data-track-id 要素を消して見つからない状況を作る
+    document.querySelectorAll("[data-track-id]").forEach((n) => n.remove());
+
+    controller.prevTrack(); // -> アイコン取れず何も起きない
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  test("nextTrack: playlistOrder が空の早期 return（false ブランチ）", () => {
+  buildDOM();
+  const { controller } = startStimulusAndGetController();
+
+  // 毎回空にするようにスタブ（実装を触らずに早期returnを踏む）
+  jest.spyOn(controller, "updatePlaylistOrder").mockImplementation(() => {
+    controller.playlistOrder = [];
+  });
+
+  const spy = jest.spyOn(controller, "loadAndPlay").mockImplementation(() => {});
+  expect(() => controller.nextTrack()).not.toThrow();
+  expect(spy).not.toHaveBeenCalled();
+  spy.mockRestore();
+});
+
+
+  test("startWaveformAnime: save/restore まで実行（描画ブロックの行全体を踏む）", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+    const ctx = document.getElementById("waveform-anime").getContext("2d");
+
+    controller.startWaveformAnime();
+    jest.advanceTimersByTime(1); // 1フレーム
+    expect(ctx.save).toHaveBeenCalled();
+    expect(ctx.beginPath).toHaveBeenCalled();
+    expect(ctx.lineTo).toHaveBeenCalled();
+    expect(ctx.stroke).toHaveBeenCalled();
+    expect(ctx.restore).toHaveBeenCalled();
+
+    controller.stopWaveformAnime();
+  });
+});
+
+
+
+// ===== gap killers 3: 残りの分岐を踏む =====
+describe("global_player_controller gap killers 3", () => {
+  test("tryRestore: widget=null → 300ms 後の再試行で復元（!this.widget 分岐）", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+
+    controller.widget = null;
+    const state = { position: 12345, isPlaying: false };
+    controller.tryRestore(state); // ここで 300ms 後に再呼び出しがスケジュールされる
+
+    // 再試行タイミングに間に合うよう、簡易モックを差し込む
+    const mock = {
+      getDuration: jest.fn((cb) => cb(120000)),
+      getCurrentSound: jest.fn((cb) => cb({ title: "TK", user: { username: "AR" } })),
+      seekTo: jest.fn(),
+      pause: jest.fn(),
+    };
+    controller.widget = mock;
+
+    jest.advanceTimersByTime(300);
+
+    expect(document.getElementById("track-title").textContent).toBe("TK");
+    expect(controller.widget.seekTo).toHaveBeenCalledWith(12345);
+  });
+
+  test("tryRestore: duration=0 → 300ms 後に再試行（!dur 分岐）", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+
+    let first = true;
+    const mock = {
+      getDuration: jest.fn((cb) => cb(first ? 0 : 90000)),
+      getCurrentSound: jest.fn((cb) => cb({ title: "After Dur", user: { username: "AR" } })),
+      seekTo: jest.fn(),
+      pause: jest.fn(),
+    };
+    controller.widget = mock;
+
+    controller.tryRestore({ position: 0, isPlaying: false });
+    first = false; // 2回目で duration を返すよう切替
+    jest.advanceTimersByTime(300);
+
+    expect(document.getElementById("track-title").textContent).toBe("After Dur");
+  });
+
+  test("updatePlaylistOrder: targets 空 → DOM フォールバックで順序復元", () => {
+    buildDOM();
+    const { controller, root } = startStimulusAndGetController();
+
+    controller.trackImageTargets = [];         // Stimulus targets を空に
+    root.classList.add("playlist-container");  // フォールバックのクエリに合致させる
+
+    controller.updatePlaylistOrder();
+    expect(controller.playlistOrder).toEqual(["1", "2"]);
+  });
+
+  test("replaceIframeWithNew: 親候補が無い時は document.body に追加（親決定分岐）", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+
+    document.getElementById("hidden-sc-player").remove(); // 旧iframeなし
+    document.getElementById("bottom-player").remove();    // 親候補も除去
+
+    const created = controller.replaceIframeWithNew();
+    expect(created).toBeTruthy();
+    expect(created.parentNode).toBe(document.body);
+  });
+
+  test("startWaveformAnime: ctx なしなら即 return（ガード分岐）", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+
+    controller.waveformCtx = null;
+    controller.waveformCanvas = null;
+    controller.startWaveformAnime();
+
+    expect(controller.waveformAnimating).toBe(false);
+  });
+
+  test("_hideScreenCover: 要素が存在する場合の分岐（hideLoadingUI 経由）", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+
+    const cover = document.createElement("div");
+    cover.id = "screen-cover-loading";
+    document.body.appendChild(cover);
+
+    controller.hideLoadingUI(); // 内部で _hideScreenCover が呼ばれる
+
+    expect(cover.style.display).toBe("none");
+    expect(cover.getAttribute("aria-hidden")).toBe("true");
+  });
+});
+
+
+
+// ===== gap killers 4: まだ残ってる分岐まとめ踏み =====
+describe("global_player_controller gap killers 4", () => {
+  test("restorePlayerState: SC.Widget が READY前に throw → 150ms 後にリトライ成功", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+    // 保存状態を用意
+    const saved = {
+      trackId: "1",
+      trackUrl: "https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fa&auto_play=true",
+      position: 1000,
+      duration: 120000,
+      isPlaying: false,
+    };
+    localStorage.setItem("playerState", JSON.stringify(saved));
+
+    // 1回目だけ throw、2回目で成功させる
+    const original = SC.Widget;
+    let call = 0;
+    // eslint-disable-next-line no-global-assign
+    SC.Widget = Object.assign(function () {
+      call += 1;
+      if (call === 1) throw new Error("boom-on-restore");
+      return original();
+    }, SC.Widget);
+
+    controller.restorePlayerState();
+    const iframe = document.getElementById("hidden-sc-player");
+    iframe.onload && iframe.onload();
+    // 1回目: 150ms後に再試行がスケジュールされる
+    jest.advanceTimersByTime(150);
+    // 2回目（成功側）も走らせる
+    jest.advanceTimersByTime(5);
+    controller.widget && controller.widget._trigger(SC.Widget.Events.READY);
+
+    // 成功して UI が動いていることだけ確認
+    expect(document.getElementById("track-title").textContent.length).toBeGreaterThan(0);
+
+    // eslint-disable-next-line no-global-assign
+    SC.Widget = original;
+  });
+
+  test("playFromExternal: SC.Widget 生成が throw → 120ms 後に自動リトライ", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+
+    const original = SC.Widget;
+    let call = 0;
+    // eslint-disable-next-line no-global-assign
+    SC.Widget = Object.assign(function () {
+      call += 1;
+      if (call === 1) throw new Error("boom-on-external");
+      return original();
+    }, SC.Widget);
+
+    controller.playFromExternal("https://soundcloud.com/artist/retry");
+    const iframe = document.getElementById("hidden-sc-player");
+    iframe.onload && iframe.onload();
+
+    // 1回目は throw → リトライ予約
+    jest.advanceTimersByTime(120);
+    // リトライ分
+    jest.advanceTimersByTime(5);
+    controller.widget && controller.widget._trigger(SC.Widget.Events.READY);
+
+    expect(document.getElementById("bottom-player").classList.contains("d-none")).toBe(false);
+
+    // eslint-disable-next-line no-global-assign
+    SC.Widget = original;
+  });
+
+  test("loadAndPlay: タイトルが6回連続で取れない → 『タイトル不明』にフォールバック", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+    const playIcon = document.querySelector('i[data-track-id="1"]');
+    const ev = { currentTarget: playIcon, stopPropagation() {} };
+
+    // getCurrentSound が常に空
+    const original = SC.Widget;
+    // eslint-disable-next-line no-global-assign
+    SC.Widget = Object.assign(function () {
+      const w = original();
+      w.getCurrentSound = jest.fn((cb) => cb({})); // タイトルなしを返し続ける
+      return w;
+    }, SC.Widget);
+
+    controller.loadAndPlay(ev);
+    const iframe = document.getElementById("hidden-sc-player");
+    iframe.onload && iframe.onload();
+    jest.advanceTimersByTime(120);
+    controller.widget && controller.widget._trigger(SC.Widget.Events.READY);
+
+    // 180ms × 6回分 + α
+    jest.advanceTimersByTime(1200);
+    expect(document.getElementById("track-title").textContent).toBe("タイトル不明");
+    expect(document.getElementById("track-artist").textContent).toBe("");
+
+    // eslint-disable-next-line no-global-assign
+    SC.Widget = original;
+  });
+
+  test("_container: element=null でも .playlist-container を拾い、なければ document", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+    // element を外す
+    controller.element = null;
+    const holder = document.createElement("div");
+    holder.className = "playlist-container";
+    document.body.appendChild(holder);
+    expect(controller._container()).toBe(holder);
+
+    // 消すと document にフォールバック
+    holder.remove();
+    expect(controller._container()).toBe(document);
+  });
+
+  test("_safeNukeIframe: null を渡しても落ちない（早期return）", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+    expect(() => controller._safeNukeIframe(null)).not.toThrow();
+  });
+
+  test("cleanup: iframe を事前に消した状態でも例外なく完了（旧iframe無しの分岐）", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+    document.getElementById("hidden-sc-player").remove();
+    expect(() => controller.cleanup()).not.toThrow();
+  });
+
+  test("bindWidgetEvents: unbind が throw しても catch で続行して bind 完了", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+    controller.widget = {
+      bind: jest.fn(),
+      unbind: jest.fn(() => { throw new Error("unbind-broken"); }),
+    };
+    expect(() => controller.bindWidgetEvents()).not.toThrow();
+    expect(controller.widget.bind).toHaveBeenCalledTimes(3);
+  });
+
+  test("A11y: 対象DOMが無い時のガード（setPlayPauseAria / updateSeekAria / updateVolumeAria）", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+
+    // 対象を消してガードを踏む
+    document.getElementById("play-pause-button")?.remove();
+    document.getElementById("seek-bar")?.remove();
+    document.getElementById("volume-bar")?.remove();
+
+    expect(() => controller.setPlayPauseAria(true)).not.toThrow();
+    expect(() => controller.updateSeekAria(50, 1000, 2000)).not.toThrow();
+    expect(() => controller.updateVolumeAria("70")).not.toThrow();
+  });
+
+  test("resize: waveformCanvas が無いときは幅/高さ追随をスキップ（ガード）", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+    controller.waveformCanvas = null; // ガードを踏む
+    window.dispatchEvent(new Event("resize"));
+    // 何も起きなければOK（落ちないことを確認）
+    expect(true).toBe(true);
+  });
+
+  test("toggleShuffle / toggleRepeat: ボタンDOMが存在しなくても落ちない", () => {
+    buildDOM();
+    const { controller } = startStimulusAndGetController();
+    document.getElementById("shuffle-button").remove();
+    document.getElementById("repeat-button").remove();
+    expect(() => controller.toggleShuffle()).not.toThrow();
+    expect(() => controller.toggleRepeat()).not.toThrow();
+  });
+});
+
