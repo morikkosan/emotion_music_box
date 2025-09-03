@@ -28,7 +28,7 @@ describe("controllers/index.js registration", () => {
   });
 
   test("すべてのコントローラが期待どおりに1回ずつ register される", async () => {
-    // 期待している登録ID一覧（追加: flash-then-redirect）
+    // 期待している登録ID一覧（tap-guard を追加）
     const expected = [
       "modal",
       "search-music",
@@ -49,7 +49,8 @@ describe("controllers/index.js registration", () => {
       "redirect",
       "comment-update",
       "mobile-footer",
-      "flash-then-redirect", // ← 追加
+      "flash-then-redirect",
+      "tap-guard", // ← これを追加
     ];
 
     const Stim = require("@hotwired/stimulus");
