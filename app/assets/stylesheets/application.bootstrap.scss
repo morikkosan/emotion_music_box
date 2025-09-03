@@ -238,3 +238,51 @@ html.preload body { visibility: visible !important; }
     transform: translateZ(0);
   }
 }
+
+/* ===== モバイルスクロール安定化 追加（9/3）— ここから ===== */
+
+/* 1) 上端オーバースクロールの連鎖を止める（Pull-to-Refresh抑止） */
+html, body {
+  overscroll-behavior-y: none;
+}
+
+/* 2) view-switcher配下のモバイルラッパは高さ固定＋親はスクロールさせない */
+[data-controller~="view-switcher"] #mobile-view {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* 旧端末フォールバック */
+@supports not (height: 100dvh) {
+  [data-controller~="view-switcher"] #mobile-view { height: 100vh; }
+}
+
+/* 3) フッターと上部ヘッダ分を変数化（値は実UIに合わせて調整） */
+:root {
+  --mobile-footer-h: 64px;    /* ← フッターの実高さに合わせる（例: 56〜80px） */
+  --mobile-headroom: 140px;   /* ← ロゴ/タイトル/ユーザーバー等の上部余白合計 */
+}
+
+/* 4) Turbo Frameだけを縦スクロール可能にして、Pull-to-Refreshを防ぐ */
+[data-controller~="view-switcher"] turbo-frame#logs_list_mobile {
+  display: block;
+  height: calc(100dvh - var(--mobile-footer-h) - var(--mobile-headroom));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain; /* 上端での連鎖スクロールを遮断 */
+}
+
+/* 5) 念のため内部のリスト領域にも連鎖遮断 */
+[data-controller~="view-switcher"] .mobile-content {
+  overscroll-behavior-y: contain;
+}
+
+/* 6) 誤タップ軽減（フッターナビ） */
+.mobile-footer a,
+.mobile-footer button {
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: pan-y;
+}
+
+/* ===== モバイルスクロール安定化 追加 — ここまで ===== */
