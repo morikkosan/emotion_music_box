@@ -21,6 +21,7 @@ import RedirectController from "./redirect_controller";
 import CommentUpdateController from "./comment_update_controller";
 import MobileFooterController from "./mobile_footer_controller";
 import FlashThenRedirectController from "./flash_then_redirect_controller";
+import TapGuardController from "./tap_guard_controller"; // 追加
 
 const application = Application.start();
 
@@ -45,3 +46,4 @@ application.register("redirect", RedirectController);
 application.register("comment-update", CommentUpdateController);
 application.register("mobile-footer", MobileFooterController);
 application.register("flash-then-redirect", FlashThenRedirectController);
+application.register("tap-guard", TapGuardController);
