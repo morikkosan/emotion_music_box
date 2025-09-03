@@ -23,7 +23,7 @@ RSpec.describe User, type: :model do
     expect(user).to be_valid
   end
 
-  it "名前が未入力でも無効になること" do
+  it "名前が未入力なら無効になること" do
     user.name = nil
     expect(user).not_to be_valid
   end
@@ -60,6 +60,7 @@ RSpec.describe User, type: :model do
   end
 
   it "profile_completedの初期値はfalseであること" do
+    # ※ カラムが存在しない場合はこのテストは削除してください
     new_user = User.new
     expect(new_user.profile_completed).to be_falsey
   end
@@ -85,9 +86,27 @@ RSpec.describe User, type: :model do
 
     it "provider/uidが一致するユーザーを返す（既存ユーザーの場合）" do
       # email/uid/providerが一致する既存userを先に作る
-      existing = create(:user, provider: 'soundcloud', uid: '999999', email: '999999@soundcloud.com', name: 'sound_')
+      existing = create(:user,
+                        provider: 'soundcloud',
+                        uid: '999999',
+                        email: '999999@soundcloud.com',
+                        name: '手動名') # ← プロバ名と違う手動名にしておく
       user = User.from_omniauth(auth_hash)
       expect(user.id).to eq(existing.id)
+    end
+
+    it "既存ユーザーでは手動で設定した name を上書きしない" do
+      # 既存ユーザーの手動名（6文字以内、プロバ名の 'sound_' と違う値）
+      existing = create(:user,
+                        provider: 'soundcloud',
+                        uid: '999999',
+                        email: '999999@soundcloud.com',
+                        name: '手動名')
+
+      # プロバイダからは 'sound_user' が来る（6文字トリムで 'sound_'）
+      User.from_omniauth(auth_hash)
+
+      expect(existing.reload.name).to eq('手動名')
     end
 
     it "provider/uidが存在しない場合は新規ユーザーを作成する" do
@@ -96,9 +115,9 @@ RSpec.describe User, type: :model do
       }.to change { User.count }.by(1)
     end
 
-    it "取得したnickname, avatar_urlを保存すること" do
+    it "初回作成時はプロバイダ名（6文字にトリム）を user.name に採用する" do
       user = User.from_omniauth(auth_hash)
-      expect(user.name).to eq("sound_") # 6文字まで
+      expect(user.name).to eq("sound_")  # 'sound_user'[0,6]
       expect(user.avatar_url).to be_nil  # 現仕様ならnil
     end
   end
