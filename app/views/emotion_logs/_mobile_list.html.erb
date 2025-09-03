@@ -1,4 +1,13 @@
 <%# ----------- ログリスト本体（ページ共通。チェックボックスはお気に入りだけ） ----------- %>
+<%# ポイント:
+  # - 渡された logs をそのまま描画（フィルタはコントローラ責務）
+  # - タグリンクは request.query_parameters を引き継ぐ
+  # - フレームIDは "#{dom_id(log)}_mobile" のまま
+%>
+
+<% on_bookmarks = @bookmark_page.present? %>
+<% base_params  = request.query_parameters.merge(view: "mobile") %>
+
 <% logs.each do |log| %>
   <%= turbo_frame_tag "#{dom_id(log)}_mobile" do %>
     <div class="card mb-2 shadow-sm mobile-list-card">
@@ -6,26 +15,23 @@
 
         <!-- 上段：日付とタグ -->
         <div class="d-flex justify-content-between align-items-center mb-1">
-          <%# ★ チェックボックス（お気に入りページの時だけ） %>
-          <% if @bookmark_page.present? %>
+          <% if on_bookmarks %>
             <input type="checkbox"
                    name="selected_logs[]"
                    value="<%= log.id %>"
                    class="playlist-check me-3 playlist-check-accent"
                    data-bookmark-target="playlistCheckbox">
           <% end %>
-          <small class="mobile-list-date"><%= log.created_at.strftime("%Y/%m/%d %H:%M") %></small>
+
+          <small class="mobile-list-date">
+            <%= log.created_at.in_time_zone('Tokyo').strftime('%Y/%m/%d %H:%M') %>
+          </small>
+
           <div>
             <% log.tags.each do |tag| %>
               <% if user_signed_in? %>
-                <% mobile_link_params = request.query_parameters.merge(view: "mobile", genre: tag.name) %>
-                <% tag_link_path =
-                     if @bookmark_page.present?
-                       bookmarks_emotion_logs_path(mobile_link_params)
-                     else
-                       emotion_logs_path(mobile_link_params)
-                     end %>
-
+                <% tag_params    = base_params.merge(genre: tag.name) %>
+                <% tag_link_path = on_bookmarks ? bookmarks_emotion_logs_path(tag_params) : emotion_logs_path(tag_params) %>
                 <%= link_to tag.name,
                             tag_link_path,
                             class: "badge bg-primary text-light mobile-list-tag",
@@ -51,18 +57,22 @@
                         data: { turbo: false } %>
           <% end %>
         </h6>
+
         <p class="mb-1 mobile-list-desc"><%= log.description.presence || "（一言はありません）" %></p>
 
-        <!-- 🎵 ジャケット画像・再生ボタン -->
+        <!-- 🎵 ジャケット画像・再生ボタン（CLS対策でアスペクト比固定） -->
         <div class="music-art-box position-relative my-2">
-          <%= image_tag log.music_art_url || "placeholder.png",
-            alt: "ジャケット画像",
-            class: "music-art-img",
-            data: {
-              "play-url"             => log.music_url,
-              "global-player-target" => "trackImage",
-              "track-id"             => log.id
-            } %>
+          <%= image_tag(
+                log.music_art_url || "placeholder.png",
+                alt: "ジャケット画像",
+                class: "music-art-img",
+                width: 300, height: 300,
+                data: {
+                  "play-url"             => log.music_url,
+                  "global-player-target" => "trackImage",
+                  "track-id"             => log.id
+                }
+              ) %>
           <i class="fa fa-play play-overlay-icon"
              data-action="click->global-player#onPlayIconClick"
              data-global-player-target="playIcon"
@@ -75,18 +85,19 @@
             <%= image_tag "comment_icon.webp", alt: "コメント数", class: "mobile-list-comment-icon" %>
             <span class="ms-1 text-white mobile-list-comment-count"><%= log.comments_count %></span>
           </div>
+
           <% if current_user == log.user %>
             <%= form_with url: emotion_log_path(log),
-                  method: :delete,
-                  data: { turbo_confirm: "本当に削除しますか？" },
-                  class: "d-inline" do %>
-              <%= submit_tag "削除",
-                    class: "btn btn-outline-danger btn-sm px-2 py-1 mobile-list-delete-btn" %>
+                          method: :delete,
+                          data: { turbo_confirm: "本当に削除しますか？" },
+                          class: "d-inline" do %>
+              <%= submit_tag "削除", class: "btn btn-outline-danger btn-sm px-2 py-1 mobile-list-delete-btn" %>
             <% end %>
           <% else %>
             <%= render "bookmark_buttons", emotion_log: log %>
           <% end %>
         </div>
+
       </div>
     </div>
   <% end %>
