@@ -40,25 +40,31 @@ class User < ApplicationRecord
     end
   end
 
-  # --- ここから下は既存のロジックを残してOK ---
+  # --- OAuth ログイン時のユーザー取得/作成 ---
   def self.from_omniauth(auth)
     identity = Identity.find_or_initialize_by(provider: auth.provider, uid: auth.uid)
+
+    # Provider から来た表示名（6文字制限を適用）
+    provider_name = (auth.info.name || "未設定")[0, 6]
+
+    # まず Identity に紐づくユーザー、なければ email で既存ユーザーを探す
     user = identity.user || User.find_by(email: auth.info.email)
-      new_name = (auth.info.name || "未設定")[0, 6]
 
     if user.nil?
-      name = (auth.info.name || "未設定")[0, 6]
+      # ★ 初回作成時のみ、プロバイダ名を user.name に採用
       user = User.new(
         email: auth.info.email.presence || "#{auth.uid}@soundcloud.com",
-        name: name,
+        name: provider_name,
         password: Devise.friendly_token[0, 20],
         provider: auth.provider,
         uid: auth.uid,
-        soundcloud_uid: auth.uid # ← 追加
+        soundcloud_uid: auth.uid
       )
       user.save
     else
-        user.update(name: new_name) if user.name != new_name
+      # ★ 以後のログインでは user.name を絶対に上書きしない
+      # （プロフィール編集で設定した名前を尊重するため）
+      # 何も書かないことが肝心
     end
 
     identity.user = user

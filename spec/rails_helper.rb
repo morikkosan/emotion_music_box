@@ -1,16 +1,29 @@
 # This file is copied to spec/ when you run 'rails generate rspec:install'
 
-require 'spec_helper'
-require 'rails-controller-testing'
-
-ENV['RAILS_ENV'] ||= 'test'
-require_relative '../config/environment'
-
-abort("The Rails environment is running in production mode!") if Rails.env.production?
-
-# ✅ カバレッジ計測（コードの網羅率を計測）
+# ✅ SimpleCov は一番最初に
 require 'simplecov'
 SimpleCov.start 'rails'
+
+# ✅ RSpec 基本
+require 'spec_helper'
+
+# ✅ テスト用ENVは environment 読み込み「より前」に用意
+ENV['RAILS_ENV'] ||= 'test'
+ENV['DISABLE_SPRING'] ||= '1' # テストではSpring無効化（Springエラー回避）
+
+ENV['RESEND_FROM']      ||= 'no-reply@example.test'
+ENV['CONTACT_TO']       ||= 'admin@example.test'
+ENV['RESEND_REPLY_TO']  ||= 'support@example.test'
+
+# ✅ Rails本体の読み込みは1回だけ（重複禁止）
+require File.expand_path('../config/environment', __dir__)
+
+# ✅ 安全装置
+abort("The Rails environment is running in production mode!") if Rails.env.production?
+
+# ✅ Rails系のRSpecヘルパ
+require 'rspec/rails'
+require 'rails-controller-testing'
 
 # ✅ shoulda-matchers
 require 'shoulda/matchers'
@@ -20,8 +33,6 @@ Shoulda::Matchers.configure do |config|
     with.library :rails
   end
 end
-
-require 'rspec/rails'
 
 # ✅ 外部APIをテストで呼ばないようにスタブ化
 require 'webmock/rspec'
