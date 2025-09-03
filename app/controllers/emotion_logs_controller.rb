@@ -274,40 +274,48 @@ class EmotionLogsController < ApplicationController
   end
 
   def bookmarks
-    Rails.logger.error("PARAMS: #{params.inspect}")
+  Rails.logger.error("PARAMS: #{params.inspect}")
 
-    logs = current_user.bookmarked_emotion_logs.includes(:user, :tags)
-    logs = logs.where(emotion: params[:emotion]) if params[:emotion].present?
-    logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
+  logs = current_user.bookmarked_emotion_logs.includes(:user, :tags)
+  logs = logs.where(emotion: params[:emotion]) if params[:emotion].present?
+  logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
 
-    if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs])
-      my = current_user.emotion_logs.includes(:user, :tags)
-      my = my.where(emotion: params[:emotion]) if params[:emotion].present?
-      my = my.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
-      logs = EmotionLog.where(id: (logs.pluck(:id) + my.pluck(:id)).uniq).includes(:user, :tags)
-    end
-
-    # ★ デフォルトを「ブクマ数順（likes）」へ変更
-    @emotion_logs = apply_sort_and_period_filters(logs, default_sort: "likes")
-                      .distinct
-                      .page(params[:page]).per(7)
-
-    @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
-    @bookmark_page = "♡お気に入りリスト♡"
-
-    if @emotion_logs.blank?
-      redirect_to emotion_logs_path(view: params[:view]), alert: "まだお気に入り投稿がありません。"
-      return
-    end
-
-    if turbo_frame_request? && request.headers["Turbo-Frame"] == "logs_list_mobile"
-      render partial: "emotion_logs/logs_list_mobile_frame"
-      return
-    end
-
-    return if render_mobile_frame_if_needed
-    render choose_view
+  if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs])
+    my = current_user.emotion_logs.includes(:user, :tags)
+    my = my.where(emotion: params[:emotion]) if params[:emotion].present?
+    my = my.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
+    logs = EmotionLog.where(id: (logs.pluck(:id) + my.pluck(:id)).uniq).includes(:user, :tags)
   end
+
+  # ★ デフォルトを「ブクマ数順（likes）」へ変更
+  @emotion_logs = apply_sort_and_period_filters(logs, default_sort: "likes")
+                    .distinct
+                    .page(params[:page]).per(7)
+
+  @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
+
+  # ★★★ 追加：マイページ含めるONなら「自分の投稿ID」も可視対象に混ぜる（ビューの安全網を通す）
+  if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs])
+    @user_bookmark_ids |= current_user.emotion_logs.pluck(:id)
+  end
+  # ★★★ ここまで
+
+  @bookmark_page = "♡お気に入りリスト♡"
+
+  if @emotion_logs.blank?
+    redirect_to emotion_logs_path(view: params[:view]), alert: "まだお気に入り投稿がありません。"
+    return
+  end
+
+  if turbo_frame_request? && request.headers["Turbo-Frame"] == "logs_list_mobile"
+    render partial: "emotion_logs/logs_list_mobile_frame"
+    return
+  end
+
+  return if render_mobile_frame_if_needed
+  render choose_view
+end
+
 
   def recommended
     # ★ 直近の自分の投稿から感情を決定（なければ hp → fallback）
