@@ -1,43 +1,56 @@
 <%= turbo_frame_tag "logs_list_mobile" do %>
   <% if @bookmark_page.present? %>
-  <div class="bookmark_title"><%= @bookmark_page %></div>
-  <div data-controller="bookmark" class="bookmark-panel">
-    <div class="bookmark-toolbar">
-      <label class="bookmark-merge-toggle-label">
-        <input type="checkbox"
-          id="mypage-merge-toggle-mobile"
-          class="form-check-input"
-          data-action="change->bookmark#toggleMyPageLogs"
-          name="include_my_logs"
-          value="true"
-          <%= 'checked' if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs]) %>
-          form="mobile-search-form">
-        マイページの投稿も含める
-      </label>
+    <div class="bookmark_title"><%= @bookmark_page %></div>
 
-      <% if current_user.playlists.count < 12 %>
-                <div
-          data-controller="playlist-modal"
-          data-playlist-modal-id-value="playlist-modal-mobile">
-          <button
-            type="button"
-            class="bookmark-playlist-create-btn"
-            data-action="click->playlist-modal#open">
-            プレイリストを作成する
-          </button>
-        </div>
+    <div data-controller="bookmark" class="bookmark-panel">
+      <!-- 送信用フォームは非表示で定義（DOM崩れ防止） -->
+      <form id="mobile-bookmarks-form"
+            action="<%= bookmarks_emotion_logs_path(view: 'mobile') %>"
+            method="get"
+            data-turbo-frame="logs_list_mobile"
+            class="visually-hidden">
+        <input type="hidden" name="view" value="mobile">
+        <%= hidden_field_tag :genre,   params[:genre]   if params[:genre].present?  %>
+        <%= hidden_field_tag :emotion, params[:emotion] if params[:emotion].present? %>
+        <%= hidden_field_tag :sort,    params[:sort]    if params[:sort].present?   %>
+        <%= hidden_field_tag :period,  params[:period]  if params[:period].present? %>
+        <!-- OFF を確定させるため常に 0 を送る -->
+        <%= hidden_field_tag :include_my_logs, "0" %>
+      </form>
 
-      <% else %>
-        <button class="btn btn-secondary" disabled>プレイリストは12個まで作成可能です</button>
-      <% end %>
+      <div class="bookmark-toolbar">
+        <label class="bookmark-merge-toggle-label">
+          <%= check_box_tag :include_my_logs,
+                            "1",
+                            ActiveModel::Type::Boolean.new.cast(params[:include_my_logs]),
+                            id: "mypage-merge-toggle-mobile",
+                            class: "form-check-input",
+                            form: "mobile-bookmarks-form",
+                            data: { action: "change->bookmark#toggleMyPageLogs" } %>
+          マイページの投稿も含める
+        </label>
+
+        <% if current_user.playlists.count < 12 %>
+          <div data-controller="playlist-modal" data-playlist-modal-id-value="playlist-modal-mobile">
+            <button type="button"
+                    class="bookmark-playlist-create-btn"
+                    data-action="click->playlist-modal#open">
+              プレイリストを作成する
+            </button>
+          </div>
+        <% else %>
+          <button class="btn btn-secondary" disabled>プレイリストは12個まで作成可能です</button>
+        <% end %>
+      </div>
     </div>
-  </div>
 
   <% elsif @mypage_title.present? %>
     <span class="bookmark_title"><%= @mypage_title %></span>
+
   <% elsif @recommended_page.present? %>
     <span class="bookmark_title"><%= @recommended_page %></span>
-  <% else %>
+
+  <% elsif user_signed_in? %>
     <div class="mobile-hp-bar-container">
       <div class="mobile-hp-bar" id="hp-bar"></div>
       <span class="mobile_today_mental_text">

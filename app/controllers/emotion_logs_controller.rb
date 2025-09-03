@@ -1,5 +1,5 @@
 # app/controllers/emotion_logs_controller.rb
-class EmotionLogsController < ApplicationController 
+class EmotionLogsController < ApplicationController
   # ▼▼ show も例外化（index/show は未ログインOK。show は下の ensure_logged_in_for_show が処理）
   before_action :authenticate_user!, except: %i[index show]
   before_action :ensure_owner, only: %i[edit update destroy]
@@ -14,25 +14,24 @@ class EmotionLogsController < ApplicationController
     Rails.logger.info "📱 Mobile? #{mobile_device?}"
     Rails.logger.info "📢 flash(n): #{flash[:notice]} / (a): #{flash[:alert]}"
 
-    @emotion_logs = EmotionLog.left_joins(:user, :bookmarks, :tags)
+    scope = EmotionLog.left_joins(:user, :bookmarks, :tags)
 
     # 感情フィルタ（hp指定が来たらhp→emotionに変換）
     if params[:emotion].present?
-      @emotion_logs = @emotion_logs.where(emotion: params[:emotion])
+      scope = scope.where(emotion: params[:emotion])
     elsif params[:hp].present?
       hp_emotion = calculate_hp_emotion(params[:hp].to_i)
-      @emotion_logs = @emotion_logs.where(emotion: hp_emotion) if hp_emotion.present?
+      scope = scope.where(emotion: hp_emotion) if hp_emotion.present?
     end
 
     # タグ（ジャンル）フィルタ
     if params[:genre].present?
-      @emotion_logs = @emotion_logs.joins(:tags).where(tags: { name: params[:genre] })
+      scope = scope.joins(:tags).where(tags: { name: params[:genre] })
     end
 
-    # 並び替え・期間 + 重複排除 + ページング（index は従来通り new をデフォルト）
-    @emotion_logs = apply_sort_and_period_filters(@emotion_logs, default_sort: "new")
-                      .distinct
-                      .page(params[:page]).per(7)
+    # 並び替え・期間 + 重複排除
+    base = apply_sort_and_period_filters(scope, default_sort: "new").distinct
+    @emotion_logs = paginate_with_total_fix(base, per: 7)
 
     # ユーザーのブクマID
     @user_bookmark_ids = user_signed_in? ? current_user.bookmarks.pluck(:emotion_log_id) : []
@@ -51,9 +50,8 @@ class EmotionLogsController < ApplicationController
     logs = logs.where(emotion: params[:emotion]) if params[:emotion].present?
     logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
 
-    @emotion_logs = apply_sort_and_period_filters(logs, default_sort: "new")
-                      .distinct
-                      .page(params[:page]).per(7)
+    base = apply_sort_and_period_filters(logs, default_sort: "new").distinct
+    @emotion_logs = paginate_with_total_fix(base, per: 7)
 
     @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
     @mypage_title = "👮マイページ👮"
@@ -274,66 +272,59 @@ class EmotionLogsController < ApplicationController
   end
 
   def bookmarks
-  Rails.logger.error("PARAMS: #{params.inspect}")
+    Rails.logger.error("PARAMS: #{params.inspect}")
 
-  logs = current_user.bookmarked_emotion_logs.includes(:user, :tags)
-  logs = logs.where(emotion: params[:emotion]) if params[:emotion].present?
-  logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
+    logs = current_user.bookmarked_emotion_logs.includes(:user, :tags)
+    logs = logs.where(emotion: params[:emotion]) if params[:emotion].present?
+    logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
 
-  if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs])
-    my = current_user.emotion_logs.includes(:user, :tags)
-    my = my.where(emotion: params[:emotion]) if params[:emotion].present?
-    my = my.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
-    logs = EmotionLog.where(id: (logs.pluck(:id) + my.pluck(:id)).uniq).includes(:user, :tags)
+    if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs])
+      my = current_user.emotion_logs.includes(:user, :tags)
+      my = my.where(emotion: params[:emotion]) if params[:emotion].present?
+      my = my.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
+      logs = EmotionLog.where(id: (logs.pluck(:id) + my.pluck(:id)).uniq).includes(:user, :tags)
+    end
+
+    base = apply_sort_and_period_filters(logs, default_sort: "likes").distinct
+    @emotion_logs = paginate_with_total_fix(base, per: 7)
+
+    @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
+    # マイページ含めるONなら「自分の投稿ID」も可視対象に混ぜる（ビューの安全網を通す）
+    if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs])
+      @user_bookmark_ids |= current_user.emotion_logs.pluck(:id)
+    end
+
+    @bookmark_page = "♡お気に入りリスト♡"
+
+    if @emotion_logs.blank?
+      redirect_to emotion_logs_path(view: params[:view]), alert: "まだお気に入り投稿がありません。"
+      return
+    end
+
+    if turbo_frame_request? && request.headers["Turbo-Frame"] == "logs_list_mobile"
+      render partial: "emotion_logs/logs_list_mobile_frame"
+      return
+    end
+
+    return if render_mobile_frame_if_needed
+    render choose_view
   end
-
-  # ★ デフォルトを「ブクマ数順（likes）」へ変更
-  @emotion_logs = apply_sort_and_period_filters(logs, default_sort: "likes")
-                    .distinct
-                    .page(params[:page]).per(7)
-
-  @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
-
-  # ★★★ 追加：マイページ含めるONなら「自分の投稿ID」も可視対象に混ぜる（ビューの安全網を通す）
-  if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs])
-    @user_bookmark_ids |= current_user.emotion_logs.pluck(:id)
-  end
-  # ★★★ ここまで
-
-  @bookmark_page = "♡お気に入りリスト♡"
-
-  if @emotion_logs.blank?
-    redirect_to emotion_logs_path(view: params[:view]), alert: "まだお気に入り投稿がありません。"
-    return
-  end
-
-  if turbo_frame_request? && request.headers["Turbo-Frame"] == "logs_list_mobile"
-    render partial: "emotion_logs/logs_list_mobile_frame"
-    return
-  end
-
-  return if render_mobile_frame_if_needed
-  render choose_view
-end
-
 
   def recommended
     # ★ 直近の自分の投稿から感情を決定（なければ hp → fallback）
     last_emotion = current_user.emotion_logs.order(created_at: :desc).limit(1).pluck(:emotion).first
-    if last_emotion.present?
-      emotion = last_emotion
-    else
-      hp_val  = params[:hp].to_i.clamp(0, 100)
-      emotion = calculate_hp_emotion(hp_val).presence || "いつも通り"
-    end
+    emotion = if last_emotion.present?
+                last_emotion
+              else
+                hp_val  = params[:hp].to_i.clamp(0, 100)
+                calculate_hp_emotion(hp_val).presence || "いつも通り"
+              end
 
     logs = EmotionLog.includes(:user, :bookmarks, :tags).where(emotion: emotion)
     logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
 
-    # ★ デフォルトを「ブクマ数順（likes）」へ
-    @emotion_logs = apply_sort_and_period_filters(logs, default_sort: "likes")
-                      .distinct
-                      .page(params[:page]).per(7)
+    base = apply_sort_and_period_filters(logs, default_sort: "likes").distinct
+    @emotion_logs = paginate_with_total_fix(base, per: 7)
 
     @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
     @recommended_page  = "🔥おすすめ🔥"
@@ -348,6 +339,30 @@ end
   end
 
   private
+
+  # ===== ここが追加（ページャを必ず表示させる安全版） =====
+  def paginate_with_total_fix(relation, per:)
+    page = params[:page].to_i
+    page = 1 if page <= 0
+
+    # likes/comments 並び替えは group/aggregate を含むことがある
+    if relation.group_values.present?
+      # 総件数を DISTINCT id で取り直し（order/group/select を剥がす）
+      total = relation
+                .reselect("emotion_logs.id")
+                .unscope(:order, :group, :select)
+                .distinct
+                .count
+
+      # 取得レコードは集計・並び順を保ったまま手動でページング
+      items = relation.limit(per).offset((page - 1) * per).to_a
+
+      Kaminari.paginate_array(items, total_count: total).page(page).per(per)
+    else
+      relation.page(page).per(per)
+    end
+  end
+  # ===== 追加ここまで =====
 
   # ★ 感情 → HP（0..100）へ変換（バーと一致：限界=0）
   def calculate_hp_percentage(emotion)
