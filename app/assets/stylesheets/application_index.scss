@@ -453,7 +453,8 @@
 // ============================
 // index のスタイル
 // ============================
-// チェックボックスラベル
+
+/* ▼ 左のチェックボックスラベル（追記：横長維持のための統一指定） */
 .bookmark-merge-toggle-label {
   background: linear-gradient(135deg, #009688, #4db6ac);
   background-size: 200% 200%;
@@ -471,7 +472,15 @@
   user-select: none;
   transition: all 0.3s ease;
   animation: bookmarkNeonGlow 6s ease-in-out infinite;
-  margin: 0; // ←追加
+  margin: 0;
+
+  /* 追加：縦長化防止・寸法統一 */
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  white-space: nowrap;
+  min-width: 210px;
+  min-height: 56px;
+  line-height: 1.3;
 }
 .bookmark-merge-toggle-label:hover {
   box-shadow: 0 0 12px rgba(0, 150, 136, 0.8), 0 0 18px rgba(77, 182, 172, 0.7);
@@ -483,7 +492,7 @@
   margin-right: 0.5em;
 }
 
-// プレイリスト作成ボタン
+/* ▼ 右のプレイリスト作成ボタン（追記：左に合わせる） */
 .bookmark-playlist-create-btn {
   background: linear-gradient(135deg, #ff7043, #f06292);
   background-size: 200% 200%;
@@ -499,15 +508,18 @@
   cursor: pointer;
   animation: bookmarkNeonGlow 5s ease-in-out infinite;
 
-  /* ▼ 追加（修復ポイント）— 縦長化の抑止 */
+  /* 追加：横長維持＋高さ合わせ */
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
   white-space: nowrap;
   min-width: 210px;
+  min-height: 56px;
+  line-height: 1.3;
   height: auto !important;
   box-sizing: border-box;
-  line-height: 1.3;
 }
 .bookmark-playlist-create-btn:hover {
   background-position: right center;
@@ -515,26 +527,32 @@
   transform: scale(1.06);
 }
 
-// 共通アニメーション
+/* 共通アニメーション */
 @keyframes bookmarkNeonGlow {
   0%   { background-position: left center; }
   50%  { background-position: right center; }
   100% { background-position: left center; }
 }
 
-// パネル&ツールバー
+/* ▼ パネル&ツールバー（追記：gapを可変に・折返し許可） */
 .bookmark-panel { margin: 1.5rem 0 2rem 1rem; }
 .bookmark-toolbar {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 8rem;
+  gap: clamp(0.8rem, 4vw, 2rem); /* 8rem 固定をやめる */
+  flex-wrap: wrap;               /* 幅が足りない時は2段に回避 */
+}
+.bookmark-toolbar > *{
+  flex: 0 0 auto;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-// プレイリスト作成フォーム
+/* プレイリスト作成フォーム */
 .bookmark-create-form { margin: 0; }
 
-// チェックボックスサイズ（カスタム）
+/* チェックボックスサイズ（カスタム） */
 .playlist-check-accent {
   width: 2.2rem;
   height: 2.2rem;
@@ -542,16 +560,16 @@
   box-shadow: 0 0 8px #fff6, 0 0 3px #e800ff;
 }
 
-// コメント数まわり
+/* コメント数まわり */
 .comment-count-box { gap: 4px; }
-.comment-count-number { fontサイズ: 1rem; } /* ←原文のままなら font-size に修正してOK */
+.comment-count-number { font-size: 1rem; }
 .comment-icon {
   width: 48px;
   height: 48px;
   display: inline-block;
 }
 
-// ジャケット画像・再生アイコン
+/* ジャケット画像・再生アイコン */
 .music-art-box {
   width: 80px;
   position: relative;
@@ -571,19 +589,19 @@
   cursor: pointer;
 }
 
-// ログ本文
+/* ログ本文 */
 .log-description {
   color: white;
   font-size: 1.1rem;
 }
 
-// スマホ版index
+/* スマホ版index */
 .mobile-logo {
   max-width: 150px;
   width: 100%;
 }
 
-// HPバー
+/* HPバー */
 .mobile-hp-bar-container {
   margin: 1.2em 0 1em 0;
   background: rgba(203, 73, 194, 0.3);
@@ -606,7 +624,7 @@
   text-shadow: 0 0 4px #10b0b4;
 }
 
-// ネオン記録ボタン（モバイル）
+/* ネオン記録ボタン（モバイル） */
 .record-mobile-btn-wrap {
   z-index: 1030;
   position: relative;
@@ -629,19 +647,19 @@
   box-shadow: 0 0 40px #ae5cff80;
 }
 
-// フッター（モバイル）
+/* フッター（モバイル） */
 .mobile-footer {
   box-shadow: 0 -1px 18px #00b7ff22;
   font-size: 0.99rem;
   z-index: 1100;
 }
 
-// その他全体
+/* その他全体 */
 .mobile-content {
-  margin-bottom: 80px; // フッター分の余白
+  margin-bottom: 80px; /* フッター分の余白 */
 }
 
-// ブックマークやタイトル
+/* ブックマークやタイトル */
 .bookmark_title {
   display: inline-block;
   font-weight: bold;
@@ -651,7 +669,7 @@
   text-shadow: 0 0 8px #cd47d4a0;
 }
 
-// ボタン（検索）
+/* ボタン（検索） */
 input[type="submit"].mobile-super-search-btn,
 button[type="submit"].mobile-super-search-btn {
   background: linear-gradient(90deg,#00e7ff,#ae5cff 90%) !important;
@@ -671,10 +689,13 @@ button[type="submit"].mobile-super-search-btn {
   cursor: pointer;
 }
 
-/* 画面が極端に狭い端末用の保険（任意） */
+/* 画面が極端に狭い端末用の保険 */
 @media (max-width: 360px){
+  .bookmark-merge-toggle-label,
   .bookmark-playlist-create-btn{
     white-space: normal;
     word-break: keep-all;
+    min-width: 160px;
+    padding: 0.85rem 1.2rem;
   }
 }
