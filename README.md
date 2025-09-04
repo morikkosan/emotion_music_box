@@ -43,77 +43,117 @@
   単なる音楽ストリーミングやSNSではなく、「**今の気分**」と「**音楽**」を結びつけることで、自分の状態を客観的に把握しやすくなります。  
   **HPバー**で**ストレス状態を可視化**し、ユーザー自身の変化に気づかせると同時に、**コミュニティの共感**も呼びます。
 
-  ---
-
-## 使い方（3ステップ）
-1. **ログイン**：SoundCloud アカウントでサインイン  
-2. **投稿**：その時の感情と曲、ひとことを記録  
-3. **楽しむ**：気になる投稿はブックマークやコメント、プレイリストに追加して再生
-他ユーザーとの共感性も高めます。
-
 ---
 
+## 使い方（3ステップ）
+1. **ログイン or 新規作成**：SoundCloud アカウントでサインイン（未所持ならかんたん新規作成）
+2. **投稿**：その時の感情と曲、ひとことを記録
+3. **楽しむ**：気になる投稿はブックマークやコメント、プレイリストに追加して再生  
+   他ユーザーとの共感性も高めます。
+
+---
 
 ## 主な機能
 
 ### 1) アカウント / 認証
-- SoundCloud OAuth による新規作成　＆ログイン（OmniAuth）
-- 新規登録者は公式Soundcloudの登録ページに遷移します。(簡単登録)
-- 登録後タブを閉じてログインを行ってください。
-
-- 初期はsoundcloudユーザーネームですが、
-- お好みでプロフィール編集でプロフィール画像、名前、性別、名前が作成できます。
-
+- SoundCloud OAuth による新規作成＆ログイン（OmniAuth）
+- 新規登録者は公式 SoundCloud の登録ページに遷移します（簡単登録）
+- 登録後タブを閉じてログインを行ってください
+- 初期は SoundCloud ユーザーネームですが、
+- お好みでプロフィール編集でプロフィール画像、名前、性別、名前が作成できます
 - セッション管理（Cookieストア）
+
+新規登録
+<img src="https://i.gyazo.com/d0476f8750b234c705ec7d85e20608be.png" alt="新規登録" width="1280" height="720">
+
+ログイン
+<img src="https://i.gyazo.com/61d215d1bfb16143db93db5624d38b0a.png" alt="ログイン" width="1280" height="720">
 
 
 ### 2) 投稿（感情ログ）
 - 感情（例：イライラ / 楽しい など）＋曲情報＋ひとことメモを1つのログとして保存
-- 投稿を忘れたときの前日分の投稿も可能.
-
-
+- 投稿を忘れたときの前日分の投稿も可能
 - タグ付け、ブックマーク数・コメント数を表示
-
-
 - 投稿詳細ページ（モバイル用とPC用の最適化ビュー）
+投稿曲検索フォーム１
+<img src="https://i.gyazo.com/839fab9843a4cc3ef9c9fd34733d37c2.png" alt="投稿検索再生フォーム" width="1280" height="720">
+投稿フォーム２
+<img src="https://i.gyazo.com/87fcadbb2fe7aba6f04c68dd5b6777cd.png" alt="投稿フォーム" width="1280" height="720">
+
+
 
 ### 3) 投稿検索・再生
-
-- SoundCloud の曲情報を利用した楽曲再生（オリジナルプレーヤー/リンク再生）
-- 投稿にあるアルバム中の再生ボタンを押せば曲へ即アクセス再生。
+- SoundCloud の曲情報を利用した楽曲再生（オリジナルプレーヤー / リンク再生）
+- 投稿にあるアルバム中の再生ボタンを押せば曲へ即アクセス再生
+- 下部メニューから検索を押せば条件検索ができる  
+  ※デスクトップ版は上メニュー部分にジャンル＆タグ検索、サイドバーでさらに細かい条件検索
 
 ### 4) ブックマーク & プレイリスト
-- 気になった投稿をブックマーク → 後からプレイリストに追加
+- 気になった投稿をブックマーク（♡） 
+  マイページの「自分の投稿も含める」にチェックを入れると自分が投稿した投稿楽曲も表示されます  
+  → プレイリストを作成する
 - プレイリスト画面
   - 1曲目から再生
+  - 曲を追加：モーダル（ブックマーク・自分の投稿済みの中から、**プレイリスト未収録のみ**を表示）
+  - 一覧に戻る
   - 曲の削除
-  - 「曲を追加」モーダル（ブックマーク済みの中から、**プレイリスト未収録のみ**を表示）
 - **Turbo Stream** による即時反映  
-  追加／削除で **プレイリスト本体とモーダル候補が自動更新**
+  追加／削除で **プレイリスト本体とモーダル候補が自動更新** を実装
+  プレイリスト作成
+  <img src="https://i.gyazo.com/564f1ee8e306c8c4d224d9d531c9460c.png" alt="ブックマーク &amp; プレイリスト" width="1280" height="720">
+
+プレイリスト内
+<img src="https://i.gyazo.com/a473b1dc619bb893d5aa3a73027fb744.png" alt="プレイリスト" width="1280" height="720">
+
 
 ### 5) コメント & リアクション
-- 投稿にコメント
-- いいね等のリアクション（それな！　よんだ！）
+- 投稿詳細画面にてコメント＆リアクションスペース
+- いいね等のリアクション（それな！／よんだ！）
+<img src="https://i.gyazo.com/fa125c7fde6bfe19698d75d44a852cd4.png" alt="コメント &amp; リアクション" width="1280" height="720">
 
 ### 6) シェア
-- X（Twitter）共有ボタン（投稿詳細からワンタップでシェア） "今日の感情は ！！ この気分できいた曲はxxxx
+- X（Twitter）共有ボタン（投稿詳細からワンタップでシェア）  
+  例：「今日の感情は ○○！！ この気分で聴いた曲は ××」
+
+ユーザーメニュー<img src="https://i.gyazo.com/1c941c7a64ef8d849fbc684e8ed6d8a1.png" alt="ユーザーメニュー" width="1280" height="720">
 
 ### 7) モバイル最適化
-- モバイル専用のフッターメニュー（再生／追加／戻る／削除/次の曲/前の曲/再生時間をコントロールできるシークバー/リピート再生ボタン/シャッフル再生ボタン）
+- モバイル専用のフッターメニュー（再生／追加／戻る／削除／次の曲／前の曲／再生時間をコントロールできるシークバー／リピート／シャッフル）
 - セーフエリア（iPhone）対応、軽量なUI部品
-- 主要操作をフッターメニュー画面下部に集約して片手操作が容易に
+- 主要操作をフッターメニュー画面下部に集約して片手操作が容易に  
+  デスクトップ版でもブラウザのサイズ変更をすればスマホ版にすぐ切り替わるストレスフリーな設計
 
 ### 8) 通知
-- Web Push（VAPID）でコメント/いいね等の通知(pc)
+- 通知（Web Push / VAPID）
 
-### 9) 運用/品質
-- 例外監視：Sentry
-- 構造化ログ：Lograge
-- 画像配信：Cloudinary（Active Storage）
-- 開発環境：Docker Compose（PostgreSQL/Redis/HTTPS）
-- フロント：Hotwire（Turbo/Stimulus）
+本アプリは **Web Push（VAPID）** に対応しており、コメント／いいね等の通知を受け取れます。  
+ブラウザ標準の **Push API / Notifications API** と **VAPID** を使うため、APNs や Firebase SDK は不要です。  
+参考：  
+- MDN — Push API: https://developer.mozilla.org/docs/Web/API/Push_API  
+- MDN — Notifications API: https://developer.mozilla.org/docs/Web/API/Notifications_API  
+- web.dev（Web Push 概要）: https://web.dev/learn/push/
 
+**対応環境**
+- **iPhone / iPad（iOS / iPadOS 16.4+）**  
+  - 必須：**ホーム画面に追加（PWAインストール）→ そのアイコンから起動**  
+  - Safari の通常タブのままでは通知は届きません  
+  参考：Apple Developer（Web Push）: https://developer.apple.com/documentation/usernotifications/sending_web_push_notifications_in_web_apps  
+  参考：OneSignal Docs: https://documentation.onesignal.com/
+- **Android（Chrome / Edge など）**  
+  - **インストール不要**。サイト内の「通知を有効にする」からブラウザの通知を許可すればOK（ホーム画面追加も任意）  
+  参考：web.dev — https://web.dev/learn/push/
+- **PC（Chrome / Edge / Safari 等）**  
+  - **インストール不要**。初回アクセス時または設定から通知を許可してください  
+  参考：MDN — Notifications API: https://developer.mozilla.org/docs/Web/API/Notifications_API
 
+**使い方（最短手順）**
+- **iOS**：サイトを開く → 共有メニュー → **「ホーム画面に追加」** → ホーム画面のアイコンから起動 → アプリ内の**「通知を有効にする」**をタップして許可  
+  参考：Apple Developer（Web Push）: https://developer.apple.com/documentation/usernotifications/sending_web_push_notifications_in_web_apps  
+  参考：OneSignal Docs: https://documentation.onesignal.com/
+- **Android / PC**：サイトを開く → **「通知を有効にする」**をクリック → ブラウザのダイアログで **許可**  
+  参考：web.dev — https://web.dev/learn/push/
+
+---
 
 ## リリース時点の挙動メモ
 - プレイリストへの**追加・削除は即時反映**（Turbo Stream）。  
