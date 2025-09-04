@@ -6,8 +6,15 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
-  <meta name="description" content="感情と音楽をシェアする新感覚アプリ EMOTION MUSIC BOX。今の気持ちを音楽に変えて最高な体験を。">
+  <meta name="description" content="感情と音楽をシェアする爽感覚アプリ EMOTION MUSIC BOX。今の気持ちを音楽に変えて最高な体験を。">
   <%= favicon_link_tag 'favicon.ico' %>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=4">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg?v=4">
+  <link rel="mask-icon" href="/icon.svg?v=4" color="#ff69b4">
+
   <% og_image = image_url('ogp.png') %>
   <meta property="og:title" content="Emotion Music Box (EMOMU)">
   <meta property="og:description" content="感情と音楽をシェアする新感覚アプリ">
@@ -102,6 +109,9 @@
       data-flash-notice="<%= j flash[:notice] %>"
       data-flash-alert="<%= j flash[:alert] %>">
 
+        <%= render 'shared/footer' %>
+
+
   <!-- ローディングカバー -->
   <div id="screen-cover-loading" aria-hidden="true" aria-live="polite" aria-label="ローディング画面">
     <div class="pacman-wrapper" aria-hidden="true">
@@ -134,7 +144,6 @@
     </div>
   </div>
 
-  <%= render 'shared/footer' %>
 
   <!-- ──────────── 下部カスタムプレーヤー & 隠し iframe ──────────── -->
 
