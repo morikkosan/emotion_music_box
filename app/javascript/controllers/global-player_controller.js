@@ -191,6 +191,8 @@ export default class extends Controller {
     console.log("[connect] global-player controller initialized");
   }
 
+
+
   // ---------- A11y: ヘルパ ----------
   setPlayPauseAria(isPlaying) {
     if (!this.playPauseButton) return;
