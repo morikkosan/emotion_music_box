@@ -1,6 +1,5 @@
 class ApplicationController < ActionController::Base
   protect_from_forgery with: Rails.env.test? ? :null_session : :exception
-  # before_action :force_mobile_view
   before_action :refresh_soundcloud_token_if_needed
 
   # before_action :log_session_info
@@ -79,29 +78,6 @@ class ApplicationController < ActionController::Base
     I18n.locale = :ja
   end
 
-  #     def force_mobile_view
-  #   return if request.path.start_with?("/auth/")
-  #   return unless request.get?
-  #   return if request.xhr? || request.format.turbo_stream?
-  #
-  #   if request.user_agent =~ /Mobile|Android|iPhone/ && params[:view] != "mobile"
-  #     redirect_to url_for(params.permit!.to_h.merge(view: "mobile")), allow_other_host: false and return
-  #   end
-  #
-  #   if !(request.user_agent =~ /Mobile|Android|iPhone/) && params[:view] == "mobile"
-  #     redirect_to url_for(params.permit!.to_h.except(:view)), allow_other_host: false and return
-  #   end
-  # end
-
-  # def debug_session_state
-  #   Rails.logger.info "🟢 Current session['omniauth.state']: #{session['omniauth.state']}"
-  # end
-  #
-  # def log_session_info
-  #   Rails.logger.debug "🔍 [SESSION] session_id: #{session.id}"
-  #   Rails.logger.debug "🔍 [SESSION] Current session data: #{session.to_hash}"
-  #   Rails.logger.debug "🟢 Current session['omniauth.state']: #{session['omniauth.state']}"
-  # end
 
   # ★★★ ここを修正：キーワード引数 **opts を受け取り、super(**opts) に渡す ★★★
   def authenticate_user!(**opts)
