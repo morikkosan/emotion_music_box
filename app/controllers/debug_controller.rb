@@ -1,13 +1,18 @@
 class DebugController < ApplicationController
   before_action :restrict_in_production
+  before_action :authenticate_user!  # ← dev/testでもログイン必須にするなら
 
   def session_info
-    render json: { session_state: session["omniauth.state"], full_session: session.to_hash }
+    safe = session.to_hash.slice("warden.user.user.key", "omniauth.state")
+    render json: {
+      session_state: safe["omniauth.state"],
+      user_session_key_present: safe["warden.user.user.key"].present?
+    }
   end
 
   private
 
   def restrict_in_production
-    head :forbidden if Rails.env.production?
+    head :not_found if Rails.env.production?
   end
 end
