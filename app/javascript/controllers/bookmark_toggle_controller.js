@@ -10,7 +10,7 @@ export default class extends Controller {
     });
   }
 
-  toggle(event) {
+  toggle(_event) {
     //console.log("📌 toggle() 発火");
 
     // 現在の状態を取得（"true" or "false"）
