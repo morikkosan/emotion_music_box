@@ -1,6 +1,6 @@
 class PlaylistsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_playlist, only: [:show, :destroy]
+  before_action :set_playlist, only: [ :show, :destroy ]
 
   def index
     @playlists = current_user.playlists.includes(playlist_items: :emotion_log)
@@ -62,7 +62,7 @@ class PlaylistsController < ApplicationController
           ERB
           locals: { message: message }
         )
-        render turbo_stream: [flash_then_redirect]
+        render turbo_stream: [ flash_then_redirect ]
         flash.discard
       end
 
@@ -93,7 +93,7 @@ class PlaylistsController < ApplicationController
   def render_flash_stream
     render_to_string(
       partial: "shared/flash_container",
-      formats: [:html],
+      formats: [ :html ],
       locals: { flash: flash }
     )
   end

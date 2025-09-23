@@ -1,7 +1,7 @@
 # app/controllers/notifications_controller.rb
 class NotificationsController < ApplicationController
   before_action :authenticate_user!
-  before_action :ensure_test_endpoints_allowed!, only: [:test, :debug_emotion]
+  before_action :ensure_test_endpoints_allowed!, only: [ :test, :debug_emotion ]
 
   # GET /notifications/test/:id
   # 管理/デバッグ用：本番は「自分宛のみ」や無効化。dev/testは任意ID許可。

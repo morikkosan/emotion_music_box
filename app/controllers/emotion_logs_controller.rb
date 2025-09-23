@@ -73,7 +73,7 @@ class EmotionLogsController < ApplicationController
     @user_reactions  = current_user&.comment_reactions&.where(comment_id: @comments.map(&:id))&.pluck(:comment_id, :kind)&.to_h || {}
 
     if turbo_frame_request? && params[:view] == "mobile"
-      render partial: "emotion_logs/show_mobile_frame", formats: [:html]
+      render partial: "emotion_logs/show_mobile_frame", formats: [ :html ]
       return
     end
 
@@ -292,10 +292,10 @@ class EmotionLogsController < ApplicationController
     last_emotion = current_user.emotion_logs.order(created_at: :desc).limit(1).pluck(:emotion).first
     emotion = if last_emotion.present?
                 last_emotion
-              else
+    else
                 hp_val  = params[:hp].to_i.clamp(0, 100)
                 calculate_hp_emotion(hp_val).presence || "いつも通り"
-              end
+    end
 
     logs = EmotionLog.includes(:user, :bookmarks, :tags).where(emotion: emotion)
     logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
@@ -312,7 +312,7 @@ class EmotionLogsController < ApplicationController
 
   def playlist_sidebar_modal
     @playlists = current_user.playlists.includes(:playlist_items, :emotion_logs)
-    render partial: "emotion_logs/playlist_sidebar", locals: { playlists: @playlists }, formats: [:html]
+    render partial: "emotion_logs/playlist_sidebar", locals: { playlists: @playlists }, formats: [ :html ]
   end
 
   private
@@ -350,7 +350,7 @@ class EmotionLogsController < ApplicationController
 
   def render_mobile_frame_if_needed
     if turbo_frame_request? && params[:view] == "mobile"
-      render partial: "emotion_logs/logs_list_mobile_frame", formats: [:html]
+      render partial: "emotion_logs/logs_list_mobile_frame", formats: [ :html ]
       return true
     end
     false
@@ -364,7 +364,7 @@ class EmotionLogsController < ApplicationController
     request.user_agent.to_s.downcase =~ /mobile|webos|iphone|android/
   end
 
-  # ▼▼ default_sort を受け取れるラッパー（RSpec互換を維持）
+# ▼▼ default_sort を受け取れるラッパー（RSpec互換を維持）
 def apply_sort_and_period_filters(logs, default_sort: "new")
   EmotionLogQuery.new(logs, params, default_sort: default_sort).call
 end

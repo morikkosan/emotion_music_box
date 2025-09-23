@@ -49,9 +49,9 @@ gem "omniauth-rails_csrf_protection"
 gem "omniauth-oauth2-generic"
 gem "oauth2", "~> 2.0"
 gem "omniauth-oauth2"
-gem 'rqrcode'
-gem 'rqrcode_svg'
-gem 'resend'
+gem "rqrcode"
+gem "rqrcode_svg"
+gem "resend"
 
 
 
@@ -60,8 +60,8 @@ gem 'resend'
 gem "image_processing", "~> 1.2"
 
 
-gem 'uglifier'
-gem 'faraday'
+gem "uglifier"
+gem "faraday"
 
 
 
@@ -83,8 +83,8 @@ gem "redis-session-store"
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 group :development, :test do
   gem "rspec-rails"
-  gem 'factory_bot_rails'
-  gem 'faker'
+  gem "factory_bot_rails"
+  gem "faker"
   gem "rubocop-rails-omakase", require: false
   gem "brakeman", require: false
 end
@@ -94,24 +94,22 @@ group :development do
 end
 
 group :test do
-  gem 'shoulda-matchers'
-  gem 'database_cleaner-active_record'
+  gem "shoulda-matchers"
+  gem "database_cleaner-active_record"
   gem "webmock"
-  gem 'vcr', require: false
-  gem 'simplecov', require: false
-  gem 'rails-controller-testing'
+  gem "vcr", require: false
+  gem "simplecov", require: false
+  gem "rails-controller-testing"
 
-      # WebMockと連携した録画型の外部APIテスト
-
-
+  # WebMockと連携した録画型の外部APIテスト
 end
 
 gem "line-bot-api", "~> 1.20"
-gem 'web-push', '~> 3.0'
-gem 'zeitwerk', '~> 2.6'
-gem 'lograge'
-gem 'sentry-rails'
-gem 'sentry-ruby'
+gem "web-push", "~> 3.0"
+gem "zeitwerk", "~> 2.6"
+gem "lograge"
+gem "sentry-rails"
+gem "sentry-ruby"
 gem "spring", "~> 4.3"
 
 gem "spring-commands-rspec", "~> 1.0"

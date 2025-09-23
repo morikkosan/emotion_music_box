@@ -1,6 +1,6 @@
 # OpenSSL 3.xでの "pkeys are immutable" エラーを回避するパッチ
-require 'web_push'
-require 'openssl'
+require "web_push"
+require "openssl"
 
 if defined?(WebPush)
   begin

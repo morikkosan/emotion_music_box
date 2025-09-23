@@ -74,7 +74,6 @@ RSpec.describe ApplicationController, type: :controller do
   music_url: "https://soundcloud.com/test",
   emotion: "最高"
 )
-
   end
 
   it "jsonが返る" do
@@ -83,8 +82,4 @@ RSpec.describe ApplicationController, type: :controller do
     expect(JSON.parse(response.body)).to be_a(Hash)
   end
 end
-
-
-
-
 end
