@@ -62,9 +62,9 @@ end
   end
   # :nocov:
 rescue ActiveRecord::RecordNotUnique
-  retry 
+  retry
   # :nocov:
-                    # まれに競合したとき用
+  # まれに競合したとき用
 end
 
 

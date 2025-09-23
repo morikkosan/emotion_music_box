@@ -1,28 +1,28 @@
 # app/services/line_bot_notifier.rb
 class LineBotNotifier
-  require 'faraday'
-  require 'json'
+  require "faraday"
+  require "json"
 
   def self.push_message(to:, message:)
-    token = ENV['LINE_BOT_CHANNEL_TOKEN']
+    token = ENV["LINE_BOT_CHANNEL_TOKEN"]
     return unless token && to && message
 
     body = {
       to: to,
       messages: [
         {
-          type: 'text',
+          type: "text",
           text: message
         }
       ]
     }
 
     response = Faraday.post(
-      'https://api.line.me/v2/bot/message/push',
+      "https://api.line.me/v2/bot/message/push",
       body.to_json,
       {
-        'Content-Type' => 'application/json',
-        'Authorization' => "Bearer #{token}"
+        "Content-Type" => "application/json",
+        "Authorization" => "Bearer #{token}"
       }
     )
 

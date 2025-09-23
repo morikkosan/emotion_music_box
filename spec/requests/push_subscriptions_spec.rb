@@ -28,7 +28,7 @@ RSpec.describe "PushSubscriptions", type: :request do
         expect(user.reload.push_subscription).to be_present
       end
     end
-    
+
     context "異常系（バリデーションエラーなど）" do
   before do
     sign_in user

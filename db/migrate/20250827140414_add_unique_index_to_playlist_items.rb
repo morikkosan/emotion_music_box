@@ -14,7 +14,7 @@ class AddUniqueIndexToPlaylistItems < ActiveRecord::Migration[7.2]
 
     # 2) 一意インデックスを同時実行で貼る（テーブルロックを最小化）
     add_index :playlist_items,
-              [:playlist_id, :emotion_log_id],
+              [ :playlist_id, :emotion_log_id ],
               unique: true,
               algorithm: :concurrently,
               name: "index_playlist_items_on_playlist_and_emotion_log"
