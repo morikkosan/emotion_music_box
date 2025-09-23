@@ -73,7 +73,7 @@ RSpec.describe SoundCloudController, type: :controller do
 
     it "正常時は200で配列を返す（カバレッジ用）" do
       allow_any_instance_of(SoundCloudController).to receive(:fetch_app_token).and_return("token")
-      success_response = double(success?: true, parsed_response: [{ "id" => "track_1" }, { "id" => "track_2" }])
+      success_response = double(success?: true, parsed_response: [ { "id" => "track_1" }, { "id" => "track_2" } ])
       allow(HTTParty).to receive(:get).and_return(success_response)
       post :search, params: { q: "relax" }, format: :json
       expect(response).to have_http_status(:ok)

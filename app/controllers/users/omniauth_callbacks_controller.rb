@@ -68,8 +68,8 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
     s = str.to_s
     return "(nil)" if s.empty?
     # 先頭4桁＋…＋末尾3桁だけ残す
-    head = s[0,4]
-    tail = s[-3,3]
+    head = s[0, 4]
+    tail = s[-3, 3]
     "#{head}...#{tail}"
   end
 end

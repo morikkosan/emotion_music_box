@@ -1,4 +1,4 @@
-require 'web_push'
+require "web_push"
 
 class PushNotifier
   # 感情ログ投稿の通知
@@ -44,8 +44,8 @@ end
       auth: user.push_subscription.key_auth,
       vapid: {
         subject: "mailto:admin@moriappli-emotion.com",
-        public_key: ENV['VAPID_PUBLIC_KEY'],
-        private_key: ENV['VAPID_PRIVATE_KEY']
+        public_key: ENV["VAPID_PUBLIC_KEY"],
+        private_key: ENV["VAPID_PRIVATE_KEY"]
       }
     )
     Rails.logger.info("✅ Push通知送信成功 user_id=#{user.id}")

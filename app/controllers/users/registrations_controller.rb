@@ -2,8 +2,8 @@
 require "base64"
 
 class Users::RegistrationsController < Devise::RegistrationsController
-  before_action :ensure_current_user, only: [:edit, :update]
-  before_action :skip_current_password_validation, only: [:update]
+  before_action :ensure_current_user, only: [ :edit, :update ]
+  before_action :skip_current_password_validation, only: [ :update ]
 
   def update
     # 念のため Devise 流で自分を取り直す
@@ -59,7 +59,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
       if data =~ /^data:(.*?);base64,(.*)$/
         ext      = $1.split("/").last
         decoded  = Base64.decode64($2)
-        tempfile = Tempfile.new(["avatar", ".#{ext}"], binmode: true)
+        tempfile = Tempfile.new([ "avatar", ".#{ext}" ], binmode: true)
         begin
           tempfile.write(decoded)
           tempfile.rewind

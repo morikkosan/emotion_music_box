@@ -1,7 +1,6 @@
 # config/routes.rb
 Rails.application.routes.draw do
-
-  get 'emotion_logs/playlist_sidebar_modal(.:format)', to: 'emotion_logs#playlist_sidebar_modal'
+  get "emotion_logs/playlist_sidebar_modal(.:format)", to: "emotion_logs#playlist_sidebar_modal"
 
   get "contacts/new"
   get "contacts/create"
@@ -34,11 +33,11 @@ Rails.application.routes.draw do
     collection { post :toggle }   # POST /bookmarks/toggle 二連打防止
   end
 
-  resources :playlists, only: [:new, :create, :index, :show, :edit, :update, :destroy] do
-    resources :playlist_items, only: [:create, :destroy]
+  resources :playlists, only: [ :new, :create, :index, :show, :edit, :update, :destroy ] do
+    resources :playlist_items, only: [ :create, :destroy ]
   end
 
-  resource :contact, only: [:new, :create], controller: :contacts
+  resource :contact, only: [ :new, :create ], controller: :contacts
 
   get :my_emotion_logs,          to: "emotion_logs#my_emotion_logs"
   get "/soundcloud_client_id",   to: "sound_cloud#client_id"
@@ -49,14 +48,14 @@ Rails.application.routes.draw do
   get "/privacy",                to: "pages#privacy", as: :privacy
   get "/cookie",                 to: "pages#cookie",  as: :cookie_policy
 
-  post '/line_bot/callback',      to: 'line_bot#callback'
-  get  '/line_add_friends',       to: 'line_bot#add_friends', as: 'line_add_friends'
-  get  '/line_link',              to: 'line_link#link'
-  post '/users/create_line_link', to: 'users#create_line_link', as: :create_line_link
+  post "/line_bot/callback",      to: "line_bot#callback"
+  get  "/line_add_friends",       to: "line_bot#add_friends", as: "line_add_friends"
+  get  "/line_link",              to: "line_link#link"
+  post "/users/create_line_link", to: "users#create_line_link", as: :create_line_link
 
   # PWA／ヘルスチェック
   # ▼▼▼ ここを rails/health#show ではなく Rack 応答にして DB を絶対起こさない ▼▼▼
-  get "up",             to: proc { [200, { "Content-Type" => "text/plain" }, ["OK"]] }, as: :rails_health_check
+  get "up",             to: proc { [ 200, { "Content-Type" => "text/plain" }, [ "OK" ] ] }, as: :rails_health_check
   get "service-worker", to: "rails/pwa#service_worker", as: :pwa_service_worker
   get "manifest",       to: "rails/pwa#manifest",       as: :pwa_manifest
 
@@ -65,18 +64,18 @@ Rails.application.routes.draw do
   get "/sc_resolve",    to: "sound_cloud#resolve"
 
   # ▼▼▼ ここを NotificationsController に寄せる（PushNotificationController は存在しないので使わない）▼▼▼
-  post 'push/emotion',           to: 'notifications#send_emotion_log'   # ← 元: push_notification#send_emotion_log
-  post '/push_subscription',     to: 'push_subscriptions#create'
+  post "push/emotion",           to: "notifications#send_emotion_log"   # ← 元: push_notification#send_emotion_log
+  post "/push_subscription",     to: "push_subscriptions#create"
 
-  patch 'enable_push_notifications',  to: 'notifications#enable'
-  patch 'disable_push_notifications', to: 'notifications#disable'
+  patch "enable_push_notifications",  to: "notifications#enable"
+  patch "disable_push_notifications", to: "notifications#disable"
 
   get "notifications/test/:id",   to: "notifications#test"
   get "/notifications/test",      to: "notifications#debug_emotion", as: :debug_emotion_notifications  # ← 元: push_notification#debug_emotion
   get "notifications/public_key", to: "notifications#public_key"
 
   if Rails.env.test? || Rails.env.development?
-    get '/debug/session_info', to: 'debug#session_info'
+    get "/debug/session_info", to: "debug#session_info"
   end
 
   #   get '/line_notify_test', to: 'line_bot#test_notify'

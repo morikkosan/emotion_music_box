@@ -7,7 +7,6 @@ class PushSubscriptionsController < ApplicationController
   respond_to :json
 
   def create
-    
   Rails.logger.debug "🐛 createアクションに入りました"
   Rails.logger.debug "🐛 current_user: #{current_user.inspect}"
   Rails.logger.debug "🐛 リクエスト形式: #{request.format}"

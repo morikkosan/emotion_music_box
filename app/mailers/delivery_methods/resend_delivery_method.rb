@@ -17,15 +17,15 @@ module DeliveryMethods
       # 本文は text/html を適切に抽出（どちらかだけでもOK）
       html_body = if mail.html_part
                     mail.html_part.body.to_s
-                  elsif (mail.content_type || "").include?("text/html")
+      elsif (mail.content_type || "").include?("text/html")
                     mail.body.decoded
-                  end
+      end
 
       text_body = if mail.text_part
                     mail.text_part.body.to_s
-                  elsif (mail.content_type || "").include?("text/plain")
+      elsif (mail.content_type || "").include?("text/plain")
                     mail.body.decoded
-                  end
+      end
 
       # いったん添付なし（必要になったら下のコメントを参考に実装）
       payload = {
@@ -36,7 +36,7 @@ module DeliveryMethods
         subject: mail.subject.to_s,
         reply_to: reply_to,
         html:    html_body,
-        text:    text_body,
+        text:    text_body
         # headers: mail.header.fields.map { |f| [f.name, f.value] }.to_h, # 任意
         # attachments: build_attachments(mail) # 任意（後述）
       }.compact
@@ -50,7 +50,7 @@ module DeliveryMethods
 
     def array_or_nil(v)
       return nil if v.blank?
-      v.is_a?(Array) ? v : [v.to_s]
+      v.is_a?(Array) ? v : [ v.to_s ]
     end
 
     # 添付が必要なときは、以下のように base64 化して渡します

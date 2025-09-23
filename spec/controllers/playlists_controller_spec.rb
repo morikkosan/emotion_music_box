@@ -31,7 +31,7 @@ RSpec.describe PlaylistsController, type: :controller do
       expect {
         post :create, params: {
           playlist: { name: "My Playlist" },
-          selected_logs: [emotion_log1.id, emotion_log2.id]
+          selected_logs: [ emotion_log1.id, emotion_log2.id ]
         }
       }.to change(Playlist, :count).by(1)
        .and change(PlaylistItem, :count).by(2)
@@ -45,7 +45,7 @@ RSpec.describe PlaylistsController, type: :controller do
       request.env["HTTP_ACCEPT"] = "text/vnd.turbo-stream.html"
       post :create, params: {
         playlist: { name: "" },
-        selected_logs: [emotion_log1.id]
+        selected_logs: [ emotion_log1.id ]
       }
 
       expect(response.body).to include("名前を入力してください").or include("エラー")
