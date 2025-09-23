@@ -63,7 +63,7 @@
   }
 
   // ===== 表示（同一ナビ・同一内容なら抑止） =====
-  function showSwalOnce(payload, source = "auto") {
+  function showSwalOnce(payload, _source = "auto") {
     if (!payload) return;
     if (rateLimit()) return;
 

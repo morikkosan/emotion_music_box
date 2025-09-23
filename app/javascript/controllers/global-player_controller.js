@@ -654,7 +654,7 @@ export default class extends Controller {
           if (typeof this.restorePlayerState === "function") {
             this.restorePlayerState();
           }
-        } catch (e) {
+        } catch (_e) {
           alert("プレイヤーの初期化に失敗しました。もう一度曲を選んでください。");
           return;
         }

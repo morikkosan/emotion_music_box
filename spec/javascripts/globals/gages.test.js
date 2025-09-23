@@ -373,4 +373,45 @@ describe("custom/gages.js", () => {
 
     expect(localStorage.getItem("hpPercentage")).toBe("44");
   });
+
+  test("不可視バーのときは即 width は書き込まれるが、次フレームでもう一度更新される", () => {
+  document.body.innerHTML = `
+    <div id="track"><div id="hp-bar"></div></div>
+    <div id="hp-status-text"></div>
+  `;
+  setTrackWidth(0); // 不可視
+  localStorage.setItem("hpPercentage", "25");
+  importGages();
+
+  window.updateHPBar();
+
+  const bar = document.getElementById("hp-bar");
+  // 即時に width は反映される
+  expect(bar.style.width).toBe("25%");
+
+  // flush で再評価されても同じ値
+  setTrackWidth(200);
+  window.__flushRAF();
+  expect(bar.style.width).toBe("25%");
+});
+
+
+test("turbo:submit-end: detail に status/success 無しなら更新されない", () => {
+  document.body.innerHTML = `
+    <div id="track"><div id="hp-bar"></div></div>
+    <form id="f"><input id="hp" value="55" /></form>
+  `;
+  setTrackWidth(300);
+  importGages();
+
+  const spy = jest.spyOn(window, "updateHPBar");
+  const form = document.getElementById("f");
+  // detail が空
+  const event = new CustomEvent("turbo:submit-end", { bubbles: true, detail: {} });
+  form.dispatchEvent(event);
+
+  expect(localStorage.getItem("hpPercentage")).toBeNull();
+  expect(spy).not.toHaveBeenCalled();
+});
+
 });
