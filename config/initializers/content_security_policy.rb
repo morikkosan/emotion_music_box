@@ -5,7 +5,7 @@ Rails.application.configure do
   config.content_security_policy_nonce_generator = ->(request) { SecureRandom.base64(16) }
 
   # ② ★ここが核心：style-src を nonce 対象から外す（script-src のみ）
-  config.content_security_policy_nonce_directives = %w(script-src)
+  config.content_security_policy_nonce_directives = %w[script-src]
 
   # ③ ポリシー本体
   config.content_security_policy do |policy|

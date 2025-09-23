@@ -1,9 +1,13 @@
-# app/controllers/emotion_logs_controller.rb
+# frozen_string_literal: true
+
 class EmotionLogsController < ApplicationController
-  # ▼▼ show も例外化（index/show は未ログインOK。show は下の ensure_logged_in_for_show が処理）
+    include Paginatable
+
+  # ▼ index/show は未ログインOK（showは ensure_logged_in_for_show が処理）
   before_action :authenticate_user!, except: %i[index show]
-  before_action :ensure_owner, only: %i[edit update destroy]
-  # ▼▼ 未ログインで show に来たら SoundCloud 認可へ飛ばす
+  # show は未ログインで @emotion_log をセットしない（テスト維持のため）
+  before_action :set_emotion_log, only: %i[edit update destroy]
+  before_action :ensure_owner,    only: %i[edit update destroy]
   before_action :ensure_logged_in_for_show, only: %i[show]
 
   # =========================
@@ -15,28 +19,13 @@ class EmotionLogsController < ApplicationController
     Rails.logger.info "📢 flash(n): #{flash[:notice]} / (a): #{flash[:alert]}"
 
     scope = EmotionLog.left_joins(:user, :bookmarks, :tags)
+    scope = apply_filters(scope)
 
-    # 感情フィルタ（hp指定が来たらhp→emotionに変換）
-    if params[:emotion].present?
-      scope = scope.where(emotion: params[:emotion])
-    elsif params[:hp].present?
-      hp_emotion = calculate_hp_emotion(params[:hp].to_i)
-      scope = scope.where(emotion: hp_emotion) if hp_emotion.present?
-    end
-
-    # タグ（ジャンル）フィルタ
-    if params[:genre].present?
-      scope = scope.joins(:tags).where(tags: { name: params[:genre] })
-    end
-
-    # 並び替え・期間 + 重複排除
     base = apply_sort_and_period_filters(scope, default_sort: "new").distinct
     @emotion_logs = paginate_with_total_fix(base, per: 7)
 
-    # ユーザーのブクマID
     @user_bookmark_ids = user_signed_in? ? current_user.bookmarks.pluck(:emotion_log_id) : []
 
-    # ---- ここが肝：モバイルのフレーム置換に対応 ----
     return if render_mobile_frame_if_needed
 
     render choose_view
@@ -47,8 +36,7 @@ class EmotionLogsController < ApplicationController
   # =========================
   def my_emotion_logs
     logs = current_user.emotion_logs.includes(:user, :bookmarks, :tags)
-    logs = logs.where(emotion: params[:emotion]) if params[:emotion].present?
-    logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
+    logs = apply_filters(logs)
 
     base = apply_sort_and_period_filters(logs, default_sort: "new").distinct
     @emotion_logs = paginate_with_total_fix(base, per: 7)
@@ -70,9 +58,7 @@ class EmotionLogsController < ApplicationController
       respond_to do |format|
         format.html { redirect_to emotion_logs_path(view: params[:view]), alert: "この投稿は削除されています。" }
         format.turbo_stream do
-          render turbo_stream: turbo_stream.redirect_to(
-            emotion_logs_path(view: params[:view])
-          ), status: :see_other
+          render turbo_stream: turbo_stream.redirect_to(emotion_logs_path(view: params[:view])), status: :see_other
         end
       end
       return
@@ -86,9 +72,8 @@ class EmotionLogsController < ApplicationController
     @reaction_counts = CommentReaction.where(comment_id: @comments.map(&:id)).group(:comment_id, :kind).count
     @user_reactions  = current_user&.comment_reactions&.where(comment_id: @comments.map(&:id))&.pluck(:comment_id, :kind)&.to_h || {}
 
-    # ★ モバイルからのフレーム遷移なら、必ず logs_list_mobile を返す
     if turbo_frame_request? && params[:view] == "mobile"
-      render partial: "emotion_logs/show_mobile_frame", formats: [:html]
+      render partial: "emotion_logs/show_mobile_frame", formats: [ :html ]
       return
     end
 
@@ -121,7 +106,7 @@ class EmotionLogsController < ApplicationController
     hp_from_form   = params.dig(:emotion_log, :hp).presence || params[:hp].presence
     hp_percentage  = hp_from_form.present? ? hp_from_form.to_i.clamp(0, 100) : calculate_hp_percentage(@emotion_log.emotion)
     hp_delta       = calculate_hp(@emotion_log.emotion)
-    is_today       = @emotion_log.date&.to_date == Date.current   # ← nil安全化
+    is_today       = @emotion_log.date&.to_date == Date.current
 
     if @emotion_log.save
       Rails.logger.info("🔔 notify hp_delta=#{hp_delta} emotion=#{@emotion_log.emotion} hp_percentage=#{hp_percentage}")
@@ -131,7 +116,7 @@ class EmotionLogsController < ApplicationController
         emotion:     @emotion_log.emotion,
         track_name:  @emotion_log.track_name,
         artist_name: @emotion_log.description.presence || "アーティスト不明",
-        hp:          hp_delta  # ← 差分固定
+        hp:          hp_delta
       )
 
       respond_to do |format|
@@ -140,8 +125,8 @@ class EmotionLogsController < ApplicationController
             success:      true,
             message:      "記録が保存されました",
             redirect_url: emotion_logs_path,
-            hpPercentage: hp_percentage,  # 0..100（メーター用）
-            hpDelta:      hp_delta,       # ±（差分）
+            hpPercentage: hp_percentage,
+            hpDelta:      hp_delta,
             hp_today:     is_today
           }
         end
@@ -180,12 +165,10 @@ class EmotionLogsController < ApplicationController
   # 編集/更新/削除
   # =========================
   def edit
-    @emotion_log = EmotionLog.find(params[:id])
     @emotion_log.tag_names = @emotion_log.tags.pluck(:name).join(",")
   end
 
   def update
-    @emotion_log = EmotionLog.find(params[:id])
     attrs = emotion_log_params.to_h
     attrs.delete("hp")
 
@@ -193,7 +176,7 @@ class EmotionLogsController < ApplicationController
       hp_from_form  = params.dig(:emotion_log, :hp).presence || params[:hp].presence
       hp_percentage = hp_from_form.present? ? hp_from_form.to_i.clamp(0, 100) : calculate_hp_percentage(@emotion_log.emotion)
       hp_delta      = calculate_hp(@emotion_log.emotion)
-      is_today      = @emotion_log.date&.to_date == Date.current   # ← nil安全化
+      is_today      = @emotion_log.date&.to_date == Date.current
 
       render json: {
         success: true,
@@ -209,10 +192,9 @@ class EmotionLogsController < ApplicationController
   end
 
   def destroy
-    log     = EmotionLog.find(params[:id])
-    base_id = view_context.dom_id(log) # 例: "emotion_log_19840"
+    base_id = view_context.dom_id(@emotion_log) # 例: "emotion_log_19840"
 
-    log.destroy!  # CASCADE / dependent が効くので関連も削除
+    @emotion_log.destroy!  # CASCADE / dependent が効く
 
     respond_to do |format|
       format.turbo_stream do
@@ -275,13 +257,11 @@ class EmotionLogsController < ApplicationController
     Rails.logger.error("PARAMS: #{params.inspect}")
 
     logs = current_user.bookmarked_emotion_logs.includes(:user, :tags)
-    logs = logs.where(emotion: params[:emotion]) if params[:emotion].present?
-    logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
+    logs = apply_filters(logs)
 
     if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs])
       my = current_user.emotion_logs.includes(:user, :tags)
-      my = my.where(emotion: params[:emotion]) if params[:emotion].present?
-      my = my.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
+      my = apply_filters(my)
       logs = EmotionLog.where(id: (logs.pluck(:id) + my.pluck(:id)).uniq).includes(:user, :tags)
     end
 
@@ -289,10 +269,7 @@ class EmotionLogsController < ApplicationController
     @emotion_logs = paginate_with_total_fix(base, per: 7)
 
     @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
-    # マイページ含めるONなら「自分の投稿ID」も可視対象に混ぜる（ビューの安全網を通す）
-    if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs])
-      @user_bookmark_ids |= current_user.emotion_logs.pluck(:id)
-    end
+    @user_bookmark_ids |= current_user.emotion_logs.pluck(:id) if ActiveModel::Type::Boolean.new.cast(params[:include_my_logs])
 
     @bookmark_page = "♡お気に入りリスト♡"
 
@@ -311,14 +288,14 @@ class EmotionLogsController < ApplicationController
   end
 
   def recommended
-    # ★ 直近の自分の投稿から感情を決定（なければ hp → fallback）
+    # 直近の自分の投稿から感情を決定（なければ hp → fallback）
     last_emotion = current_user.emotion_logs.order(created_at: :desc).limit(1).pluck(:emotion).first
     emotion = if last_emotion.present?
                 last_emotion
-              else
+    else
                 hp_val  = params[:hp].to_i.clamp(0, 100)
                 calculate_hp_emotion(hp_val).presence || "いつも通り"
-              end
+    end
 
     logs = EmotionLog.includes(:user, :bookmarks, :tags).where(emotion: emotion)
     logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
@@ -335,67 +312,45 @@ class EmotionLogsController < ApplicationController
 
   def playlist_sidebar_modal
     @playlists = current_user.playlists.includes(:playlist_items, :emotion_logs)
-    render partial: "emotion_logs/playlist_sidebar", locals: { playlists: @playlists }, formats: [:html]
+    render partial: "emotion_logs/playlist_sidebar", locals: { playlists: @playlists }, formats: [ :html ]
   end
 
   private
 
-  # ===== ここが追加（ページャを必ず表示させる安全版） =====
-  def paginate_with_total_fix(relation, per:)
-    page = params[:page].to_i
-    page = 1 if page <= 0
-
-    # likes/comments 並び替えは group/aggregate を含むことがある
-    if relation.group_values.present?
-      # 総件数を DISTINCT id で取り直し（order/group/select を剥がす）
-      total = relation
-                .reselect("emotion_logs.id")
-                .unscope(:order, :group, :select)
-                .distinct
-                .count
-
-      # 取得レコードは集計・並び順を保ったまま手動でページング
-      items = relation.limit(per).offset((page - 1) * per).to_a
-
-      Kaminari.paginate_array(items, total_count: total).page(page).per(per)
-    else
-      relation.page(page).per(per)
+  # ===== DRY: 絞り込み共通化（振る舞いは従来と同じ） =====
+  def apply_filters(scope)
+    if params[:emotion].present?
+      scope = scope.where(emotion: params[:emotion])
+    elsif params[:hp].present?
+      hp_emotion = calculate_hp_emotion(params[:hp].to_i)
+      scope = scope.where(emotion: hp_emotion) if hp_emotion.present?
     end
-  end
-  # ===== 追加ここまで =====
 
-  # ★ 感情 → HP（0..100）へ変換（バーと一致：限界=0）
+    if params[:genre].present?
+      scope = scope.joins(:tags).where(tags: { name: params[:genre] })
+    end
+
+    scope
+  end
+
+
+
+  # ▼▼ HP計算（ラッパーは残す：既存RSpecがそのまま通る）
   def calculate_hp_percentage(emotion)
-    case emotion
-    when "限界"       then 0
-    when "イライラ"   then 30
-    when "いつも通り" then 50
-    when "気分良い"   then 70
-    when "最高"       then 100
-    else 50
-    end
+    HpCalculator.percentage(emotion)
   end
 
-  # 0..100 → 感情
   def calculate_hp_emotion(hp)
-    case hp
-    when 0..1    then "限界"
-    when 2..25   then "イライラ"
-    when 26..50  then "いつも通り"
-    when 51..70  then "気分良い"
-    when 71..100 then "最高"
-    else "いつも通り"
-    end
+    HpCalculator.from_hp(hp)
   end
 
-  # HPの差分（お好みのまま）
   def calculate_hp(emotion)
-    { "最高" => 50, "気分良い" => 30, "いつも通り" => 0, "イライラ" => -30, "限界" => -50 }[emotion] || 0
+    HpCalculator.delta(emotion)
   end
 
   def render_mobile_frame_if_needed
     if turbo_frame_request? && params[:view] == "mobile"
-      render partial: "emotion_logs/logs_list_mobile_frame", formats: [:html]
+      render partial: "emotion_logs/logs_list_mobile_frame", formats: [ :html ]
       return true
     end
     false
@@ -409,26 +364,11 @@ class EmotionLogsController < ApplicationController
     request.user_agent.to_s.downcase =~ /mobile|webos|iphone|android/
   end
 
-  # ▼▼ default_sort を受け取れるように変更
-  def apply_sort_and_period_filters(logs, default_sort: "new")
-    sort_param = params[:sort].presence || default_sort
-    logs = case sort_param
-           when "new"      then logs.newest
-           when "old"      then logs.oldest
-           when "likes"    then logs.by_bookmarks
-           when "comments" then logs.by_comments
-           else logs
-           end
+# ▼▼ default_sort を受け取れるラッパー（RSpec互換を維持）
+def apply_sort_and_period_filters(logs, default_sort: "new")
+  EmotionLogQuery.new(logs, params, default_sort: default_sort).call
+end
 
-    case params[:period]
-    when "today"    then logs.for_today
-    when "week"     then logs.for_week
-    when "month"    then logs.for_month
-    when "halfyear" then logs.for_half_year
-    when "year"     then logs.for_year
-    else logs
-    end
-  end
 
   # Strong Params（hp は読み取り用途で permit するが、保存には使わない）
   def emotion_log_params
@@ -439,9 +379,12 @@ class EmotionLogsController < ApplicationController
     params.permit(:track_name, :music_url)
   end
 
-  def ensure_owner
+  def set_emotion_log
     @emotion_log = EmotionLog.find(params[:id])
-    head :forbidden unless @emotion_log.user == current_user
+  end
+
+  def ensure_owner
+    head :forbidden unless @emotion_log.user_id == current_user&.id
   end
 
   # ▼▼ 未ログインの show アクセスを SoundCloud 認可へ転送（ログイン後は index 固定）

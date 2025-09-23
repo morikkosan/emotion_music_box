@@ -3,7 +3,7 @@ window._flashShownOnce = window._flashShownOnce || null;
 
 (function () {
   // --- 追加：モーダル残骸を必ず掃除（Bootstrapの黒幕・body状態）
-  function cleanupModalArtifacts(source = "cleanup") {
+  function cleanupModalArtifacts(_source = "cleanup") {
     try {
       document.querySelectorAll(".modal.show").forEach((m) => {
         try {

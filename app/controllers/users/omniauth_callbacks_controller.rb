@@ -1,84 +1,75 @@
+# app/controllers/users/omniauth_callbacks_controller.rb
 class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
   skip_before_action :verify_authenticity_token, only: %i[soundcloud]
 
   # SoundCloud 認証（メイン）
   def soundcloud
-    Rails.logger.debug "🔹 OAuth Callback Started for SoundCloud"
-    Rails.logger.debug "🔹 Parameters received: #{params.inspect}"
-    Rails.logger.debug "🔍 Current session data: #{session.to_hash}"
-    
-    
+    oauth = request.env["omniauth.auth"]
 
-    oauth_data = request.env["omniauth.auth"]
-    error_data = request.env["omniauth.error"]
-
-if oauth_data.nil? || oauth_data["info"].nil?
-  flash[:alert] = "SoundCloud認証に失敗しました。"
-  redirect_to root_path and return
-end
-
-Rails.logger.debug "🧪 credentials: #{oauth_data.credentials&.inspect}"
-Rails.logger.debug "🔑 トークン: #{oauth_data.credentials&.token}"
-Rails.logger.debug "🔁 リフレッシュトークン: #{oauth_data.credentials&.refresh_token}"
-Rails.logger.debug "⏳ 有効期限(UNIX): #{oauth_data.credentials&.expires_at}"
-Rails.logger.debug "⏰ 有効期限(Readable): #{Time.at(oauth_data.credentials.expires_at) if oauth_data.credentials&.expires_at}"
-
-
-    if oauth_data.nil? || oauth_data["info"].nil?
-      # Rails.logger.error "❌ SoundCloud OAuth data is missing"
+    unless oauth && oauth["info"]
       flash[:alert] = "SoundCloud認証に失敗しました。"
       redirect_to root_path and return
     end
 
-    Rails.logger.debug "🔍 OAuth data received: #{oauth_data.inspect}"
-    Rails.logger.debug "🔑 トークン: #{oauth_data.credentials.token}"
-    Rails.logger.debug "🔁 リフレッシュトークン: #{oauth_data.credentials.refresh_token}"
-    Rails.logger.debug "⏳ 有効期限(UNIX): #{oauth_data.credentials.expires_at}"
-    Rails.logger.debug "⏰ 有効期限(Readable): #{Time.at(oauth_data.credentials.expires_at)}"
+    log_oauth_debug(oauth) # 本番では出ない安全なデバッグログ
 
-    @user = User.from_omniauth(oauth_data)
+    @user = User.from_omniauth(oauth)
 
-if @user.persisted?
-  @user.update!(
-    soundcloud_token: oauth_data.credentials.token,
-    soundcloud_refresh_token: oauth_data.credentials.refresh_token,
-    soundcloud_token_expires_at: Time.at(oauth_data.credentials.expires_at)
-  )
+    if @user.persisted?
+      # 有効期限は nil の可能性があるため to_i 経由で安全に
+      expires_at = oauth.dig(:credentials, :expires_at) || oauth.dig("credentials", "expires_at")
+      @user.update!(
+        soundcloud_token:           oauth.dig(:credentials, :token)           || oauth.dig("credentials", "token"),
+        soundcloud_refresh_token:   oauth.dig(:credentials, :refresh_token)   || oauth.dig("credentials", "refresh_token"),
+        soundcloud_token_expires_at: expires_at ? Time.at(expires_at.to_i) : nil
+      )
 
-  sign_in @user
-  flash[:notice] = "SoundCloudでログインしました！"
-  if mobile_device?
-    redirect_to emotion_logs_path(view: "mobile")
-  else
-    redirect_to emotion_logs_path
+      sign_in @user
+      flash[:notice] = "SoundCloudでログインしました！"
+      redirect_to(mobile_device? ? emotion_logs_path(view: "mobile") : emotion_logs_path)
+    else
+      session["devise.soundcloud_data"] = oauth.except(:extra)
+      redirect_to mobile_device? ? new_user_registration_url(view: "mobile") : new_user_registration_url
+    end
   end
-else
-  session["devise.soundcloud_data"] = oauth_data.except(:extra)
-  # こちらも同じようにスマホ判定で出し分けてもOK
-  if mobile_device?
-    redirect_to new_user_registration_url(view: "mobile")
-  else
-    redirect_to new_user_registration_url
-  end
-end
-end
 
-
-
-  #  GETの誤リクエスト対策
+  # GETの誤リクエスト対策
   def passthru
     if request.get? && request.path.include?("soundcloud")
-      # Rails.logger.error " SoundCloudのOAuthは GET をサポートしていません"
-      render status: 405, plain: "SoundCloud requires POST request"
+      render status: :method_not_allowed, plain: "SoundCloud requires POST request"
     else
       super
     end
   end
 
-  # ❗ OmniAuth失敗時のデフォルト（必要に応じて）
   def failure
-    # Rails.logger.info " Users::OmniauthCallbacksController#failure が呼び出されました"
     flash[:alert] = "SoundCloudログインがキャンセルされました。もう一度ログインをするか、ログイン画面先でSign out!を押してください"
     redirect_to root_path
+  end
+
+  private
+
+  # 本番では一切出さない・トークンはマスクして debug にだけ出す
+  def log_oauth_debug(oauth)
+    return if Rails.env.production?
+
+    creds = oauth.try(:credentials) || {}
+    Rails.logger.debug "🔹 OAuth Callback Started for SoundCloud"
+    Rails.logger.debug "🔹 basic info present: #{oauth['info'].present?}"
+    Rails.logger.debug "🔑 token: #{mask(creds.try(:token))}"
+    Rails.logger.debug "🔁 refresh_token: #{mask(creds.try(:refresh_token))}"
+    if (exp = creds.try(:expires_at)).present?
+      Rails.logger.debug "⏳ expires_at(unix): #{exp}"
+      Rails.logger.debug "⏰ expires_at(readable): #{Time.at(exp.to_i)}"
+    end
+  end
+
+  def mask(str)
+    s = str.to_s
+    return "(nil)" if s.empty?
+    # 先頭4桁＋…＋末尾3桁だけ残す
+    head = s[0, 4]
+    tail = s[-3, 3]
+    "#{head}...#{tail}"
   end
 end

@@ -1,9 +1,6 @@
-# app/controllers/playlists_controller.rb
-require 'securerandom'
-
 class PlaylistsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_playlist, only: [:show, :destroy]
+  before_action :set_playlist, only: [ :show, :destroy ]
 
   def index
     @playlists = current_user.playlists.includes(playlist_items: :emotion_log)
@@ -24,97 +21,23 @@ class PlaylistsController < ApplicationController
   end
 
   def create
-    # 2系統の入力をマージ
-    csv_ids   = params[:selected_log_ids].to_s.split(",")
-    array_ids = Array(params[:selected_logs])
-    selected_ids = (csv_ids + array_ids).map(&:to_i).reject(&:zero?).uniq
+    selected_ids = collect_selected_ids
 
-    if selected_ids.any?
-      @playlist = current_user.playlists.new(playlist_params)
-      if @playlist.save
-        selected_ids.each { |log_id| @playlist.playlist_items.create!(emotion_log_id: log_id) }
+    @playlist = current_user.playlists.new(playlist_params)
 
-        flash.now[:notice] = "プレイリストを作成しました！"
-
-        respond_to do |format|
-          format.turbo_stream do
-            # フラッシュは HTML として部分テンプレートを描画（<turbo-stream> を返す）
-            flash_stream = render_to_string(
-              partial: "shared/flash_container",
-              formats: [:html],
-              locals: { flash: flash }
-            )
-
-            render turbo_stream: [
-              # モバイル：モーダル内のリスト差し替え（入力クリアも兼ねる）
-              turbo_stream.replace(
-                "playlist-modal-content-mobile",
-                partial: "emotion_logs/playlist_sidebar",
-                locals: { playlists: current_user.playlists.includes(playlist_items: :emotion_log) }
-              ),
-              # デスクトップ：サイドバー差し替え
-              turbo_stream.replace(
-                "playlist-sidebar",
-                partial: "emotion_logs/playlist_sidebar",
-                locals: { playlists: current_user.playlists.includes(playlist_items: :emotion_log) }
-              ),
-              # フラッシュの <turbo-stream> をそのまま返す
-              flash_stream
-            ]
-          end
-
-          format.html { redirect_to playlists_path, notice: "プレイリストを作成しました！" }
-        end
-      else
-        flash.now[:alert] = @playlist.errors.full_messages.join("、")
-        respond_to do |format|
-          format.turbo_stream do
-            flash_stream = render_to_string(
-              partial: "shared/flash_container",
-              formats: [:html],
-              locals: { flash: flash }
-            )
-
-            render turbo_stream: [
-              turbo_stream.update(
-                "playlist-modal-container",
-                partial: "emotion_logs/playlist_modal",
-                locals: { playlist: @playlist }
-              ),
-              flash_stream
-            ]
-          end
-          format.html { render :new, status: :unprocessable_entity }
-        end
-      end
+    if selected_ids.any? && @playlist.save
+      selected_ids.each { |log_id| @playlist.playlist_items.create!(emotion_log_id: log_id) }
+      flash.now[:notice] = "プレイリストを作成しました！"
+      respond_with_success
     else
-      @playlist = current_user.playlists.new(playlist_params)
-      flash.now[:alert] = "チェックマークが1つも選択されていません"
-      respond_to do |format|
-        format.turbo_stream do
-          flash_stream = render_to_string(
-            partial: "shared/flash_container",
-            formats: [:html],
-            locals: { flash: flash }
-          )
-
-          render turbo_stream: [
-            turbo_stream.update(
-              "playlist-modal-container",
-              partial: "emotion_logs/playlist_modal",
-              locals: { playlist: @playlist }
-            ),
-            flash_stream
-          ]
-        end
-        format.html { render :new, status: :unprocessable_entity }
-      end
+      flash.now[:alert] ||= @playlist.errors.full_messages.join("、").presence || "チェックマークが1つも選択されていません"
+      respond_with_failure
     end
   end
 
   def show
     @playlist_urls = @playlist.playlist_items.includes(:emotion_log).map { |item| item.emotion_log.music_url }
-    flash.discard(:notice)
+    flash.discard(:notice) # 意図的に notice を消している（2重表示防止）
   end
 
   def destroy
@@ -123,7 +46,6 @@ class PlaylistsController < ApplicationController
     respond_to do |format|
       format.turbo_stream do
         message = "プレイリストを削除しました。"
-
         flash_then_redirect = render_to_string(
           inline: <<~ERB,
             <turbo-stream action="append" target="flash">
@@ -140,10 +62,7 @@ class PlaylistsController < ApplicationController
           ERB
           locals: { message: message }
         )
-
-        render turbo_stream: [flash_then_redirect]
-
-        # Turbo経由の遷移にフラッシュを持ち込まない（二重表示防止）
+        render turbo_stream: [ flash_then_redirect ]
         flash.discard
       end
 
@@ -160,22 +79,59 @@ class PlaylistsController < ApplicationController
   end
 
   def set_playlist
-    @playlist = current_user.playlists
-                    .includes(playlist_items: :emotion_log)
-                    .find(params[:id])
+    @playlist = current_user.playlists.includes(playlist_items: :emotion_log).find(params[:id])
   rescue ActiveRecord::RecordNotFound
     redirect_to playlists_path, alert: "指定のプレイリストが見つかりません。"
   end
 
-  # 使わない（競合回避のため未使用）
-  def render_trigger_flash
-    render_to_string(inline: <<~ERB)
-      <turbo-stream action="remove" target="flash-container"></turbo-stream>
-      <turbo-stream action="append" target="flash">
-        <template>
-          <div id="flash-container" data-flash-notice="#{j flash[:notice]}" data-flash-alert="#{j flash[:alert]}"></div>
-        </template>
-      </turbo-stream>
-    ERB
+  def collect_selected_ids
+    csv_ids   = params[:selected_log_ids].to_s.split(",")
+    array_ids = Array(params[:selected_logs])
+    (csv_ids + array_ids).map(&:to_i).reject(&:zero?).uniq
+  end
+
+  def render_flash_stream
+    render_to_string(
+      partial: "shared/flash_container",
+      formats: [ :html ],
+      locals: { flash: flash }
+    )
+  end
+
+  def respond_with_success
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.replace(
+            "playlist-modal-content-mobile",
+            partial: "emotion_logs/playlist_sidebar",
+            locals: { playlists: current_user.playlists.includes(playlist_items: :emotion_log) }
+          ),
+          turbo_stream.replace(
+            "playlist-sidebar",
+            partial: "emotion_logs/playlist_sidebar",
+            locals: { playlists: current_user.playlists.includes(playlist_items: :emotion_log) }
+          ),
+          render_flash_stream
+        ]
+      end
+      format.html { redirect_to playlists_path, notice: "プレイリストを作成しました！" }
+    end
+  end
+
+  def respond_with_failure
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.update(
+            "playlist-modal-container",
+            partial: "emotion_logs/playlist_modal",
+            locals: { playlist: @playlist }
+          ),
+          render_flash_stream
+        ]
+      end
+      format.html { render :new, status: :unprocessable_entity }
+    end
   end
 end

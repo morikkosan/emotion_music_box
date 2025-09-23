@@ -86,7 +86,7 @@ RSpec.describe EmotionLog, type: :model do
       let!(:newer_log) { create(:emotion_log, created_at: Time.current) }
 
       it "新しい順に並ぶこと" do
-        expect(EmotionLog.newest).to eq([newer_log, older_log])
+        expect(EmotionLog.newest).to eq([ newer_log, older_log ])
       end
     end
 

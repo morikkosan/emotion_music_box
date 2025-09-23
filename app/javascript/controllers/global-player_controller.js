@@ -1,8 +1,31 @@
+/* eslint-env browser */
+/* global SC, Swal */
+
+/**
+ * @typedef {{
+ *   bind: (event:string, handler:Function) => void,
+ *   unbind: (event:string) => void,
+ *   play: () => void,
+ *   pause: () => void,
+ *   isPaused: (cb:(paused:boolean)=>void) => void,
+ *   getDuration: (cb:(ms:number)=>void) => void,
+ *   getPosition: (cb:(ms:number)=>void) => void,
+ *   getCurrentSound: (cb:(sound?:{ title?:string, user?:{ username?:string } })=>void) => void,
+ *   seekTo: (ms:number) => void,
+ *   setVolume: (pct:number) => void
+ * }} SCWidget
+ * @typedef {{ trackId:string|null, trackUrl?:string, position:number, duration:number, isPlaying:boolean }} PlayerState
+ */
+
+
+
 // app/javascript/controllers/global_player_controller.js
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
   static targets = ["trackImage", "playIcon"];
+
+
 
   // ===== 追加: フォールバック用ユーティリティ =====
   _q(sel, root = null) {
@@ -35,6 +58,30 @@ export default class extends Controller {
     } catch (_) {}
   }
 
+  // === 追加：メタデータ反映の共通化（挙動は既存と同じ） ===
+  _applySoundMetadata(sound) {
+    if (sound?.title) {
+      this.setTrackTitle(sound.title);
+      const artist = sound.user?.username ? `— ${sound.user.username}` : "";
+      this.setArtist(artist);
+      this.hideLoadingUI();
+    } else {
+      this.setTrackTitle("タイトル不明");
+      this.setArtist("");
+      this.hideLoadingUI();
+    }
+  }
+
+  // === 追加：unbind を一本化（bindWidgetEvents は既存のまま利用） ===
+  unbindWidgetEvents() {
+    if (!this.widget) return;
+    try {
+      this.widget.unbind(SC.Widget.Events.PLAY);
+      this.widget.unbind(SC.Widget.Events.PAUSE);
+      this.widget.unbind(SC.Widget.Events.FINISH);
+    } catch (_) {}
+  }
+
   cleanup = () => {
     clearInterval(this.progressInterval);
 
@@ -49,11 +96,7 @@ export default class extends Controller {
     } catch (_) {}
 
     if (this.widget) {
-      try {
-        this.widget.unbind(SC.Widget.Events.PLAY);
-        this.widget.unbind(SC.Widget.Events.PAUSE);
-        this.widget.unbind(SC.Widget.Events.FINISH);
-      } catch (_) {}
+      this.unbindWidgetEvents();
       this.widget = null;
     }
 
@@ -242,16 +285,11 @@ export default class extends Controller {
 
       this.widget.getCurrentSound((sound) => {
         if (sound?.title) {
-          this.setTrackTitle(sound.title);
-          const artist = sound.user?.username ? `— ${sound.user.username}` : "";
-          this.setArtist(artist);
-          this.hideLoadingUI();
+          this._applySoundMetadata(sound);
         } else if (retry < 5) {
           return setTimeout(() => this.tryRestore(state, retry + 1), 250);
         } else {
-          this.setTrackTitle("タイトル不明");
-          this.setArtist("");
-          this.hideLoadingUI();
+          this._applySoundMetadata(undefined);
         }
       });
 
@@ -274,11 +312,7 @@ export default class extends Controller {
     this.bottomPlayer?.classList.remove("d-none");
 
     if (this.widget) {
-      try {
-        this.widget.unbind(SC.Widget.Events.PLAY);
-        this.widget.unbind(SC.Widget.Events.PAUSE);
-        this.widget.unbind(SC.Widget.Events.FINISH);
-      } catch (_) {}
+      this.unbindWidgetEvents();
       clearInterval(this.progressInterval);
       this.widget = null;
     }
@@ -300,14 +334,10 @@ export default class extends Controller {
         this.widget.bind(SC.Widget.Events.READY, () => {
           this.widget.getCurrentSound((sound) => {
             if (sound?.title) {
-              this.setTrackTitle(sound.title);
-              const artist = sound.user?.username ? `— ${sound.user.username}` : "";
-              this.setArtist(artist);
+              this._applySoundMetadata(sound);
             } else {
-              this.setTrackTitle("タイトル不明");
-              this.setArtist("");
+              this._applySoundMetadata(undefined);
             }
-            this.hideLoadingUI();
             this.widget.seekTo(state.position || 0);
             state.isPlaying ? this.widget.play() : this.widget.pause();
 
@@ -334,11 +364,7 @@ export default class extends Controller {
     this.bottomPlayer?.offsetHeight;
 
     if (this.widget) {
-      try {
-        this.widget.unbind(SC.Widget.Events.PLAY);
-        this.widget.unbind(SC.Widget.Events.PAUSE);
-        this.widget.unbind(SC.Widget.Events.FINISH);
-      } catch (_) {}
+      this.unbindWidgetEvents();
       clearInterval(this.progressInterval);
       this.widget = null;
     }
@@ -364,16 +390,11 @@ export default class extends Controller {
           const getSound = (retry = 0) => {
             this.widget.getCurrentSound((sound) => {
               if (sound?.title) {
-                this.setTrackTitle(sound.title);
-                const artist = sound.user?.username ? `— ${sound.user.username}` : "";
-                this.setArtist(artist);
-                this.hideLoadingUI();
+                this._applySoundMetadata(sound);
               } else if (retry < 6) {
                 setTimeout(() => getSound(retry + 1), 180);
               } else {
-                this.setTrackTitle("タイトル不明");
-                this.setArtist("");
-                this.hideLoadingUI();
+                this._applySoundMetadata(undefined);
               }
             });
           };
@@ -573,11 +594,7 @@ export default class extends Controller {
     this.cleanup();
 
     if (this.widget) {
-      try {
-        this.widget.unbind(SC.Widget.Events.PLAY);
-        this.widget.unbind(SC.Widget.Events.PAUSE);
-        this.widget.unbind(SC.Widget.Events.FINISH);
-      } catch (_) {}
+      this.unbindWidgetEvents();
       clearInterval(this.progressInterval);
       this.widget = null;
     }
@@ -600,16 +617,11 @@ export default class extends Controller {
           const trySetTitle = (retry = 0) => {
             this.widget.getCurrentSound((sound) => {
               if (sound?.title) {
-                this.setTrackTitle(sound.title);
-                const artist = sound.user?.username ? `— ${sound.user.username}` : "";
-                this.setArtist(artist);
-                this.hideLoadingUI();
+                this._applySoundMetadata(sound);
               } else if (retry < 6) {
                 return setTimeout(() => trySetTitle(retry + 1), 180);
               } else {
-                this.setTrackTitle("タイトル不明");
-                this.setArtist("");
-                this.hideLoadingUI();
+                this._applySoundMetadata(undefined);
               }
             });
           };
@@ -642,7 +654,7 @@ export default class extends Controller {
           if (typeof this.restorePlayerState === "function") {
             this.restorePlayerState();
           }
-        } catch (e) {
+        } catch (_e) {
           alert("プレイヤーの初期化に失敗しました。もう一度曲を選んでください。");
           return;
         }
@@ -709,10 +721,7 @@ export default class extends Controller {
 
     this.widget.getCurrentSound((sound) => {
       if (sound?.title && !this.trackTitleEl.textContent) {
-        this.setTrackTitle(sound.title);
-        const artist = sound.user?.username ? `— ${sound.user.username}` : "";
-        this.setArtist(artist);
-        this.hideLoadingUI();
+        this._applySoundMetadata(sound);
       }
     });
     this.savePlayerState();

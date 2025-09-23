@@ -1,7 +1,7 @@
 class User < ApplicationRecord
   # devise関連
   devise :database_authenticatable, :registerable, :recoverable,
-         :rememberable, :omniauthable, omniauth_providers: [:soundcloud, :google_oauth2]
+         :rememberable, :omniauthable, omniauth_providers: [ :soundcloud, :google_oauth2 ]
 
   # ★ 開発/テストで使う ActiveStorage（本番で使わなくても宣言してOK）
   has_one_attached :avatar
@@ -36,7 +36,7 @@ class User < ApplicationRecord
     elsif avatar_url.present?
       avatar_url
     else
-      ActionController::Base.helpers.asset_path('default_stick_figure.webp')
+      ActionController::Base.helpers.asset_path("default_stick_figure.webp")
     end
   end
 

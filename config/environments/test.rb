@@ -51,5 +51,4 @@ Rails.application.configure do
 
     config.hosts << "www.example.com"
   config.i18n.default_locale = :ja
-  
 end

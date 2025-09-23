@@ -9,7 +9,7 @@ RSpec.describe "Tags", type: :request do
     it "qがあると部分一致で返す" do
       get "/tags", params: { q: "ro" }
       expect(response).to have_http_status(:success)
-      expect(JSON.parse(response.body)).to eq(["rock"])
+      expect(JSON.parse(response.body)).to eq([ "rock" ])
     end
 
     it "qが無いと空配列" do
