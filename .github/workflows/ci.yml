@@ -11,9 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RAILS_ENV: test
-      DISABLE_SPRING: 1   # Spring 無効（CIでは不要＆不安定化要因）
+      DISABLE_SPRING: 1
       TZ: Asia/Tokyo
-
 
     services:
       postgres:
@@ -68,9 +67,16 @@ jobs:
       - name: Show current database.yml
         run: cat config/database.yml
 
-      # ★ seedを実行しない（db:prepareはseedも呼ぶためNG）
       - name: Prepare database (skip seeds)
         run: bundle exec rails db:create db:schema:load
+
+      # ====== ここから追加 ======
+      - name: Run RuboCop
+        run: bundle exec rubocop
+
+      - name: Run ESLint
+        run: yarn eslint --ext .js app/javascript
+      # ====== ここまで追加 ======
 
       - name: Run Jest tests
         env:
