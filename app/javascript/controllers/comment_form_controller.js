@@ -4,7 +4,7 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = ["submit", "textarea", "comments"]
 
-  sending(event) {
+  sending(_event) {
     this.showToast("送信中…")
     this.submitTarget.disabled = true
   }
