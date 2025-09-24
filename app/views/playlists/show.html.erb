@@ -1,52 +1,50 @@
-<%# ===== ★ 一番上に入れる ★ ===== %>
+<!-- このページだけ Turbo のページキャッシュを無効化（レイアウトの yield :head 経由で <head> に入る） -->
+<% content_for :head do %>
+  <meta name="turbo-cache-control" content="no-cache">
+<% end %>
+
+<!-- レイアウトの body に付与するクラス（プレイリスト show 専用スタイル用） -->
 <% content_for :body_class, "playlist-show-page" %>
 
-<%# 端末別：戻るリンクの行き先と data-* を事前に用意 %>
-<%
-  back_path =
-    mobile_device? ? bookmarks_emotion_logs_path(view: "mobile") : bookmarks_emotion_logs_path
-
-  back_link_data =
-    if mobile_device?
-      { turbo_frame: "logs_list_mobile", turbo_action: "advance" }
-    else
-      # playlists#show からはフレームが無いので _top でOK（フル遷移）
-      { turbo_frame: "_top", turbo_action: "advance", no_loader: true }
-    end
-%>
+<!-- 戻るリンクの遷移先だけ端末で分岐。data 属性は常に _top（フル遷移）で安定化 -->
+<% back_path = mobile_device? ? bookmarks_emotion_logs_path(view: "mobile") : bookmarks_emotion_logs_path %>
+<% back_link_data = { turbo_frame: "_top", turbo_action: "advance" } %>
 
 <% if @playlist.playlist_items.empty? %>
+  <!-- 空プレイリスト時のメッセージ -->
   <p class="text-center">まだ曲が追加されていません。</p>
 <% else %>
-  <!-- プレイリスト全体に Stimulus Controller アタッチ -->
+  <!-- プレイリスト全体に Stimulus Controller をアタッチ（グローバルプレーヤー制御） -->
   <div class="playlist-container" data-controller="global-player">
 
-    <!-- プレイリスト本体：パーシャルに切り出し -->
+    <!-- プレイリスト本体（カード/リストなどはパーシャルに分離） -->
     <%= render "playlists/playlist_contents", playlist: @playlist %>
 
-    <!-- ★ フッターメニュー（常時表示） -->
+    <!-- 画面下部の操作フッターメニュー（常時表示） -->
     <nav class="mobile-footer-menu">
-      <button
-        type="button"
-        class="footer-btn playfirst"
-        data-action="click->global-player#playFirstTrack">
+      <!-- 先頭の曲を再生 -->
+      <button type="button"
+              class="footer-btn playfirst"
+              data-action="click->global-player#playFirstTrack">
         <i class="fa fa-play"></i><span>再生</span>
       </button>
 
-      <button
-        type="button"
-        class="footer-btn add"
-        data-bs-toggle="modal"
-        data-bs-target="#addSongsModal"
-        aria-label="曲を追加">
+      <!-- 曲を追加：モーダルを開く -->
+      <button type="button"
+              class="footer-btn add"
+              data-bs-toggle="modal"
+              data-bs-target="#addSongsModal"
+              aria-label="曲を追加">
         <i class="fa fa-plus-circle"></i><span>追加</span>
       </button>
 
+      <!-- 戻る：必ずフル遷移（_top）。戻った後のモーダル不具合を防止 -->
       <%= link_to raw('<i class="fa fa-arrow-left"></i><span>戻る</span>'),
                   back_path,
                   class: "footer-btn back",
                   data: back_link_data %>
 
+      <!-- プレイリスト削除 -->
       <%= link_to raw('<i class="fa fa-trash"></i><span>削除</span>'),
                   playlist_path(@playlist),
                   method: :delete,
@@ -56,7 +54,7 @@
   </div>
 <% end %>
 
-<!-- モーダル定義 -->
+<!-- 曲追加モーダル（ブックマーク一覧から追加） -->
 <div class="modal fade"
      id="addSongsModal"
      data-controller="add-song-modal"
@@ -64,21 +62,27 @@
      aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
+
+      <!-- モーダルヘッダー -->
       <div class="modal-header">
         <h5 class="modal-title">ブックマーク済みの曲一覧</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
+
+      <!-- モーダル本文：ブックマーク曲リスト（パーシャル） -->
       <div class="modal-body" id="addSongsModalBody">
-        <%= render 'playlists/bookmarked_songs', playlist: @playlist %>
+        <%= render "playlists/bookmarked_songs", playlist: @playlist %>
       </div>
+
+      <!-- モーダルフッター -->
       <div class="modal-footer">
-        <button
-          type="button"
-          class="btn btn-secondary"
-          data-bs-dismiss="modal">
+        <button type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal">
           閉じる
         </button>
       </div>
+
     </div>
   </div>
 </div>

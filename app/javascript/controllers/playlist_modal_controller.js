@@ -186,3 +186,20 @@ function runGlobalOverlayCleanup() {
   document.body.classList.remove("swal2-shown")
   document.body.style.pointerEvents = "auto"
 }
+
+
+// ← 追加：Turboの復元描画のたびに必ず残骸掃除
+document.addEventListener("turbo:render", () => {
+  try { runGlobalOverlayCleanup() } catch (_) {}
+});
+
+// ★ 置き換え：persisted 判定ナシで毎回掃除（BFCache/通常どちらでも発火）
+window.addEventListener("pageshow", () => {
+  try { runGlobalOverlayCleanup() } catch (_) {}
+});
+
+// ★ 追加：初回描画・スナップショット復元後にも確実に掃除
+document.addEventListener("turbo:load", () => {
+  try { runGlobalOverlayCleanup() } catch (_) {}
+});
+

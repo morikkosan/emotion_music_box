@@ -410,18 +410,20 @@
           <i class="bi bi-heart fs-4"></i><br>お気に入り
         <% end %>
 
-        <%= link_to "#",
-          id: "show-playlist-modal-mobile",
-          class: "text-center text-white small",
-          data: {
-            controller: "tap-guard",
-            action: "touchstart->tap-guard#start touchmove->tap-guard#move touchend->tap-guard#end click->tap-guard#click click->mobile-footer#onPlaylistClick",
-            "mobile-footer-target": "item",
-            section: "playlist",
-            turbo: false
-          } do %>
-          <i class="bi bi-music-note-list fs-4"></i><br>ㇷ゚ㇾィㇼㇲㇳ
-        <% end %>
+        <%= link_to "#playlist-modal-mobile",
+  id: "show-playlist-modal-mobile",
+  class: "text-center text-white small",
+  role: "button",
+  data: {
+    controller: "tap-guard",
+    action: "touchstart->tap-guard#start touchmove->tap-guard#move touchend->tap-guard#end click->tap-guard#click",
+    "bs-toggle": "modal",
+    "bs-target": "#playlist-modal-mobile",
+    turbo: false
+  } do %>
+  <i class="bi bi-music-note-list fs-4"></i><br>ㇷ゚ㇾィㇼㇲㇳ
+<% end %>
+
       </nav>
 
 
