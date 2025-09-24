@@ -439,3 +439,37 @@ body.playlist-show-page {
   padding-top: calc(0.5rem - 2px);
 }
 
+
+// プレイリストボタン
+/* ▼ プレイリストの追加モーダル用（ERBはそのままでOK） */
+#addSongsModalBody {
+  /* 行(li)自体も flex 子として縮め可に */
+  li.d-flex {
+    min-width: 0;
+  }
+
+  /* 曲名+ボタンを包む行（.song-row）は li の子。ここも縮め可に */
+  .song-row {
+    min-width: 0;
+  }
+
+  /* 曲名部分（.song-title）に “省略の3点セット” + min-width:0 を必ず当てる */
+  .song-row > .song-title {
+    min-width: 0;            /* ★ Flex 子の縮小許可（これが肝） */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* button_to が出す form は .song-row の子なので、ここを固定幅にする */
+  .song-row > form {
+    flex: 0 0 120px;         /* 幅は好みで 100〜140px 程度に調整可 */
+  }
+
+  /* 送信ボタンを form 幅いっぱいに */
+  .song-row > form > button,
+  .song-row > form > input[type="submit"] {
+    width: 100%;
+    display: block;
+  }
+}
