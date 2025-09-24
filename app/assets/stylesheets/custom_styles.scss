@@ -2,14 +2,15 @@
 body {
   font-family: 'Poppins', sans-serif;
   color: #585656;
-  background-color: rgba(0, 0, 0, 0.5); /* 半透明の黒を背景色として設定 */
-  background-image: url('/assets/daishizen.webp'); /* 背景画像を設定 */
-  background-size: 80% auto; /* 横幅を80%に縮小 */
-  background-repeat: no-repeat;
-  background-position: top center;
-  background-attachment: fixed;
-  background-blend-mode: multiply; /* 背景画像と背景色を乗算でブレンド */
+  background-color: rgba(0, 0, 0, 0.5); /* 半透明の黒 */
+  background-image: url('/assets/daishizen.webp'); /* 背景画像 */
+  background-size: cover;              /* ← 画面いっぱいに広げる */
+  background-repeat: no-repeat;        /* 繰り返さない */
+  background-position: center center;  /* 中央に配置 */
+  background-attachment: fixed;        /* スクロールしても固定 */
+  background-blend-mode: multiply;     /* 色と合成 */
 }
+
 
 .banner-container {
   display: flex;
