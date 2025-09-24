@@ -599,6 +599,7 @@
 .mobile-logo {
   max-width: 150px;
   width: 100%;
+  margin-top: 8px; /* 約2mm下げる */
 }
 
 /* HPバー */
@@ -698,4 +699,30 @@ button[type="submit"].mobile-super-search-btn {
     min-width: 160px;
     padding: 0.85rem 1.2rem;
   }
+}
+
+/* 上部フッターを固定 */
+.footer-flex {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px; /* ← 実際に十分収まる高さに */
+  z-index: 1200;
+}
+
+/* 下部フッターを固定 */
+.mobile-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  min-height: 56px; /* ← 高さを固定せず可変対応 */
+  z-index: 1100;
+}
+
+/* 真ん中のスクロール領域 */
+#mobile-view {
+  padding-top: 60px;   /* ↑と同じ数値に */
+  padding-bottom: 56px;
 }
