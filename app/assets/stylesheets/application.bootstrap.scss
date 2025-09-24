@@ -300,3 +300,15 @@ html, body {
   z-index: 5000;
 }
 
+
+body.playlists .footer-flex,
+body.playlists .mobile-footer {
+  display: none;
+}
+
+/* もし上部フッター固定の余白を取ってるなら、それも解除 */
+body.playlists #mobile-view {
+  padding-top: 0;
+  padding-bottom: 0;
+  height: 100vh;
+}
