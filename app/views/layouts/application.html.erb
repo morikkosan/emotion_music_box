@@ -104,10 +104,13 @@
   <%= yield :head %>
   <%= Sentry.get_trace_propagation_meta.html_safe %>
 </head>
+
 <body class="<%= content_for?(:body_class) ? yield(:body_class) : '' %>"
       data-controller="view-switcher global-player"
       data-flash-notice="<%= j flash[:notice] %>"
       data-flash-alert="<%= j flash[:alert] %>">
+        <%= render 'shared/footer' %>
+
 
   <!-- ローディングカバー -->
   <div id="screen-cover-loading" aria-hidden="true" aria-live="polite" aria-label="ローディング画面">
@@ -141,7 +144,6 @@
     </div>
   </div>
 
-  <%= render 'shared/footer' %>
 
   <!-- ──────────── 下部カスタムプレーヤー & 隠し iframe ──────────── -->
 

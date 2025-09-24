@@ -285,4 +285,18 @@ html, body {
   touch-action: pan-y;
 }
 
-/* ===== モバイルスクロール安定化 追加 — ここまで ===== */
+/* スマホ表示でフッターメニューを一番上に置いた場合の補正 */
+@media (max-width: 996px) {
+  [data-controller~="view-switcher"] #mobile-view {
+    padding-top: 40px; /* ← フッター分だけ下げる */
+  }
+}
+
+.footer-top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5000;
+}
+
