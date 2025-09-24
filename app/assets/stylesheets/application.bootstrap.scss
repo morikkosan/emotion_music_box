@@ -107,7 +107,7 @@ body.no-player .emotion-log-show { padding-bottom: 0 !important; }
 [data-controller~="view-switcher"] #desktop-view { display: block; }
 [data-controller~="view-switcher"] #mobile-view  { display: none; }
 
-@media (max-width: 768px) {
+@media (max-width: 996px) {
   [data-controller~="view-switcher"] #desktop-view { display: none !important; }
   [data-controller~="view-switcher"] #mobile-view  { display: block !important; }
 
@@ -182,7 +182,7 @@ html.preload body { visibility: visible !important; }
   - 背景を body に設定している場合でも縮み/タイル化を防ぐ
   - view-switcher 配下のみ副作用を最小化
    ========================================================= */
-@media (max-width: 768px) {
+@media (max-width: 996px) {
   /* ビューポートの高さ基準を安定させる */
   html, body {
     height: auto !important;
@@ -222,7 +222,7 @@ html.preload body { visibility: visible !important; }
 }
 
 /* モバイル全面背景を #mobile-view の擬似要素で表示（fixedバグ回避） */
-@media (max-width: 768px) {
+@media (max-width: 996px) {
   [data-controller~="view-switcher"] #mobile-view::before {
     content: "";
     position: fixed;
