@@ -10,7 +10,7 @@
 <% back_path = mobile_device? ? bookmarks_emotion_logs_path(view: "mobile") : bookmarks_emotion_logs_path %>
 <% back_link_data = { turbo_frame: "_top", turbo_action: "advance" } %>
 
-<% if @playlist.playlist_items.empty? %>
+<% if !@has_items %>
   <!-- 空プレイリスト時のメッセージ -->
   <p class="text-center">まだ曲が追加されていません。</p>
 <% else %>
@@ -18,7 +18,9 @@
   <div class="playlist-container" data-controller="global-player">
 
     <!-- プレイリスト本体（カード/リストなどはパーシャルに分離） -->
-    <%= render "playlists/playlist_contents", playlist: @playlist %>
+    <%= render "playlists/playlist_contents",
+               playlist: @playlist,
+               playlist_items: @playlist_items %>
 
     <!-- 画面下部の操作フッターメニュー（常時表示） -->
     <nav class="mobile-footer-menu">

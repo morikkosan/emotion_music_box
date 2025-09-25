@@ -440,6 +440,22 @@ body.playlist-show-page {
 }
 
 
+/* ===== Selection Counter (desktop + mobile) ===== */
+
+
+
+/* モバイルで少しだけコンパクトに */
+@media (max-width: 576px) {
+  .bookmark-toolbar
+    [data-controller="selection-counter"]
+    [data-selection-counter-target="output"] {
+    font-size: .9rem;
+    padding: .3rem .55rem;
+  }
+}
+
+
+
 // プレイリストボタン
 /* ===========================
    追加ボタン：大人リッチなネオン風
