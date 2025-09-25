@@ -1,7 +1,8 @@
 // app/javascript/controllers/playlist_modal_controller.js
 import { Controller } from "@hotwired/stimulus"
 import * as bootstrap from "bootstrap"
-
+// ★ 追加：共通クリーンアップのインポート
+import { runGlobalOverlayCleanup } from "../custom/overlay_cleanup.js";
 /**
  * 「ページ常設のプレイリストモーダル」用
  * ・DOMはremoveしない（使い回し）
@@ -106,12 +107,7 @@ export default class extends Controller {
 
 /* ==== Turbo連携 ==== */
 
-// ページキャッシュ前は従来通り掃除
-document.addEventListener("turbo:before-cache", () => {
-  runGlobalOverlayCleanup()
-})
-
-// フラッシュ関係の stream は掃除をスキップし、描画後に必ず起動
+// ✅ これ（before-stream-render 上書き）はこのコントローラに必要なので残す
 document.addEventListener("turbo:before-stream-render", (event) => {
   const stream = event.target
   if (!stream || stream.tagName !== "TURBO-STREAM") {
@@ -135,7 +131,6 @@ document.addEventListener("turbo:before-stream-render", (event) => {
       if (touchesFlash) {
         queueMicrotask(() => {
           try {
-            // 互換：どちらでもOK
             if (typeof window.showFlashMessages === "function") {
               window.showFlashMessages()
             } else if (typeof window.showFlashSwal === "function") {
@@ -143,7 +138,6 @@ document.addEventListener("turbo:before-stream-render", (event) => {
             }
           } catch (_) {}
 
-          // 成功時はフォームクリア
           try {
             const fc = document.getElementById("flash-container")
             const notice = (fc?.getAttribute("data-flash-notice") || "")
@@ -160,46 +154,3 @@ document.addEventListener("turbo:before-stream-render", (event) => {
     }
   }
 })
-
-function runGlobalOverlayCleanup() {
-  document.querySelectorAll(".modal.show").forEach(m => {
-    try {
-      const inst = bootstrap.Modal.getInstance(m) || bootstrap.Modal.getOrCreateInstance(m)
-      inst.hide(); inst.dispose()
-    } catch (_) {}
-    m.classList.remove("show")
-    m.style.display = ""
-    m.removeAttribute("aria-modal")
-    m.setAttribute("aria-hidden", "true")
-  })
-  document.querySelectorAll(".modal-backdrop, .offcanvas-backdrop").forEach(el => el.remove())
-  document.body.classList.remove("modal-open")
-  document.body.style.overflow = ""
-  document.body.style.paddingRight = ""
-  ;["#swal-fake-modal",".sweet-overlay","#sweet-alert",".swal2-container",".swal2-backdrop"].forEach(sel => {
-    document.querySelectorAll(sel).forEach(n => {
-      try { n.remove() } catch (_) {
-        n.style.pointerEvents = "none"; n.style.display = "none"; n.style.visibility = "hidden"
-      }
-    })
-  })
-  document.body.classList.remove("swal2-shown")
-  document.body.style.pointerEvents = "auto"
-}
-
-
-// ← 追加：Turboの復元描画のたびに必ず残骸掃除
-document.addEventListener("turbo:render", () => {
-  try { runGlobalOverlayCleanup() } catch (_) {}
-});
-
-// ★ 置き換え：persisted 判定ナシで毎回掃除（BFCache/通常どちらでも発火）
-window.addEventListener("pageshow", () => {
-  try { runGlobalOverlayCleanup() } catch (_) {}
-});
-
-// ★ 追加：初回描画・スナップショット復元後にも確実に掃除
-document.addEventListener("turbo:load", () => {
-  try { runGlobalOverlayCleanup() } catch (_) {}
-});
-
