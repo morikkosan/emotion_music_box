@@ -1,9 +1,7 @@
-<!-- <%# app/views/devise/registrations/edit.html.erb %>
-<%# Cropper.js 用 CSS はレイアウトで読み込まれている想定です %>
-<%# app/views/devise/registrations/edit.html.erb %>
+
 <% content_for :head do %>
-  <%= stylesheet_link_tag "application", media: "all", "data-turbo-track": "reload" %>
-<% end %> -->
+  <meta name="turbo-cache-control" content="no-cache">
+<% end %>
 <% content_for :body_class, ' no-player' %>
 
 <% content_for :title, "プロフィール編集" %>
