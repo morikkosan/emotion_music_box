@@ -107,7 +107,7 @@ body.no-player .emotion-log-show { padding-bottom: 0 !important; }
 [data-controller~="view-switcher"] #desktop-view { display: block; }
 [data-controller~="view-switcher"] #mobile-view  { display: none; }
 
-@media (max-width: 768px) {
+@media (max-width: 996px) {
   [data-controller~="view-switcher"] #desktop-view { display: none !important; }
   [data-controller~="view-switcher"] #mobile-view  { display: block !important; }
 
@@ -182,7 +182,7 @@ html.preload body { visibility: visible !important; }
   - 背景を body に設定している場合でも縮み/タイル化を防ぐ
   - view-switcher 配下のみ副作用を最小化
    ========================================================= */
-@media (max-width: 768px) {
+@media (max-width: 996px) {
   /* ビューポートの高さ基準を安定させる */
   html, body {
     height: auto !important;
@@ -222,7 +222,7 @@ html.preload body { visibility: visible !important; }
 }
 
 /* モバイル全面背景を #mobile-view の擬似要素で表示（fixedバグ回避） */
-@media (max-width: 768px) {
+@media (max-width: 996px) {
   [data-controller~="view-switcher"] #mobile-view::before {
     content: "";
     position: fixed;
@@ -285,4 +285,30 @@ html, body {
   touch-action: pan-y;
 }
 
-/* ===== モバイルスクロール安定化 追加 — ここまで ===== */
+/* スマホ表示でフッターメニューを一番上に置いた場合の補正 */
+@media (max-width: 996px) {
+  [data-controller~="view-switcher"] #mobile-view {
+    padding-top: 40px; /* ← フッター分だけ下げる */
+  }
+}
+
+.footer-top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5000;
+}
+
+
+body.playlists .footer-flex,
+body.playlists .mobile-footer {
+  display: none;
+}
+
+/* もし上部フッター固定の余白を取ってるなら、それも解除 */
+body.playlists #mobile-view {
+  padding-top: 0;
+  padding-bottom: 0;
+  height: 100vh;
+}

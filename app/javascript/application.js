@@ -24,9 +24,31 @@ import "./custom/recommend_button";
 import "./custom/avatar_cropper";
 import "./custom/recommended_global";
 
+// ★ 追加：共通オーバーレイクリーンアップ
+import { runGlobalOverlayCleanup } from "./custom/overlay_cleanup.js";
+
 Rails.start();
 console.log("🔥 Rails UJS is loaded!", Rails);
 window.bootstrap = bootstrap;
+
+// ★ 任意：他スクリプトから呼べるように公開
+if (!window.runGlobalOverlayCleanup) {
+  window.runGlobalOverlayCleanup = runGlobalOverlayCleanup;
+}
+
+// ★ 多重登録防止しつつ、復元/描画ごとに必ず掃除するリスナーを一括登録
+if (!window.__overlayCleanupInitialized) {
+  window.__overlayCleanupInitialized = true;
+
+  const safeCleanup = () => {
+    try { runGlobalOverlayCleanup(); } catch (_) {}
+  };
+
+  document.addEventListener("turbo:before-cache", safeCleanup);
+  document.addEventListener("turbo:render",       safeCleanup);
+  document.addEventListener("turbo:load",         safeCleanup);
+  window.addEventListener("pageshow",             safeCleanup);
+}
 
 // サービスワーカー登録（従来どおり）
 registerServiceWorker();

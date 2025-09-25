@@ -1,14 +1,15 @@
 <!-- app/views/playlists/_bookmarked_songs.html.erb -->
-<!-- ✅ モーダル本体にだけ data-controller を付けるので、ここには不要 -->
 <div id="addSongsModalBody">
   <ul class="list-unstyled">
-    <%# プレイリストにまだ含まれていない曲だけを表示 %>
-    <% current_user.bookmarked_emotion_logs
-         .reject { |log| @playlist.emotion_log_ids.include?(log.id) }
-         .each do |log| %>
+    <%# プレイリストにまだ含まれていない曲だけを表示（music_urlでユニーク化） %>
+    <% (current_user.bookmarked_emotion_logs + current_user.emotion_logs)
+       .uniq { |log| log.music_url }
+       .reject { |log| @playlist.emotion_log_ids.include?(log.id) }
+       .each do |log| %>
+
       <li
         data-add-song-modal-target="item"
-        class="d-flex align-items-center mb-2 p-1"
+        class="song-item d-flex align-items-center mb-2 p-1"
       >
         <!-- アートワーク -->
         <%= image_tag(
@@ -17,21 +18,26 @@
               class: "me-2 rounded"
             ) %>
 
-        <!-- 曲名 -->
-        <div class="flex-grow-1"><%= log.track_name %></div>
+        <!-- 曲名 + ボタンの横並び行 -->
+        <div class="song-row d-flex align-items-center flex-grow-1">
+          <!-- 曲名（必ず省略される） -->
+          <div class="song-title flex-grow-1 me-2">
+            <%= log.track_name %>
+          </div>
 
-        <!-- ✅ 追加ボタン：submit後にこの曲だけ li を非表示にする -->
-        <%= button_to "追加",
-              playlist_playlist_items_path(playlist_id: @playlist.id),
-              params: { emotion_log_id: log.id },
-              method: :post,
-              form: {
-                data: {
-                  turbo_frame: dom_id(@playlist, :contents),
-                  action: "turbo:submit-end->add-song-modal#hideItem"
-                }
-              },
-              class: "btn btn-sm btn-success" %>
+          <!-- 追加ボタン（固定幅で右に揃う） -->
+          <%= button_to "追加",
+                playlist_playlist_items_path(playlist_id: @playlist.id),
+                params: { emotion_log_id: log.id },
+                method: :post,
+                form: {
+                  data: {
+                    turbo_frame: dom_id(@playlist, :contents),
+                    action: "turbo:submit-end->add-song-modal#hideItem"
+                  }
+                },
+                class: "btn btn-success add-song-btn" %>
+        </div>
       </li>
     <% end %>
   </ul>

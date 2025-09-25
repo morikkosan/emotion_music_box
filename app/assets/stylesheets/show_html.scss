@@ -438,3 +438,78 @@ body.playlist-show-page {
   border-top: 2px solid currentColor;
   padding-top: calc(0.5rem - 2px);
 }
+
+
+// プレイリストボタン
+/* ===========================
+   追加ボタン：大人リッチなネオン風
+   ※ ERBのクラスはそのまま（btn btn-success add-song-btn）
+   =========================== */
+/* ===========================
+   追加ボタン：大人リッチなネオン（緑テキストを完全無効化）
+   ERBはそのまま: class="btn btn-success add-song-btn"
+   =========================== */
+#addSongsModalBody {
+  .song-row > form { flex: 0 0 120px; }
+
+  .song-row > form > .btn.add-song-btn {
+    /* Bootstrapのsuccess系を無効化 */
+    background-color: transparent !important;
+    border-color: transparent !important;
+    color: #eef3ff !important;              /* ← 文字は白系に固定 */
+    /* ネオン枠＋ダーク本体 */
+    background:
+      linear-gradient(135deg, #26293a 0%, #26293a 40%) padding-box,
+      linear-gradient(135deg, #3fe7fb 0%, #a78bfa 100%) border-box !important;
+    border: 1.6px solid transparent !important;
+
+    width: 100%; display: block;
+    border-radius: 9999px;
+    padding: 0.48rem 0.9rem;
+    font-weight: 700; letter-spacing: 0.03em; line-height: 1.1;
+
+    box-shadow:
+      0 6px 18px rgba(167,139,250,.28),
+      0 0 12px rgba(63,231,251,.22);
+
+    transition: transform .12s ease, box-shadow .14s ease,
+                filter .14s ease, background .14s ease;
+    text-shadow: 0 0 4px rgba(255,255,255,.12);
+  }
+
+  .song-row > form > .btn.add-song-btn:hover {
+    color: #f7f9ff !important;
+    background:
+      linear-gradient(135deg, #2b2f45 0%, #2b2f45 40%) padding-box,
+      linear-gradient(135deg, #62efff 0%, #c1b0ff 100%) border-box !important;
+    box-shadow:
+      0 10px 22px rgba(167,139,250,.42),
+      0 0 20px rgba(98,239,255,.35);
+    transform: translateY(-1px);
+    filter: brightness(1.03);
+  }
+
+  .song-row > form > .btn.add-song-btn:active {
+    transform: translateY(0);
+    filter: brightness(.97);
+    box-shadow:
+      0 4px 12px rgba(167,139,250,.25),
+      0 0 10px rgba(63,231,251,.20);
+  }
+
+  .song-row > form > .btn.add-song-btn:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 3px rgba(98,239,255,.35),
+      0 0 0 6px rgba(167,139,250,.25),
+      0 8px 20px rgba(167,139,250,.35);
+  }
+
+  .song-row > form > .btn.add-song-btn:disabled {
+    opacity: .65; filter: grayscale(.2); box-shadow: none; cursor: not-allowed;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .song-row > form > .btn.add-song-btn { transition: none; }
+  }
+}
