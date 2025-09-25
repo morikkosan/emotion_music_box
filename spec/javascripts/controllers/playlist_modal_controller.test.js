@@ -103,8 +103,11 @@ describe("playlist_modal_controller (DOM effects)", () => {
     // ここで bootstrap を見た目再現モックに差し替える
     jest.doMock("bootstrap", makeBootstrapMock);
 
-    // controller をモック適用後に import
+    // ★ 重要：アプリ起動順に合わせて application を先に import（グローバル掃除リスナー登録）
     jest.isolateModules(() => {
+      // eslint-disable-next-line global-require
+      require("application");
+      // 次に controller を import
       // eslint-disable-next-line global-require
       ControllerClass = require("controllers/playlist_modal_controller").default;
     });
@@ -355,7 +358,7 @@ describe("playlist_modal_controller (DOM effects)", () => {
     document.body.classList.add("modal-open");
     document.body.style.overflow = "hidden";
 
-    // 1) turbo:before-cache
+    // 1) turbo:before-cache（application.js に登録されたグローバルリスナーが反応）
     document.dispatchEvent(new Event("turbo:before-cache"));
 
     await waitFor(() => {
@@ -370,7 +373,7 @@ describe("playlist_modal_controller (DOM effects)", () => {
       expect(document.body.style.pointerEvents).toBe("auto");
     });
 
-    // 再度汚して 2) turbo:before-stream-render
+    // 再度汚して 2) turbo:before-stream-render（controller 内のハンドラが反応）
     const m2 = document.createElement("div");
     m2.className = "modal show";
     m2.style.display = "block";
@@ -461,7 +464,7 @@ describe("playlist_modal_controller (DOM effects)", () => {
     document.body.classList.add("modal-open");
     document.body.style.overflow = "hidden";
 
-    // イベント発火
+    // イベント発火（application.js のリスナーが runGlobalOverlayCleanup を実行）
     document.dispatchEvent(new Event("turbo:before-cache"));
 
     await waitFor(() => {
