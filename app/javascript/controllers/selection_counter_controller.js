@@ -2,20 +2,24 @@
 import { Controller } from "@hotwired/stimulus"
 
 /*
-  HTML:
-  <div
-    data-controller="selection-counter"
-    data-selection-counter-checkbox-selector-value=".playlist-check"
-    data-selection-counter-button-selector-value=".bookmark-playlist-create-btn">
-    <span data-selection-counter-target="output" aria-live="polite">0個選択中</span>
-  </div>
+<div
+  data-controller="selection-counter"
+  data-selection-counter-checkbox-selector-value=".playlist-check"
+  data-selection-counter-button-selector-value=".bookmark-playlist-create-btn"
+  data-selection-counter-namespace-key-value="bookmarks">  // ← 共有キー
+  <span data-selection-counter-target="output" aria-live="polite">0個選択中</span>
+  <!-- 任意: クリアボタン -->
+  <button type="button" class="btn btn-sm btn-link ms-2"
+          data-action="selection-counter#clearAll">選択クリア</button>
+</div>
 */
 
 export default class extends Controller {
   static targets = ["output"]
   static values = {
     checkboxSelector: String,
-    buttonSelector: { type: String, default: "" }
+    buttonSelector: { type: String, default: "" },
+    namespaceKey:   { type: String, default: "" }   // ← ページ/文脈のキー
   }
 
   connect() {
@@ -23,18 +27,20 @@ export default class extends Controller {
     this.onTurboLoad      = this.onTurboLoad.bind(this)
     this.onTurboFrameLoad = this.onTurboFrameLoad.bind(this)
 
-    // 変更はドキュメント全体で拾う（フレーム跨ぎでもOKにする）
     document.addEventListener("change", this.handleChange, true)
     document.addEventListener("turbo:load", this.onTurboLoad)
     document.addEventListener("turbo:frame-load", this.onTurboFrameLoad)
 
-    // 大きなDOM変化にも追従（全体監視）
     this.mo = new MutationObserver(() => {
       clearTimeout(this._mutationTimer)
-      this._mutationTimer = setTimeout(() => this.updateCount(), 50)
+      this._mutationTimer = setTimeout(() => {
+        this.applyCheckedState()
+        this.updateCount()
+      }, 50)
     })
     this.mo.observe(document.body, { childList: true, subtree: true })
 
+    this.applyCheckedState()
     this.updateCount()
   }
 
@@ -48,33 +54,52 @@ export default class extends Controller {
 
   handleChange(e) {
     const sel = this.checkboxSelectorValue || ".playlist-check"
-    if (e.target && e.target.matches(sel)) {
-      this.updateCount()
-    }
+    if (!e.target || !e.target.matches(sel)) return
+
+    const id = String(e.target.value ?? e.target.dataset.id ?? "")
+    if (!id) return
+
+    const set = this._loadSet()
+    if (e.target.checked) set.add(id)
+    else set.delete(id)
+    this._saveSet(set)
+    this.updateCount()
   }
 
-  onTurboLoad()      { this.updateCount() }
-  onTurboFrameLoad() { this.updateCount() }
+  onTurboLoad()      { this.applyCheckedState(); this.updateCount() }
+  onTurboFrameLoad() { this.applyCheckedState(); this.updateCount() }
+
+  // 任意: 全解除
+  clearAll() {
+    this._saveSet(new Set())
+    const sel = this.checkboxSelectorValue || ".playlist-check"
+    document.querySelectorAll(sel).forEach(cb => cb.checked = false)
+    this.updateCount()
+  }
+
+  // 保存分を画面に反映（ページ移動・再描画時）
+  applyCheckedState() {
+    const sel = this.checkboxSelectorValue || ".playlist-check"
+    const set = this._loadSet()
+    document.querySelectorAll(sel).forEach(cb => {
+      const id = String(cb.value ?? cb.dataset.id ?? "")
+      if (id) cb.checked = set.has(id)
+    })
+  }
 
   updateCount() {
-    const sel = this.checkboxSelectorValue || ".playlist-check"
-
-    // ★ 重要：常に document から集計（どのフレームにいても拾える）
-    const boxes   = Array.from(document.querySelectorAll(sel))
-    const checked = boxes.filter(b => b.checked).length
+    const count = this._loadSet().size
 
     if (this.hasOutputTarget) {
-      this.outputTarget.textContent = `${checked}個選択中`
+      this.outputTarget.textContent = `${count}個選択中`
     }
 
     if (this.buttonSelectorValue) {
-      // まずは自身の要素内→無ければdocument
       const btn =
         this.element.querySelector(this.buttonSelectorValue) ||
         document.querySelector(this.buttonSelectorValue)
-
       if (btn) {
-        if (checked > 0) {
+        if (count > 0) {
           btn.removeAttribute("disabled")
           btn.classList.remove("disabled")
           btn.setAttribute("aria-disabled", "false")
@@ -85,5 +110,22 @@ export default class extends Controller {
         }
       }
     }
+  }
+
+  // ===== sessionStorage =====
+  _storageKey() {
+    return this.namespaceKeyValue || `selection:${location.pathname}:bookmarks`
+  }
+  _loadSet() {
+    try {
+      const raw = sessionStorage.getItem(this._storageKey())
+      if (!raw) return new Set()
+      const arr = JSON.parse(raw)
+      return new Set(Array.isArray(arr) ? arr.map(String) : [])
+    } catch { return new Set() }
+  }
+  _saveSet(set) {
+    try { sessionStorage.setItem(this._storageKey(), JSON.stringify([...set])) }
+    catch { /* ignore */ }
   }
 }
