@@ -1,8 +1,8 @@
 # app/controllers/playlists_controller.rb
 class PlaylistsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_playlist, only: [ :show, :destroy ]
-  before_action :disable_turbo_cache, only: [ :show ]
+  before_action :set_playlist, only: [:show, :destroy]
+  before_action :disable_turbo_cache, only: [:show]
 
   def index
     @playlists = current_user.playlists.includes(playlist_items: :emotion_log)
@@ -27,12 +27,20 @@ class PlaylistsController < ApplicationController
 
     @playlist = current_user.playlists.new(playlist_params)
 
-    if selected_ids.any? && @playlist.save
-      selected_ids.each { |log_id| @playlist.playlist_items.create!(emotion_log_id: log_id) }
+    begin
+      Playlist.transaction do
+        @playlist.save!
+        # 存在するIDだけに絞った後、重複を避けて安全に作成
+        selected_ids.each do |log_id|
+          @playlist.playlist_items.find_or_create_by!(emotion_log_id: log_id)
+        end
+      end
+
       flash.now[:notice] = "プレイリストを作成しました！"
       respond_with_success
-    else
-      flash.now[:alert] ||= @playlist.errors.full_messages.join("、").presence || "チェックマークが1つも選択されていません"
+    rescue ActiveRecord::RecordInvalid => e
+      # 失敗理由をそのまま表示（既存の分岐を尊重）
+      flash.now[:alert] ||= e.record.errors.full_messages.join("、").presence || "チェックマークが1つも選択されていません"
       respond_with_failure
     end
   end
@@ -87,16 +95,24 @@ class PlaylistsController < ApplicationController
     redirect_to playlists_path, alert: "指定のプレイリストが見つかりません。"
   end
 
+  # ▼ここを“存在するIDだけ”に正規化（ここだけ修正）
   def collect_selected_ids
     csv_ids   = params[:selected_log_ids].to_s.split(",")
     array_ids = Array(params[:selected_logs])
-    (csv_ids + array_ids).map(&:to_i).reject(&:zero?).uniq
+    raw = (csv_ids + array_ids)
+            .map { |v| v.to_s.strip }
+            .reject(&:blank?)
+            .map(&:to_i)
+            .reject(&:zero?)
+            .uniq
+    # 実在チェック：存在しないIDを弾く（ここが肝）
+    EmotionLog.where(id: raw).pluck(:id)
   end
 
   def render_flash_stream
     render_to_string(
       partial: "shared/flash_container",
-      formats: [ :html ],
+      formats: [:html],
       locals: { flash: flash }
     )
   end
