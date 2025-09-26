@@ -1,50 +1,72 @@
-<!-- Turbo Stream replace 命中先：playlist_#{id}_contents -->
-<div id="<%= dom_id(playlist, :contents) %>">
-  <ul class="list-unstyled mt-3 playlist-contents">
-    <% items = local_assigns[:playlist_items] || playlist.playlist_items.includes(:emotion_log).order(:created_at) %>
+<% content_for :head do %>
+  <meta name="turbo-cache-control" content="no-cache">
+<% end %>
 
-    <% items.each do |item| %>
-      <% log = item.emotion_log %>
-      <!-- log が欠けても落ちないように id はフォールバック付与 -->
-      <li class="mb-4" id="<%= dom_id(log || item, :row) %>">
-        <div class="pmx_playlist_row d-flex align-items-center">
-          <!-- 左：アートワーク＋再生アイコン -->
-          <div class="pmx_cover_wrapper me-3">
-            <%= image_tag(
-                  (log&.music_art_url).presence || "placeholder.webp",
-                  alt: (log&.track_name).presence || "（タイトル未設定）",
-                  class: "rounded shadow pmx_cover_img",
-                  data: {
-                    "global-player-target" => "trackImage",
-                    "track-id"             => log&.id,
-                    "play-url"             => log&.music_url
-                  }
-                ) %>
-            <i class="fa fa-play play-overlay-icon"
-               data-action="click->global-player#onPlayIconClick"
-               data-global-player-target="playIcon"
-               data-track-id="<%= log&.id %>"
-               data-play-url="<%= log&.music_url %>"></i>
-          </div>
+<% content_for :body_class, "playlist-show-page" %>
 
-          <!-- 中央：曲名＋投稿者 -->
-          <div class="pmx_song_info flex-grow-1">
-            <div class="fw-bold neon-btn-title"><%= (log&.track_name).presence || (log&.music_url).to_s.presence || "（タイトル未設定）" %></div>
-            <div class="text-muted small mt-1">
-              投稿: <%= log&.user&.name || "匿名" %>
-            </div>
-          </div>
+<% back_path = mobile_device? ? bookmarks_emotion_logs_path(view: "mobile") : bookmarks_emotion_logs_path %>
+<% back_link_data = { turbo_frame: "_top", turbo_action: "advance" } %>
 
-          <!-- 右：削除ボタン -->
-          <div class="pmx_remove_button">
-            <%= button_to raw('<i class="fa fa-trash"></i>'),
-                  playlist_playlist_item_path(playlist, item),
+<% if !@has_items %>
+  <!-- ★★ ここを追加：置換先(ID)を用意しておく ★★ -->
+  <div id="<%= dom_id(@playlist, :contents) %>">
+    <!-- 空プレイリスト時のメッセージ（既存のまま） -->
+    <p class="text-center">まだ曲が追加されていません。</p>
+  </div>
+<% else %>
+  <!-- ここは既存のまま -->
+  <div class="playlist-container" data-controller="global-player">
+    <%= render "playlists/playlist_contents",
+               playlist: @playlist,
+               playlist_items: @playlist_items %>
+
+    <nav class="mobile-footer-menu">
+      <button type="button"
+              class="footer-btn playfirst"
+              data-action="click->global-player#playFirstTrack">
+        <i class="fa fa-play"></i><span>再生</span>
+      </button>
+
+      <button type="button"
+              class="footer-btn add"
+              data-bs-toggle="modal"
+              data-bs-target="#addSongsModal"
+              aria-label="曲を追加">
+        <i class="fa fa-plus-circle"></i><span>追加</span>
+      </button>
+
+      <%= link_to raw('<i class="fa fa-arrow-left"></i><span>戻る</span>'),
+                  back_path,
+                  class: "footer-btn back",
+                  data: back_link_data %>
+
+      <%= link_to raw('<i class="fa fa-trash"></i><span>削除</span>'),
+                  playlist_path(@playlist),
                   method: :delete,
-                  data: { turbo_confirm: "本当にこの曲を削除しますか？" },
-                  class: "btn btn-danger btn-sm" %>
-          </div>
-        </div>
-      </li>
-    <% end %>
-  </ul>
+                  data: { confirm: "本当にこのプレイリストを削除しますか？" },
+                  class: "footer-btn delete" %>
+    </nav>
+  </div>
+<% end %>
+
+<!-- モーダル（既存のまま） -->
+<div class="modal fade"
+     id="addSongsModal"
+     data-controller="add-song-modal"
+     tabindex="-1"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">ブックマーク済みの曲一覧</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="addSongsModalBody">
+        <%= render "playlists/bookmarked_songs", playlist: @playlist %>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+      </div>
+    </div>
+  </div>
 </div>
