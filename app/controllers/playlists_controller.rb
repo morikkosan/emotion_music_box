@@ -1,7 +1,8 @@
+# app/controllers/playlists_controller.rb
 class PlaylistsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_playlist, only: [ :show, :destroy ]
-  before_action :disable_turbo_cache, only: [ :show ]  # ★ 追記
+  before_action :disable_turbo_cache, only: [ :show ]
 
   def index
     @playlists = current_user.playlists.includes(playlist_items: :emotion_log)
@@ -37,13 +38,17 @@ class PlaylistsController < ApplicationController
   end
 
   def show
-    @playlist_urls = @playlist.playlist_items.includes(:emotion_log).map { |item| item.emotion_log.music_url }
-    flash.discard(:notice) # 意図的に notice を消している（2重表示防止）
+    # ▼ここから3行が追加/変更（判定の安定化と配列の固定）
+    @has_items      = @playlist.playlist_items.exists?
+    @playlist_items = @playlist.playlist_items.includes(:emotion_log).order(:created_at).to_a
+    @playlist_urls  = @playlist_items.map { |item| item.emotion_log&.music_url }.compact
+    # ▲ここまで
+
+    flash.discard(:notice)
   end
 
   def destroy
     @playlist.destroy
-
     respond_to do |format|
       format.turbo_stream do
         message = "プレイリストを削除しました。"
@@ -66,10 +71,7 @@ class PlaylistsController < ApplicationController
         render turbo_stream: [ flash_then_redirect ]
         flash.discard
       end
-
-      format.html do
-        redirect_to bookmarks_emotion_logs_path, notice: "プレイリストを削除しました。"
-      end
+      format.html { redirect_to bookmarks_emotion_logs_path, notice: "プレイリストを削除しました。" }
     end
   end
 
@@ -136,7 +138,6 @@ class PlaylistsController < ApplicationController
     end
   end
 
-  # ★ 追加：キャッシュ無効化（確実にモーダルをリセットしたい場合）
   def disable_turbo_cache
     response.headers["Cache-Control"] = "no-store"
   end

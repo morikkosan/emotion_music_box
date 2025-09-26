@@ -41,6 +41,26 @@
         <% else %>
           <button class="btn btn-secondary" disabled>プレイリストは12個まで作成可能です</button>
         <% end %>
+
+        <!-- ▼ チェック数カウンタ（ボタン直下に表示） -->
+        <div
+  class="mt-2"
+  data-controller="selection-counter"
+  data-selection-counter-checkbox-selector-value="[name='selected_logs[]']"
+  data-selection-counter-button-selector-value=".bookmark-playlist-create-btn"
+  data-selection-counter-namespace-key-value="bookmarks">
+  <span data-selection-counter-target="output" class="small text-muted" aria-live="polite">
+    0個選択中
+  </span>
+  <button type="button"
+        class="btn btn-sm btn-link text-decoration-underline ms-2"
+        data-action="selection-counter#clearAll">
+  選択クリア
+</button>
+</div>
+
+        <!-- ▲ ここまで追記 -->
+
       </div>
     </div>
 
