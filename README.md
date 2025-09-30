@@ -135,7 +135,7 @@
 
 **対応環境**
 - **iPhone / iPad（iOS / iPadOS 16.4+）**  
-  - 必須：**ホーム画面に追加（PWAインストール）→ そのアイコンから起動**  
+  - 必須：**ホーム画面に追加（PWAインストール）→ そのアイコンから起動**
   - Safari の通常タブのままでは通知は届きません  
   参考：Apple Developer（Web Push）: https://developer.apple.com/documentation/usernotifications/sending_web_push_notifications_in_web_apps  
   参考：OneSignal Docs: https://documentation.onesignal.com/
