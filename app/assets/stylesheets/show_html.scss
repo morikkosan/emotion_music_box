@@ -529,3 +529,17 @@ body.playlist-show-page {
     .song-row > form > .btn.add-song-btn { transition: none; }
   }
 }
+
+
+
+/* 曲が1件も無い間は再生ボタンを無効化（半透明 & クリック不可） */
+.playlist-show-page:not(:has([data-track-id])) .mobile-footer-menu .playfirst {
+  opacity: .4;
+  pointer-events: none;
+}
+
+/* 初期描画で aria-disabled=true の場合も無効に見せる */
+.mobile-footer-menu .playfirst[aria-disabled="true"] {
+  opacity: .4;
+  pointer-events: none;
+}
