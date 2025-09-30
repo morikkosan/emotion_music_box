@@ -11,70 +11,46 @@
   <div id="<%= dom_id(@playlist, :contents) %>">
     <p class="text-center">まだ曲が追加されていません。</p>
   </div>
-
-  <!-- ★ 曲がない場合でもフッターメニュー（再生は出さない） -->
-  <nav class="mobile-footer-menu">
-    <!-- 曲を追加：モーダルを開く -->
-    <button type="button"
-            class="footer-btn add"
-            data-bs-toggle="modal"
-            data-bs-target="#addSongsModal"
-            aria-label="曲を追加">
-      <i class="fa fa-plus-circle"></i><span>追加</span>
-    </button>
-
-    <!-- 戻る -->
-    <%= link_to raw('<i class="fa fa-arrow-left"></i><span>戻る</span>'),
-                back_path,
-                class: "footer-btn back",
-                data: back_link_data %>
-
-    <!-- プレイリスト削除 -->
-    <%= link_to raw('<i class="fa fa-trash"></i><span>削除</span>'),
-                playlist_path(@playlist),
-                method: :delete,
-                data: { confirm: "本当にこのプレイリストを削除しますか？" },
-                class: "footer-btn delete" %>
-  </nav>
 <% else %>
   <div class="playlist-container" data-controller="global-player">
     <%= render "playlists/playlist_contents",
                playlist: @playlist,
                playlist_items: @playlist_items %>
-
-    <!-- 従来どおりのフッターメニュー（再生あり） -->
-    <nav class="mobile-footer-menu">
-      <!-- 先頭の曲を再生 -->
-      <button type="button"
-              class="footer-btn playfirst"
-              data-action="click->global-player#playFirstTrack">
-        <i class="fa fa-play"></i><span>再生</span>
-      </button>
-
-      <!-- 曲を追加：モーダルを開く -->
-      <button type="button"
-              class="footer-btn add"
-              data-bs-toggle="modal"
-              data-bs-target="#addSongsModal"
-              aria-label="曲を追加">
-        <i class="fa fa-plus-circle"></i><span>追加</span>
-      </button>
-
-      <!-- 戻る -->
-      <%= link_to raw('<i class="fa fa-arrow-left"></i><span>戻る</span>'),
-                  back_path,
-                  class: "footer-btn back",
-                  data: back_link_data %>
-
-      <!-- プレイリスト削除 -->
-      <%= link_to raw('<i class="fa fa-trash"></i><span>削除</span>'),
-                  playlist_path(@playlist),
-                  method: :delete,
-                  data: { confirm: "本当にこのプレイリストを削除しますか？" },
-                  class: "footer-btn delete" %>
-    </nav>
   </div>
 <% end %>
+
+<nav class="mobile-footer-menu">
+  <!-- 再生（曲がない時はCSSで無効化するのでJSはそのまま） -->
+  <button type="button"
+          class="footer-btn playfirst"
+          data-action="click->global-player#playFirstTrack"
+          <%# アクセシビリティ用。初回描画時だけ aria-disabled を合わせる（CSSで見た目と操作は制御） %>
+          aria-disabled="<%= @has_items ? 'false' : 'true' %>">
+    <i class="fa fa-play"></i><span>再生</span>
+  </button>
+
+  <!-- 曲を追加：モーダルを開く -->
+  <button type="button"
+          class="footer-btn add"
+          data-bs-toggle="modal"
+          data-bs-target="#addSongsModal"
+          aria-label="曲を追加">
+    <i class="fa fa-plus-circle"></i><span>追加</span>
+  </button>
+
+  <!-- 戻る -->
+  <%= link_to raw('<i class="fa fa-arrow-left"></i><span>戻る</span>'),
+              back_path,
+              class: "footer-btn back",
+              data: back_link_data %>
+
+  <!-- プレイリスト削除 -->
+  <%= link_to raw('<i class="fa fa-trash"></i><span>削除</span>'),
+              playlist_path(@playlist),
+              method: :delete,
+              data: { confirm: "本当にこのプレイリストを削除しますか？" },
+              class: "footer-btn delete" %>
+</nav>
 
 <!-- 曲追加モーダル（既存のまま） -->
 <div class="modal fade"
