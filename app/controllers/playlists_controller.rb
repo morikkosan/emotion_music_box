@@ -1,8 +1,8 @@
 # app/controllers/playlists_controller.rb
 class PlaylistsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_playlist, only: [:show, :destroy]
-  before_action :disable_turbo_cache, only: [:show]
+  before_action :set_playlist, only: [ :show, :destroy ]
+  before_action :disable_turbo_cache, only: [ :show ]
 
   def index
     @playlists = current_user.playlists.includes(playlist_items: :emotion_log)
@@ -112,7 +112,7 @@ class PlaylistsController < ApplicationController
   def render_flash_stream
     render_to_string(
       partial: "shared/flash_container",
-      formats: [:html],
+      formats: [ :html ],
       locals: { flash: flash }
     )
   end
