@@ -2,7 +2,7 @@
 class PlaylistItemsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_playlist
-  before_action :set_playlist_item, only: [:destroy]
+  before_action :set_playlist_item, only: [ :destroy ]
 
   def create
     @item = @playlist.playlist_items.build(emotion_log_id: params[:emotion_log_id])

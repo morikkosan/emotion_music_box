@@ -1,18 +1,21 @@
-<!-- このページだけ Turbo のページキャッシュを無効化（レイアウトの yield :head 経由で <head> に入る） -->
 <% content_for :head do %>
   <meta name="turbo-cache-control" content="no-cache">
 <% end %>
 
-<!-- レイアウトの body に付与するクラス（プレイリスト show 専用スタイル用） -->
 <% content_for :body_class, "playlist-show-page" %>
 
-<!-- 戻るリンクの遷移先だけ端末で分岐。data 属性は常に _top（フル遷移）で安定化 -->
 <% back_path = mobile_device? ? bookmarks_emotion_logs_path(view: "mobile") : bookmarks_emotion_logs_path %>
 <% back_link_data = { turbo_frame: "_top", turbo_action: "advance" } %>
 
 <% if !@has_items %>
   <div id="<%= dom_id(@playlist, :contents) %>">
     <p class="text-center">まだ曲が追加されていません。</p>
+    <div class="text-center mt-3">
+      <%= link_to raw('<i class="fa fa-arrow-left"></i><span>戻る</span>'),
+                  back_path,
+                  class: "footer-btn back",
+                  data: back_link_data %>
+    </div>
   </div>
 <% else %>
   <div class="playlist-container" data-controller="global-player">
@@ -20,16 +23,13 @@
                playlist: @playlist,
                playlist_items: @playlist_items %>
 
-    <!-- 画面下部の操作フッターメニュー（常時表示） -->
     <nav class="mobile-footer-menu">
-      <!-- 先頭の曲を再生 -->
       <button type="button"
               class="footer-btn playfirst"
               data-action="click->global-player#playFirstTrack">
         <i class="fa fa-play"></i><span>再生</span>
       </button>
 
-      <!-- 曲を追加：モーダルを開く -->
       <button type="button"
               class="footer-btn add"
               data-bs-toggle="modal"
@@ -38,13 +38,11 @@
         <i class="fa fa-plus-circle"></i><span>追加</span>
       </button>
 
-      <!-- 戻る：必ずフル遷移（_top）。戻った後のモーダル不具合を防止 -->
       <%= link_to raw('<i class="fa fa-arrow-left"></i><span>戻る</span>'),
                   back_path,
                   class: "footer-btn back",
                   data: back_link_data %>
 
-      <!-- プレイリスト削除 -->
       <%= link_to raw('<i class="fa fa-trash"></i><span>削除</span>'),
                   playlist_path(@playlist),
                   method: :delete,
@@ -54,7 +52,6 @@
   </div>
 <% end %>
 
-<!-- 曲追加モーダル（ブックマーク一覧から追加） -->
 <div class="modal fade"
      id="addSongsModal"
      data-controller="add-song-modal"
@@ -62,27 +59,16 @@
      aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
-
-      <!-- モーダルヘッダー -->
       <div class="modal-header">
         <h5 class="modal-title">ブックマーク済みの曲一覧</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-
-      <!-- モーダル本文：ブックマーク曲リスト（パーシャル） -->
       <div class="modal-body" id="addSongsModalBody">
         <%= render "playlists/bookmarked_songs", playlist: @playlist %>
       </div>
-
-      <!-- モーダルフッター -->
       <div class="modal-footer">
-        <button type="button"
-                class="btn btn-secondary"
-                data-bs-dismiss="modal">
-          閉じる
-        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
       </div>
-
     </div>
   </div>
 </div>
