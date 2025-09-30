@@ -24,8 +24,7 @@
   <button type="button"
           class="footer-btn playfirst"
           data-action="click->global-player#playFirstTrack"
-          <%# アクセシビリティ用。初回描画時だけ aria-disabled を合わせる（CSSで見た目と操作は制御） %>
-          aria-disabled="<%= @has_items ? 'false' : 'true' %>">
+          >
     <i class="fa fa-play"></i><span>再生</span>
   </button>
 
