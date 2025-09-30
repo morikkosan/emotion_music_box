@@ -106,6 +106,15 @@ export default class extends Controller {
       this._safeNukeIframe(old);
       this.iframeElement = null;
     } catch (_) {}
+
+    // ★追加：フッターの再生ボタン有効/無効監視の後始末
+    try {
+      document.removeEventListener("turbo:render", this._updatePlayButton);
+      document.removeEventListener("turbo:frame-load", this._updatePlayButton);
+      document.removeEventListener("turbo:submit-end", this._updatePlayButton);
+      this._footerGuardMO?.disconnect();
+      this._footerGuardMO = null;
+    } catch (_) {}
   };
 
   setArtist(text) {
@@ -229,6 +238,23 @@ export default class extends Controller {
     this.setPlayPauseAria(false);
     this.updateSeekAria(0, 0, 0);
     this.updateVolumeAria(this.volumeBar?.value ?? "100");
+
+    // ★追加：曲の有無でフッター「再生」を有効/無効に切替（既存ロジック非変更）
+    this._updatePlayButton = () => {
+      const btn = document.querySelector(".mobile-footer-menu .playfirst");
+      if (!btn) return;
+      const has = !!(this._container()?.querySelector("[data-track-id]"));
+      btn.toggleAttribute("disabled", !has);
+      btn.setAttribute("aria-disabled", String(!has));
+      btn.classList.toggle("is-disabled", !has); // 見た目用（CSS側で任意）
+    };
+    document.addEventListener("turbo:render", this._updatePlayButton);
+    document.addEventListener("turbo:frame-load", this._updatePlayButton);
+    document.addEventListener("turbo:submit-end", this._updatePlayButton);
+    this._footerGuardMO = new MutationObserver(() => queueMicrotask(this._updatePlayButton));
+    this._footerGuardMO.observe(this._container() || document, { childList: true, subtree: true });
+    this._updatePlayButton();
+    // ★追加ここまで
 
     this.restorePlayerState();
     console.log("[connect] global-player controller initialized");
