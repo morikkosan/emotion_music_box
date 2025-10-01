@@ -246,15 +246,15 @@ html, body {
   overscroll-behavior-y: none;
 }
 
-/* 2) view-switcher配下のモバイルラッパは高さ固定＋親はスクロールさせない */
-[data-controller~="view-switcher"] #mobile-view {
+/* 2) モバイルラッパ固定は“ログイン時だけ”適用（修復） */
+body.logged-in [data-controller~="view-switcher"] #mobile-view {
   height: 100dvh;
   overflow: hidden;
 }
 
-/* 旧端末フォールバック */
+/* 旧端末フォールバック（ログイン時のみ） */
 @supports not (height: 100dvh) {
-  [data-controller~="view-switcher"] #mobile-view { height: 100vh; }
+  body.logged-in [data-controller~="view-switcher"] #mobile-view { height: 100vh; }
 }
 
 /* 3) フッターと上部ヘッダ分を変数化（値は実UIに合わせて調整） */
@@ -263,13 +263,31 @@ html, body {
   --mobile-headroom: 140px;   /* ← ロゴ/タイトル/ユーザーバー等の上部余白合計 */
 }
 
-/* 4) Turbo Frameだけを縦スクロール可能にして、Pull-to-Refreshを防ぐ */
-[data-controller~="view-switcher"] turbo-frame#logs_list_mobile {
+/* ▼ ログイン後スマホ時のヘッダ余白を中間くらいに（140px → お好みの値に） */
+@media (max-width: 996px) {
+  body.logged-in { --mobile-headroom: 104px; }  /* 例：104px。好みに合わせて微調整OK */
+}
+
+
+/* 4) フレーム内部スクロールは“ログイン時だけ”（修復） */
+body.logged-in [data-controller~="view-switcher"] turbo-frame#logs_list_mobile {
   display: block;
   height: calc(100dvh - var(--mobile-footer-h) - var(--mobile-headroom));
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain; /* 上端での連鎖スクロールを遮断 */
+}
+
+/* －－－－ 未ログイン（guest）は“ページ全体スクロール”へ（追加） －－－－ */
+body.guest [data-controller~="view-switcher"] #mobile-view {
+  height: auto;            /* ロック解除 */
+  min-height: 100dvh;      /* 画面は満たす */
+  overflow-y: auto;        /* 全体スクロール */
+  -webkit-overflow-scrolling: touch;
+}
+body.guest [data-controller~="view-switcher"] turbo-frame#logs_list_mobile {
+  height: auto;            /* 固定解除 */
+  overflow: visible;       /* 自然な縦流し */
 }
 
 /* 5) 念のため内部のリスト領域にも連鎖遮断 */
@@ -286,11 +304,27 @@ html, body {
 }
 
 /* スマホ表示でフッターメニューを一番上に置いた場合の補正 */
+/* 👇 こちらを追加（ログイン後のみヘッダ分の余白を確保）*/
 @media (max-width: 996px) {
-  [data-controller~="view-switcher"] #mobile-view {
-    padding-top: 40px; /* ← フッター分だけ下げる */
+  body.logged-in [data-controller~="view-switcher"] #mobile-view {
+    padding-top: var(--mobile-headroom) !important;
+  }
+
+  /* フレーム高さは既に --mobile-headroom を引いているのでOK。明示しておくなら再掲： */
+  body.logged-in [data-controller~="view-switcher"] turbo-frame#logs_list_mobile {
+    height: calc(100dvh - var(--mobile-footer-h) - var(--mobile-headroom));
+  }
+
+  /* 端末対応を強めたい場合（任意） */
+  @supports (height: 100svh) {
+    body.logged-in [data-controller~="view-switcher"] #mobile-view { height: 100svh; }
+    body.logged-in [data-controller~="view-switcher"] turbo-frame#logs_list_mobile {
+      height: calc(100svh - var(--mobile-footer-h) - var(--mobile-headroom));
+    }
   }
 }
+
+
 
 .footer-top {
   position: fixed;
@@ -353,3 +387,25 @@ body.playlists #mobile-view {
   color: #fff !important;
   -webkit-text-fill-color: #fff;
 }
+
+/* モバイル全体を縦フレックス。高さは動的vhで */
+#mobile-view {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh; /* iOS含め安定 */
+}
+
+/* 未ログインのヒーロー／ボタン／説明ブロックをスクロールさせる器 */
+.mobile-guest-scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* iOS慣性スクロール */
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+/* （任意）長ボタンが折り返しても見切れないように微調整 */
+.mobile-guest-scroll .neon-btn-panel {
+  padding: 8px 12px;
+}
+
+/* （任意）固定フッターがある画面と干渉しないように…未ログインはフッターが無いのでOK */
