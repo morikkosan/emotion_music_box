@@ -375,43 +375,97 @@ describe("custom/gages.js", () => {
   });
 
   test("不可視バーのときは即 width は書き込まれるが、次フレームでもう一度更新される", () => {
-  document.body.innerHTML = `
-    <div id="track"><div id="hp-bar"></div></div>
-    <div id="hp-status-text"></div>
-  `;
-  setTrackWidth(0); // 不可視
-  localStorage.setItem("hpPercentage", "25");
-  importGages();
+    document.body.innerHTML = `
+      <div id="track"><div id="hp-bar"></div></div>
+      <div id="hp-status-text"></div>
+    `;
+    setTrackWidth(0); // 不可視
+    localStorage.setItem("hpPercentage", "25");
+    importGages();
 
-  window.updateHPBar();
+    window.updateHPBar();
 
-  const bar = document.getElementById("hp-bar");
-  // 即時に width は反映される
-  expect(bar.style.width).toBe("25%");
+    const bar = document.getElementById("hp-bar");
+    // 即時に width は反映される
+    expect(bar.style.width).toBe("25%");
 
-  // flush で再評価されても同じ値
-  setTrackWidth(200);
-  window.__flushRAF();
-  expect(bar.style.width).toBe("25%");
-});
+    // flush で再評価されても同じ値
+    setTrackWidth(200);
+    window.__flushRAF();
+    expect(bar.style.width).toBe("25%");
+  });
 
+  test("turbo:submit-end: detail に status/success 無しなら更新されない", () => {
+    document.body.innerHTML = `
+      <div id="track"><div id="hp-bar"></div></div>
+      <form id="f"><input id="hp" value="55" /></form>
+    `;
+    setTrackWidth(300);
+    importGages();
 
-test("turbo:submit-end: detail に status/success 無しなら更新されない", () => {
-  document.body.innerHTML = `
-    <div id="track"><div id="hp-bar"></div></div>
-    <form id="f"><input id="hp" value="55" /></form>
-  `;
-  setTrackWidth(300);
-  importGages();
+    const spy = jest.spyOn(window, "updateHPBar");
+    const form = document.getElementById("f");
+    // detail が空
+    const event = new CustomEvent("turbo:submit-end", { bubbles: true, detail: {} });
+    form.dispatchEvent(event);
 
-  const spy = jest.spyOn(window, "updateHPBar");
-  const form = document.getElementById("f");
-  // detail が空
-  const event = new CustomEvent("turbo:submit-end", { bubbles: true, detail: {} });
-  form.dispatchEvent(event);
+    expect(localStorage.getItem("hpPercentage")).toBeNull();
+    expect(spy).not.toHaveBeenCalled();
+  });
 
-  expect(localStorage.getItem("hpPercentage")).toBeNull();
-  expect(spy).not.toHaveBeenCalled();
-});
+  // === ここから追記 ===================================================================
 
+  // offsetParent 側の可視判定ブランチを踏む（getClientRects が空でも offsetParent が非 null）
+  test("可視判定: getClientRects が空でも offsetParent が非 null なら可視扱い（rAF 未スケジュール）", () => {
+    document.body.innerHTML = `
+      <div id="track"><div id="hp-bar"></div></div>
+      <div id="hp-status-text"></div>
+    `;
+
+    const bar = document.getElementById("hp-bar");
+
+    // この要素に限り getClientRects を空配列化（不可視側）
+    const origBarGetClientRects = bar.getClientRects;
+    bar.getClientRects = () => [];
+
+    // offsetParent の getter を差し込んで「可視」を示す（OR 条件のもう一方）
+    Object.defineProperty(bar, "offsetParent", {
+      get: () => ({}),
+      configurable: true,
+    });
+
+    localStorage.setItem("hpPercentage", "42");
+    importGages();
+
+    // rAF が呼ばれないことを直接検証するために spy
+    const rafSpy = jest.spyOn(window, "requestAnimationFrame");
+
+    window.updateHPBar();
+
+    expect(bar.style.width).toBe("42%");
+    expect(rafSpy).not.toHaveBeenCalled();
+
+    // 後始末
+    if (origBarGetClientRects) bar.getClientRects = origBarGetClientRects;
+    try { delete bar.offsetParent; } catch (_e) {}
+  });
+
+  // input の正常系: セレクタ一致 + 有効数値（.js-hp-input 66%）
+  test("input: セレクタ一致かつ有効数値なら setHPAndRefresh 経由で反映される（.js-hp-input → 66%）", () => {
+    document.body.innerHTML = `
+      <div id="track"><div id="hp-bar"></div></div>
+      <div id="hp-status-text"></div>
+      <input class="js-hp-input" value="66" />
+    `;
+    setTrackWidth(300);
+    importGages();
+
+    const bar = document.getElementById("hp-bar");
+    const input = document.querySelector(".js-hp-input");
+
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+
+    expect(localStorage.getItem("hpPercentage")).toBe("66");
+    expect(bar.style.width).toBe("66%");
+  });
 });

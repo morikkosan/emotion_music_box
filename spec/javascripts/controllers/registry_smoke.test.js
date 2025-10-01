@@ -1,3 +1,5 @@
+// spec/javascripts/controllers/registry_smoke.test.js
+
 /**
  * 目的:
  *  - controllers/index.js が Stimulus Application に
@@ -28,7 +30,7 @@ describe("controllers/index.js registration", () => {
   });
 
   test("すべてのコントローラが期待どおりに1回ずつ register される", async () => {
-    // 期待している登録ID一覧（tap-guard を追加）
+    // 期待している登録ID一覧（本体に合わせて selection-counter を追加）
     const expected = [
       "modal",
       "search-music",
@@ -50,7 +52,8 @@ describe("controllers/index.js registration", () => {
       "comment-update",
       "mobile-footer",
       "flash-then-redirect",
-      "tap-guard", // ← これを追加
+      "tap-guard",
+      "selection-counter", // ← 追加
     ];
 
     const Stim = require("@hotwired/stimulus");
