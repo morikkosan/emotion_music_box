@@ -1,55 +1,51 @@
+// spec/javascripts/globals/comments.test.js
 /**
- * comments.js のDOM/タイマー/アニメーション検証
- * - document.addEventListener("DOMContentLoaded") をスパイしてハンドラを捕捉
- * - Math.random を固定化して top のpx値を検証
- * - setInterval をフェイクタイマーで進め、コメント生成を検証
- * - gsap.to をモックし、引数（duration/ease/x）と onComplete による削除を検証
- *
- * 前提:
- *  - jest.config.js は既存設定（jsdom / setupFilesAfterEnv 等）
- *  - moduleDirectories に "<rootDir>/app/javascript" が含まれている
- *  - 本体を app/javascript/custom/comments.js に配置
+ * comments.js のDOM/タイマー/アニメーション検証（Web Animations API 版）
+ * 分岐網羅ポイント:
+ *  - コンテナ無しで早期 return
+ *  - clientHeight=0 → window.innerHeight フォールバック
+ *  - clientHeight<20 → Math.max による top=0 クランプ
  */
 
-describe("custom/comments.js", () => {
+describe("custom/comments.js (Web Animations API)", () => {
   let capturedDOMContentLoaded;
   let addListenerSpy;
+  let animateMock;
+
+  const importModule = () => {
+    jest.isolateModules(() => {
+      require("custom/comments.js"); // app/javascript/custom/comments.js
+    });
+  };
 
   beforeEach(() => {
     jest.resetModules();
     jest.useFakeTimers();
 
-    // DOM準備
     document.body.innerHTML = `
       <div id="comment-container" style="position:relative;"></div>
     `;
     const container = document.getElementById("comment-container");
 
-    // jsdomだと clientHeight が 0 になりがちなので固定
     Object.defineProperty(container, "clientHeight", {
-      value: 200, // 任意の高さ
+      value: 200,
       configurable: true,
     });
-
-    // innerWidth も検証のため固定
     Object.defineProperty(window, "innerWidth", {
       value: 800,
       configurable: true,
     });
 
-    // gsap はグローバル参照なのでテスト側で用意
-    global.gsap = {
-      to: jest.fn(),
-    };
+    // Web Animations API モック
+    animateMock = jest.fn().mockReturnValue({});
+    Element.prototype.animate = animateMock;
 
-    // DOMContentLoaded リスナを捕捉
+    // DOMContentLoaded 捕捉
     capturedDOMContentLoaded = undefined;
     addListenerSpy = jest
       .spyOn(document, "addEventListener")
       .mockImplementation((event, cb) => {
-        if (event === "DOMContentLoaded") {
-          capturedDOMContentLoaded = cb;
-        }
+        if (event === "DOMContentLoaded") capturedDOMContentLoaded = cb;
       });
   });
 
@@ -57,83 +53,142 @@ describe("custom/comments.js", () => {
     jest.clearAllTimers();
     jest.useRealTimers();
     addListenerSpy?.mockRestore();
-    delete global.gsap;
     jest.restoreAllMocks();
   });
 
-  const importModule = () => {
-    // モジュールキャッシュ隔離で確実にaddEventListenerが呼ばれるようにする
-    jest.isolateModules(() => {
-      require("custom/comments.js"); // ← app/javascript/custom/comments.js
-    });
-  };
-
-  test("10秒ごとにコメントが生成され、gsap.to が正しい引数で呼ばれ、onCompleteで削除される", () => {
-    // top の乱数を固定: clientHeight=200 → (200-20)*0.25 = 45px
+  test("10秒ごとにコメントが生成され、animate が正しい引数で呼ばれ、onfinishで削除される", () => {
     const randSpy = jest.spyOn(Math, "random").mockReturnValue(0.25);
 
     importModule();
     expect(typeof capturedDOMContentLoaded).toBe("function");
-
-    // DOMContentLoaded 発火 → setInterval セット
     capturedDOMContentLoaded();
 
     const container = document.getElementById("comment-container");
-    expect(container.querySelector(".comment")).toBeNull();
 
-    // 10秒経過で1回生成
+    // 10秒経過で1つ生成
     jest.advanceTimersByTime(10000);
 
-    // 生成された要素の検証
     const comment = container.querySelector(".comment");
     expect(comment).not.toBeNull();
     expect(comment.textContent).toBe("いらいら");
     expect(comment.style.left).toBe("100%");
-    expect(comment.style.top).toBe("45px"); // 乱数固定の結果
+    expect(comment.style.top).toBe("45px"); // (200-20)*0.25
 
-    // gsap.to が正しい引数で呼ばれているか
-    expect(global.gsap.to).toHaveBeenCalledTimes(1);
-    const [animEl, animOpts] = global.gsap.to.mock.calls[0];
-    expect(animEl).toBe(comment);
-    expect(animOpts.duration).toBe(10);
-    expect(animOpts.ease).toBe("linear");
-    expect(animOpts.x).toBe(-window.innerWidth - 200); // -1000
+    // travelX は実測値で検証
+    const travelX = window.innerWidth + (comment.offsetWidth || 0) + 200;
 
-    // アニメーション完了時にDOMから削除されること
-    expect(typeof animOpts.onComplete).toBe("function");
-    animOpts.onComplete();
+    expect(animateMock).toHaveBeenCalledTimes(1);
+    const [keyframes, options] = animateMock.mock.calls[0];
+    expect(keyframes).toEqual([
+      { transform: "translateX(0)" },
+      { transform: `translateX(-${travelX}px)` },
+    ]);
+    expect(options).toMatchObject({
+      duration: 10000,
+      easing: "linear",
+      fill: "forwards",
+    });
+
+    // onfinish → DOM から削除
+    const returnedAnim = animateMock.mock.results[0].value;
+    returnedAnim.onfinish?.();
     expect(container.querySelector(".comment")).toBeNull();
 
     randSpy.mockRestore();
   });
 
-  test("10秒ごとに複数回トリガされる（onCompleteを即時に呼んでリーク無しを確認）", () => {
+  test("10秒ごとに複数回トリガされる（onfinishを手動で即時呼び・リーク無し確認）", () => {
     const randSpy = jest.spyOn(Math, "random").mockReturnValue(0.5);
 
-    // gsap.to 実行時に即 onComplete を呼ぶ（テストを軽くするため）
-    global.gsap.to.mockImplementation((el, opts) => {
-      if (opts && typeof opts.onComplete === "function") opts.onComplete();
+    // ※ タイマーは使わず、各回の onfinish を手動で呼ぶ
+    importModule();
+    capturedDOMContentLoaded();
+    const container = document.getElementById("comment-container");
+
+    // 1回目
+    jest.advanceTimersByTime(10000);
+    expect(animateMock).toHaveBeenCalledTimes(1);
+    animateMock.mock.results[0].value.onfinish?.();
+    expect(container.querySelectorAll(".comment").length).toBe(0);
+
+    // 2回目
+    jest.advanceTimersByTime(10000);
+    expect(animateMock).toHaveBeenCalledTimes(2);
+    animateMock.mock.results[1].value.onfinish?.();
+    expect(container.querySelectorAll(".comment").length).toBe(0);
+
+    // 3回目
+    jest.advanceTimersByTime(10000);
+    expect(animateMock).toHaveBeenCalledTimes(3);
+    animateMock.mock.results[2].value.onfinish?.();
+    expect(container.querySelectorAll(".comment").length).toBe(0);
+
+    randSpy.mockRestore();
+  });
+
+  test("【分岐】コンテナが存在しない場合は早期return（要素もアニメも発生しない）", () => {
+    // DOM を空にして early return を通す
+    document.body.innerHTML = ``;
+
+    // リスナ捕捉をやり直す
+    capturedDOMContentLoaded = undefined;
+    addListenerSpy.mockImplementation((event, cb) => {
+      if (event === "DOMContentLoaded") capturedDOMContentLoaded = cb;
+    });
+
+    importModule();
+    expect(typeof capturedDOMContentLoaded).toBe("function");
+    capturedDOMContentLoaded();
+
+    // 進めても何も起きない
+    jest.advanceTimersByTime(10000);
+    expect(document.querySelector(".comment")).toBeNull();
+    expect(animateMock).not.toHaveBeenCalled();
+  });
+
+  test("【分岐】clientHeight=0 のとき window.innerHeight を使う（top が fallback計算になる）", () => {
+    const randSpy = jest.spyOn(Math, "random").mockReturnValue(0.5);
+
+    const container = document.getElementById("comment-container");
+    Object.defineProperty(container, "clientHeight", {
+      value: 0,
+      configurable: true,
+    });
+    Object.defineProperty(window, "innerHeight", {
+      value: 600,
+      configurable: true,
     });
 
     importModule();
     capturedDOMContentLoaded();
 
+    jest.advanceTimersByTime(10000);
+
+    const comment = container.querySelector(".comment");
+    expect(comment).not.toBeNull();
+    // top = (innerHeight - 20) * 0.5 = (600-20)*0.5 = 290
+    expect(comment.style.top).toBe("290px");
+
+    randSpy.mockRestore();
+  });
+
+  test("【分岐】clientHeight<20 のとき Math.max により top は 0 にクランプされる", () => {
+    const randSpy = jest.spyOn(Math, "random").mockReturnValue(0.8);
+
     const container = document.getElementById("comment-container");
+    Object.defineProperty(container, "clientHeight", {
+      value: 10, // 10-20 = -10 → Math.max(0, -10) = 0
+      configurable: true,
+    });
 
-    // 1回目
-    jest.advanceTimersByTime(10000);
-    expect(global.gsap.to).toHaveBeenCalledTimes(1);
-    expect(container.querySelectorAll(".comment").length).toBe(0); // 即削除
+    importModule();
+    capturedDOMContentLoaded();
 
-    // 2回目
     jest.advanceTimersByTime(10000);
-    expect(global.gsap.to).toHaveBeenCalledTimes(2);
-    expect(container.querySelectorAll(".comment").length).toBe(0);
 
-    // 3回目
-    jest.advanceTimersByTime(10000);
-    expect(global.gsap.to).toHaveBeenCalledTimes(3);
-    expect(container.querySelectorAll(".comment").length).toBe(0);
+    const comment = container.querySelector(".comment");
+    expect(comment).not.toBeNull();
+    expect(comment.style.top).toBe("0px"); // クランプ
 
     randSpy.mockRestore();
   });
