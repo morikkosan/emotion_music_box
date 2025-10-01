@@ -26,7 +26,9 @@
             <span class="today_mental_text">
               👆Today's stress level <span id="bar-width-display"></span>👆
             </span>
-            <p id="hp-status-text">メンタル正常</p>
+           <p id="hp-status-text" class="hp-status-text">メンタル正常</p>
+
+
             <div id="hp-bar"></div>
           </div>
         <% end %>
@@ -74,7 +76,6 @@
               <button class="btn btn-secondary" disabled>プレイリストは12個まで作成可能です</button>
             <% end %>
 
-            <!-- ▼チェック数カウンタ（ボタン直下のスペース） -->
             <!-- ▼チェック数カウンタ（ボタン直下のスペース） -->
         <div
           class="mt-2"
@@ -331,7 +332,6 @@
             <% end %>
 
             <!-- ▼チェック数カウンタ（ボタン直下のスペース） -->
-            <!-- ▼チェック数カウンタ（ボタン直下のスペース） -->
         <div
           class="mt-2"
           data-controller="selection-counter"
@@ -362,6 +362,8 @@
           <span class="mobile_today_mental_text">
             👆Today's stress level <span id="bar-width-display-mobile"></span>👆
           </span>
+          <p id="hp-status-text-mobile" class="hp-status-text">メンタル正常</p>
+
         </div>
       <% end %>
 

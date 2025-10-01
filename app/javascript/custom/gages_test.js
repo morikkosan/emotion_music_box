@@ -44,20 +44,31 @@ window.updateHPBar = function () {
   if (barWidthDisplay) barWidthDisplay.innerText = barWidth;
   if (barWidthDisplayMobile) barWidthDisplayMobile.innerText = barWidth;
 
-  // 文言更新は要素があるときだけ
+  // 文言更新は要素があるときだけ（デスクトップ + モバイル複数対応）
+  // 既存の単一ID（#hp-status-text）も温存しつつ、複数要素にも反映する
+  const hpStatusTextAll = document.querySelectorAll(
+    "#hp-status-text, #hp-status-text-mobile, .hp-status-text"
+  );
   const paint = (color) => bars.forEach((b) => (b.style.backgroundColor = color));
+  const setStatus = (text) => {
+    // 既存の単一ID変数（hpStatusText）も引き続き使う（※元のコードを尊重）
+    if (hpStatusText) hpStatusText.innerText = text;
+    // 複数要素（デスクトップ/モバイル双方）に一括反映
+    hpStatusTextAll.forEach((el) => (el.innerText = text));
+  };
+
   if (hpPercentage <= 20) {
     paint("red");
-    if (hpStatusText) hpStatusText.innerText = "🆘 ストレス危険 🆘";
+    setStatus("🆘 ストレス危険 🆘");
   } else if (hpPercentage <= 40) {
     paint("yellow");
-    if (hpStatusText) hpStatusText.innerText = "🏥 ちょっと休みましょ 🏥";
+    setStatus("🏥 ちょっと休みましょ 🏥");
   } else if (hpPercentage <= 70) {
     paint("#9ACD32");
-    if (hpStatusText) hpStatusText.innerText = "♪ おつかれさまです ♪";
+    setStatus("♪ おつかれさまです ♪");
   } else {
     paint("green");
-    if (hpStatusText) hpStatusText.innerText = "🩺 メンタル正常 🌿";
+    setStatus("🩺 メンタル正常 🌿");
   }
 };
 

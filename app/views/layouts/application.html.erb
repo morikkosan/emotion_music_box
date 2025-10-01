@@ -105,10 +105,10 @@
   <%= Sentry.get_trace_propagation_meta.html_safe %>
 </head>
 
-<body class="<%= "#{controller_name} #{action_name}" %> <%= content_for?(:body_class) ? yield(:body_class) : '' %>"
-      data-controller="view-switcher global-player"
-      data-flash-notice="<%= j flash[:notice] %>"
-      data-flash-alert="<%= j flash[:alert] %>">
+<body class="<%= [controller_name, action_name, (content_for?(:body_class) ? yield(:body_class) : nil), (current_user.present? ? 'logged-in' : 'guest')].compact.join(' ') %>"
+        data-controller="view-switcher global-player"
+        data-flash-notice="<%= j flash[:notice] %>"
+        data-flash-alert="<%= j flash[:alert] %>">
 
         <%= render 'shared/footer' %>
 
