@@ -63,6 +63,9 @@
 - お好みでプロフィール編集でプロフィール画像、名前、性別、名前が作成できます
 - セッション管理（Cookieストア）
 
+※本アプリはSoundCloudのAPIを利用していますが、SoundCloudにより承認・提携・支援されたものではありません。
+Screenshots of SoundCloud login UI are used for instructional purposes. © SoundCloud Ltd.
+
 新規登録
 <img src="https://i.gyazo.com/d0476f8750b234c705ec7d85e20608be.png" alt="新規登録" width="1280" height="720">
 
@@ -75,11 +78,11 @@
 - 投稿を忘れたときの前日分の投稿も可能
 - タグ付け、ブックマーク数・コメント数を表示
 - 投稿詳細ページ（モバイル用とPC用の最適化ビュー）
-投稿曲検索フォーム１
-<img src="https://i.gyazo.com/839fab9843a4cc3ef9c9fd34733d37c2.png" alt="投稿検索再生フォーム" width="1280" height="720">
-投稿フォーム２
-<img src="https://i.gyazo.com/87fcadbb2fe7aba6f04c68dd5b6777cd.png" alt="投稿フォーム" width="1280" height="720">
 
+<details><summary>投稿フォーム</summary>
+  <video src="docs/videos/emomu_formdemo.mp4"
+         width="390" controls muted playsinline preload="metadata"></video>
+</details>
 
 
 ### 3) 投稿検索・再生
@@ -99,17 +102,26 @@
   - 曲の削除
 - **Turbo Stream** による即時反映  
   追加／削除で **プレイリスト本体とモーダル候補が自動更新** を実装
-  プレイリスト作成
-  <img src="https://i.gyazo.com/564f1ee8e306c8c4d224d9d531c9460c.png" alt="ブックマーク &amp; プレイリスト" width="1280" height="720">
+<details><summary>ブックマーク／プレイリスト作成</summary>
+  <video src="docs/videos/emomu_create_bookmark_playlist.mp4"
+         width="390" controls muted playsinline preload="metadata"></video>
+</details>
 
-プレイリスト内
-<img src="https://i.gyazo.com/a473b1dc619bb893d5aa3a73027fb744.png" alt="プレイリスト" width="1280" height="720">
+<details><summary>プレイリスト編集</summary>
+  <video src="docs/videos/emomu_playlist_edit.mp4"
+         width="390" controls muted playsinline preload="metadata"></video>
+</details>
+
 
 
 ### 5) コメント & リアクション
 - 投稿詳細画面にてコメント＆リアクションスペース
 - いいね等のリアクション（それな！／よんだ！）
-<img src="https://i.gyazo.com/fa125c7fde6bfe19698d75d44a852cd4.png" alt="コメント &amp; リアクション" width="1280" height="720">
+
+<details><summary>コメント＆リアクション</summary>
+  <video src="docs/videos/emomu_commentdemo.mp4"
+         width="390" controls muted playsinline preload="metadata"></video>
+</details>
 
 ### 6) シェア
 - X（Twitter）共有ボタン（投稿詳細からワンタップでシェア）  

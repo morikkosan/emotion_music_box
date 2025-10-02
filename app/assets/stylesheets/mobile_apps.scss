@@ -5,11 +5,9 @@
   align-items: center !important;
   width: 100% !important;
   margin: 16px 0 8px 0 !important;
-  /* ここで少し左にズラす（例: -12%） */
-  margin-left: -30% !important;
+  /* ← 左へ少し寄せる（はみ出し防止のため transform を使用） */
+  transform: translateX(-12%);
 }
-
-
 
 /* ページネーション本体(ul)もリセット・中央寄せ */
 .mobile-pagination-center .pagination {
@@ -43,9 +41,10 @@
   }
 }
 
-
-
-
+/* モーダルが開いている間は“記録ボタン”も背面へ（重なり事故防止） */
+body.modal-open #record-button-mobile.record-mobile-button {
+  z-index: 1040 !important;
+}
 
 .mobile-footer .text-center.text-white.small {
   flex: 1 1 0 !important;
@@ -70,9 +69,6 @@
 .mobile-footer .text-center.text-white.small.active i {
   color: #ffd700 !important;
 }
-
-
-
 
 .mobile-card, .mobile-comment-card {
   margin-bottom: 0.75rem;
@@ -166,7 +162,6 @@
     0 0 45px #ff00cc !important;
 }
 
-
 /* ✅ SoundCloud プレーヤーの横はみ出し対策 */
 /* プレーヤー全体をラップしてスクロール可能に */
 .soundcloud-player-wrapper {
@@ -185,8 +180,6 @@
   border: none;
   display: block;
 }
-
-
 
 /* モーダル全体 */
 .mobile-super-search-modal-content {
@@ -209,6 +202,34 @@
   font-weight: bold;
   text-shadow: 0 0 8px #ff2ffb99, 0 0 4px #00e7ff44;
   margin-bottom: 0.5rem;
+}
+
+/* ▼ ここを .mobile-super-search-modal-content の定義のすぐ下あたりに追記 */
+
+/* 下げる量はカスタム変数で管理（調整しやすく） */
+#mobile-super-search-modal {
+  --super-search-offset: 4cm; /* ← 好きな量に変えてOK */
+}
+
+/* 通常幅（fullscreenでない時）は margin-top だけでOK */
+#mobile-super-search-modal .modal-dialog {
+  margin: var(--super-search-offset) auto 0;
+}
+
+/* スマホ幅（modal-fullscreen-sm-down が効く時）は height も調整 */
+@media (max-width: 576px) {
+  #mobile-super-search-modal .modal-dialog {
+    /* ノッチ等の安全領域も加味 */
+    margin: calc(var(--super-search-offset) + env(safe-area-inset-top, 0px)) 0 0 !important;
+    height: calc(100% - var(--super-search-offset) - env(safe-area-inset-top, 0px)) !important;
+  }
+
+  /* svh に対応している端末ならより正確に */
+  @supports (height: 100svh) {
+    #mobile-super-search-modal .modal-dialog {
+      height: calc(100svh - var(--super-search-offset) - env(safe-area-inset-top, 0px)) !important;
+    }
+  }
 }
 
 /* セレクト・テキストボックス */
@@ -344,7 +365,3 @@
   justify-content: center;
   transition: opacity 0.2s;
 }
-
-
-
-
