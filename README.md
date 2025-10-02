@@ -81,8 +81,7 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 
 <details><summary>投稿フォーム（約15秒）</summary>
 
-![投稿フォーム](docs/images/emomu_formdemo.gif)
-
+<img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_formdemo.gif" width="390" alt="投稿フォーム">
 </details>
 
 
@@ -106,14 +105,12 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 
 <details><summary>ブックマーク／プレイリスト作成（約13秒）</summary>
 
-![ブックマーク/プレイリスト作成](docs/images/emomu_create_bookmark_playlist.gif)
-
+<img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_create_bookmark_playlist.gif" width="390" alt="ブックマーク/プレイリスト作成">
 </details>
 
 <details><summary>プレイリスト編集（約17秒）</summary>
 
-![プレイリスト編集](docs/images/emomu_playlist_edit.gif)
-
+<img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_playlist_edit.gif" width="390" alt="プレイリスト編集">
 </details>
 
 
@@ -124,7 +121,7 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 
 <details><summary>コメント＆リアクション（約10秒）</summary>
 
-![コメント＆リアクション](docs/images/emomu_commentdemo.gif)
+ <img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_commentdemo.gif" width="390" alt="コメント＆リアクション">
 
 </details>
 
