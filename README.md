@@ -79,9 +79,10 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 - タグ付け、ブックマーク数・コメント数を表示
 - 投稿詳細ページ（モバイル用とPC用の最適化ビュー）
 
-<details><summary>投稿フォーム</summary>
-  <video src="docs/videos/emomu_formdemo.mp4"
-         width="390" controls muted playsinline preload="metadata"></video>
+<details><summary>投稿フォーム（約15秒）</summary>
+
+![投稿フォーム](docs/images/emomu_formdemo.gif)
+
 </details>
 
 
@@ -102,14 +103,17 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
   - 曲の削除
 - **Turbo Stream** による即時反映  
   追加／削除で **プレイリスト本体とモーダル候補が自動更新** を実装
-<details><summary>ブックマーク／プレイリスト作成</summary>
-  <video src="docs/videos/emomu_create_bookmark_playlist.mp4"
-         width="390" controls muted playsinline preload="metadata"></video>
+
+<details><summary>ブックマーク／プレイリスト作成（約13秒）</summary>
+
+![ブックマーク/プレイリスト作成](docs/images/emomu_create_bookmark_playlist.gif)
+
 </details>
 
-<details><summary>プレイリスト編集</summary>
-  <video src="docs/videos/emomu_playlist_edit.mp4"
-         width="390" controls muted playsinline preload="metadata"></video>
+<details><summary>プレイリスト編集（約17秒）</summary>
+
+![プレイリスト編集](docs/images/emomu_playlist_edit.gif)
+
 </details>
 
 
@@ -118,9 +122,10 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 - 投稿詳細画面にてコメント＆リアクションスペース
 - いいね等のリアクション（それな！／よんだ！）
 
-<details><summary>コメント＆リアクション</summary>
-  <video src="docs/videos/emomu_commentdemo.mp4"
-         width="390" controls muted playsinline preload="metadata"></video>
+<details><summary>コメント＆リアクション（約10秒）</summary>
+
+![コメント＆リアクション](docs/images/emomu_commentdemo.gif)
+
 </details>
 
 ### 6) シェア
