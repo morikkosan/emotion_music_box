@@ -29,7 +29,6 @@ class PlaylistsController < ApplicationController
 
     begin
       Playlist.transaction do
-
       if selected_ids.blank?
         raise ActiveRecord::RecordInvalid.new(@playlist), "チェックマークが1つも選択されていません"
       end

@@ -108,7 +108,9 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 
 ---
 
-### 5) 🎧 プレイリスト編集（約17秒）
+### 5) 🎧 プレイリスト再生&編集（約17秒）
+
+- 作成したプレイリストは、画面下のボタンから再生・編集・削除を直感的に操作でき、快適に音楽を楽しめます。
 
 <img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_playlist_edit.gif" width="320" alt="プレイリスト編集">
 
@@ -117,14 +119,16 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 ### 6) 💬 コメント＆リアクション（約10秒）
 - 投稿詳細画面にてコメント＆リアクションスペース
 - いいね等のリアクション（それな！／よんだ！）
+　ユーザー間のコミュニティ＆共感性満足を得られます。
 
 <img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_commentdemo.gif" width="320" alt="コメント＆リアクション">
 
 ---
 
 ### 7) シェア
-- X（Twitter）共有ボタン（投稿詳細からワンタップでシェア）  
+- X（Twitter）共有ボタン（投稿詳細からワンタップでシェア）
   例：「今日の感情は ○○！！ この気分で聴いた曲は ××」
+　SNSにより共感性満足感を高めます。
 
 **ユーザーメニュー**
 
@@ -134,10 +138,10 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 
 
 ### 8) モバイル最適化
-- モバイル専用のフッターメニュー（再生／追加／戻る／削除／次の曲／前の曲／再生時間をコントロールできるシークバー／リピート／シャッフル）
+- モバイル専用のフッター音楽プレーヤー（再生／追加／戻る／削除／次の曲／前の曲／再生時間をコントロールできるシークバー／リピート／シャッフル）
 - セーフエリア（iPhone）対応、軽量なUI部品
-- 主要操作をフッターメニュー画面下部に集約して片手操作が容易に  
-  デスクトップ版でもブラウザのサイズ変更をすればスマホ版にすぐ切り替わるストレスフリーな設計
+- 主要操作をフッターメニュー画面下部に集約して片手操作が容易に
+- デスクトップ版では、ブラウザのサイズを自由に変更してもレイアウトが瞬時に切り替わるため、常に最適なUIで快適に操作できます。
 
 ### 9) 通知
 - 通知（Web Push / VAPID）
@@ -148,6 +152,10 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 - MDN — Push API: https://developer.mozilla.org/docs/Web/API/Push_API  
 - MDN — Notifications API: https://developer.mozilla.org/docs/Web/API/Notifications_API  
 - web.dev（Web Push 概要）: https://web.dev/learn/push/
+
+
+# Emotion Music Box は、感情と音楽をつなげて「今の自分」に寄り添う音楽体験を届けます。
+
 
 **対応環境**
 - **iPhone / iPad（iOS / iPadOS 16.4+）**  
@@ -171,9 +179,7 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 
 ---
 
-## リリース時点の挙動メモ
-- プレイリストへの**追加・削除は即時反映**（Turbo Stream）。  
-  モーダルを閉じずに連続追加が可能。閉じても再読み込みは不要です。
+
 - モバイルでもフッターメニューが常時固定で操作しやすい設計。
 
 ---
