@@ -26,10 +26,10 @@
 
 ## このサービスへの思い・作りたい理由
 
-私は**音楽専門学校**を経て、以前バンドでライブをしたり曲を作ったり、**音楽に携わること**をしていました。  
-**音楽なしでは生きられない**人間でした。  
-小学生の時から**iPod**などを使用し、気分によってどんなジャンルの音楽を聴いていたかで**ストレスを和らげていました**。  
-音楽によるストレス発散は、僕だけじゃなく**誰しもがそうです**。  
+私は**音楽専門学校**を経て、以前バンドでライブをしたり曲を作ったり、**音楽に携わること**をしていました。
+**音楽なしでは生きられない**人間でした。
+小学生の時から**iPod**などを使用し、気分によってどんなジャンルの音楽を聴いていたかで**ストレスを和らげていました**。
+音楽によるストレス発散は、僕だけじゃなく**誰しもがそうです**。
 だからこそ、このアプリを作りたいと思いました。
 
 ## ユーザー層について
@@ -79,11 +79,10 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 - タグ付け、ブックマーク数・コメント数を表示
 - 投稿詳細ページ（モバイル用とPC用の最適化ビュー）
 
-<details><summary>投稿フォーム（約15秒）</summary>
-
+#### 📝 投稿フォーム（約15秒）
 <img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_formdemo.gif" width="390" alt="投稿フォーム">
-</details>
 
+---
 
 ### 3) 投稿検索・再生
 - SoundCloud の曲情報を利用した楽曲再生（オリジナルプレーヤー / リンク再生）
@@ -91,7 +90,9 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 - 下部メニューから検索を押せば条件検索ができる  
   ※デスクトップ版は上メニュー部分にジャンル＆タグ検索、サイドバーでさらに細かい条件検索
 
-### 4) ブックマーク & プレイリスト
+---
+
+### 4) 🎵 ブックマーク／プレイリスト作成（約13秒）
 - 気になった投稿をブックマーク（♡） 
   マイページの「自分の投稿も含める」にチェックを入れると自分が投稿した投稿楽曲も表示されます  
   → プレイリストを作成する
@@ -103,41 +104,37 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 - **Turbo Stream** による即時反映  
   追加／削除で **プレイリスト本体とモーダル候補が自動更新** を実装
 
-<details><summary>ブックマーク／プレイリスト作成（約13秒）</summary>
+<img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_create_bookmark_playlist.gif" width="340" alt="ブックマーク/プレイリスト作成">
 
-<img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_create_bookmark_playlist.gif" width="390" alt="ブックマーク/プレイリスト作成">
-</details>
+---
 
-<details><summary>プレイリスト編集（約17秒）</summary>
+### 5) 🎧 プレイリスト編集（約17秒）
 
-<img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_playlist_edit.gif" width="390" alt="プレイリスト編集">
-</details>
+<img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_playlist_edit.gif" width="340" alt="プレイリスト編集">
 
+---
 
-
-### 5) コメント & リアクション
+### 6) 💬 コメント＆リアクション（約10秒）
 - 投稿詳細画面にてコメント＆リアクションスペース
 - いいね等のリアクション（それな！／よんだ！）
 
-<details><summary>コメント＆リアクション（約10秒）</summary>
+<img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_commentdemo.gif" width="340" alt="コメント＆リアクション">
 
- <img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_commentdemo.gif" width="390" alt="コメント＆リアクション">
+---
 
-</details>
-
-### 6) シェア
+### 7) シェア
 - X（Twitter）共有ボタン（投稿詳細からワンタップでシェア）  
   例：「今日の感情は ○○！！ この気分で聴いた曲は ××」
 
 ユーザーメニュー<img src="https://i.gyazo.com/1c941c7a64ef8d849fbc684e8ed6d8a1.png" alt="ユーザーメニュー" width="1280" height="720">
 
-### 7) モバイル最適化
+### 8) モバイル最適化
 - モバイル専用のフッターメニュー（再生／追加／戻る／削除／次の曲／前の曲／再生時間をコントロールできるシークバー／リピート／シャッフル）
 - セーフエリア（iPhone）対応、軽量なUI部品
 - 主要操作をフッターメニュー画面下部に集約して片手操作が容易に  
   デスクトップ版でもブラウザのサイズ変更をすればスマホ版にすぐ切り替わるストレスフリーな設計
 
-### 8) 通知
+### 9) 通知
 - 通知（Web Push / VAPID）
 
 本アプリは **Web Push（VAPID）** に対応しており、コメント／いいね等の通知を受け取れます。  
