@@ -66,10 +66,10 @@
 ※本アプリはSoundCloudのAPIを利用していますが、SoundCloudにより承認・提携・支援されたものではありません。
 Screenshots of SoundCloud login UI are used for instructional purposes. © SoundCloud Ltd.
 
-新規登録
+**新規登録**
 <img src="https://i.gyazo.com/d0476f8750b234c705ec7d85e20608be.png" alt="新規登録" width="1280" height="720">
 
-ログイン
+**ログイン**
 <img src="https://i.gyazo.com/61d215d1bfb16143db93db5624d38b0a.png" alt="ログイン" width="1280" height="720">
 
 
@@ -94,7 +94,7 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 
 ### 4) 🎵 ブックマーク／プレイリスト作成（約13秒）
 - 気になった投稿をブックマーク（♡） 
-  マイページの「自分の投稿も含める」にチェックを入れると自分が投稿した投稿楽曲も表示されます  
+  マイページの「自分の投稿も含める」にチェックを入れると自分が投稿した投稿楽曲も表示されます
   → プレイリストを作成する
 - プレイリスト画面
   - 1曲目から再生
@@ -126,8 +126,11 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 - X（Twitter）共有ボタン（投稿詳細からワンタップでシェア）  
   例：「今日の感情は ○○！！ この気分で聴いた曲は ××」
 
-ユーザーメニュー
-<img src="docs/images/emomu_usermenu.png" alt="ユーザーメニュー" width="640">
+**ユーザーメニュー**
+
+
+<img src="docs/images/emomu_usermenu.png" alt="ユーザーメニュー" width="320">
+
 
 
 ### 8) モバイル最適化
