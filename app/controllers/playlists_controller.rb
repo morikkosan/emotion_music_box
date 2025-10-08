@@ -29,6 +29,10 @@ class PlaylistsController < ApplicationController
 
     begin
       Playlist.transaction do
+
+      if selected_ids.blank?
+        raise ActiveRecord::RecordInvalid.new(@playlist), "チェックマークが1つも選択されていません"
+      end
         @playlist.save!
         # 存在するIDだけに絞った後、重複を避けて安全に作成
         selected_ids.each do |log_id|
