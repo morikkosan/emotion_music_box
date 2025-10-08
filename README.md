@@ -26,10 +26,10 @@
 
 ## このサービスへの思い・作りたい理由
 
-私は**音楽専門学校**を経て、以前バンドでライブをしたり曲を作ったり、**音楽に携わること**をしていました。
-**音楽なしでは生きられない**人間でした。
-小学生の時から**iPod**などを使用し、気分によってどんなジャンルの音楽を聴いていたかで**ストレスを和らげていました**。
-音楽によるストレス発散は、僕だけじゃなく**誰しもがそうです**。
+私は**音楽専門学校**を経て、以前バンドでライブをしたり曲を作ったり、**音楽に携わること**をしていました。  
+**音楽なしでは生きられない**人間でした。  
+小学生の時から**iPod**などを使用し、気分によってどんなジャンルの音楽を聴いていたかで**ストレスを和らげていました**。  
+音楽によるストレス発散は、僕だけじゃなく**誰しもがそうです**。  
 だからこそ、このアプリを作りたいと思いました。
 
 ## ユーザー層について
@@ -104,13 +104,13 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 - **Turbo Stream** による即時反映  
   追加／削除で **プレイリスト本体とモーダル候補が自動更新** を実装
 
-<img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_create_bookmark_playlist.gif" width="340" alt="ブックマーク/プレイリスト作成">
+<img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_create_bookmark_playlist.gif" width="320" alt="ブックマーク/プレイリスト作成">
 
 ---
 
 ### 5) 🎧 プレイリスト編集（約17秒）
 
-<img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_playlist_edit.gif" width="340" alt="プレイリスト編集">
+<img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_playlist_edit.gif" width="320" alt="プレイリスト編集">
 
 ---
 
@@ -118,7 +118,7 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 - 投稿詳細画面にてコメント＆リアクションスペース
 - いいね等のリアクション（それな！／よんだ！）
 
-<img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_commentdemo.gif" width="340" alt="コメント＆リアクション">
+<img src="https://raw.githubusercontent.com/morikkosan/emotion_music_box/main/docs/images/emomu_commentdemo.gif" width="320" alt="コメント＆リアクション">
 
 ---
 
