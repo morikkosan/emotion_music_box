@@ -126,7 +126,9 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 - X（Twitter）共有ボタン（投稿詳細からワンタップでシェア）  
   例：「今日の感情は ○○！！ この気分で聴いた曲は ××」
 
-ユーザーメニュー<img src="https://i.gyazo.com/1c941c7a64ef8d849fbc684e8ed6d8a1.png" alt="ユーザーメニュー" width="1280" height="720">
+ユーザーメニュー
+<img src="docs/images/emomu_usermenu.png" alt="ユーザーメニュー" width="640">
+
 
 ### 8) モバイル最適化
 - モバイル専用のフッターメニュー（再生／追加／戻る／削除／次の曲／前の曲／再生時間をコントロールできるシークバー／リピート／シャッフル）
