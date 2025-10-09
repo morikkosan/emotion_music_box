@@ -93,13 +93,22 @@
 
   <!-- ✅ グローバル変数 -->
   <script nonce="<%= content_security_policy_nonce %>">
-    window.SOUNDCLOUD_CLIENT_ID    = "<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>";
-    window.soundcloudToken         = "<%= ENV['SOUNDCLOUD_OAUTH_TOKEN'] %>";
-    window.CLOUDINARY_CLOUD_NAME   = "<%= ENV['CLOUDINARY_CLOUD_NAME'] %>";
-    window.CLOUDINARY_UPLOAD_PRESET= "<%= ENV['CLOUDINARY_UPLOAD_PRESET'] %>";
-    window.VAPID_PUBLIC_KEY        = "<%= ENV['VAPID_PUBLIC_KEY'] %>";
-    window.isLoggedIn              = <%= current_user.present? ? 'true' : 'false' %>;
-  </script>
+  // 公開してよいID（OK）
+  window.SOUNDCLOUD_CLIENT_ID      = "<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>";
+
+  // アクセストークンは「本人ログイン時だけ」出す（安全）
+  <% if current_user&.soundcloud_token.present? %>
+    window.soundcloudToken = "<%= current_user.soundcloud_token %>";
+  <% else %>
+    window.soundcloudToken = null;
+  <% end %>
+
+  window.CLOUDINARY_CLOUD_NAME     = "<%= ENV['CLOUDINARY_CLOUD_NAME'] %>";
+  window.CLOUDINARY_UPLOAD_PRESET  = "<%= ENV['CLOUDINARY_UPLOAD_PRESET'] %>";
+  window.VAPID_PUBLIC_KEY          = "<%= ENV['VAPID_PUBLIC_KEY'] %>";
+  window.isLoggedIn                = <%= current_user.present? ? 'true' : 'false' %>;
+</script>
+
 
   <%= yield :head %>
   <%= Sentry.get_trace_propagation_meta.html_safe %>
