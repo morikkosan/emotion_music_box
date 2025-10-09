@@ -48,3 +48,5 @@ coverage/
 coverage/**
 coverage-final.json
 lcov.info
+*.pem
+context.tar
