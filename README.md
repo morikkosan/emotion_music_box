@@ -2,7 +2,7 @@
 音楽と感情のアプリ
 
 
-![screenflow-overview](docs/diagrams/overview_thumb_v2.png)
+![screenflow-overview](docs/diagrams/overview_thumb_v3.png)
 
 
 ### ER図
