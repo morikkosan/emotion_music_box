@@ -1,6 +1,10 @@
 # EMOTION MUSIC BOX
 音楽と感情のアプリ
 
+
+![screenflow-overview](docs/diagrams/overview_thumb.png)
+
+
 ### ER図
 ![ER図](https://i.gyazo.com/61026d2bc54eaf1947f83289763d18b1.png)
 
@@ -16,6 +20,8 @@
 - [リリース時点の挙動メモ](#リリース時点の挙動メモ)
 - [テスト構成（Jest 概要）](#テスト構成jest-概要)
 - [使用技術（Tech Stack）](#使用技術tech-stack)
+- [画面遷移図（Figma）](#画面遷移図figma)
+
 
 ---
 
@@ -232,3 +238,11 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 ### 監視・ログ
 - Sentry（sentry-rails / sentry-ruby）
 - Lograge
+
+
+## 画面遷移図（Figma）
+
+> 詳細な画面遷移は Figma を参照してください。
+
+- Figma: emotion_music3  
+  https://www.figma.com/design/FglcI4oHKG1LdAOzUg4103/emotion_music3?node-id=0-1&m=dev&t=PpWZOzjESTKnPbQv-1
