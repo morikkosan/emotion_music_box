@@ -25,6 +25,8 @@ import { Controller } from "@hotwired/stimulus";
 export default class extends Controller {
   static targets = ["trackImage", "playIcon"];
 
+  // ★追加：iOS無音解錠フラグ（クラスフィールド）
+  _iosUnlocked = false;
 
 
   // ===== 追加: フォールバック用ユーティリティ =====
@@ -46,6 +48,45 @@ export default class extends Controller {
         cover.setAttribute("aria-hidden", "true");
       }
     } catch (_) {}
+  }
+
+  // === 追加：iOS判定 & 無音“解錠” ===
+  _isIOS() {
+    return /iP(hone|ad|od)/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
+  /**
+   * iOSの自動再生ブロックを、ユーザータップ中に“無音1ショット再生(約39ms)”で解除。
+   * 何度も実行されないようフラグでガード。
+   */
+  async _primeIOSAutoplay() {
+    if (!this._isIOS() || this._iosUnlocked) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) {
+        const ctx = new AC();
+        await ctx.resume().catch(() => {});
+        const buf = ctx.createBuffer(1, 1, 22050); // 1サンプルの無音
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start(0);
+        // ★39ms 後に停止（取りこぼしを減らすために少し待つ）
+        setTimeout(() => {
+          try { src.stop(0); } catch (_) {}
+        }, 39);
+        this._iosUnlocked = true;
+        return;
+      }
+      // 保険：<audio muted> でも解錠トライ
+      const a = new Audio();
+      a.muted = true;
+      a.src = "data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAA"; // 無音データ
+      await a.play().catch(() => {});
+      setTimeout(() => { try { a.pause(); } catch (_) {} }, 39);
+      this._iosUnlocked = true;
+    } catch (_) {
+      // 失敗しても致命ではない（次のタップでまた試す）
+    }
   }
 
   // === 追加：旧 iframe を安全に破棄（SCのpostMessage先を断つ）===
@@ -386,6 +427,9 @@ export default class extends Controller {
 
   // -------------- 外部 URL 再生 -----------------
   playFromExternal(playUrl) {
+    // ★追加：この発火の文脈でiOS解錠
+    this._primeIOSAutoplay();
+
     this.bottomPlayer?.classList.remove("d-none");
     this.bottomPlayer?.offsetHeight;
 
@@ -578,11 +622,15 @@ export default class extends Controller {
       this._safeNukeIframe(oldIframe);
     }
 
-    // 新規 iframe 作成（属性は従来通り）
+    // 新規 iframe 作成（属性は従来通り＋iOS向け強化）
     const newIframe = document.createElement("iframe");
     newIframe.id = "hidden-sc-player";
     newIframe.classList.add("is-hidden");
-    newIframe.allow = "autoplay";
+    // ★強化：iOSでの自動再生を通しやすくするヒント
+    newIframe.allow = "autoplay; encrypted-media";
+    newIframe.setAttribute("playsinline", "true");
+    newIframe.setAttribute("webkit-playsinline", "true");
+
     newIframe.frameBorder = "no";
     newIframe.scrolling = "no";
     newIframe.width = "100%";
@@ -595,6 +643,9 @@ export default class extends Controller {
   // -------------- トラック再生関連 -----------------
   loadAndPlay(event) {
     event?.stopPropagation?.();
+    // ★追加：このタップの文脈でiOSを解錠（39msの無音）
+    this._primeIOSAutoplay();
+
     this.updatePlaylistOrder();
 
     const el = event?.currentTarget;
@@ -670,6 +721,8 @@ export default class extends Controller {
     console.log("this.widget", this.widget);
 
     event?.stopPropagation?.();
+    // ★追加：トグル直前の文脈でiOS解錠
+    this._primeIOSAutoplay();
 
     if (!this.widget) {
       this.iframeElement = document.getElementById("hidden-sc-player");
