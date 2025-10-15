@@ -110,6 +110,19 @@
 </script>
 
 
+<%# ===== 正規URL（canonical） ===== %>
+<% if controller_name == 'home' && action_name == 'index' %>
+  <link rel="canonical" href="https://moriappli-emotion.com/">
+<% else %>
+  <link rel="canonical" href="<%= canonical_url %>">
+<% end %>
+
+<%# ===== ?view=... のときは“載せないがリンクは辿る” ===== %>
+<% if params[:view].present? %>
+  <meta name="robots" content="noindex,follow">
+<% end %>
+
+
   <%= yield :head %>
   <%= Sentry.get_trace_propagation_meta.html_safe %>
 </head>
