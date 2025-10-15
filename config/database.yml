@@ -1,19 +1,31 @@
+# config/database.yml
+
+# 共通: アダプタ/エンコ/プールだけ（←本番もここは使う）
 default: &default
   adapter: postgresql
   encoding: unicode
-  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS", 5) %>
+
+# 開発: ローカルDB
+development:
+  <<: *default
+  database: app_development
   username: postgres
   password: password
   host: 127.0.0.1
 
-development:
-  <<: *default
-  database: app_development
-
+# テスト: ローカルDB
 test:
   <<: *default
   database: app_test
+  username: postgres
+  password: password
+  host: 127.0.0.1
 
+# 本番: Neon の pooler 付き DATABASE_URL を “そのまま” 使う
 production:
   <<: *default
   url: <%= ENV["DATABASE_URL"] %>
+  reaping_frequency: 10
+  variables:
+    statement_timeout: 5000
