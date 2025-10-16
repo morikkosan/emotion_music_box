@@ -23,13 +23,7 @@ import { Controller } from "@hotwired/stimulus";
 export default class extends Controller {
   static targets = ["trackImage", "playIcon"];
 
-  // iOS 無音解錠 & 直近ジェスチャ
-  _iosUnlocked = false;
-  _lastUserGestureAt = 0;
-  _lastLoadedUrl = null;
-  _widgetReady = false;
-
-  // ===== ユーティリティ =====
+  // ===== 追加: フォールバック用ユーティリティ =====
   _q(sel, root = null) {
     return (root || this.element || document).querySelector(sel);
   }
@@ -40,6 +34,7 @@ export default class extends Controller {
     return this.element || this._q(".playlist-container") || document;
   }
   _hideScreenCover() {
+    // ローディング覆いが閉じない保険（別コントローラが落ちても畳む）
     try {
       const cover = document.getElementById("screen-cover-loading");
       if (cover) {
@@ -49,50 +44,23 @@ export default class extends Controller {
     } catch (_) {}
   }
 
-  // === iOS判定 & 無音解錠 ===
+  // ★追加：iOS判定
   _isIOS() {
-    return /iP(hone|ad|od)/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  }
-  _markGesture() {
-    this._lastUserGestureAt = performance.now();
-    this._primeIOSAutoplay();
-  }
-  async _primeIOSAutoplay() {
-    if (!this._isIOS() || this._iosUnlocked) return;
-    try {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (AC) {
-        const ctx = new AC();
-        await ctx.resume().catch(() => {});
-        const buf = ctx.createBuffer(1, 1, 22050);
-        const src = ctx.createBufferSource();
-        src.buffer = buf;
-        src.connect(ctx.destination);
-        src.start(0);
-        setTimeout(() => { try { src.stop(0); } catch (_) {} }, 39);
-        this._iosUnlocked = true;
-        return;
-      }
-      const a = new Audio();
-      a.muted = true;
-      a.src = "data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAA";
-      await a.play().catch(() => {});
-      setTimeout(() => { try { a.pause(); } catch (_) {} }, 39);
-      this._iosUnlocked = true;
-    } catch (_) {}
+    return /iP(hone|ad|od)/i.test(navigator.userAgent)
+      || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   }
 
-  // 旧 iframe を安全に破棄
+  // === 追加：旧 iframe を安全に破棄（SCのpostMessage先を断つ）===
   _safeNukeIframe(iframe) {
     try {
       if (!iframe) return;
-      iframe.src = "about:blank";
-      iframe.removeAttribute("src");
-      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      iframe.src = "about:blank";           // 内部処理を停止
+      iframe.removeAttribute("src");        // 参照を切る
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe); // DOMから除去
     } catch (_) {}
   }
 
-  // メタデータ反映
+  // === 追加：メタデータ反映の共通化（挙動は既存と同じ） ===
   _applySoundMetadata(sound) {
     if (sound?.title) {
       this.setTrackTitle(sound.title);
@@ -106,20 +74,20 @@ export default class extends Controller {
     }
   }
 
-  // unbind 共通化
+  // === 追加：unbind を一本化（bindWidgetEvents は既存のまま利用） ===
   unbindWidgetEvents() {
     if (!this.widget) return;
     try {
       this.widget.unbind(SC.Widget.Events.PLAY);
       this.widget.unbind(SC.Widget.Events.PAUSE);
       this.widget.unbind(SC.Widget.Events.FINISH);
-      this.widget.unbind(SC.Widget.Events.READY);
     } catch (_) {}
   }
 
   cleanup = () => {
     clearInterval(this.progressInterval);
 
+    // 追加: 手動付与したイベントリスナを確実に解除
     try {
       this.seekBar?.removeEventListener("input", this._onSeekInput);
       this.volumeBar?.removeEventListener("input", this._onVolumeInput);
@@ -134,12 +102,14 @@ export default class extends Controller {
       this.widget = null;
     }
 
+    // ★追加：旧iframeを「空→除去」してpostMessageノイズを抑止
     try {
       const old = document.getElementById("hidden-sc-player");
       this._safeNukeIframe(old);
       this.iframeElement = null;
     } catch (_) {}
 
+    // ★追加：フッターの再生ボタン有効/無効監視の後始末
     try {
       document.removeEventListener("turbo:render", this._updatePlayButton);
       document.removeEventListener("turbo:frame-load", this._updatePlayButton);
@@ -158,6 +128,7 @@ export default class extends Controller {
   connect() {
     document.addEventListener("turbo:before-cache", this.cleanup, { once: true });
 
+    // showページでキャッシュリセット
     if (document.body.classList.contains("playlist-show-page")) {
       localStorage.removeItem("playerState");
     }
@@ -191,7 +162,7 @@ export default class extends Controller {
     this.waveformCtx     = this.waveformCanvas?.getContext("2d");
     this.waveformAnimating = false;
 
-    // シークドラッグ
+    // ===== シークバーのドラッグ制御（従来通り）=====
     this._onMouseUpSeek = () => {
       if (this.isSeeking) {
         this.isSeeking = false;
@@ -199,17 +170,16 @@ export default class extends Controller {
       }
     };
     this.seekBar?.addEventListener("mousedown", () => {
-      this._markGesture();
       this.isSeeking = true;
       clearInterval(this.progressInterval);
     });
     document.addEventListener("mouseup", this._onMouseUpSeek);
 
-    // 保険ハンドラ
+    // ====== 追加: data-action取りこぼし時の“保険”ハンドラ ======
     this._onSeekInput   = (e) => this.seek(e);
     this._onVolumeInput = (e) => this.changeVolume(e);
-    this._onPrevClick   = (e) => { this._markGesture(); this.prevTrack(e); };
-    this._onNextClick   = (e) => { this._markGesture(); this.nextTrack(e); };
+    this._onPrevClick   = (e) => this.prevTrack(e);
+    this._onNextClick   = (e) => this.nextTrack(e);
 
     this.seekBar?.addEventListener("input", this._onSeekInput);
     this.volumeBar?.addEventListener("input", this._onVolumeInput);
@@ -219,16 +189,17 @@ export default class extends Controller {
     this._prevBtn?.addEventListener("click", this._onPrevClick);
     this._nextBtn?.addEventListener("click", this._onNextClick);
 
-    // 画像/アイコンのイベント委譲
+    // 追加: タイル画像/再生アイコンのクリックが届かないケースのフォールバック（イベント委譲）
     this._onIconClickDelegated = (e) => {
       const target = e.target.closest("[data-track-id]");
       if (!target) return;
-      this._markGesture();
+      // 再生アイコン or 画像いずれも拾う
       if (
         target.matches('[data-global-player-target="playIcon"], .play-overlay-icon') ||
         target.classList.contains("fa") ||
         target.dataset.playUrl
       ) {
+        // すでにアイコンなら onPlayIconClick、画像なら loadAndPlay を直接呼ぶ
         if (target.dataset.trackId && !target.dataset.playUrl) {
           this.onPlayIconClick({ currentTarget: target, stopPropagation() {} });
         } else {
@@ -241,13 +212,8 @@ export default class extends Controller {
     // 外部検索から再生
     window.addEventListener("play-from-search", (e) => {
       const { playUrl } = e.detail;
-      this._markGesture();
       this.playFromExternal(playUrl);
     });
-
-    // 最初のタップで一度だけ解錠
-    window.addEventListener("touchstart", () => this._primeIOSAutoplay(), { once: true, passive: true });
-    window.addEventListener("click", () => this._primeIOSAutoplay(), { once: true });
 
     this.switchPlayerTopRow();
     window.addEventListener("resize", () => {
@@ -258,7 +224,7 @@ export default class extends Controller {
       }
     });
 
-    // 初期フラグの見た目同期
+    // 初期の見た目をフラグと同期
     const shuffleBtn = document.getElementById("shuffle-button");
     if (shuffleBtn) {
       shuffleBtn.classList.toggle("active", this.isShuffle);
@@ -275,14 +241,14 @@ export default class extends Controller {
     this.updateSeekAria(0, 0, 0);
     this.updateVolumeAria(this.volumeBar?.value ?? "100");
 
-    // フッター再生ボタン可否
+    // ★追加：曲の有無でフッター「再生」を有効/無効に切替（既存ロジック非変更）
     this._updatePlayButton = () => {
       const btn = document.querySelector(".mobile-footer-menu .playfirst");
       if (!btn) return;
       const has = !!(this._container()?.querySelector("[data-track-id]"));
       btn.toggleAttribute("disabled", !has);
       btn.setAttribute("aria-disabled", String(!has));
-      btn.classList.toggle("is-disabled", !has);
+      btn.classList.toggle("is-disabled", !has); // 見た目用（CSS側で任意）
     };
     document.addEventListener("turbo:render", this._updatePlayButton);
     document.addEventListener("turbo:frame-load", this._updatePlayButton);
@@ -290,12 +256,13 @@ export default class extends Controller {
     this._footerGuardMO = new MutationObserver(() => queueMicrotask(this._updatePlayButton));
     this._footerGuardMO.observe(this._container() || document, { childList: true, subtree: true });
     this._updatePlayButton();
+    // ★追加ここまで
 
     this.restorePlayerState();
     console.log("[connect] global-player controller initialized");
   }
 
-  // ---------- A11y ----------
+  // ---------- A11y: ヘルパ ----------
   setPlayPauseAria(isPlaying) {
     if (!this.playPauseButton) return;
     this.playPauseButton.setAttribute("aria-label", isPlaying ? "一時停止" : "再生");
@@ -306,7 +273,7 @@ export default class extends Controller {
     const p = Math.max(0, Math.min(100, Math.round(percent)));
     this.seekBar.setAttribute("aria-valuenow", String(p));
     const current = this.formatTime(posMs);
-    const total   = this.formatTime(durMs);
+       const total   = this.formatTime(durMs);
     this.seekBar.setAttribute("aria-valuetext", durMs ? `${current} / ${total}` : current);
   }
 
@@ -325,7 +292,7 @@ export default class extends Controller {
         this.widget.getDuration((dur) => {
           const state = {
             trackId:   this.currentTrackId,
-            trackUrl:  this._lastLoadedUrl || this.iframeElement?.src,
+            trackUrl:  this.iframeElement?.src,
             position:  pos ?? 0,
             duration:  dur ?? 0,
             isPlaying: this.playPauseIcon?.classList.contains("fa-pause"),
@@ -378,8 +345,11 @@ export default class extends Controller {
     this.iframeElement = this.replaceIframeWithNew();
     if (!this.iframeElement) return;
 
-    this._lastLoadedUrl = state.trackUrl;
-    this.iframeElement.src = state.trackUrl.replace("&auto_play=true", "&auto_play=false");
+    // ★iOSでは復元時は自動再生を無効化
+    const url = this._isIOS()
+      ? state.trackUrl.replace("&auto_play=true", "&auto_play=false")
+      : state.trackUrl;
+    this.iframeElement.src = url;
     this.resetPlayerUI();
 
     this.iframeElement.onload = () => {
@@ -387,29 +357,34 @@ export default class extends Controller {
         try {
           this.widget = SC.Widget(this.iframeElement);
         } catch (_) {
+          // READY前で失敗したら少し待って再試行
           return setTimeout(() => this.restorePlayerState(), 150);
         }
 
-        this.bindWidgetEvents();
-
         this.widget.bind(SC.Widget.Events.READY, () => {
-          this._widgetReady = true;
           this.widget.getCurrentSound((sound) => {
-            if (sound?.title) this._applySoundMetadata(sound);
-            else this._applySoundMetadata(undefined);
+            if (sound?.title) {
+              this._applySoundMetadata(sound);
+            } else {
+              this._applySoundMetadata(undefined);
+            }
+
+            this.widget.seekTo(state.position || 0);
+
+            // ★Windows/Androidのみ自動再生復元
+            if (!this._isIOS() && state.isPlaying) {
+              this.widget.play();
+            } else if (this._isIOS() && !state.isPlaying) {
+              this.widget.pause();
+            }
+
+            this.bindWidgetEvents();
+            this.startProgressTracking();
+            this.changeVolume({ target: this.volumeBar });
+
+            this.updateTrackIcon(this.currentTrackId, !this._isIOS() && state.isPlaying);
+            this.setPlayPauseAria(!this._isIOS() && state.isPlaying);
           });
-
-          // iOSではジェスチャ外なので強制再生しない
-          if (!this._isIOS()) {
-            state.isPlaying ? this.widget.play() : this.widget.pause();
-          } else {
-            if (!state.isPlaying) this.widget.pause();
-          }
-
-          this.startProgressTracking();
-          this.changeVolume({ target: this.volumeBar });
-          this.updateTrackIcon(this.currentTrackId, !this._isIOS() && state.isPlaying);
-          this.setPlayPauseAria(!this._isIOS() && state.isPlaying);
         });
       }, 150);
     };
@@ -422,8 +397,6 @@ export default class extends Controller {
 
   // -------------- 外部 URL 再生 -----------------
   playFromExternal(playUrl) {
-    this._markGesture();
-
     this.bottomPlayer?.classList.remove("d-none");
     this.bottomPlayer?.offsetHeight;
 
@@ -439,9 +412,8 @@ export default class extends Controller {
       return;
     }
 
-    // 同一ジェスチャ内に収める
-    this._lastLoadedUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(playUrl)}&auto_play=true`;
-    this.iframeElement.src = this._lastLoadedUrl;
+    const src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(playUrl)}&auto_play=true`;
+    this.iframeElement.src = src;
     this.resetPlayerUI();
 
     this.iframeElement.onload = () => {
@@ -452,20 +424,25 @@ export default class extends Controller {
           return setTimeout(() => this.playFromExternal(playUrl), 120);
         }
 
-        this.bindWidgetEvents();
-
         this.widget.bind(SC.Widget.Events.READY, () => {
-          this._widgetReady = true;
           const getSound = (retry = 0) => {
             this.widget.getCurrentSound((sound) => {
-              if (sound?.title) this._applySoundMetadata(sound);
-              else if (retry < 6) setTimeout(() => getSound(retry + 1), 180);
-              else this._applySoundMetadata(undefined);
+              if (sound?.title) {
+                this._applySoundMetadata(sound);
+              } else if (retry < 6) {
+                setTimeout(() => getSound(retry + 1), 180);
+              } else {
+                this._applySoundMetadata(undefined);
+              }
             });
           };
           getSound();
 
-          // ここで play() は呼ばない（auto_play に任せる）
+          this.bindWidgetEvents();
+
+          // ★iOSではREADY後に明示的play()を呼ばない（同一タップのauto_playに任せる）
+          if (!this._isIOS()) this.widget.play();
+
           this.startProgressTracking();
           this.changeVolume({ target: this.volumeBar });
           this.savePlayerState();
@@ -476,7 +453,7 @@ export default class extends Controller {
 
   // -------------- 波形アニメーション -----------------
   startWaveformAnime() {
-    if (!this.waveformCtx || !this.waveformCanvas) return;
+    if (!this.waveformCtx) return;
     this.waveformAnimating = true;
 
     const ctx = this.waveformCtx;
@@ -505,14 +482,11 @@ export default class extends Controller {
 
   stopWaveformAnime() {
     this.waveformAnimating = false;
-    if (this.waveformCtx && this.waveformCanvas) {
-      this.waveformCtx.clearRect(0, 0, this.waveformCanvas.width, this.waveformCanvas.height);
-    }
+    this.waveformCtx && this.waveformCtx.clearRect(0, 0, this.waveformCanvas.width, this.waveformCanvas.height);
   }
 
   // -------------- シャッフル / リピート -----------------
   toggleShuffle() {
-    this._markGesture();
     this.isShuffle = !this.isShuffle;
     const btn = document.getElementById("shuffle-button");
     if (btn) {
@@ -523,7 +497,6 @@ export default class extends Controller {
   }
 
   toggleRepeat() {
-    this._markGesture();
     this.isRepeat = !this.isRepeat;
     const btn = document.getElementById("repeat-button");
     if (btn) {
@@ -533,11 +506,15 @@ export default class extends Controller {
   }
 
   updatePlaylistOrder() {
+    // まずはStimulusのtargetsから
     this.playlistOrder = this.trackImageTargets.map((img) => img.dataset.trackId).filter(Boolean);
+
+    // ★ フォールバック: targets が空でも DOM 直走査で順序を作る
     if (!this.playlistOrder.length) {
       const nodes = this._qa(".playlist-container [data-track-id][data-play-url]", this._container());
       this.playlistOrder = nodes.map((n) => String(n.dataset.trackId)).filter(Boolean);
     }
+
     if (this.isShuffle) this.shufflePlaylistOrder();
   }
 
@@ -582,7 +559,7 @@ export default class extends Controller {
     this.trackTitleEl?.classList.remove("is-hidden");
     this.trackTitleTopEl?.classList.remove("is-hidden");
     this.trackArtistEl?.classList.remove("is-hidden");
-    this._hideScreenCover();
+    this._hideScreenCover(); // ★ 覆いの畳み込みを最終保証
   }
 
   resetPlayerUI() {
@@ -611,16 +588,18 @@ export default class extends Controller {
       (this.bottomPlayer && this.bottomPlayer.parentNode) ||
       document.body;
 
+    // 旧iframeがあれば安全破棄（空→除去）
     if (oldIframe) {
       this._safeNukeIframe(oldIframe);
     }
 
+    // 新規 iframe 作成（属性はiOS対応込み）
     const newIframe = document.createElement("iframe");
     newIframe.id = "hidden-sc-player";
     newIframe.classList.add("is-hidden");
-    newIframe.allow = "autoplay; encrypted-media";
-    newIframe.setAttribute("playsinline", "true");
-    newIframe.setAttribute("webkit-playsinline", "true");
+    newIframe.allow = "autoplay; encrypted-media"; // ★
+    newIframe.setAttribute("playsinline", "true"); // ★
+    newIframe.setAttribute("webkit-playsinline", "true"); // ★
     newIframe.frameBorder = "no";
     newIframe.scrolling = "no";
     newIframe.width = "100%";
@@ -633,18 +612,19 @@ export default class extends Controller {
   // -------------- トラック再生関連 -----------------
   loadAndPlay(event) {
     event?.stopPropagation?.();
-    this._markGesture();
-
     this.updatePlaylistOrder();
 
     const el = event?.currentTarget;
     const newTrackId = el?.dataset?.trackId;
+    // 1) playUrlをまず直接拾う
     let trackUrl = el?.dataset?.playUrl;
 
+    // 2) targets から補完
     if (!trackUrl && newTrackId) {
       const img = this.trackImageTargets.find((t) => t.dataset.trackId == newTrackId);
       trackUrl = img?.dataset.playUrl;
     }
+    // 3) DOM直参照でフォールバック
     if (!trackUrl && newTrackId) {
       const node = this._q(`[data-track-id="${CSS.escape(String(newTrackId))}"][data-play-url]`, this._container());
       trackUrl = node?.dataset?.playUrl;
@@ -654,33 +634,30 @@ export default class extends Controller {
     this.resetPlayerUI();
     this.bottomPlayer?.classList.remove("d-none");
     this.currentTrackId = newTrackId || null;
+    this.cleanup();
 
-    // 古い構造を片付けてから新規iframe
     if (this.widget) {
       this.unbindWidgetEvents();
       clearInterval(this.progressInterval);
       this.widget = null;
     }
+
     this.iframeElement = this.replaceIframeWithNew();
     if (!this.iframeElement) return;
 
-    // 同一ジェスチャ内で auto_play=true を設定
-    this._lastLoadedUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&auto_play=true`;
-    this.iframeElement.src = this._lastLoadedUrl;
+    // ★タイルタップ（ユーザー操作）内に auto_play=true を付与して読み込む
+    this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&auto_play=true`;
 
     this.iframeElement.onload = () => {
       setTimeout(() => {
         try {
           this.widget = SC.Widget(this.iframeElement);
         } catch (_) {
+          // READY前で失敗 → 少し待ってリトライ
           return setTimeout(() => this.loadAndPlay({ currentTarget: el, stopPropagation() {} }), 120);
         }
 
-        this.bindWidgetEvents();
-
         this.widget.bind(SC.Widget.Events.READY, () => {
-          this._widgetReady = true;
-
           const trySetTitle = (retry = 0) => {
             this.widget.getCurrentSound((sound) => {
               if (sound?.title) {
@@ -694,9 +671,15 @@ export default class extends Controller {
           };
           trySetTitle();
 
-          // ここで play() を呼ばない（iOSでジェスチャ外扱い→停止の原因）
+          this.bindWidgetEvents();
+
+          // ★iOSではREADY後に明示的play()を呼ばない（auto_playに任せる）
+          if (!this._isIOS()) this.widget.play();
+
           this.startProgressTracking();
           this.changeVolume({ target: this.volumeBar });
+          this.updateTrackIcon(this.currentTrackId, true);
+          this.setPlayPauseAria(true);
           this.savePlayerState();
         });
       }, 100);
@@ -705,8 +688,10 @@ export default class extends Controller {
 
   // -------------- プレイ/ポーズトグル -----------------
   togglePlayPause(event) {
+    console.log("togglePlayPause発火", event);
+    console.log("this.widget", this.widget);
+
     event?.stopPropagation?.();
-    this._markGesture();
 
     if (!this.widget) {
       this.iframeElement = document.getElementById("hidden-sc-player");
@@ -756,14 +741,16 @@ export default class extends Controller {
 
   onPlayIconClick(event) {
     event.stopPropagation();
-    this._markGesture();
     const icon = event.currentTarget;
     const trackId = icon.dataset.trackId;
 
     if (this.currentTrackId === trackId && this.widget) {
       this.widget.isPaused((paused) => {
-        if (paused) this.widget.play();
-        else this.widget.pause();
+        if (paused) {
+          this.widget.play();
+        } else {
+          this.widget.pause();
+        }
       });
       return;
     }
@@ -772,6 +759,8 @@ export default class extends Controller {
 
   /* ---------- 再生イベント ---------- */
   onPlay = () => {
+    console.log("onPlayイベント発火！");
+
     this.playPauseIcon?.classList.replace("fa-play", "fa-pause");
     this.updateTrackIcon(this.currentTrackId, true);
     this.setPlayPauseAria(true);
@@ -787,6 +776,8 @@ export default class extends Controller {
   };
 
   onPause = () => {
+    console.log("onPauseイベント発火！");
+
     this.playPauseIcon?.classList.replace("fa-pause", "fa-play");
     this.updateTrackIcon(this.currentTrackId, false);
     this.setPlayPauseAria(false);
@@ -810,6 +801,7 @@ export default class extends Controller {
     clearInterval(this.progressInterval);
     this.playStartedAt = null;
 
+    /* --- 自動再生 / リピート / シャッフル --- */
     if (this.isRepeat) {
       const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == this.currentTrackId)
         || this._q(`[data-track-id="${CSS.escape(String(this.currentTrackId))}"]`, this._container());
@@ -834,6 +826,7 @@ export default class extends Controller {
   /* ---------- アイコン更新 / バインド ---------- */
   updateTrackIcon(trackId, playing) {
     if (!this.hasPlayIconTarget) {
+      // targetsがない場合でも、見える範囲のアイコンを直接更新（任意）
       this._qa('[data-track-id]', this._container()).forEach((node) => {
         if (!node.classList) return;
         if (node.dataset.trackId == trackId) {
@@ -863,12 +856,7 @@ export default class extends Controller {
       this.widget.unbind(SC.Widget.Events.PLAY);
       this.widget.unbind(SC.Widget.Events.PAUSE);
       this.widget.unbind(SC.Widget.Events.FINISH);
-      this.widget.unbind(SC.Widget.Events.READY);
     } catch (_) {}
-    this.widget.bind(SC.Widget.Events.READY, () => {
-      this._widgetReady = true;
-      this.widget.getCurrentSound((sound) => this._applySoundMetadata(sound));
-    });
     this.widget.bind(SC.Widget.Events.PLAY,   this.onPlay);
     this.widget.bind(SC.Widget.Events.PAUSE,  this.onPause);
     this.widget.bind(SC.Widget.Events.FINISH, this.onFinish);
@@ -902,12 +890,13 @@ export default class extends Controller {
     return `${m}:${s.toString().padStart(2, "0")}`;
   }
 
-  /* ---------- 前後トラック ---------- */
+  /* ---------- 前後トラック（フォールバック強化） ---------- */
   prevTrack(event) {
     event?.stopPropagation?.();
     this.updatePlaylistOrder();
     if (!this.playlistOrder?.length) return;
 
+    // currentTrackId未セットでも「最後の曲」を再生できるように
     if (!this.currentTrackId) {
       const lastId = this.playlistOrder[this.playlistOrder.length - 1];
       const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == lastId)
@@ -924,6 +913,7 @@ export default class extends Controller {
       return;
     }
 
+    // 先頭の時は最後へ（UX的フォールバック）
     const lastId2 = this.playlistOrder[this.playlistOrder.length - 1];
     const icon2 = this.playIconTargets.find((icn) => icn.dataset.trackId == lastId2)
       || this._q(`[data-track-id="${CSS.escape(String(lastId2))}"]`, this._container());
@@ -935,6 +925,7 @@ export default class extends Controller {
     this.updatePlaylistOrder();
     if (!this.playlistOrder?.length) return;
 
+    // currentTrackId未セットでも「最初の曲」を再生できるように
     if (!this.currentTrackId) {
       const firstId = this.playlistOrder[0];
       const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == firstId)
@@ -952,6 +943,7 @@ export default class extends Controller {
       return;
     }
 
+    // 最後の時は最初へ（UX的フォールバック）
     const firstId2 = this.playlistOrder[0];
     const icon2 = this.playIconTargets.find((icn) => icn.dataset.trackId == firstId2)
       || this._q(`[data-track-id="${CSS.escape(String(firstId2))}"]`, this._container());
@@ -960,7 +952,6 @@ export default class extends Controller {
 
   playFirstTrack(event) {
     event?.stopPropagation?.();
-    this._markGesture();
     this.updatePlaylistOrder();
     if (!this.playlistOrder?.length) return;
 
