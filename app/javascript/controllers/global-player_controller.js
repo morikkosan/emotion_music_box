@@ -995,3 +995,4 @@ export default class extends Controller {
     mobileRow.style.display  = isMobile ? "flex" : "none";
   }
 }
+
