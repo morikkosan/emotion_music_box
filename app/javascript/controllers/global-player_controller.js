@@ -17,8 +17,6 @@
  * @typedef {{ trackId:string|null, trackUrl?:string, position:number, duration:number, isPlaying:boolean }} PlayerState
  */
 
-
-
 // app/javascript/controllers/global_player_controller.js
 import { Controller } from "@hotwired/stimulus";
 
@@ -27,7 +25,6 @@ export default class extends Controller {
 
   // ★追加：iOS無音解錠フラグ（クラスフィールド）
   _iosUnlocked = false;
-
 
   // ===== 追加: フォールバック用ユーティリティ =====
   _q(sel, root = null) {
@@ -70,7 +67,6 @@ export default class extends Controller {
         src.buffer = buf;
         src.connect(ctx.destination);
         src.start(0);
-        // ★39ms 後に停止（取りこぼしを減らすために少し待つ）
         setTimeout(() => {
           try { src.stop(0); } catch (_) {}
         }, 39);
@@ -254,6 +250,10 @@ export default class extends Controller {
       this.playFromExternal(playUrl);
     });
 
+    // ★iOS解錠を確実にする：最初のタップ/クリックで一度だけ解錠
+    window.addEventListener("touchstart", () => this._primeIOSAutoplay(), { once: true, passive: true });
+    window.addEventListener("click", () => this._primeIOSAutoplay(), { once: true });
+
     this.switchPlayerTopRow();
     window.addEventListener("resize", () => {
       this.switchPlayerTopRow();
@@ -300,8 +300,6 @@ export default class extends Controller {
     this.restorePlayerState();
     console.log("[connect] global-player controller initialized");
   }
-
-
 
   // ---------- A11y: ヘルパ ----------
   setPlayPauseAria(isPlaying) {
@@ -406,14 +404,22 @@ export default class extends Controller {
               this._applySoundMetadata(undefined);
             }
             this.widget.seekTo(state.position || 0);
-            state.isPlaying ? this.widget.play() : this.widget.pause();
+
+            // ★iOSではここで勝手に再生を開始しない（ユーザー明示のトグルに委ねる）
+            if (!this._isIOS()) {
+              state.isPlaying ? this.widget.play() : this.widget.pause();
+            } else {
+              if (!state.isPlaying) this.widget.pause();
+            }
 
             this.bindWidgetEvents();
             this.startProgressTracking();
             this.changeVolume({ target: this.volumeBar });
 
-            this.updateTrackIcon(this.currentTrackId, state.isPlaying);
-            this.setPlayPauseAria(state.isPlaying);
+            // ★修正：UIは実際に再生する可能性（iOS除外）でのみ「再生中」表示
+            const willPlay = !this._isIOS() && state.isPlaying;
+            this.updateTrackIcon(this.currentTrackId, willPlay);
+            this.setPlayPauseAria(willPlay);
           });
         });
       }, 150);
@@ -471,7 +477,12 @@ export default class extends Controller {
           getSound();
 
           this.bindWidgetEvents();
-          this.widget.play();
+
+          // ★iOSでは明示playを呼ばない（auto_playに委ねる）
+          if (!this._isIOS()) {
+            this.widget.play();
+          }
+
           this.startProgressTracking();
           this.changeVolume({ target: this.volumeBar });
           this.savePlayerState();
@@ -704,11 +715,20 @@ export default class extends Controller {
           };
           trySetTitle();
           this.bindWidgetEvents();
-          this.widget.play();
+
+          // ★iOSではここで明示 play() を呼ばない（auto_play に委ねる）
+          if (!this._isIOS()) {
+            this.widget.play();
+          }
+
           this.startProgressTracking();
           this.changeVolume({ target: this.volumeBar });
-          this.updateTrackIcon(this.currentTrackId, true);
-          this.setPlayPauseAria(true);
+
+          // ★修正：iOSではonPlayが来るまで「再生中」UIにしない
+          const willPlay = !this._isIOS();
+          this.updateTrackIcon(this.currentTrackId, willPlay);
+          this.setPlayPauseAria(willPlay);
+
           this.savePlayerState();
         });
       }, 100);
