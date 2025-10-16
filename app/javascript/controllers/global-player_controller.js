@@ -78,8 +78,9 @@ export default class extends Controller {
     } catch (_) {}
   }
   _iosLoadOpts(url) {
+    // iOSではこのあと同じタップ内で play() するため auto_play は false 固定
     return {
-      auto_play: true,
+      auto_play: false,
       url,
       hide_related: true,
       show_comments: false,
@@ -87,6 +88,29 @@ export default class extends Controller {
       sharing: false,
       show_teaser: false
     };
+  }
+
+  // ===== iOS 初回タップ時のブートストラップ =====
+  _ensureIOSBootstrap() {
+    if (!this._isIOS()) return true;
+    if (this.widget && this.iframeElement) return true;
+
+    this.iframeElement = document.getElementById("hidden-sc-player") || this._createPlayerIframe();
+    if (!this.iframeElement) return false;
+
+    if (!this.iframeElement.src || this.iframeElement.src === "about:blank") {
+      const base = new URL("https://w.soundcloud.com/player/");
+      base.searchParams.set("auto_play", "false");
+      this.iframeElement.src = base.toString();
+    }
+
+    try {
+      this.widget = SC.Widget(this.iframeElement);
+      this.bindWidgetEvents();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   // ===== ライフサイクル =====
@@ -103,11 +127,9 @@ export default class extends Controller {
 
     if (this.widget) {
       this.unbindWidgetEvents();
-      // iOSは後でload()再利用のためwidgetを保持、それ以外は破棄
       if (!this._isIOS()) this.widget = null;
     }
 
-    // iOSはiframe再利用／その他は破棄
     try {
       const old = document.getElementById("hidden-sc-player");
       if (!this._isIOS()) {
@@ -166,6 +188,7 @@ export default class extends Controller {
     this.waveformAnimating = false;
     this.isRepeat  = false;
     this.isShuffle = false;
+    this._gesturePlay = false; // ← ユーザー操作中フラグ
 
     this.updatePlaylistOrder();
 
@@ -185,8 +208,8 @@ export default class extends Controller {
     // 保険ハンドラ
     this._onSeekInput   = (e) => this.seek(e);
     this._onVolumeInput = (e) => this.changeVolume(e);
-    this._onPrevClick   = (e) => this.prevTrack(e);
-    this._onNextClick   = (e) => this.nextTrack(e);
+    this._onPrevClick   = (e) => { this._gesturePlay = true; this.prevTrack(e); };
+    this._onNextClick   = (e) => { this._gesturePlay = true; this.nextTrack(e); };
 
     this.seekBar?.addEventListener("input", this._onSeekInput);
     this.volumeBar?.addEventListener("input", this._onVolumeInput);
@@ -200,6 +223,7 @@ export default class extends Controller {
     this._onIconClickDelegated = (e) => {
       const target = e.target.closest("[data-track-id]");
       if (!target) return;
+      this._gesturePlay = true;
       if (
         target.matches('[data-global-player-target="playIcon"], .play-overlay-icon') ||
         target.classList.contains("fa") ||
@@ -214,7 +238,7 @@ export default class extends Controller {
     };
     this._container()?.addEventListener("click", this._onIconClickDelegated);
 
-    // 検索から再生
+    // 検索から再生（外部イベントはユーザー操作か不明なので _gesturePlay は立てない）
     window.addEventListener("play-from-search", (e) => {
       const { playUrl } = e.detail;
       this.playFromExternal(playUrl);
@@ -276,7 +300,7 @@ export default class extends Controller {
     const p = Math.max(0, Math.min(100, Math.round(percent)));
     this.seekBar.setAttribute("aria-valuenow", String(p));
     const current = this.formatTime(posMs);
-    const total   = this.formatTime(durMs);
+    const total   = this.formatTime(durMs); // ← 修正済み
     this.seekBar.setAttribute("aria-valuetext", durMs ? `${current} / ${total}` : current);
   }
   updateVolumeAria(valueStr) {
@@ -290,7 +314,7 @@ export default class extends Controller {
   _ensurePlayerUrl(u) {
     try {
       const obj = new URL(u);
-      if (obj.hostname === "w.soundcloud.com") return u; // 既にプレイヤーURL
+      if (obj.hostname === "w.soundcloud.com") return u;
       const p = new URL("https://w.soundcloud.com/player/");
       p.searchParams.set("url", u);
       return p.toString();
@@ -313,7 +337,6 @@ export default class extends Controller {
             const permalink = sound?.permalink_url || sound?.uri;
             const isPlaying = this.playPauseIcon?.classList.contains("fa-pause");
             let trackUrl = this.iframeElement?.src || "";
-            // 安定したプレイヤーURLを生成（auto_playは現在状態に合わせる）
             if (permalink) {
               try {
                 const u = new URL("https://w.soundcloud.com/player/");
@@ -380,7 +403,6 @@ export default class extends Controller {
     this.iframeElement = this.replaceIframeWithNew();
     if (!this.iframeElement) return;
 
-    // iOSは復元で自動再生させない
     const base = this._ensurePlayerUrl(state.trackUrl);
     const url  = this._isIOS() ? this._forceAutoPlay(base, false) : base;
 
@@ -427,18 +449,44 @@ export default class extends Controller {
     this.bottomPlayer?.classList.remove("d-none");
     this.bottomPlayer?.offsetHeight;
 
-    // iOS fast-path: 既存widget+iframeがあれば load()
+    // iOS: 既存widget+iframeがあれば、同タップ内で load→即 play
     if (this._isIOS() && this.widget && this.iframeElement) {
       this.resetPlayerUI();
       this.bindWidgetEvents();
+
       this.widget.load(playUrl, this._iosLoadOpts(playUrl));
+      if (this._gesturePlay) { try { this.widget.play(); } catch(_) {} }
+      this.widget.bind(SC.Widget.Events.READY, () => {
+        if (this._gesturePlay) { try { this.widget.play(); } catch(_) {} }
+        this._gesturePlay = false;
+      });
+
       this.startProgressTracking();
       this.changeVolume({ target: this.volumeBar });
       this.savePlayerState();
       return;
     }
 
-    // 通常ルート
+    // iOS 初回：同タップ中にブート→load→play
+    if (this._isIOS()) {
+      const ok = this._ensureIOSBootstrap();
+      if (ok && this.widget) {
+        this.resetPlayerUI();
+        this.bindWidgetEvents();
+        this.widget.load(playUrl, this._iosLoadOpts(playUrl));
+        if (this._gesturePlay) { try { this.widget.play(); } catch(_) {} }
+        this.widget.bind(SC.Widget.Events.READY, () => {
+          if (this._gesturePlay) { try { this.widget.play(); } catch(_) {} }
+          this._gesturePlay = false;
+        });
+        this.startProgressTracking();
+        this.changeVolume({ target: this.volumeBar });
+        this.savePlayerState();
+        return;
+      }
+    }
+
+    // 非iOS
     if (this.widget) {
       this.unbindWidgetEvents();
       clearInterval(this.progressInterval);
@@ -497,22 +545,29 @@ export default class extends Controller {
       trackUrl = img?.dataset.playUrl;
     }
     if (!trackUrl && newTrackId) {
-      const node = this._q(`[data-track-id="${CSS.escape(String(newTrackId))}"][data-play-url]`, this._container());
+      const node = this._q(
+        `[data-track-id="${CSS.escape(String(newTrackId))}"][data-play-url]`,
+        this._container()
+      );
       trackUrl = node?.dataset?.playUrl;
     }
     if (!trackUrl) return;
 
+    this._gesturePlay = true;
     this.resetPlayerUI();
     this.bottomPlayer?.classList.remove("d-none");
     this.currentTrackId = newTrackId || null;
 
-    // cleanup（iOSはwidget/iframe保持）
-    this.cleanup();
-
-    // iOS fast-path: widget+iframe健在ならload()
+    // iOS: 既存widget+iframe
     if (this._isIOS() && this.widget && this.iframeElement) {
       this.bindWidgetEvents();
       this.widget.load(trackUrl, this._iosLoadOpts(trackUrl));
+      if (this._gesturePlay) { try { this.widget.play(); } catch(_) {} }
+      this.widget.bind(SC.Widget.Events.READY, () => {
+        if (this._gesturePlay) { try { this.widget.play(); } catch(_) {} }
+        this._gesturePlay = false;
+      });
+
       this.startProgressTracking();
       this.changeVolume({ target: this.volumeBar });
       this.updateTrackIcon(this.currentTrackId, true);
@@ -521,7 +576,28 @@ export default class extends Controller {
       return;
     }
 
-    // 通常ルート
+    // iOS 初回ブート
+    if (this._isIOS()) {
+      const ok = this._ensureIOSBootstrap();
+      if (ok && this.widget) {
+        this.bindWidgetEvents();
+        this.widget.load(trackUrl, this._iosLoadOpts(trackUrl));
+        if (this._gesturePlay) { try { this.widget.play(); } catch(_) {} }
+        this.widget.bind(SC.Widget.Events.READY, () => {
+          if (this._gesturePlay) { try { this.widget.play(); } catch(_) {} }
+          this._gesturePlay = false;
+        });
+
+        this.startProgressTracking();
+        this.changeVolume({ target: this.volumeBar });
+        this.updateTrackIcon(this.currentTrackId, true);
+        this.setPlayPauseAria(true);
+        this.savePlayerState();
+        return;
+      }
+    }
+
+    // 非iOS
     if (this.widget) {
       this.unbindWidgetEvents();
       clearInterval(this.progressInterval);
@@ -531,14 +607,16 @@ export default class extends Controller {
     this.iframeElement = this.replaceIframeWithNew();
     if (!this.iframeElement) return;
 
-    this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&auto_play=true`;
+    this.iframeElement.src =
+      `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&auto_play=true`;
 
     this.iframeElement.onload = () => {
       setTimeout(() => {
         try {
           this.widget = SC.Widget(this.iframeElement);
         } catch (_) {
-          return setTimeout(() => this.loadAndPlay({ currentTarget: el, stopPropagation() {} }), 120);
+          return setTimeout(() =>
+            this.loadAndPlay({ currentTarget: el, stopPropagation() {} }), 120);
         }
 
         this.widget.bind(SC.Widget.Events.READY, () => {
@@ -569,6 +647,18 @@ export default class extends Controller {
     event?.stopPropagation?.();
 
     if (!this.widget) {
+      // iOSでもここは明示タップなので、必要なら初回ブート
+      if (this._isIOS()) {
+        this._gesturePlay = true;
+        const ok = this._ensureIOSBootstrap();
+        if (ok && this.widget) {
+          this.widget.isPaused((paused) => (paused ? this.widget.play() : this.widget.pause()));
+          setTimeout(() => this.savePlayerState(), 500);
+          this._gesturePlay = false;
+          return;
+        }
+      }
+
       this.iframeElement = document.getElementById("hidden-sc-player");
       if (this.iframeElement && this.iframeElement.src && this.iframeElement.src !== "") {
         try {
@@ -617,6 +707,7 @@ export default class extends Controller {
   // ===== クリック =====
   onPlayIconClick(event) {
     event.stopPropagation();
+    this._gesturePlay = true;
     const icon = event.currentTarget;
     const trackId = icon.dataset.trackId;
 
@@ -624,6 +715,7 @@ export default class extends Controller {
       this.widget.isPaused((paused) => {
         if (paused) this.widget.play();
         else this.widget.pause();
+        this._gesturePlay = false;
       });
       return;
     }
@@ -669,7 +761,8 @@ export default class extends Controller {
     if (this.isRepeat) {
       const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == this.currentTrackId)
         || this._q(`[data-track-id="${CSS.escape(String(this.currentTrackId))}"]`, this._container());
-      icon && setTimeout(() => this.loadAndPlay({ currentTarget: icon, stopPropagation() {} }), 300);
+      icon && setTimeout(() =>
+        this.loadAndPlay({ currentTarget: icon, stopPropagation() {} }), 300);
       return;
     }
 
@@ -679,7 +772,8 @@ export default class extends Controller {
     if (nextId) {
       const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == nextId)
         || this._q(`[data-track-id="${CSS.escape(String(nextId))}"]`, this._container());
-      icon && setTimeout(() => this.loadAndPlay({ currentTarget: icon, stopPropagation() {} }), 300);
+      icon && setTimeout(() =>
+        this.loadAndPlay({ currentTarget: icon, stopPropagation() {} }), 300);
       return;
     }
 
@@ -809,6 +903,7 @@ export default class extends Controller {
 
   playFirstTrack(event) {
     event?.stopPropagation?.();
+    this._gesturePlay = true;
     this.updatePlaylistOrder();
     if (!this.playlistOrder?.length) return;
 
@@ -837,10 +932,17 @@ export default class extends Controller {
       (this.bottomPlayer && this.bottomPlayer.parentNode) ||
       document.body;
 
-    // iOSは既存iframeがあれば再利用
     if (this._isIOS() && oldIframe) return oldIframe;
-
     if (oldIframe) this._safeNukeIframe(oldIframe);
+
+    return this._createPlayerIframe(parent);
+  }
+
+  _createPlayerIframe(parent = null) {
+    const p =
+      parent ||
+      (this.bottomPlayer && this.bottomPlayer.parentNode) ||
+      document.body;
 
     const newIframe = document.createElement("iframe");
     newIframe.id = "hidden-sc-player";
@@ -852,8 +954,7 @@ export default class extends Controller {
     newIframe.scrolling = "no";
     newIframe.width = "100%";
     newIframe.height = "166";
-
-    parent.appendChild(newIframe);
+    p.appendChild(newIframe);
     return newIframe;
   }
 
