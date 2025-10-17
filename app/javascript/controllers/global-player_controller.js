@@ -14,6 +14,8 @@
  * @property {(ms:number) => void} seekTo
  * @property {(pct:number) => void} setVolume
  * @property {(url:string, opts?:Record<string, unknown>) => void} load
+ * @property {() => void} next
+ * @property {() => void} prev
  */
 
 /**
@@ -59,6 +61,7 @@ export default class extends Controller {
     }
     this.hideLoadingUI?.();
   }
+
   unbindWidgetEvents() {
     if (!this.widget) return;
     try {
@@ -86,7 +89,7 @@ export default class extends Controller {
     const p = parent || (this.bottomPlayer && this.bottomPlayer.parentNode) || document.body;
     const newIframe = document.createElement("iframe");
     newIframe.id = "hidden-sc-player";
-    // !!! display:none 相当は付けない（iOSの自動再生制限に引っかかる）
+    // display:none/visibility:hidden は使わない（iOSブロック回避）
     newIframe.allow = "autoplay; encrypted-media";
     newIframe.setAttribute("playsinline", "true");
     newIframe.setAttribute("webkit-playsinline", "true");
@@ -94,7 +97,7 @@ export default class extends Controller {
     newIframe.scrolling = "no";
     newIframe.width = "100%";
     newIframe.height = "166";
-    // 画面外に退避（不可視だがdisplay扱いにはする）
+    // 画面外に退避（不可視だがレンダリング対象）
     newIframe.style.position = "absolute";
     newIframe.style.width = "1px";
     newIframe.style.height = "1px";
@@ -150,25 +153,26 @@ export default class extends Controller {
       return;
     }
 
-    // 同期内のprime（権限解禁）
+    // 同期内の prime（ユーザー操作内で play/pause）
     try { this.widget.play(); } catch (_) {}
     try { this.widget.pause(); } catch (_) {}
 
-    // load
+    // load（iOSは auto_play:false）
     const opts = this._isIOS() ? this._iosLoadOpts() : { auto_play: !!autoPlay };
     try { this.widget.load(url, opts); } catch (_) {}
 
-    // 直後のplay（自動再生制限回避の本体）
+    // 同期内に play（ユーザー操作のうちに実行）
     if (autoPlay) { try { this.widget.play(); } catch (_) {} }
 
-    // READY時の保険
+    // READY保険
     try { this.widget.unbind(SC.Widget.Events.READY); } catch (_) {}
     this.widget.bind(SC.Widget.Events.READY, () => {
       this.widget.getCurrentSound((sound) => this._applySoundMetadata(sound));
       if (autoPlay) { try { this.widget.play(); } catch (_) {} }
-      // 音量を二重適用（iOSの無音化防止）
-      try { this.widget.setVolume(Number(this.volumeBar?.value ?? 100)); } catch (_) {}
-      setTimeout(() => { try { this.widget.setVolume(Number(this.volumeBar?.value ?? 100)); } catch (_) {} }, 200);
+      // 音量を二重適用（無音化の保険）
+      const vol = Number(this.volumeBar?.value ?? 100);
+      try { this.widget.setVolume(vol); } catch (_) {}
+      setTimeout(() => { try { this.widget.setVolume(vol); } catch (_) {} }, 200);
       this.startProgressTracking();
       this.changeVolume({ target: this.volumeBar });
       this.savePlayerState();
@@ -251,6 +255,7 @@ export default class extends Controller {
     this.isRepeat  = false;
     this.isShuffle = false;
     this._gesturePlay = false;
+    this.useSCPlaylist = false; // ← SCのプレイリストURLを1回loadしたモード
 
     this.updatePlaylistOrder();
 
@@ -262,8 +267,8 @@ export default class extends Controller {
     // 保険ハンドラ
     this._onSeekInput   = (e) => this.seek(e);
     this._onVolumeInput = (e) => this.changeVolume(e);
-    this._onPrevClick   = (e) => { this._gesturePlay = true; this.prevTrack?.(e); };
-    this._onNextClick   = (e) => { this._gesturePlay = true; this.nextTrack?.(e); };
+    this._onPrevClick   = (e) => { e?.preventDefault?.(); this.prevTrack(); };
+    this._onNextClick   = (e) => { e?.preventDefault?.(); this.nextTrack(); };
 
     this.seekBar?.addEventListener("input", this._onSeekInput);
     this.volumeBar?.addEventListener("input", this._onVolumeInput);
@@ -487,16 +492,26 @@ export default class extends Controller {
     this.trackTitleTopEl && (this.trackTitleTopEl.textContent = title);
   }
 
+  // ===== プレイリストを一括ロード（SC側に連続再生を任せる） =====
+  loadPlaylistOnce(playlistUrl) {
+    this.useSCPlaylist = true;
+    this._primeLoadPlay(playlistUrl, true);
+  }
+
   // ===== 再生（外部URL） =====
   playFromExternal(playUrl) {
     this.bottomPlayer?.classList.remove("d-none");
     this.bottomPlayer?.offsetHeight;
-
     this.resetPlayerUI?.();
 
-    // 同期タップ内に prime→load→play
     this._gesturePlay = true;
-    this._primeLoadPlay(playUrl, true);
+    // プレイリストURLなら一括ロード
+    if (/\/playlists\//.test(playUrl)) {
+      this.loadPlaylistOnce(playUrl);
+    } else {
+      this.useSCPlaylist = false;
+      this._primeLoadPlay(playUrl, true);
+    }
   }
 
   // ===== 再生（リストから） =====
@@ -526,9 +541,69 @@ export default class extends Controller {
     this.bottomPlayer?.classList.remove("d-none");
     this.currentTrackId = newTrackId || null;
 
-    // 同期タップ内に prime→load→play
-    this._primeLoadPlay(trackUrl, true);
+    // 単曲ロードモード
+    this.useSCPlaylist = /\/playlists\//.test(trackUrl);
+    if (this.useSCPlaylist) {
+      this.loadPlaylistOnce(trackUrl);
+    } else {
+      this._primeLoadPlay(trackUrl, true);
+    }
 
+    this.updateTrackIcon(this.currentTrackId, true);
+    this.setPlayPauseAria(true);
+    this.savePlayerState();
+  }
+
+  // ===== 前後トラック（クリック＝ユーザー操作内なのでOK） =====
+  nextTrack() {
+    if (!this.widget) return;
+    // プレイリストモードはSC内部に任せて `.next()` を使う
+    if (this.useSCPlaylist) {
+      try { this.widget.next(); this.widget.play?.(); } catch (_) {}
+      return;
+    }
+
+    // 単曲モード：自前の一覧から次
+    this.updatePlaylistOrder();
+    const curIdx = this.playlistOrder.indexOf(this.currentTrackId);
+    const nextId = this.playlistOrder[curIdx + 1];
+    if (!nextId) return;
+
+    const node = this._q(
+      `[data-track-id="${CSS.escape(String(nextId))}"][data-play-url]`,
+      this._container()
+    );
+    const url = node?.dataset?.playUrl;
+    if (!url) return;
+
+    this.currentTrackId = nextId;
+    this._primeLoadPlay(url, true);
+    this.updateTrackIcon(this.currentTrackId, true);
+    this.setPlayPauseAria(true);
+    this.savePlayerState();
+  }
+
+  prevTrack() {
+    if (!this.widget) return;
+    if (this.useSCPlaylist) {
+      try { this.widget.prev(); this.widget.play?.(); } catch (_) {}
+      return;
+    }
+
+    this.updatePlaylistOrder();
+    const curIdx = this.playlistOrder.indexOf(this.currentTrackId);
+    const prevId = this.playlistOrder[curIdx - 1];
+    if (!prevId) return;
+
+    const node = this._q(
+      `[data-track-id="${CSS.escape(String(prevId))}"][data-play-url]`,
+      this._container()
+    );
+    const url = node?.dataset?.playUrl;
+    if (!url) return;
+
+    this.currentTrackId = prevId;
+    this._primeLoadPlay(url, true);
     this.updateTrackIcon(this.currentTrackId, true);
     this.setPlayPauseAria(true);
     this.savePlayerState();
@@ -639,25 +714,13 @@ export default class extends Controller {
     clearInterval(this.progressInterval);
     this.playStartedAt = null;
 
-    if (this.isRepeat) {
-      const icon = this.playIconTargets?.find((icn) => icn.dataset.trackId == this.currentTrackId)
-        || this._q(`[data-track-id="${CSS.escape(String(this.currentTrackId))}"]`, this._container());
-      icon && setTimeout(() =>
-        this.loadAndPlay({ currentTarget: icon, stopPropagation() {} }), 300);
+    // プレイリストモードなら SC 側が連続再生する（ここで何もしないのが安定）
+    if (this.useSCPlaylist) {
+      this.savePlayerState();
       return;
     }
 
-    this.updatePlaylistOrder();
-    const curIdx = this.playlistOrder.indexOf(this.currentTrackId);
-    const nextId = this.playlistOrder[curIdx + 1];
-    if (nextId) {
-      const icon = this.playIconTargets?.find((icn) => icn.dataset.trackId == nextId)
-        || this._q(`[data-track-id="${CSS.escape(String(nextId))}"]`, this._container());
-      icon && setTimeout(() =>
-        this.loadAndPlay({ currentTarget: icon, stopPropagation() {} }), 300);
-      return;
-    }
-
+    // 単曲モード：自動で次曲は iOS 制約で不可。UIだけ戻す。
     this.bottomPlayer?.classList.add("d-none");
     this.savePlayerState();
   };
@@ -793,4 +856,4 @@ export default class extends Controller {
     desktopRow.style.display = isMobile ? "none" : "flex";
     mobileRow.style.display  = isMobile ? "flex" : "none";
   }
-}
+} 　　
