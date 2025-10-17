@@ -17,15 +17,11 @@
  * @typedef {{ trackId:string|null, trackUrl?:string, position:number, duration:number, isPlaying:boolean }} PlayerState
  */
 
-
-
 // app/javascript/controllers/global_player_controller.js
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
   static targets = ["trackImage", "playIcon"];
-
-
 
   // ===== 追加: フォールバック用ユーティリティ =====
   _q(sel, root = null) {
@@ -52,9 +48,9 @@ export default class extends Controller {
   _safeNukeIframe(iframe) {
     try {
       if (!iframe) return;
-      iframe.src = "about:blank";           // 内部処理を停止
-      iframe.removeAttribute("src");        // 参照を切る
-      if (iframe.parentNode) iframe.parentNode.removeChild(iframe); // DOMから除去
+      iframe.src = "about:blank";
+      iframe.removeAttribute("src");
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
     } catch (_) {}
   }
 
@@ -79,6 +75,51 @@ export default class extends Controller {
       this.widget.unbind(SC.Widget.Events.PLAY);
       this.widget.unbind(SC.Widget.Events.PAUSE);
       this.widget.unbind(SC.Widget.Events.FINISH);
+    } catch (_) {}
+  }
+
+  // === 追加：iOSの初回再生制限を“無音再生”で解錠（UIは一切変えない）===
+  _setupIOSAudioUnlock() {
+    try {
+      if (typeof window === "undefined") return;
+      if (window.__iosAudioUnlocked) return;
+
+      const isIOS =
+        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      if (!isIOS) return;
+
+      const unlock = () => {
+        if (window.__iosAudioUnlocked) return;
+        try {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (!AudioCtx) throw new Error("No AudioContext");
+          const ctx = new AudioCtx();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          gain.gain.value = 0.0001; // 無音に近い
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(0);
+          setTimeout(() => {
+            try { osc.stop(0); ctx.close(); } catch (_) {}
+            window.__iosAudioUnlocked = true;
+            // 解錠直後、待機中なら再生を促す（既存挙動は維持）
+            try {
+              if (this.widget && typeof this.widget.play === "function") {
+                this.widget.isPaused((p) => { if (p) this.widget.play(); });
+              }
+            } catch (_) {}
+          }, 50);
+        } catch (_) {
+          // 失敗しても既存挙動は変えない
+        } finally {
+          window.removeEventListener("touchend", unlock, true);
+          window.removeEventListener("click", unlock, true);
+        }
+      };
+
+      window.addEventListener("touchend", unlock, true);
+      window.addEventListener("click", unlock, true);
     } catch (_) {}
   }
 
@@ -148,7 +189,7 @@ export default class extends Controller {
     this.currentTrackId   = null;
     this.widget           = null;
     this.progressInterval = null;
-    this.isSeeking        = false;
+       this.isSeeking        = false;
     this.playStartedAt    = null;
 
     this.isRepeat  = false;
@@ -159,6 +200,9 @@ export default class extends Controller {
     this.waveformCanvas  = document.getElementById("waveform-anime");
     this.waveformCtx     = this.waveformCanvas?.getContext("2d");
     this.waveformAnimating = false;
+
+    // ★iOSオーディオ解錠を最初にセット（既存UIは変えない）
+    this._setupIOSAudioUnlock();
 
     // ===== シークバーのドラッグ制御（従来通り）=====
     this._onMouseUpSeek = () => {
@@ -191,13 +235,11 @@ export default class extends Controller {
     this._onIconClickDelegated = (e) => {
       const target = e.target.closest("[data-track-id]");
       if (!target) return;
-      // 再生アイコン or 画像いずれも拾う
       if (
         target.matches('[data-global-player-target="playIcon"], .play-overlay-icon') ||
         target.classList.contains("fa") ||
         target.dataset.playUrl
       ) {
-        // すでにアイコンなら onPlayIconClick、画像なら loadAndPlay を直接呼ぶ
         if (target.dataset.trackId && !target.dataset.playUrl) {
           this.onPlayIconClick({ currentTarget: target, stopPropagation() {} });
         } else {
@@ -246,7 +288,7 @@ export default class extends Controller {
       const has = !!(this._container()?.querySelector("[data-track-id]"));
       btn.toggleAttribute("disabled", !has);
       btn.setAttribute("aria-disabled", String(!has));
-      btn.classList.toggle("is-disabled", !has); // 見た目用（CSS側で任意）
+      btn.classList.toggle("is-disabled", !has);
     };
     document.addEventListener("turbo:render", this._updatePlayButton);
     document.addEventListener("turbo:frame-load", this._updatePlayButton);
@@ -254,13 +296,10 @@ export default class extends Controller {
     this._footerGuardMO = new MutationObserver(() => queueMicrotask(this._updatePlayButton));
     this._footerGuardMO.observe(this._container() || document, { childList: true, subtree: true });
     this._updatePlayButton();
-    // ★追加ここまで
 
     this.restorePlayerState();
     console.log("[connect] global-player controller initialized");
   }
-
-
 
   // ---------- A11y: ヘルパ ----------
   setPlayPauseAria(isPlaying) {
@@ -353,7 +392,6 @@ export default class extends Controller {
         try {
           this.widget = SC.Widget(this.iframeElement);
         } catch (_) {
-          // READY前で失敗したら少し待って再試行
           return setTimeout(() => this.restorePlayerState(), 150);
         }
 
@@ -544,7 +582,7 @@ export default class extends Controller {
     this.trackTitleEl?.classList.remove("is-hidden");
     this.trackTitleTopEl?.classList.remove("is-hidden");
     this.trackArtistEl?.classList.remove("is-hidden");
-    this._hideScreenCover(); // ★ 覆いの畳み込みを最終保証
+    this._hideScreenCover();
   }
 
   resetPlayerUI() {
@@ -582,7 +620,7 @@ export default class extends Controller {
     const newIframe = document.createElement("iframe");
     newIframe.id = "hidden-sc-player";
     newIframe.classList.add("is-hidden");
-    newIframe.allow = "autoplay";
+    newIframe.allow = "autoplay; encrypted-media"; // ★強化
     newIframe.frameBorder = "no";
     newIframe.scrolling = "no";
     newIframe.width = "100%";
@@ -599,15 +637,12 @@ export default class extends Controller {
 
     const el = event?.currentTarget;
     const newTrackId = el?.dataset?.trackId;
-    // 1) playUrlをまず直接拾う
     let trackUrl = el?.dataset?.playUrl;
 
-    // 2) targets から補完
     if (!trackUrl && newTrackId) {
       const img = this.trackImageTargets.find((t) => t.dataset.trackId == newTrackId);
       trackUrl = img?.dataset.playUrl;
     }
-    // 3) DOM直参照でフォールバック
     if (!trackUrl && newTrackId) {
       const node = this._q(`[data-track-id="${CSS.escape(String(newTrackId))}"][data-play-url]`, this._container());
       trackUrl = node?.dataset?.playUrl;
@@ -635,7 +670,6 @@ export default class extends Controller {
         try {
           this.widget = SC.Widget(this.iframeElement);
         } catch (_) {
-          // READY前で失敗 → 少し待ってリトライ
           return setTimeout(() => this.loadAndPlay({ currentTarget: el, stopPropagation() {} }), 120);
         }
 
@@ -804,7 +838,6 @@ export default class extends Controller {
   /* ---------- アイコン更新 / バインド ---------- */
   updateTrackIcon(trackId, playing) {
     if (!this.hasPlayIconTarget) {
-      // targetsがない場合でも、見える範囲のアイコンを直接更新（任意）
       this._qa('[data-track-id]', this._container()).forEach((node) => {
         if (!node.classList) return;
         if (node.dataset.trackId == trackId) {
@@ -874,7 +907,6 @@ export default class extends Controller {
     this.updatePlaylistOrder();
     if (!this.playlistOrder?.length) return;
 
-    // currentTrackId未セットでも「最後の曲」を再生できるように
     if (!this.currentTrackId) {
       const lastId = this.playlistOrder[this.playlistOrder.length - 1];
       const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == lastId)
@@ -891,7 +923,6 @@ export default class extends Controller {
       return;
     }
 
-    // 先頭の時は最後へ（UX的フォールバック）
     const lastId2 = this.playlistOrder[this.playlistOrder.length - 1];
     const icon2 = this.playIconTargets.find((icn) => icn.dataset.trackId == lastId2)
       || this._q(`[data-track-id="${CSS.escape(String(lastId2))}"]`, this._container());
@@ -903,7 +934,6 @@ export default class extends Controller {
     this.updatePlaylistOrder();
     if (!this.playlistOrder?.length) return;
 
-    // currentTrackId未セットでも「最初の曲」を再生できるように
     if (!this.currentTrackId) {
       const firstId = this.playlistOrder[0];
       const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == firstId)
@@ -921,7 +951,6 @@ export default class extends Controller {
       return;
     }
 
-    // 最後の時は最初へ（UX的フォールバック）
     const firstId2 = this.playlistOrder[0];
     const icon2 = this.playIconTargets.find((icn) => icn.dataset.trackId == firstId2)
       || this._q(`[data-track-id="${CSS.escape(String(firstId2))}"]`, this._container());
