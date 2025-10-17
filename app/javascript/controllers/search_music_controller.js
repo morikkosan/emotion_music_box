@@ -18,7 +18,7 @@ export default class extends Controller {
   connect () {
     this.currentPage = 1;
     this.searchResults = [];
-    // ローディングを必ず非表示で初期化（出っぱなし防止）
+    // ★ ローディングを必ず非表示で初期化（出っぱなし防止）
     this._toggleLoading(false);
   }
 
@@ -26,7 +26,7 @@ export default class extends Controller {
     const q = this.queryTarget.value.trim();
     if (!q) { alert("検索ワードを入力してください"); return; }
 
-    // ローディングON（is-hidden除去 + 入力/ボタンdisable）
+    // ★ ここでローディングON（is-hidden除去 + 入力/ボタンdisable）
     this._toggleLoading(true);
 
     try {
@@ -41,10 +41,11 @@ export default class extends Controller {
       this.currentPage = 1;
       this.renderPage();
     } catch (e) {
+      // ★ここだけ変更
       logError("検索エラー:", e);
       alert("検索に失敗しました：" + e.message);
     } finally {
-      // ローディングOFF（is-hidden付与 + 入力/ボタンenable）
+      // ★ ここでローディングOFF（is-hidden付与 + 入力/ボタンenable）
       this._toggleLoading(false);
     }
   }
@@ -92,7 +93,6 @@ export default class extends Controller {
       btn.textContent = "選択or視聴";
       btn.dataset.action = "search-music#select";
       btn.dataset.audio = track.permalink_url;
-      btn.dataset.playUrl = track.permalink_url; // グローバル側の委譲でも拾える保険
       btn.dataset.name = track.title;
       btn.dataset.artist = track.user.username;
       btn.dataset.trackId = track.id;
@@ -162,31 +162,20 @@ export default class extends Controller {
     }
   }
 
-  // ★ iPhoneでもロード後に止まらないために：
-  //   1) タップの同一ジェスチャ内で iOS 無音解錠
-  //   2) すぐに play-from-search を dispatch
-  //   3) その後にフォーム値やUIを更新
   select(e) {
-    e?.preventDefault?.();
-    e?.stopPropagation?.();
-
-    // 1) iOSのオーディオ制限を同期的に解除
-    this._primeIOSAutoplay();
-
-    // 2) 同一ジェスチャ内に dispatch（ここで SoundCloud iframe が auto_play で動く）
-    const target = e.currentTarget || e.target;
-    const { audio, name, artist } = target.dataset;
-
-    window.dispatchEvent(new CustomEvent("play-from-search", {
-      detail: { trackId: audio, playUrl: audio }
-    }));
-
-    // 3) 以降はUIの更新
+    const { audio, name, artist } = e.target.dataset;
     this.audioTarget.value = audio;
     this.trackTarget.value = `${name} - ${artist}`;
     document.querySelectorAll(".player-slot").forEach(s => s.innerHTML = "");
 
-    const slot = target.closest(".track-result").querySelector(".player-slot");
+    window.dispatchEvent(new CustomEvent("play-from-search", {
+      detail: {
+        trackId: audio,
+        playUrl: audio
+      }
+    }));
+
+    const slot = e.target.closest(".track-result").querySelector(".player-slot");
     const confirmBtn = document.createElement("button");
     confirmBtn.type = "button";
     confirmBtn.className = "btn btn-primary mt-2 btn-lg";
@@ -242,51 +231,26 @@ export default class extends Controller {
       if (modal) bootstrap.Modal.getOrCreateInstance(modal).show();
 
     } catch (e) {
+      // ★ここだけ変更
       logError("モーダル切替エラー:", e);
       alert("モーダル切替に失敗しました");
     }
   }
 
-  // ===== ローディング表示制御 =====
+  // ===== ここが今回の“唯一の追加ロジック”です =====
   _toggleLoading(show) {
+    // aria-busy: 支援技術に「処理中」を伝える
     if (this.hasSectionTarget) {
       this.sectionTarget.setAttribute("aria-busy", show ? "true" : "false");
     }
     if (this.hasLoadingTarget) {
+      // is-hidden の付け外しで表示切り替え（!important でも確実）
       this.loadingTarget.classList.toggle("is-hidden", !show);
     }
 
+    // 入力欄と検索ボタンの活性/非活性
     if (this.hasQueryTarget) this.queryTarget.disabled = !!show;
     const btn = this.element.querySelector('[data-action~="search-music#search"]');
     if (btn) btn.disabled = !!show;
-  }
-
-  // ===== iPhone自動再生対策（global_player と整合）=====
-  _isIOS() {
-    return /iP(hone|ad|od)/i.test(navigator.userAgent) ||
-           (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  }
-
-  _primeIOSAutoplay() {
-    if (!this._isIOS()) return;
-    try {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (AC) {
-        const ctx = new AC();
-        ctx.resume?.();
-        const buf = ctx.createBuffer(1, 1, 22050);
-        const src = ctx.createBufferSource();
-        src.buffer = buf;
-        src.connect(ctx.destination);
-        src.start(0);
-        setTimeout(() => { try { src.stop(0); } catch(_){} }, 30);
-      } else {
-        const a = new Audio();
-        a.muted = true;
-        a.src = "data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAA";
-        a.play().catch(()=>{});
-        setTimeout(() => { try { a.pause(); } catch(_){} }, 30);
-      }
-    } catch(_) {}
   }
 }
