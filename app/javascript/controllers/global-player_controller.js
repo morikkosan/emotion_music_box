@@ -44,40 +44,58 @@ export default class extends Controller {
   }
 
   // ---- 画面内簡易ログ（Macなし用） ----
+  _enableInlineLogger() {
+    if (this._inlineLoggerEnabled) return;
+    this._inlineLoggerEnabled = true;
+
+    const log = document.createElement("pre");
+    log.id = "ios-log";
+    Object.assign(log.style, {
+      position: "fixed",
+      bottom: "8px",
+      left: "8px",
+      right: "8px",
+      maxHeight: "45vh",
+      overflow: "auto",
+      padding: "8px",
+      background: "rgba(0,0,0,0.78)",
+      color: "#0f0",
+      fontSize: "12px",
+      zIndex: 99999,
+      border: "1px solid #0f0",
+      borderRadius: "6px"
+    });
+    log.setAttribute("aria-live", "polite");
+    log.textContent = "[iosdebug] logger ready\n";
+    document.body.appendChild(log);
+    this._log = (msg) => {
+      const t = new Date().toLocaleTimeString();
+      log.textContent += `[${t}] ${msg}\n`;
+      log.scrollTop = log.scrollHeight;
+    };
+
+    // タップで閉じられるように
+    log.addEventListener("click", () => {
+      try {
+        localStorage.removeItem("iosdebug");
+        this._inlineLoggerEnabled = false;
+        this._log = () => {};
+        log.remove();
+        alert("iosdebugをOFFにしました（再度ONにするには長押し or ?iosdebug=1）");
+      } catch (_) {}
+    });
+  }
+
   _setupInlineLogger() {
     try {
-      const params = new URLSearchParams(location.search);
-      if (!params.has("iosdebug")) return;
-      if (document.getElementById("ios-log")) return;
-
-      const log = document.createElement("pre");
-      log.id = "ios-log";
-      Object.assign(log.style, {
-        position: "fixed",
-        bottom: "8px",
-        left: "8px",
-        right: "8px",
-        maxHeight: "45vh",
-        overflow: "auto",
-        padding: "8px",
-        background: "rgba(0,0,0,0.75)",
-        color: "#0f0",
-        fontSize: "12px",
-        zIndex: 99999,
-        border: "1px solid #0f0",
-        borderRadius: "6px"
-      });
-      log.setAttribute("aria-live", "polite");
-      log.textContent = "[iosdebug] logger ready\n";
-      document.body.appendChild(log);
-      this._log = (msg) => {
-        const t = new Date().toLocaleTimeString();
-        log.textContent += `[${t}] ${msg}\n`;
-        log.scrollTop = log.scrollHeight;
-      };
+      const params = new URLSearchParams(location.search || "");
+      const ls = (typeof localStorage !== "undefined") ? localStorage.getItem("iosdebug") : null;
+      if (params.has("iosdebug") || ls === "1") {
+        this._enableInlineLogger();
+      }
     } catch (_) {}
   }
-  _log = (_msg) => {}; // デフォルトは無効（?iosdebug=1 で有効化）
+  _log = (_msg) => {}; // デフォルトは無効（有効化後に上書き）
 
   // === 旧 iframe を安全に破棄 ===
   _safeNukeIframe(iframe) {
@@ -124,7 +142,7 @@ export default class extends Controller {
         try {
           const AudioCtx = window.AudioContext || window.webkitAudioContext;
           if (!AudioCtx) throw new Error("No AudioContext");
-          // 1) 解錠用に一瞬ならす
+          // 1) 解錠用に一瞬鳴らす
           const ctx = new AudioCtx();
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
@@ -133,7 +151,7 @@ export default class extends Controller {
           osc.start(0);
           setTimeout(() => {
             try { osc.stop(0); } catch (_) {}
-            // 2) セッション常時キープ用に、別Contextを持続（極小音、実質無音）
+            // 2) セッション常時キープ（実質無音）
             try {
               this._iosKeepAliveCtx = new AudioCtx();
               const o2 = this._iosKeepAliveCtx.createOscillator();
@@ -148,7 +166,7 @@ export default class extends Controller {
             try { ctx.close(); } catch (_) {}
             window.__iosAudioUnlocked = true;
 
-            // 待機中なら再生を促す（既存挙動不変）
+            // 待機中なら再生を促す
             try {
               if (this.widget && typeof this.widget.play === "function") {
                 this.widget.isPaused((p) => { if (p) this.widget.play(); });
@@ -167,14 +185,37 @@ export default class extends Controller {
     } catch (_) {}
   }
 
-  // === keep-alive の微調整（再生中はそのまま / 停止時は出力0のまま）===
+  // === keep-alive の微調整（ログだけ、音量は無音固定）===
   _onPlaybackStateChange(isPlaying) {
     if (!this._iosKeepAliveGain) return;
     try {
-      // 音は常に無音（0.0001）でOK。停止時もセッションは維持。
-      this._iosKeepAliveGain.gain.value = isPlaying ? 0.0001 : 0.0001;
+      this._iosKeepAliveGain.gain.value = 0.0001; // 常に無音
       this._log(`keep-alive gain set (isPlaying=${isPlaying})`);
     } catch (_) {}
+  }
+
+  // === 長押しでデバッグON ===
+  _installLongPressToEnableDebug() {
+    if (!this.bottomPlayer) return;
+    let tId = null;
+    const start = () => {
+      if (tId) return;
+      tId = setTimeout(() => {
+        try {
+          localStorage.setItem("iosdebug", "1");
+          this._enableInlineLogger();
+          this._log("iosdebug enabled via long-press");
+          alert("デバッグ表示をONにしました（緑のログ枠）。枠をタップでOFFにできます。");
+        } catch (_) {}
+        tId = null;
+      }, 1200);
+    };
+    const clear = () => { if (tId) { clearTimeout(tId); tId = null; } };
+    this.bottomPlayer.addEventListener("touchstart", start, { passive: true });
+    this.bottomPlayer.addEventListener("touchend", clear, { passive: true });
+    this.bottomPlayer.addEventListener("touchcancel", clear, { passive: true });
+    this.bottomPlayer.addEventListener("mousedown", start);
+    document.addEventListener("mouseup", clear);
   }
 
   cleanup = () => {
@@ -221,7 +262,6 @@ export default class extends Controller {
       localStorage.removeItem("playerState");
     }
 
-    this._setupInlineLogger(); // ← ?iosdebug=1 で可視ログ
     this.iframeElement   = document.getElementById("hidden-sc-player");
     this.bottomPlayer    = document.getElementById("bottom-player");
     this.playPauseButton = document.getElementById("play-pause-button");
@@ -244,6 +284,10 @@ export default class extends Controller {
 
     this.isRepeat  = false;
     this.isShuffle = false;
+
+    // デバッグ起動（?iosdebug=1 / localStorage / 長押しでON）
+    this._setupInlineLogger();
+    this._installLongPressToEnableDebug();
 
     this.updatePlaylistOrder();
 
@@ -495,7 +539,7 @@ export default class extends Controller {
         return setTimeout(init, 60);
       }
 
-      // iOS: READY前に一度 play() を投げて “手動操作” の流れを維持
+      // iOS: READY前に一度 play() を投げて “操作中” の流れを維持
       try { this.widget.play(); } catch (_) {}
 
       this.widget.bind(SC.Widget.Events.READY, () => {
@@ -910,23 +954,5 @@ export default class extends Controller {
     this.trackTitleTopEl?.classList.remove("is-hidden");
     this.trackArtistEl?.classList.remove("is-hidden");
     this._hideScreenCover();
-  }
-
-  resetPlayerUI() {
-    this.currentTimeEl && (this.currentTimeEl.textContent = "0:00");
-    this.durationEl && (this.durationEl.textContent = "0:00");
-    this.seekBar && (this.seekBar.value = 0);
-    this.updateSeekAria(0, 0, 0);
-
-    if (this.hasPlayIconTarget) {
-      this.playIconTargets.forEach((icn) => {
-        icn.classList.add("fa-play");
-        icn.classList.remove("fa-pause");
-      });
-    }
-    this.playPauseIcon?.classList.add("fa-play");
-    this.playPauseIcon?.classList.remove("fa-pause");
-    this.setPlayPauseAria(false);
-    this.showLoadingUI();
   }
 }
