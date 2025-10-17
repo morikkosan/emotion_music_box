@@ -57,7 +57,7 @@ export default class extends Controller {
       this.setTrackTitle("タイトル不明");
       this.setArtist("");
     }
-    this.hideLoadingUI();
+    this.hideLoadingUI?.();
   }
   unbindWidgetEvents() {
     if (!this.widget) return;
@@ -86,7 +86,7 @@ export default class extends Controller {
     const p = parent || (this.bottomPlayer && this.bottomPlayer.parentNode) || document.body;
     const newIframe = document.createElement("iframe");
     newIframe.id = "hidden-sc-player";
-    newIframe.classList.add("is-hidden");
+    // !!! display:none 相当は付けない（iOSの自動再生制限に引っかかる）
     newIframe.allow = "autoplay; encrypted-media";
     newIframe.setAttribute("playsinline", "true");
     newIframe.setAttribute("webkit-playsinline", "true");
@@ -94,6 +94,14 @@ export default class extends Controller {
     newIframe.scrolling = "no";
     newIframe.width = "100%";
     newIframe.height = "166";
+    // 画面外に退避（不可視だがdisplay扱いにはする）
+    newIframe.style.position = "absolute";
+    newIframe.style.width = "1px";
+    newIframe.style.height = "1px";
+    newIframe.style.opacity = "0";
+    newIframe.style.pointerEvents = "none";
+    newIframe.style.left = "-9999px";
+    newIframe.style.top = "0";
     p.appendChild(newIframe);
     return newIframe;
   }
@@ -132,6 +140,39 @@ export default class extends Controller {
     } catch {
       return false;
     }
+  }
+
+  // ===== iOS対策：同一タップ内 prime→load→play =====
+  _primeLoadPlay(url, autoPlay = true) {
+    const ok = this._isIOS() ? this._ensureIOSBootstrap() : this._ensureWidget();
+    if (!ok || !this.widget) {
+      alert("プレイヤー初期化に失敗しました。もう一度曲を選んでください。");
+      return;
+    }
+
+    // 同期内のprime（権限解禁）
+    try { this.widget.play(); } catch (_) {}
+    try { this.widget.pause(); } catch (_) {}
+
+    // load
+    const opts = this._isIOS() ? this._iosLoadOpts() : { auto_play: !!autoPlay };
+    try { this.widget.load(url, opts); } catch (_) {}
+
+    // 直後のplay（自動再生制限回避の本体）
+    if (autoPlay) { try { this.widget.play(); } catch (_) {} }
+
+    // READY時の保険
+    try { this.widget.unbind(SC.Widget.Events.READY); } catch (_) {}
+    this.widget.bind(SC.Widget.Events.READY, () => {
+      this.widget.getCurrentSound((sound) => this._applySoundMetadata(sound));
+      if (autoPlay) { try { this.widget.play(); } catch (_) {} }
+      // 音量を二重適用（iOSの無音化防止）
+      try { this.widget.setVolume(Number(this.volumeBar?.value ?? 100)); } catch (_) {}
+      setTimeout(() => { try { this.widget.setVolume(Number(this.volumeBar?.value ?? 100)); } catch (_) {} }, 200);
+      this.startProgressTracking();
+      this.changeVolume({ target: this.volumeBar });
+      this.savePlayerState();
+    });
   }
 
   // ===== ライフサイクル =====
@@ -221,8 +262,8 @@ export default class extends Controller {
     // 保険ハンドラ
     this._onSeekInput   = (e) => this.seek(e);
     this._onVolumeInput = (e) => this.changeVolume(e);
-    this._onPrevClick   = (e) => { this._gesturePlay = true; this.prevTrack(e); };
-    this._onNextClick   = (e) => { this._gesturePlay = true; this.nextTrack(e); };
+    this._onPrevClick   = (e) => { this._gesturePlay = true; this.prevTrack?.(e); };
+    this._onNextClick   = (e) => { this._gesturePlay = true; this.nextTrack?.(e); };
 
     this.seekBar?.addEventListener("input", this._onSeekInput);
     this.volumeBar?.addEventListener("input", this._onVolumeInput);
@@ -407,13 +448,13 @@ export default class extends Controller {
 
     this.currentTrackId = state.trackId || null;
     this.bottomPlayer?.classList.remove("d-none");
-    this.resetPlayerUI();
+    this.resetPlayerUI?.();
 
     // widget 準備
     const ok = this._isIOS() ? this._ensureIOSBootstrap() : this._ensureWidget();
     if (!ok || !this.widget) return;
 
-    // 直接 iframe.src を書き換えず、常に widget.load() を使う
+    // 常に widget.load() を使う
     const base = this._ensurePlayerUrl(state.trackUrl);
     const url  = this._isIOS() ? this._forceAutoPlay(base, false) : base;
     const opts = this._isIOS() ? this._iosLoadOpts() : { auto_play: state.isPlaying };
@@ -451,36 +492,11 @@ export default class extends Controller {
     this.bottomPlayer?.classList.remove("d-none");
     this.bottomPlayer?.offsetHeight;
 
-    this.resetPlayerUI();
+    this.resetPlayerUI?.();
 
-    const ok = this._isIOS() ? this._ensureIOSBootstrap() : this._ensureWidget();
-    if (!ok || !this.widget) {
-      alert("プレイヤー初期化に失敗しました。もう一度曲を選んでください。");
-      return;
-    }
-
-    const opts = this._isIOS() ? this._iosLoadOpts() : { auto_play: true };
-    this.widget.load(playUrl, opts);
-
-    if (this._isIOS() && this._gesturePlay) { try { this.widget.play(); } catch (_) {} }
-
-    const onReady = () => {
-      const getSound = (retry = 0) => {
-        this.widget.getCurrentSound((sound) => {
-          if (sound?.title) this._applySoundMetadata(sound);
-          else if (retry < 6) setTimeout(() => getSound(retry + 1), 180);
-          else this._applySoundMetadata(undefined);
-        });
-      };
-      getSound();
-      if (!this._isIOS()) { try { this.widget.play(); } catch (_) {} }
-      this.startProgressTracking();
-      this.changeVolume({ target: this.volumeBar });
-      this.savePlayerState();
-      try { this.widget.unbind(SC.Widget.Events.READY); } catch (_) {}
-    };
-    try { this.widget.unbind(SC.Widget.Events.READY); } catch (_) {}
-    this.widget.bind(SC.Widget.Events.READY, onReady);
+    // 同期タップ内に prime→load→play
+    this._gesturePlay = true;
+    this._primeLoadPlay(playUrl, true);
   }
 
   // ===== 再生（リストから） =====
@@ -506,43 +522,16 @@ export default class extends Controller {
     if (!trackUrl) return;
 
     this._gesturePlay = true;
-    this.resetPlayerUI();
+    this.resetPlayerUI?.();
     this.bottomPlayer?.classList.remove("d-none");
     this.currentTrackId = newTrackId || null;
 
-    const ok = this._isIOS() ? this._ensureIOSBootstrap() : this._ensureWidget();
-    if (!ok || !this.widget) {
-      alert("プレイヤー初期化に失敗しました。もう一度曲を選んでください。");
-      return;
-    }
+    // 同期タップ内に prime→load→play
+    this._primeLoadPlay(trackUrl, true);
 
-    const opts = this._isIOS() ? this._iosLoadOpts() : { auto_play: true };
-    this.widget.load(trackUrl, opts);
-    if (this._isIOS() && this._gesturePlay) { try { this.widget.play(); } catch (_) {} }
-
-    const onReady = () => {
-      const trySetTitle = (retry = 0) => {
-        this.widget.getCurrentSound((sound) => {
-          if (sound?.title) this._applySoundMetadata(sound);
-          else if (retry < 6) return setTimeout(() => trySetTitle(retry + 1), 180);
-          else this._applySoundMetadata(undefined);
-        });
-      };
-      trySetTitle();
-
-      if (!this._isIOS()) { try { this.widget.play(); } catch (_) {} }
-
-      this.bindWidgetEvents();
-      this.startProgressTracking();
-      this.changeVolume({ target: this.volumeBar });
-      this.updateTrackIcon(this.currentTrackId, true);
-      this.setPlayPauseAria(true);
-      this.savePlayerState();
-
-      try { this.widget.unbind(SC.Widget.Events.READY); } catch (_) {}
-    };
-    try { this.widget.unbind(SC.Widget.Events.READY); } catch (_) {}
-    this.widget.bind(SC.Widget.Events.READY, onReady);
+    this.updateTrackIcon(this.currentTrackId, true);
+    this.setPlayPauseAria(true);
+    this.savePlayerState();
   }
 
   // ===== トグル =====
@@ -651,7 +640,7 @@ export default class extends Controller {
     this.playStartedAt = null;
 
     if (this.isRepeat) {
-      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == this.currentTrackId)
+      const icon = this.playIconTargets?.find((icn) => icn.dataset.trackId == this.currentTrackId)
         || this._q(`[data-track-id="${CSS.escape(String(this.currentTrackId))}"]`, this._container());
       icon && setTimeout(() =>
         this.loadAndPlay({ currentTarget: icon, stopPropagation() {} }), 300);
@@ -662,7 +651,7 @@ export default class extends Controller {
     const curIdx = this.playlistOrder.indexOf(this.currentTrackId);
     const nextId = this.playlistOrder[curIdx + 1];
     if (nextId) {
-      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == nextId)
+      const icon = this.playIconTargets?.find((icn) => icn.dataset.trackId == nextId)
         || this._q(`[data-track-id="${CSS.escape(String(nextId))}"]`, this._container());
       icon && setTimeout(() =>
         this.loadAndPlay({ currentTarget: icon, stopPropagation() {} }), 300);
