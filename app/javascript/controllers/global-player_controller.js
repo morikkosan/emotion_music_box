@@ -14,8 +14,6 @@
  * @property {(ms:number) => void} seekTo
  * @property {(pct:number) => void} setVolume
  * @property {(url:string, opts?:Record<string, unknown>) => void} load
- * @property {() => void} next
- * @property {() => void} prev
  */
 
 /**
@@ -29,13 +27,22 @@ export default class extends Controller {
   static targets = ["trackImage", "playIcon"];
 
   // ===== ユーティリティ =====
-  _q(sel, root = null) { return (root || this.element || document).querySelector(sel); }
-  _qa(sel, root = null) { return Array.from((root || this.element || document).querySelectorAll(sel)); }
-  _container() { return this.element || this._q(".playlist-container") || document; }
+  _q(sel, root = null) {
+    return (root || this.element || document).querySelector(sel);
+  }
+  _qa(sel, root = null) {
+    return Array.from((root || this.element || document).querySelectorAll(sel));
+  }
+  _container() {
+    return this.element || this._q(".playlist-container") || document;
+  }
   _hideScreenCover() {
     try {
       const cover = document.getElementById("screen-cover-loading");
-      if (cover) { cover.style.display = "none"; cover.setAttribute("aria-hidden", "true"); }
+      if (cover) {
+        cover.style.display = "none";
+        cover.setAttribute("aria-hidden", "true");
+      }
     } catch (_) {}
   }
   _isIOS() {
@@ -50,30 +57,42 @@ export default class extends Controller {
       if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
     } catch (_) {}
   }
+
+  // playerURL（w.soundcloud.com/player/?url=...）→ 元の permalink/playlist URL に戻す
+  _normalizeLoadUrl(u) {
+    try {
+      const url = new URL(u);
+      if (url.hostname === "w.soundcloud.com" && url.pathname.startsWith("/player/")) {
+        const inner = url.searchParams.get("url");
+        return inner || u;
+      }
+      return u;
+    } catch { return u; }
+  }
+
   _applySoundMetadata(sound) {
     if (sound?.title) {
       this.setTrackTitle(sound.title);
       const artist = sound.user?.username ? `— ${sound.user.username}` : "";
       this.setArtist(artist);
+      this.hideLoadingUI();
     } else {
       this.setTrackTitle("タイトル不明");
       this.setArtist("");
+      this.hideLoadingUI();
     }
-    this.hideLoadingUI?.();
   }
-
   unbindWidgetEvents() {
     if (!this.widget) return;
     try {
       this.widget.unbind(SC.Widget.Events.PLAY);
       this.widget.unbind(SC.Widget.Events.PAUSE);
       this.widget.unbind(SC.Widget.Events.FINISH);
-      this.widget.unbind(SC.Widget.Events.READY);
     } catch (_) {}
   }
 
-  // iOSのloadオプション（※urlは入れない）
   _iosLoadOpts() {
+    // iOSはユーザー操作内で play() するので auto_play は常に false
     return {
       auto_play: false,
       hide_related: true,
@@ -84,31 +103,7 @@ export default class extends Controller {
     };
   }
 
-  // ===== widget/iframe 準備 =====
-  _createPlayerIframe(parent = null) {
-    const p = parent || (this.bottomPlayer && this.bottomPlayer.parentNode) || document.body;
-    const newIframe = document.createElement("iframe");
-    newIframe.id = "hidden-sc-player";
-    // display:none/visibility:hidden は使わない（iOSブロック回避）
-    newIframe.allow = "autoplay; encrypted-media";
-    newIframe.setAttribute("playsinline", "true");
-    newIframe.setAttribute("webkit-playsinline", "true");
-    newIframe.frameBorder = "no";
-    newIframe.scrolling = "no";
-    newIframe.width = "100%";
-    newIframe.height = "166";
-    // 画面外に退避（不可視だがレンダリング対象）
-    newIframe.style.position = "absolute";
-    newIframe.style.width = "1px";
-    newIframe.style.height = "1px";
-    newIframe.style.opacity = "0";
-    newIframe.style.pointerEvents = "none";
-    newIframe.style.left = "-9999px";
-    newIframe.style.top = "0";
-    p.appendChild(newIframe);
-    return newIframe;
-  }
-
+  // ===== iOS 初回タップ時のブートストラップ =====
   _ensureIOSBootstrap() {
     if (!this._isIOS()) return true;
     if (this.widget && this.iframeElement) return true;
@@ -116,7 +111,7 @@ export default class extends Controller {
     this.iframeElement = document.getElementById("hidden-sc-player") || this._createPlayerIframe();
     if (!this.iframeElement) return false;
 
-    // iOSは空プレイヤーを先に立ち上げてから widget を張る
+    // 先に空プレイヤーをロード（これ重要）
     if (!this.iframeElement.src || this.iframeElement.src === "about:blank") {
       const base = new URL("https://w.soundcloud.com/player/");
       base.searchParams.set("auto_play", "false");
@@ -130,53 +125,6 @@ export default class extends Controller {
     } catch {
       return false;
     }
-  }
-
-  _ensureWidget() {
-    if (this.widget && this.iframeElement) return true;
-    this.iframeElement = document.getElementById("hidden-sc-player") || this._createPlayerIframe();
-    if (!this.iframeElement) return false;
-    try {
-      this.widget = SC.Widget(this.iframeElement);
-      this.bindWidgetEvents();
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  // ===== iOS対策：同一タップ内 prime→load→play =====
-  _primeLoadPlay(url, autoPlay = true) {
-    const ok = this._isIOS() ? this._ensureIOSBootstrap() : this._ensureWidget();
-    if (!ok || !this.widget) {
-      alert("プレイヤー初期化に失敗しました。もう一度曲を選んでください。");
-      return;
-    }
-
-    // 同期内の prime（ユーザー操作内で play/pause）
-    try { this.widget.play(); } catch (_) {}
-    try { this.widget.pause(); } catch (_) {}
-
-    // load（iOSは auto_play:false）
-    const opts = this._isIOS() ? this._iosLoadOpts() : { auto_play: !!autoPlay };
-    try { this.widget.load(url, opts); } catch (_) {}
-
-    // 同期内に play（ユーザー操作のうちに実行）
-    if (autoPlay) { try { this.widget.play(); } catch (_) {} }
-
-    // READY保険
-    try { this.widget.unbind(SC.Widget.Events.READY); } catch (_) {}
-    this.widget.bind(SC.Widget.Events.READY, () => {
-      this.widget.getCurrentSound((sound) => this._applySoundMetadata(sound));
-      if (autoPlay) { try { this.widget.play(); } catch (_) {} }
-      // 音量を二重適用（無音化の保険）
-      const vol = Number(this.volumeBar?.value ?? 100);
-      try { this.widget.setVolume(vol); } catch (_) {}
-      setTimeout(() => { try { this.widget.setVolume(vol); } catch (_) {} }, 200);
-      this.startProgressTracking();
-      this.changeVolume({ target: this.volumeBar });
-      this.savePlayerState();
-    });
   }
 
   // ===== ライフサイクル =====
@@ -255,20 +203,27 @@ export default class extends Controller {
     this.isRepeat  = false;
     this.isShuffle = false;
     this._gesturePlay = false;
-    this.useSCPlaylist = false; // ← SCのプレイリストURLを1回loadしたモード
 
     this.updatePlaylistOrder();
 
     // シークバーのドラッグ
-    this._onMouseUpSeek = () => { if (this.isSeeking) { this.isSeeking = false; this.startProgressTracking(); } };
-    this.seekBar?.addEventListener("mousedown", () => { this.isSeeking = true; clearInterval(this.progressInterval); });
+    this._onMouseUpSeek = () => {
+      if (this.isSeeking) {
+        this.isSeeking = false;
+        this.startProgressTracking();
+      }
+    };
+    this.seekBar?.addEventListener("mousedown", () => {
+      this.isSeeking = true;
+      clearInterval(this.progressInterval);
+    });
     document.addEventListener("mouseup", this._onMouseUpSeek);
 
     // 保険ハンドラ
     this._onSeekInput   = (e) => this.seek(e);
     this._onVolumeInput = (e) => this.changeVolume(e);
-    this._onPrevClick   = (e) => { e?.preventDefault?.(); this.prevTrack(); };
-    this._onNextClick   = (e) => { e?.preventDefault?.(); this.nextTrack(); };
+    this._onPrevClick   = (e) => { this._gesturePlay = true; this.prevTrack(e); };
+    this._onNextClick   = (e) => { this._gesturePlay = true; this.nextTrack(e); };
 
     this.seekBar?.addEventListener("input", this._onSeekInput);
     this.volumeBar?.addEventListener("input", this._onVolumeInput);
@@ -297,7 +252,7 @@ export default class extends Controller {
     };
     this._container()?.addEventListener("click", this._onIconClickDelegated);
 
-    // 検索から再生（外部イベントは _gesturePlay は立てない）
+    // 検索から再生（_gesturePlay は立てない）
     window.addEventListener("play-from-search", (e) => {
       const { playUrl } = e.detail;
       this.playFromExternal(playUrl);
@@ -453,38 +408,49 @@ export default class extends Controller {
 
     this.currentTrackId = state.trackId || null;
     this.bottomPlayer?.classList.remove("d-none");
-    this.resetPlayerUI?.();
 
-    // widget 準備
-    const ok = this._isIOS() ? this._ensureIOSBootstrap() : this._ensureWidget();
-    if (!ok || !this.widget) return;
+    if (this.widget) {
+      this.unbindWidgetEvents();
+      clearInterval(this.progressInterval);
+      this.widget = null;
+    }
+    this.iframeElement = this.replaceIframeWithNew();
+    if (!this.iframeElement) return;
 
-    // 常に widget.load() を使う
     const base = this._ensurePlayerUrl(state.trackUrl);
     const url  = this._isIOS() ? this._forceAutoPlay(base, false) : base;
-    const opts = this._isIOS() ? this._iosLoadOpts() : { auto_play: state.isPlaying };
 
-    this.widget.load(url, opts);
-    const onReady = () => {
-      this.widget.getCurrentSound((sound) => this._applySoundMetadata(sound));
-      this.widget.seekTo(state.position || 0);
+    this.iframeElement.src = url;
+    this.resetPlayerUI();
 
-      if (!this._isIOS() && state.isPlaying) {
-        try { this.widget.play(); } catch (_) {}
-      } else if (this._isIOS() && !state.isPlaying) {
-        try { this.widget.pause(); } catch (_) {}
-      }
+    this.iframeElement.onload = () => {
+      setTimeout(() => {
+        try {
+          this.widget = SC.Widget(this.iframeElement);
+        } catch (_) {
+          return setTimeout(() => this.restorePlayerState(), 150);
+        }
 
-      this.bindWidgetEvents();
-      this.startProgressTracking();
-      this.changeVolume({ target: this.volumeBar });
-      this.updateTrackIcon(this.currentTrackId, !this._isIOS() && state.isPlaying);
-      this.setPlayPauseAria(!this._isIOS() && state.isPlaying);
+        this.widget.bind(SC.Widget.Events.READY, () => {
+          this.widget.getCurrentSound((sound) => {
+            if (sound?.title) this._applySoundMetadata(sound);
+            else this._applySoundMetadata(undefined);
+          });
 
-      try { this.widget.unbind(SC.Widget.Events.READY); } catch (_) {}
+          this.widget.seekTo(state.position || 0);
+
+          if (!this._isIOS() && state.isPlaying) this.widget.play();
+          else if (this._isIOS() && !state.isPlaying) this.widget.pause();
+
+          this.bindWidgetEvents();
+          this.startProgressTracking();
+          this.changeVolume({ target: this.volumeBar });
+
+          this.updateTrackIcon(this.currentTrackId, !this._isIOS() && state.isPlaying);
+          this.setPlayPauseAria(!this._isIOS() && state.isPlaying);
+        });
+      }, 150);
     };
-    try { this.widget.unbind(SC.Widget.Events.READY); } catch (_) {}
-    this.widget.bind(SC.Widget.Events.READY, onReady);
   }
 
   setTrackTitle(title) {
@@ -492,26 +458,93 @@ export default class extends Controller {
     this.trackTitleTopEl && (this.trackTitleTopEl.textContent = title);
   }
 
-  // ===== プレイリストを一括ロード（SC側に連続再生を任せる） =====
-  loadPlaylistOnce(playlistUrl) {
-    this.useSCPlaylist = true;
-    this._primeLoadPlay(playlistUrl, true);
-  }
-
   // ===== 再生（外部URL） =====
   playFromExternal(playUrl) {
     this.bottomPlayer?.classList.remove("d-none");
     this.bottomPlayer?.offsetHeight;
-    this.resetPlayerUI?.();
 
-    this._gesturePlay = true;
-    // プレイリストURLなら一括ロード
-    if (/\/playlists\//.test(playUrl)) {
-      this.loadPlaylistOnce(playUrl);
-    } else {
-      this.useSCPlaylist = false;
-      this._primeLoadPlay(playUrl, true);
+    const normalized = this._normalizeLoadUrl(playUrl);
+
+    // iOS: 既存widget+iframeがあれば、同タップ内で load→即 play
+    if (this._isIOS() && this.widget && this.iframeElement) {
+      this.resetPlayerUI();
+      this.bindWidgetEvents();
+
+      this.widget.load(normalized, this._iosLoadOpts());
+      if (this._gesturePlay) { try { this.widget.play(); } catch(_) {} }
+      this.widget.bind(SC.Widget.Events.READY, () => {
+        if (this._gesturePlay) { try { this.widget.play(); } catch(_) {} }
+        this._gesturePlay = false;
+      });
+
+      this.startProgressTracking();
+      this.changeVolume({ target: this.volumeBar });
+      this.savePlayerState();
+      return;
     }
+
+    // iOS 初回：同タップ中にブート→load→play
+    if (this._isIOS()) {
+      const ok = this._ensureIOSBootstrap();
+      if (ok && this.widget) {
+        this.resetPlayerUI();
+        this.bindWidgetEvents();
+        this.widget.load(normalized, this._iosLoadOpts());
+        if (this._gesturePlay) { try { this.widget.play(); } catch(_) {} }
+        this.widget.bind(SC.Widget.Events.READY, () => {
+          if (this._gesturePlay) { try { this.widget.play(); } catch(_) {} }
+          this._gesturePlay = false;
+        });
+        this.startProgressTracking();
+        this.changeVolume({ target: this.volumeBar });
+        this.savePlayerState();
+        return;
+      }
+    }
+
+    // 非iOS
+    if (this.widget) {
+      this.unbindWidgetEvents();
+      clearInterval(this.progressInterval);
+      this.widget = null;
+    }
+
+    this.iframeElement = this.replaceIframeWithNew();
+    if (!this.iframeElement) {
+      alert("iframe 生成に失敗しました");
+      return;
+    }
+
+    this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(normalized)}&auto_play=true`;
+    this.resetPlayerUI();
+
+    this.iframeElement.onload = () => {
+      setTimeout(() => {
+        try {
+          this.widget = SC.Widget(this.iframeElement);
+        } catch (_) {
+          return setTimeout(() => this.playFromExternal(normalized), 120);
+        }
+
+        this.widget.bind(SC.Widget.Events.READY, () => {
+          const getSound = (retry = 0) => {
+            this.widget.getCurrentSound((sound) => {
+              if (sound?.title) this._applySoundMetadata(sound);
+              else if (retry < 6) setTimeout(() => getSound(retry + 1), 180);
+              else this._applySoundMetadata(undefined);
+            });
+          };
+          getSound();
+
+          this.bindWidgetEvents();
+          if (!this._isIOS()) this.widget.play();
+
+          this.startProgressTracking();
+          this.changeVolume({ target: this.volumeBar });
+          this.savePlayerState();
+        });
+      }, 100);
+    };
   }
 
   // ===== 再生（リストから） =====
@@ -536,77 +569,95 @@ export default class extends Controller {
     }
     if (!trackUrl) return;
 
+    const normalized = this._normalizeLoadUrl(trackUrl);
+
     this._gesturePlay = true;
-    this.resetPlayerUI?.();
+    this.resetPlayerUI();
     this.bottomPlayer?.classList.remove("d-none");
     this.currentTrackId = newTrackId || null;
 
-    // 単曲ロードモード
-    this.useSCPlaylist = /\/playlists\//.test(trackUrl);
-    if (this.useSCPlaylist) {
-      this.loadPlaylistOnce(trackUrl);
-    } else {
-      this._primeLoadPlay(trackUrl, true);
-    }
+    // iOS: 既存widget+iframe
+    if (this._isIOS() && this.widget && this.iframeElement) {
+      this.bindWidgetEvents();
+      this.widget.load(normalized, this._iosLoadOpts());
+      if (this._gesturePlay) { try { this.widget.play(); } catch(_) {} }
+      this.widget.bind(SC.Widget.Events.READY, () => {
+        if (this._gesturePlay) { try { this.widget.play(); } catch(_) {} }
+        this._gesturePlay = false;
+      });
 
-    this.updateTrackIcon(this.currentTrackId, true);
-    this.setPlayPauseAria(true);
-    this.savePlayerState();
-  }
-
-  // ===== 前後トラック（クリック＝ユーザー操作内なのでOK） =====
-  nextTrack() {
-    if (!this.widget) return;
-    // プレイリストモードはSC内部に任せて `.next()` を使う
-    if (this.useSCPlaylist) {
-      try { this.widget.next(); this.widget.play?.(); } catch (_) {}
+      this.startProgressTracking();
+      this.changeVolume({ target: this.volumeBar });
+      this.updateTrackIcon(this.currentTrackId, true);
+      this.setPlayPauseAria(true);
+      this.savePlayerState();
       return;
     }
 
-    // 単曲モード：自前の一覧から次
-    this.updatePlaylistOrder();
-    const curIdx = this.playlistOrder.indexOf(this.currentTrackId);
-    const nextId = this.playlistOrder[curIdx + 1];
-    if (!nextId) return;
+    // iOS 初回ブート
+    if (this._isIOS()) {
+      const ok = this._ensureIOSBootstrap();
+      if (ok && this.widget) {
+        this.bindWidgetEvents();
+        this.widget.load(normalized, this._iosLoadOpts());
+        if (this._gesturePlay) { try { this.widget.play(); } catch(_) {} }
+        this.widget.bind(SC.Widget.Events.READY, () => {
+          if (this._gesturePlay) { try { this.widget.play(); } catch(_) {} }
+          this._gesturePlay = false;
+        });
 
-    const node = this._q(
-      `[data-track-id="${CSS.escape(String(nextId))}"][data-play-url]`,
-      this._container()
-    );
-    const url = node?.dataset?.playUrl;
-    if (!url) return;
-
-    this.currentTrackId = nextId;
-    this._primeLoadPlay(url, true);
-    this.updateTrackIcon(this.currentTrackId, true);
-    this.setPlayPauseAria(true);
-    this.savePlayerState();
-  }
-
-  prevTrack() {
-    if (!this.widget) return;
-    if (this.useSCPlaylist) {
-      try { this.widget.prev(); this.widget.play?.(); } catch (_) {}
-      return;
+        this.startProgressTracking();
+        this.changeVolume({ target: this.volumeBar });
+        this.updateTrackIcon(this.currentTrackId, true);
+        this.setPlayPauseAria(true);
+        this.savePlayerState();
+        return;
+      }
     }
 
-    this.updatePlaylistOrder();
-    const curIdx = this.playlistOrder.indexOf(this.currentTrackId);
-    const prevId = this.playlistOrder[curIdx - 1];
-    if (!prevId) return;
+    // 非iOS
+    if (this.widget) {
+      this.unbindWidgetEvents();
+      clearInterval(this.progressInterval);
+      this.widget = null;
+    }
 
-    const node = this._q(
-      `[data-track-id="${CSS.escape(String(prevId))}"][data-play-url]`,
-      this._container()
-    );
-    const url = node?.dataset?.playUrl;
-    if (!url) return;
+    this.iframeElement = this.replaceIframeWithNew();
+    if (!this.iframeElement) return;
 
-    this.currentTrackId = prevId;
-    this._primeLoadPlay(url, true);
-    this.updateTrackIcon(this.currentTrackId, true);
-    this.setPlayPauseAria(true);
-    this.savePlayerState();
+    this.iframeElement.src =
+      `https://w.soundcloud.com/player/?url=${encodeURIComponent(normalized)}&auto_play=true`;
+
+    this.iframeElement.onload = () => {
+      setTimeout(() => {
+        try {
+          this.widget = SC.Widget(this.iframeElement);
+        } catch (_) {
+          return setTimeout(() =>
+            this.loadAndPlay({ currentTarget: el, stopPropagation() {} }), 120);
+        }
+
+        this.widget.bind(SC.Widget.Events.READY, () => {
+          const trySetTitle = (retry = 0) => {
+            this.widget.getCurrentSound((sound) => {
+              if (sound?.title) this._applySoundMetadata(sound);
+              else if (retry < 6) return setTimeout(() => trySetTitle(retry + 1), 180);
+              else this._applySoundMetadata(undefined);
+            });
+          };
+          trySetTitle();
+
+          this.bindWidgetEvents();
+          if (!this._isIOS()) this.widget.play();
+
+          this.startProgressTracking();
+          this.changeVolume({ target: this.volumeBar });
+          this.updateTrackIcon(this.currentTrackId, true);
+          this.setPlayPauseAria(true);
+          this.savePlayerState();
+        });
+      }, 100);
+    };
   }
 
   // ===== トグル =====
@@ -625,9 +676,20 @@ export default class extends Controller {
           return;
         }
       }
-      // 非iOS
-      const ok = this._ensureWidget();
-      if (!ok || !this.widget) {
+
+      this.iframeElement = document.getElementById("hidden-sc-player");
+      if (this.iframeElement && this.iframeElement.src && this.iframeElement.src !== "") {
+        try {
+          this.widget = SC.Widget(this.iframeElement);
+          this.bindWidgetEvents();
+          if (typeof this.restorePlayerState === "function") {
+            this.restorePlayerState();
+          }
+        } catch (_e) {
+          alert("プレイヤーの初期化に失敗しました。もう一度曲を選んでください。");
+          return;
+        }
+      } else {
         alert("プレイヤーが初期化されていません。もう一度曲を選んでください。");
         return;
       }
@@ -714,13 +776,25 @@ export default class extends Controller {
     clearInterval(this.progressInterval);
     this.playStartedAt = null;
 
-    // プレイリストモードなら SC 側が連続再生する（ここで何もしないのが安定）
-    if (this.useSCPlaylist) {
-      this.savePlayerState();
+    if (this.isRepeat) {
+      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == this.currentTrackId)
+        || this._q(`[data-track-id="${CSS.escape(String(this.currentTrackId))}"]`, this._container());
+      icon && setTimeout(() =>
+        this.loadAndPlay({ currentTarget: icon, stopPropagation() {} }), 300);
       return;
     }
 
-    // 単曲モード：自動で次曲は iOS 制約で不可。UIだけ戻す。
+    this.updatePlaylistOrder();
+    const curIdx = this.playlistOrder.indexOf(this.currentTrackId);
+    const nextId = this.playlistOrder[curIdx + 1];
+    if (nextId) {
+      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == nextId)
+        || this._q(`[data-track-id="${CSS.escape(String(nextId))}"]`, this._container());
+      icon && setTimeout(() =>
+        this.loadAndPlay({ currentTarget: icon, stopPropagation() {} }), 300);
+      return;
+    }
+
     this.bottomPlayer?.classList.add("d-none");
     this.savePlayerState();
   };
@@ -790,6 +864,188 @@ export default class extends Controller {
   }
 
   // ===== 前後トラック =====
+  prevTrack(event) {
+    event?.stopPropagation?.();
+    this.updatePlaylistOrder();
+    if (!this.playlistOrder?.length) return;
+
+    if (!this.currentTrackId) {
+      const lastId = this.playlistOrder[this.playlistOrder.length - 1];
+      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == lastId)
+        || this._q(`[data-track-id="${CSS.escape(String(lastId))}"]`, this._container());
+      icon && this.loadAndPlay({ currentTarget: icon, stopPropagation() {} });
+      return;
+    }
+
+    const idx = this.playlistOrder.indexOf(this.currentTrackId);
+    if (idx > 0) {
+      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == this.playlistOrder[idx - 1])
+        || this._q(`[data-track-id="${CSS.escape(String(this.playlistOrder[idx - 1]))}"]`, this._container());
+      icon && this.loadAndPlay({ currentTarget: icon, stopPropagation() {} });
+      return;
+    }
+
+    const lastId2 = this.playlistOrder[this.playlistOrder.length - 1];
+    const icon2 = this.playIconTargets.find((icn) => icn.dataset.trackId == lastId2)
+      || this._q(`[data-track-id="${CSS.escape(String(lastId2))}"]`, this._container());
+    icon2 && this.loadAndPlay({ currentTarget: icon2, stopPropagation() {} });
+  }
+
+  nextTrack(event) {
+    event?.stopPropagation?.();
+    this.updatePlaylistOrder();
+    if (!this.playlistOrder?.length) return;
+
+    if (!this.currentTrackId) {
+      const firstId = this.playlistOrder[0];
+      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == firstId)
+        || this._q(`[data-track-id="${CSS.escape(String(firstId))}"]`, this._container());
+      icon && this.loadAndPlay({ currentTarget: icon, stopPropagation() {} });
+      return;
+    }
+
+    const idx = this.playlistOrder.indexOf(this.currentTrackId);
+    if (idx < this.playlistOrder.length - 1 && idx >= 0) {
+      const nextId = this.playlistOrder[idx + 1];
+      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == nextId)
+        || this._q(`[data-track-id="${CSS.escape(String(nextId))}"]`, this._container());
+      icon && this.loadAndPlay({ currentTarget: icon, stopPropagation() {} });
+      return;
+    }
+
+    const firstId2 = this.playlistOrder[0];
+    const icon2 = this.playIconTargets.find((icn) => icn.dataset.trackId == firstId2)
+      || this._q(`[data-track-id="${CSS.escape(String(firstId2))}"]`, this._container());
+    icon2 && this.loadAndPlay({ currentTarget: icon2, stopPropagation() {} });
+  }
+
+  playFirstTrack(event) {
+    event?.stopPropagation?.();
+    this._gesturePlay = true;
+    this.updatePlaylistOrder();
+    if (!this.playlistOrder?.length) return;
+
+    const firstId = this.playlistOrder[0];
+    const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == firstId)
+      || this._q(`[data-track-id="${CSS.escape(String(firstId))}"]`, this._container());
+    icon && this.loadAndPlay({ currentTarget: icon, stopPropagation() {} });
+  }
+
+  // ===== レイアウト切替 =====
+  switchPlayerTopRow() {
+    const isMobile  = window.innerWidth <= 768;
+    const desktopRow = document.getElementById("player-top-row-desktop");
+    const mobileRow  = document.getElementById("player-top-row-mobile");
+    if (!desktopRow || !mobileRow) return;
+
+    desktopRow.style.display = isMobile ? "none" : "flex";
+    mobileRow.style.display  = isMobile ? "flex" : "none";
+  }
+
+  // ===== iframe作成（iPhoneは再利用） =====
+  replaceIframeWithNew() {
+    const oldIframe = document.getElementById("hidden-sc-player");
+    const parent =
+      (oldIframe && oldIframe.parentNode) ||
+      (this.bottomPlayer && this.bottomPlayer.parentNode) ||
+      document.body;
+
+    if (this._isIOS() && oldIframe) return oldIframe;
+    if (oldIframe) this._safeNukeIframe(oldIframe);
+
+    return this._createPlayerIframe(parent);
+  }
+
+  _createPlayerIframe(parent = null) {
+    const p =
+      parent ||
+      (this.bottomPlayer && this.bottomPlayer.parentNode) ||
+      document.body;
+
+    const newIframe = document.createElement("iframe");
+    newIframe.id = "hidden-sc-player";
+    // display:none/visibility:hidden は使わない（iOSブロック回避）
+    newIframe.allow = "autoplay; encrypted-media";
+    newIframe.setAttribute("playsinline", "true");
+    newIframe.setAttribute("webkit-playsinline", "true");
+    newIframe.frameBorder = "no";
+    newIframe.scrolling = "no";
+    newIframe.width = "100%";
+    newIframe.height = "166";
+    // 画面外に退避（不可視だがレンダリング対象）
+    newIframe.style.position = "absolute";
+    newIframe.style.width = "1px";
+    newIframe.style.height = "1px";
+    newIframe.style.opacity = "0";
+    newIframe.style.pointerEvents = "none";
+    newIframe.style.left = "-9999px";
+    newIframe.style.top = "0";
+    p.appendChild(newIframe);
+    return newIframe;
+  }
+
+  // ===== UI表示 =====
+  showLoadingUI() {
+    this.playPauseIcon?.classList.add("is-hidden");
+    this.playPauseButton?.setAttribute("disabled", "disabled");
+    this.playPauseButton?.setAttribute("aria-disabled", "true");
+    this.bottomPlayer?.setAttribute("aria-busy", "true");
+    this.loadingArea?.classList.remove("is-hidden");
+    this.neonCharacter?.classList.remove("is-hidden");
+
+    if (this.trackTitleEl) {
+      this.trackTitleEl.innerHTML = `
+        <span class="neon-wave">
+          <span>N</span><span>O</span><span>W</span>
+          <span>&nbsp;</span>
+          <span>L</span><span>O</span><span>A</span><span>D</span>
+          <span>I</span><span>N</span><span>G</span>
+          <span>.</span><span>.</span><span>.</span>
+        </span>`;
+      this.trackTitleEl.classList.remove("is-hidden");
+    }
+    this.trackTitleTopEl && (this.trackTitleTopEl.innerHTML = "Loading…");
+    this.trackArtistEl && this.trackArtistEl.classList.add("is-hidden");
+  }
+
+  hideLoadingUI() {
+    this.playPauseIcon?.classList.remove("is-hidden");
+    this.playPauseButton?.removeAttribute("disabled");
+    this.playPauseButton?.setAttribute("aria-disabled", "false");
+    this.bottomPlayer?.setAttribute("aria-busy", "false");
+    this.loadingArea?.classList.add("is-hidden");
+    this.neonCharacter?.classList.add("is-hidden");
+    this.trackTitleEl?.classList.remove("is-hidden");
+    this.trackTitleTopEl?.classList.remove("is-hidden");
+    this.trackArtistEl?.classList.remove("is-hidden");
+    this._hideScreenCover();
+  }
+
+  resetPlayerUI() {
+    this.currentTimeEl && (this.currentTimeEl.textContent = "0:00");
+    this.durationEl && (this.durationEl.textContent = "0:00");
+    if (this.seekBar) {
+      this.seekBar.value = "0";
+      this.updateSeekAria(0, 0, 0);
+    }
+    if (this.hasPlayIconTarget) {
+      this.playIconTargets.forEach((icn) => {
+        icn.classList.add("fa-play");
+        icn.classList.remove("fa-pause");
+      });
+    } else {
+      this._qa("[data-track-id]", this._container()).forEach((node) => {
+        node.classList?.add("fa-play");
+        node.classList?.remove("fa-pause");
+      });
+    }
+    this.playPauseIcon?.classList.add("fa-play");
+    this.playPauseIcon?.classList.remove("fa-pause");
+    this.setPlayPauseAria(false);
+    this.showLoadingUI();
+  }
+
+  // ===== プレイリスト順 =====
   updatePlaylistOrder() {
     this.playlistOrder = (this.trackImageTargets || [])
       .map((img) => img?.dataset?.trackId)
@@ -845,15 +1101,4 @@ export default class extends Controller {
       this.waveformCtx.clearRect(0, 0, this.waveformCanvas.width || 0, this.waveformCanvas.height || 0);
     }
   }
-
-  // ===== ナビ用 =====
-  switchPlayerTopRow() {
-    const isMobile  = window.innerWidth <= 768;
-    const desktopRow = document.getElementById("player-top-row-desktop");
-    const mobileRow  = document.getElementById("player-top-row-mobile");
-    if (!desktopRow || !mobileRow) return;
-
-    desktopRow.style.display = isMobile ? "none" : "flex";
-    mobileRow.style.display  = isMobile ? "flex" : "none";
-  }
-} 　　
+}
