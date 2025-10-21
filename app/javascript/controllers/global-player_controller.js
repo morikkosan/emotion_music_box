@@ -303,7 +303,7 @@ export default class extends Controller {
     this._footerGuardMO.observe(this._container() || document, { childList: true, subtree: true });
     this._updatePlayButton();
 
-    // ▼ ここを差し替え（SCの読み込み遅延に備える）
+    // ▼ SCの読み込み遅延に備える
     if (window.SC?.Widget) {
       this.restorePlayerState();
     } else {
@@ -391,7 +391,13 @@ export default class extends Controller {
         this.widget.bind(SC.Widget.Events.READY, () => {
           this.widget.getCurrentSound((sound) => this._applySoundMetadata(sound));
           this.widget.seekTo(state.position || 0);
-          state.isPlaying ? this.widget.play() : this.widget.pause();
+          if (state.isPlaying) {
+            // iOS初回以外は強制再生
+            if (!this._needsHandshake()) this._forcePlay();
+            else this.widget.play(); // ハンドシェイク時はユーザー操作待ちのため軽くplayだけ
+          } else {
+            this.widget.pause();
+          }
           this.bindWidgetEvents();
           this.startProgressTracking();
           this.changeVolume({ target: this.volumeBar });
@@ -405,6 +411,23 @@ export default class extends Controller {
   setTrackTitle(title) {
     this.trackTitleEl    && (this.trackTitleEl.textContent    = title);
     this.trackTitleTopEl && (this.trackTitleTopEl.textContent = title);
+  }
+
+  // ---------- 強制再生（Autoplayブロック対策の軽いリトライ） ----------
+  _forcePlay(maxTries = 5) {
+    if (!this.widget) return;
+    let tries = 0;
+    const tick = () => {
+      if (!this.widget) return;
+      this.widget.isPaused((paused) => {
+        if (!paused) return; // 再生できてる
+        try { this.widget.play(); } catch (_) {}
+        tries += 1;
+        if (tries < maxTries) setTimeout(tick, 220);
+      });
+    };
+    // READY直後に1回、以降は短い間隔で再確認
+    setTimeout(tick, 50);
   }
 
   // ---------- iframe作成（visible=true で初回だけ見せる） ----------
@@ -463,9 +486,10 @@ export default class extends Controller {
 
           this.bindWidgetEvents();
 
-          // 初回（可視）時はユーザーがiframe内▶を押すのを待つ
-          if (!show) this.widget.play();
-
+          if (!show) {
+            // 初回以外は自動再生。止まる場合は軽く再試行
+            this._forcePlay();
+          }
           this.startProgressTracking();
           this.changeVolume({ target: this.volumeBar });
           this.savePlayerState();
@@ -526,7 +550,10 @@ export default class extends Controller {
 
           this.bindWidgetEvents();
 
-          if (!show) this.widget.play(); // 初回以外は従来通り即再生
+          if (!show) {
+            // 初回以外は自動再生 + 再試行
+            this._forcePlay();
+          }
 
           this.startProgressTracking();
           this.changeVolume({ target: this.volumeBar });
@@ -560,7 +587,13 @@ export default class extends Controller {
     }
 
     this.widget.isPaused((paused) => {
-      paused ? this.widget.play() : this.widget.pause();
+      if (paused) {
+        this.widget.play();
+        // 念のため一回だけ再試行（ユーザー操作起点なのでほぼ通る）
+        setTimeout(() => this._forcePlay(2), 120);
+      } else {
+        this.widget.pause();
+      }
       setTimeout(() => this.savePlayerState(), 500);
     });
   }
