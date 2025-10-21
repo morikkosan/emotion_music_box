@@ -409,3 +409,42 @@ body.playlists #mobile-view {
 }
 
 /* （任意）固定フッターがある画面と干渉しないように…未ログインはフッターが無いのでOK */
+
+
+/* === SoundCloud iframe を“見えないけど描画は続ける”状態に保つ === */
+#hidden-sc-player.sc-keepalive {
+  position: fixed;
+  left: -10000px; /* 画面外へ退避（display:none は絶対NG） */
+  top: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  /* 下の2行で、どんな強い display:none も無効化 */
+  display: block !important;
+  visibility: visible !important;
+}
+
+/* body に no-player が付いていても、keepalive 中は消さない */
+body.no-player #hidden-sc-player.sc-keepalive {
+  display: block !important;
+  visibility: visible !important;
+}
+
+/* 念のため：誤って .is-hidden が付いても iframe だけは生かす */
+#hidden-sc-player.sc-keepalive.is-hidden {
+  display: block !important;
+  visibility: visible !important;
+}
+
+/* SoundCloud iframe を“見せる”状態（iOS初回ハンドシェイク中） */
+#hidden-sc-player.sc-keepalive.sc-visible {
+  left: 0 !important;
+  top: auto !important;
+  bottom: 0;                /* 好みで bottom: var(--footer-player-h, 0) など */
+  width: 100% !important;
+  height: 166px !important; /* SCの標準高 / 必要なら調整 */
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  z-index: 2147483647 !important; /* 最前面へ */
+}

@@ -148,10 +148,7 @@ export default class extends Controller {
       document.removeEventListener("mouseup", this._onMouseUpSeek);
     } catch (_) {}
 
-    if (this.widget) {
-      this.unbindWidgetEvents();
-      this.widget = null;
-    }
+    if (this.widget) { this.unbindWidgetEvents(); this.widget = null; }
 
     try {
       const old = document.getElementById("hidden-sc-player");
@@ -169,6 +166,22 @@ export default class extends Controller {
 
     this._hideHandshakeHint();
   };
+
+  // ★ プレイヤーだけ安全に止める（UIイベントは残す）
+  stopOnlyPlayer() {
+    try {
+      clearInterval(this.progressInterval);
+      this.progressInterval = null;
+      this.unbindWidgetEvents();
+      this.widget = null;
+    } catch (_) {}
+
+    try {
+      const old = document.getElementById("hidden-sc-player");
+      this._safeNukeIframe(old);
+      this.iframeElement = null;
+    } catch (_) {}
+  }
 
   setArtist(text) {
     this.trackArtistEl && (this.trackArtistEl.textContent = text);
@@ -290,7 +303,12 @@ export default class extends Controller {
     this._footerGuardMO.observe(this._container() || document, { childList: true, subtree: true });
     this._updatePlayButton();
 
-    this.restorePlayerState();
+    // ▼ ここを差し替え（SCの読み込み遅延に備える）
+    if (window.SC?.Widget) {
+      this.restorePlayerState();
+    } else {
+      window.addEventListener("load", () => this.restorePlayerState?.());
+    }
   }
 
   // ---------- A11y ----------
@@ -337,7 +355,8 @@ export default class extends Controller {
     this.widget.getDuration((dur) => {
       if (!dur) return setTimeout(() => this.tryRestore(state, retry), 300);
       this.widget.getCurrentSound((sound) => {
-        if (sound?.title) this._applySoundMetadata(sound); else if (retry < 5) return setTimeout(() => this.tryRestore(state, retry + 1), 250);
+        if (sound?.title) this._applySoundMetadata(sound);
+        else if (retry < 5) return setTimeout(() => this.tryRestore(state, retry + 1), 250);
       });
       this.widget.seekTo(state.position || 0);
       if (!state.isPlaying) this.widget.pause();
@@ -358,7 +377,7 @@ export default class extends Controller {
     this.bottomPlayer?.classList.remove("d-none");
 
     if (this.widget) { this.unbindWidgetEvents(); clearInterval(this.progressInterval); this.widget = null; }
-    this.iframeElement = this.replaceIframeWithNew(false); // 復元時は非表示
+    this.iframeElement = this.replaceIframeWithNew(false); // 復元時は非表示（keepaliveのみ）
     if (!this.iframeElement) return;
 
     this.iframeElement.src = state.trackUrl.replace("&auto_play=true", "&auto_play=false");
@@ -400,14 +419,13 @@ export default class extends Controller {
 
     const newIframe = document.createElement("iframe");
     newIframe.id = "hidden-sc-player";
-    if (!visible) newIframe.classList.add("is-hidden");
+    // 常に keepalive。見せたい時だけ sc-visible を付与
+    newIframe.classList.add("sc-keepalive");
+    if (visible) newIframe.classList.add("sc-visible");
+
     newIframe.allow = "autoplay; encrypted-media";
     newIframe.frameBorder = "no";
     newIframe.scrolling = "no";
-    newIframe.width = "100%";
-    newIframe.height = "166";
-    newIframe.style.maxWidth = "720px";
-    newIframe.style.margin = "12px auto";
 
     parent.appendChild(newIframe);
     return newIframe;
@@ -426,8 +444,8 @@ export default class extends Controller {
     this.iframeElement = this.replaceIframeWithNew(show);
     if (!this.iframeElement) { alert("iframe 生成に失敗しました"); return; }
 
-    this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(playUrl)}&auto_play=${show ? "false" : "true"}`;
     this.resetPlayerUI();
+    this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(playUrl)}&auto_play=${show ? "false" : "true"}`;
 
     this.iframeElement.onload = () => {
       setTimeout(() => {
@@ -478,7 +496,9 @@ export default class extends Controller {
     this.resetPlayerUI();
     this.bottomPlayer?.classList.remove("d-none");
     this.currentTrackId = newTrackId || null;
-    this.cleanup();
+
+    // ★ プレイヤーだけ止める（UIイベントは殺さない）
+    this.stopOnlyPlayer();
 
     if (this.widget) { this.unbindWidgetEvents(); clearInterval(this.progressInterval); this.widget = null; }
 
@@ -547,11 +567,11 @@ export default class extends Controller {
 
   // ---------- SC Widget イベント ----------
   onPlay = () => {
-    // （初回握手）PLAYが入った＝ユーザーがiframe内▶を押した → 握手済みにして非表示へ戻す
+    // （初回握手）PLAYが入った＝ユーザーがiframe内▶を押した → 握手済みにして画面から下げる
     if (this._needsHandshake()) {
       this._markHandshakeDone();
       this._hideHandshakeHint();
-      try { this.iframeElement?.classList.add("is-hidden"); } catch (_) {}
+      try { this.iframeElement?.classList.remove("sc-visible"); } catch (_) {}
     }
 
     this.playPauseIcon?.classList.replace("fa-play", "fa-pause");
@@ -668,6 +688,35 @@ export default class extends Controller {
     }, 1000);
   }
 
+  // ---------- シーク / ボリューム ----------
+  seek(e) {
+    if (!this.widget || !this.seekBar) return;
+    const percent = Number(e?.target?.value ?? this.seekBar.value ?? 0);
+    this.isSeeking = true;
+    this.widget.getDuration((dur) => {
+      if (!dur) { this.isSeeking = false; return; }
+      const ms = Math.max(0, Math.min(dur, Math.round((percent / 100) * dur)));
+      this.widget.seekTo(ms);
+      this.currentTimeEl && (this.currentTimeEl.textContent = this.formatTime(ms));
+      this.updateSeekAria(percent, ms, dur);
+      // シーク確定後に追従再開
+      setTimeout(() => { this.isSeeking = false; }, 50);
+    });
+  }
+
+  changeVolume(e) {
+    const val = Number(e?.target?.value ?? this.volumeBar?.value ?? 100);
+    const clamped = Math.max(0, Math.min(100, val));
+    try { this.widget?.setVolume?.(clamped); } catch (_) {}
+    this.updateVolumeAria(String(clamped));
+  }
+
+  // ---------- プレイアイコン ----------
+  onPlayIconClick(evt) {
+    // 画像上の ▶ を押した時など
+    this.loadAndPlay(evt);
+  }
+
   formatTime(ms) {
     const n = Number(ms);
     if (!Number.isFinite(n) || n <= 0) return "0:00";
@@ -752,5 +801,125 @@ export default class extends Controller {
     if (!desktopRow || !mobileRow) return;
     desktopRow.style.display = isMobile ? "none" : "flex";
     mobileRow.style.display  = isMobile ? "flex" : "none";
+  }
+
+  // ---------- UI表示 ----------
+  showLoadingUI() {
+    this.playPauseIcon?.classList.add("is-hidden"); // ← ボタン内の見た目用
+    this.playPauseButton?.setAttribute("disabled", "disabled");
+    this.playPauseButton?.setAttribute("aria-disabled", "true");
+    this.bottomPlayer?.setAttribute("aria-busy", "true");
+    this.loadingArea?.classList.remove("is-hidden");
+    this.neonCharacter?.classList.remove("is-hidden");
+
+    if (this.trackTitleEl) {
+      this.trackTitleEl.innerHTML = `
+        <span class="neon-wave">
+          <span>N</span><span>O</span><span>W</span>
+          <span>&nbsp;</span>
+          <span>L</span><span>O</span><span>A</span><span>D</span>
+          <span>I</span><span>N</span><span>G</span>
+          <span>.</span><span>.</span><span>.</span>
+        </span>`;
+      this.trackTitleEl.classList.remove("is-hidden");
+    }
+    this.trackTitleTopEl && (this.trackTitleTopEl.innerHTML = "Loading…");
+    this.trackArtistEl && this.trackArtistEl.classList.add("is-hidden");
+  }
+
+  hideLoadingUI() {
+    this.playPauseIcon?.classList.remove("is-hidden");
+    this.playPauseButton?.removeAttribute("disabled");
+    this.playPauseButton?.setAttribute("aria-disabled", "false");
+    this.bottomPlayer?.setAttribute("aria-busy", "false");
+    this.loadingArea?.classList.add("is-hidden");
+    this.neonCharacter?.classList.add("is-hidden");
+    this.trackTitleEl?.classList.remove("is-hidden");
+    this.trackTitleTopEl?.classList.remove("is-hidden");
+    this.trackArtistEl?.classList.remove("is-hidden");
+    this._hideScreenCover();
+  }
+
+  resetPlayerUI() {
+    this.currentTimeEl && (this.currentTimeEl.textContent = "0:00");
+    this.durationEl && (this.durationEl.textContent = "0:00");
+    this.seekBar && (this.seekBar.value = 0);
+    this.updateSeekAria(0, 0, 0);
+
+    if (this.hasPlayIconTarget) {
+      this.playIconTargets.forEach((icn) => {
+        icn.classList.add("fa-play");
+        icn.classList.remove("fa-pause");
+      });
+    }
+    this.playPauseIcon?.classList.add("fa-play");
+    this.playPauseIcon?.classList.remove("fa-pause");
+    this.setPlayPauseAria(false);
+    this.showLoadingUI();
+  }
+
+  // ---------- シャッフル / リピート ----------
+  toggleShuffle() {
+    this.isShuffle = !this.isShuffle;
+    const btn = document.getElementById("shuffle-button");
+    if (btn) {
+      btn.classList.toggle("active", this.isShuffle);
+      btn.setAttribute("aria-pressed", String(this.isShuffle));
+    }
+    this.updatePlaylistOrder();
+  }
+
+  toggleRepeat() {
+    this.isRepeat = !this.isRepeat;
+    const btn = document.getElementById("repeat-button");
+    if (btn) {
+      btn.classList.toggle("active", this.isRepeat);
+      btn.setAttribute("aria-pressed", String(this.isRepeat));
+    }
+  }
+
+  updatePlaylistOrder() {
+    this.playlistOrder = this.trackImageTargets.map((img) => img.dataset.trackId).filter(Boolean);
+    if (!this.playlistOrder.length) {
+      const nodes = this._qa(".playlist-container [data-track-id][data-play-url]", this._container());
+      this.playlistOrder = nodes.map((n) => String(n.dataset.trackId)).filter(Boolean);
+    }
+    if (this.isShuffle) {
+      for (let i = this.playlistOrder.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [this.playlistOrder[i], this.playlistOrder[j]] = [this.playlistOrder[j], this.playlistOrder[i]];
+      }
+    }
+  }
+
+  // 波形
+  startWaveformAnime() {
+    if (!this.waveformCtx) return;
+    this.waveformAnimating = true;
+    const ctx = this.waveformCtx;
+    const W   = this.waveformCanvas.width;
+    const H   = this.waveformCanvas.height;
+    let t     = 0;
+    const animate = () => {
+      if (!this.waveformAnimating) return;
+      ctx.clearRect(0, 0, W, H);
+      ctx.save();
+      ctx.strokeStyle = "#10ffec";
+      ctx.lineWidth   = 2;
+      ctx.beginPath();
+      for (let x = 0; x < W; x += 4) {
+        const y = H / 2 + Math.sin((x + t) / 7) * (H / 2.5) * (0.7 + 0.3 * Math.sin(x / 17 + t / 13));
+        ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+      t += 0.7;
+      requestAnimationFrame(animate);
+    };
+    animate();
+  }
+  stopWaveformAnime() {
+    this.waveformAnimating = false;
+    this.waveformCtx && this.waveformCtx.clearRect(0, 0, this.waveformCanvas.width, this.waveformCanvas.height);
   }
 }
