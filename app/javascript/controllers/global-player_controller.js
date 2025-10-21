@@ -34,6 +34,14 @@ export default class extends Controller {
     } catch (_) {}
   }
 
+  // iOS 判定
+  isIOS() {
+    try {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+             (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    } catch (_) { return false; }
+  }
+
   // 旧 iframe を安全に破棄
   _safeNukeIframe(iframe) {
     try {
@@ -68,7 +76,7 @@ export default class extends Controller {
     } catch (_) {}
   }
 
-  // iOS初回再生解錠（UIは変えない）
+  // iOS初回再生解錠（AudioContext での解錠: UIは変えない）
   _setupIOSAudioUnlock() {
     try {
       if (typeof window === "undefined") return;
@@ -104,6 +112,74 @@ export default class extends Controller {
       window.addEventListener("touchend", unlock, true);
       window.addEventListener("click", unlock, true);
     } catch (_) {}
+  }
+
+  // ===== iOS “プライム”（最初の1回だけSC iframeを見せて▶️タップしてもらう）=====
+  primeSoundCloudOnce(trackUrl) {
+    return new Promise((resolve, reject) => {
+      if (!this.isIOS()) return resolve(true);         // iOS以外は不要
+      if (window.__scPrimed) return resolve(true);     // すでにプライム済み
+
+      // オーバーレイ
+      const wrap = document.createElement("div");
+      wrap.style.cssText = `
+        position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:99999;
+        display:flex; align-items:center; justify-content:center; padding:16px;
+      `;
+      const panel = document.createElement("div");
+      panel.style.cssText = `
+        width:min(640px, 96vw); background:#111; color:#fff; border-radius:10px;
+        box-shadow:0 10px 30px rgba(0,0,0,.6); padding:14px; text-align:center;
+      `;
+      panel.innerHTML = `
+        <div style="font-size:16px; margin-bottom:8px">
+          iPhoneの制限により、最初の1回だけ<br>下のプレイヤー内の ▶︎ をタップしてください
+        </div>
+        <iframe id="sc-prime-iframe" allow="autoplay; encrypted-media" playsinline webkit-playsinline
+                frameborder="no" scrolling="no" width="100%" height="166"
+                style="border-radius:8px; overflow:hidden; background:#000"></iframe>
+        <div style="opacity:.75; font-size:12px; margin-top:6px">完了すると自動的に閉じます</div>
+      `;
+      wrap.appendChild(panel);
+      document.body.appendChild(wrap);
+
+      const ifr = panel.querySelector("#sc-prime-iframe");
+      const src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&auto_play=false`;
+      ifr.src = src;
+
+      let widget;
+      const cleanup = () => { try { document.body.removeChild(wrap); } catch(_){} };
+
+      const onReadyBind = () => {
+        try {
+          widget = SC.Widget(ifr);
+          try { widget.unbind(SC.Widget.Events.PLAY); } catch(_) {}
+          widget.bind(SC.Widget.Events.PLAY, () => {
+            window.__scPrimed = true;   // 1回でもPLAYが起きたらプライム完了
+            cleanup();
+            resolve(true);
+          });
+        } catch (e) {
+          cleanup();
+          reject(e);
+        }
+      };
+
+      ifr.onload = () => {
+        try {
+          const w = SC.Widget(ifr);
+          try { w.unbind(SC.Widget.Events.READY); } catch(_) {}
+          w.bind(SC.Widget.Events.READY, onReadyBind);
+        } catch(e) {
+          cleanup(); reject(e);
+        }
+      };
+
+      // 背景タップでキャンセル可能
+      wrap.addEventListener("click", (ev) => {
+        if (ev.target === wrap) { cleanup(); reject(new Error("priming-cancelled")); }
+      }, { passive:true });
+    });
   }
 
   cleanup = () => {
@@ -402,6 +478,13 @@ export default class extends Controller {
 
   // -------------- 外部 URL 再生 -----------------
   playFromExternal(playUrl) {
+    // ★ iOS未プライムなら先にプライム
+    if (this.isIOS() && !window.__scPrimed) {
+      return this.primeSoundCloudOnce(playUrl)
+        .then(() => this.playFromExternal(playUrl))
+        .catch(() => {});
+    }
+
     this.bottomPlayer?.classList.remove("d-none");
     this.bottomPlayer?.offsetHeight;
 
@@ -445,7 +528,7 @@ export default class extends Controller {
 
           this.bindWidgetEvents();
 
-          // ★READY直後に必ず再生（ユーザー操作起点のタップ内で呼ばれている）
+          // READY直後に必ず再生
           this.widget.play();
 
           this.startProgressTracking();
@@ -474,6 +557,15 @@ export default class extends Controller {
       trackUrl = node?.dataset?.playUrl;
     }
     if (!trackUrl) return;
+
+    // ★ iOS未プライムなら先にプライム（ユーザーのタップ中）
+    if (this.isIOS() && !window.__scPrimed) {
+      return this.primeSoundCloudOnce(trackUrl)
+        .then(() => {
+          this.loadAndPlay({ currentTarget: { dataset: { trackId: newTrackId, playUrl: trackUrl } }, stopPropagation(){} });
+        })
+        .catch(() => {});
+    }
 
     this.resetPlayerUI();
     this.bottomPlayer?.classList.remove("d-none");
@@ -517,7 +609,7 @@ export default class extends Controller {
 
           this.bindWidgetEvents();
 
-          // ★READY直後に必ず再生（ここが今回の本質的修正）
+          // READY直後に必ず再生
           this.widget.play();
 
           this.startProgressTracking();
@@ -763,5 +855,34 @@ export default class extends Controller {
 
     desktopRow.style.display = isMobile ? "none" : "flex";
     mobileRow.style.display  = isMobile ? "flex" : "none";
+  }
+
+  // -------------- iframe差し替え -----------------
+  replaceIframeWithNew() {
+    const oldIframe = document.getElementById("hidden-sc-player");
+    const parent =
+      (oldIframe && oldIframe.parentNode) ||
+      (this.bottomPlayer && this.bottomPlayer.parentNode) ||
+      document.body;
+
+    // 旧iframeがあれば安全破棄（空→除去）
+    if (oldIframe) {
+      this._safeNukeIframe(oldIframe);
+    }
+
+    // 新規 iframe 作成（属性は従来通り＋allow強化）
+    const newIframe = document.createElement("iframe");
+    newIframe.id = "hidden-sc-player";
+    newIframe.classList.add("is-hidden");
+    newIframe.allow = "autoplay; encrypted-media";
+    newIframe.setAttribute("playsinline", "");
+    newIframe.setAttribute("webkit-playsinline", "");
+    newIframe.frameBorder = "no";
+    newIframe.scrolling = "no";
+    newIframe.width = "100%";
+    newIframe.height = "166";
+
+    parent.appendChild(newIframe);
+    return newIframe;
   }
 }
