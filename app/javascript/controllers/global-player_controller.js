@@ -14,24 +14,63 @@
  *   seekTo: (ms:number) => void,
  *   setVolume: (pct:number) => void
  * }} SCWidget
- * @typedef {{ trackId:string|null, trackUrl?:string, position:number, duration:number, isPlaying:boolean }} PlayerState
  */
 
-// app/javascript/controllers/global_player_controller.js
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
   static targets = ["trackImage", "playIcon"];
 
-  // ===== フォールバック用ユーティリティ =====
+  // ---------- ユーティリティ ----------
   _q(sel, root = null) { return (root || this.element || document).querySelector(sel); }
   _qa(sel, root = null) { return Array.from((root || this.element || document).querySelectorAll(sel)); }
   _container() { return this.element || this._q(".playlist-container") || document; }
+  _isIOS() {
+    try {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent)
+        || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    } catch (_) { return false; }
+  }
+  _needsHandshake() {
+    if (!this._isIOS()) return false;
+    try { return !sessionStorage.getItem("scHandshakeDone"); } catch (_) { return true; }
+  }
+  _markHandshakeDone() {
+    try { sessionStorage.setItem("scHandshakeDone", "1"); } catch (_) {}
+  }
   _hideScreenCover() {
     try {
       const cover = document.getElementById("screen-cover-loading");
       if (cover) { cover.style.display = "none"; cover.setAttribute("aria-hidden", "true"); }
     } catch (_) {}
+  }
+
+  // 小さなヒントバナー（iOS初回のみ表示）
+  _showHandshakeHint() {
+    if (this._hintEl || !this._isIOS()) return;
+    const el = document.createElement("div");
+    el.id = "sc-handshake-hint";
+    el.style.position = "fixed";
+    el.style.left = "12px";
+    el.style.right = "12px";
+    el.style.bottom = "12px";
+    el.style.zIndex = "99999";
+    el.style.padding = "10px 12px";
+    el.style.fontSize = "14px";
+    el.style.borderRadius = "10px";
+    el.style.background = "rgba(0,0,0,0.85)";
+    el.style.color = "#fff";
+    el.style.lineHeight = "1.5";
+    el.style.boxShadow = "0 4px 16px rgba(0,0,0,.25)";
+    el.style.textAlign = "center";
+    el.textContent = "初回のみ：下のSoundCloudプレイヤー内の ▶ を一度タップして再生を許可してください。（以後は外側のボタンだけで再生されます）";
+    el.addEventListener("click", () => this._hideHandshakeHint());
+    document.body.appendChild(el);
+    this._hintEl = el;
+  }
+  _hideHandshakeHint() {
+    try { this._hintEl?.remove(); } catch(_) {}
+    this._hintEl = null;
   }
 
   // 旧 iframe を安全に破棄
@@ -42,47 +81,6 @@ export default class extends Controller {
       iframe.removeAttribute("src");
       if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
     } catch (_) {}
-  }
-
-  // ---- iOS 判定 + ジェスチャーウィンドウ（同一タップ内再試行を許可） ----
-  _isIOS() {
-    try {
-      return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    } catch (_) { return false; }
-  }
-  _beginGestureWindow(ms = 4000) {
-    this._gestureUntil = Date.now() + ms;
-    this._kickTried = 0;
-    this._kickArmed = true; // onPause側の単発キックを許可
-  }
-  _inGestureWindow() {
-    return typeof this._gestureUntil === "number" && Date.now() <= this._gestureUntil;
-  }
-
-  // READY直後：iOS だけ「止まっていたら再度 play() を数回」蹴り直す
-  _kickPlayLoop(delayMs = 120, maxTries = 4) {
-    if (!this._isIOS()) return;
-    if (!this._inGestureWindow()) return;
-    if (!this.widget) return;
-
-    const tryOnce = () => {
-      if (!this.widget) return;
-      this.widget.isPaused((paused) => {
-        if (!paused) return; // もう再生中なら終わり
-        // まだ停止なら play() を蹴る（回数制限あり）
-        if (this._kickTried < maxTries) {
-          this._kickTried++;
-          try { this.widget.play(); } catch (_) {}
-          // 次の確認へ（だんだん待ちを伸ばしつつ最大 ~1.2s 程度）
-          const nextDelay = delayMs + this._kickTried * 180;
-          if (this._inGestureWindow()) setTimeout(tryOnce, nextDelay);
-        }
-      });
-    };
-
-    // 最初の蹴り直しを遅延開始
-    setTimeout(tryOnce, delayMs);
   }
 
   // メタデータ反映
@@ -109,13 +107,11 @@ export default class extends Controller {
     } catch (_) {}
   }
 
-  // iOS初回再生解錠（UIは変えない）— 失敗しても無害
+  // AudioContextで静音ワンショット（失敗しても無害）
   _setupIOSAudioUnlock() {
     try {
-      if (typeof window === "undefined") return;
-      if (window.__iosAudioUnlocked) return;
       if (!this._isIOS()) return;
-
+      if (window.__iosAudioUnlocked) return;
       const unlock = () => {
         if (window.__iosAudioUnlocked) return;
         try {
@@ -130,20 +126,17 @@ export default class extends Controller {
           setTimeout(() => {
             try { osc.stop(0); ctx.close(); } catch (_) {}
             window.__iosAudioUnlocked = true;
-            try { if (this.widget?.play) { this.widget.isPaused((p)=>{ if(p) this.widget.play(); }); } } catch (_) {}
           }, 50);
-        } catch (_) {
-        } finally {
-          window.removeEventListener("touchend", unlock, true);
-          window.removeEventListener("click", unlock, true);
-        }
+        } catch (_) {}
+        window.removeEventListener("touchend", unlock, true);
+        window.removeEventListener("click", unlock, true);
       };
-
       window.addEventListener("touchend", unlock, true);
       window.addEventListener("click", unlock, true);
     } catch (_) {}
   }
 
+  // -------- ライフサイクル --------
   cleanup = () => {
     clearInterval(this.progressInterval);
     try {
@@ -174,10 +167,7 @@ export default class extends Controller {
       this._footerGuardMO = null;
     } catch (_) {}
 
-    // iOSジェスチャー状態をリセット
-    this._gestureUntil = 0;
-    this._kickTried = 0;
-    this._kickArmed = false;
+    this._hideHandshakeHint();
   };
 
   setArtist(text) {
@@ -189,7 +179,6 @@ export default class extends Controller {
   connect() {
     document.addEventListener("turbo:before-cache", this.cleanup, { once: true });
 
-    // showページでキャッシュリセット
     if (document.body.classList.contains("playlist-show-page")) {
       localStorage.removeItem("playerState");
     }
@@ -223,20 +212,11 @@ export default class extends Controller {
     this.waveformCtx     = this.waveformCanvas?.getContext("2d");
     this.waveformAnimating = false;
 
-    // iOS解錠
     this._setupIOSAudioUnlock();
 
-    // シークバーのドラッグ制御
-    this._onMouseUpSeek = () => {
-      if (this.isSeeking) {
-        this.isSeeking = false;
-        this.startProgressTracking();
-      }
-    };
-    this.seekBar?.addEventListener("mousedown", () => {
-      this.isSeeking = true;
-      clearInterval(this.progressInterval);
-    });
+    // シークバー
+    this._onMouseUpSeek = () => { if (this.isSeeking) { this.isSeeking = false; this.startProgressTracking(); } };
+    this.seekBar?.addEventListener("mousedown", () => { this.isSeeking = true; clearInterval(this.progressInterval); });
     document.addEventListener("mouseup", this._onMouseUpSeek);
 
     // 保険ハンドラ
@@ -244,16 +224,14 @@ export default class extends Controller {
     this._onVolumeInput = (e) => this.changeVolume(e);
     this._onPrevClick   = (e) => this.prevTrack(e);
     this._onNextClick   = (e) => this.nextTrack(e);
-
     this.seekBar?.addEventListener("input", this._onSeekInput);
     this.volumeBar?.addEventListener("input", this._onVolumeInput);
-
     this._prevBtn = document.getElementById("prev-track-button");
     this._nextBtn = document.getElementById("next-track-button");
     this._prevBtn?.addEventListener("click", this._onPrevClick);
     this._nextBtn?.addEventListener("click", this._onNextClick);
 
-    // タイル画像/再生アイコンのイベント委譲
+    // 画像/アイコンのイベント委譲
     this._onIconClickDelegated = (e) => {
       const target = e.target.closest("[data-track-id]");
       if (!target) return;
@@ -277,6 +255,7 @@ export default class extends Controller {
       this.playFromExternal(playUrl);
     });
 
+    // レイアウト
     this.switchPlayerTopRow();
     window.addEventListener("resize", () => {
       this.switchPlayerTopRow();
@@ -286,24 +265,16 @@ export default class extends Controller {
       }
     });
 
-    // 初期の見た目をフラグと同期
+    // 見た目同期
     const shuffleBtn = document.getElementById("shuffle-button");
-    if (shuffleBtn) {
-      shuffleBtn.classList.toggle("active", this.isShuffle);
-      shuffleBtn.setAttribute("aria-pressed", String(this.isShuffle));
-    }
+    if (shuffleBtn) { shuffleBtn.classList.toggle("active", this.isShuffle); shuffleBtn.setAttribute("aria-pressed", String(this.isShuffle)); }
     const repeatBtn = document.getElementById("repeat-button");
-    if (repeatBtn) {
-      repeatBtn.classList.toggle("active", this.isRepeat);
-      repeatBtn.setAttribute("aria-pressed", String(this.isRepeat));
-    }
+    if (repeatBtn) { repeatBtn.classList.toggle("active", this.isRepeat); repeatBtn.setAttribute("aria-pressed", String(this.isRepeat)); }
 
-    // A11y 初期ラベル
     this.setPlayPauseAria(false);
     this.updateSeekAria(0, 0, 0);
     this.updateVolumeAria(this.volumeBar?.value ?? "100");
 
-    // フッター「再生」活性/非活性
     this._updatePlayButton = () => {
       const btn = document.querySelector(".mobile-footer-menu .playfirst");
       if (!btn) return;
@@ -320,7 +291,6 @@ export default class extends Controller {
     this._updatePlayButton();
 
     this.restorePlayerState();
-    console.log("[connect] global-player controller initialized");
   }
 
   // ---------- A11y ----------
@@ -328,7 +298,6 @@ export default class extends Controller {
     if (!this.playPauseButton) return;
     this.playPauseButton.setAttribute("aria-label", isPlaying ? "一時停止" : "再生");
   }
-
   updateSeekAria(percent, posMs, durMs) {
     if (!this.seekBar) return;
     const p = Math.max(0, Math.min(100, Math.round(percent)));
@@ -337,7 +306,6 @@ export default class extends Controller {
     const total   = this.formatTime(durMs);
     this.seekBar.setAttribute("aria-valuetext", durMs ? `${current} / ${total}` : current);
   }
-
   updateVolumeAria(valueStr) {
     if (!this.volumeBar) return;
     const v = String(valueStr);
@@ -345,7 +313,7 @@ export default class extends Controller {
     this.volumeBar.setAttribute("aria-valuetext", `${v}%`);
   }
 
-  // -------------- 状態保存 / 復元 -----------------
+  // ---------- 状態保存 / 復元 ----------
   savePlayerState() {
     if (!this.widget) return;
     try {
@@ -366,20 +334,11 @@ export default class extends Controller {
 
   tryRestore(state, retry = 0) {
     if (!this.widget) return setTimeout(() => this.tryRestore(state, retry), 300);
-
     this.widget.getDuration((dur) => {
       if (!dur) return setTimeout(() => this.tryRestore(state, retry), 300);
-
       this.widget.getCurrentSound((sound) => {
-        if (sound?.title) {
-          this._applySoundMetadata(sound);
-        } else if (retry < 5) {
-          return setTimeout(() => this.tryRestore(state, retry + 1), 250);
-        } else {
-          this._applySoundMetadata(undefined);
-        }
+        if (sound?.title) this._applySoundMetadata(sound); else if (retry < 5) return setTimeout(() => this.tryRestore(state, retry + 1), 250);
       });
-
       this.widget.seekTo(state.position || 0);
       if (!state.isPlaying) this.widget.pause();
       this.setPlayPauseAria(state.isPlaying);
@@ -398,41 +357,27 @@ export default class extends Controller {
     this.currentTrackId = state.trackId || null;
     this.bottomPlayer?.classList.remove("d-none");
 
-    if (this.widget) {
-      this.unbindWidgetEvents();
-      clearInterval(this.progressInterval);
-      this.widget = null;
-    }
-    this.iframeElement = this.replaceIframeWithNew();
+    if (this.widget) { this.unbindWidgetEvents(); clearInterval(this.progressInterval); this.widget = null; }
+    this.iframeElement = this.replaceIframeWithNew(false); // 復元時は非表示
     if (!this.iframeElement) return;
 
-    // 復元時は自動再生させない → のちに手動やトグルで再生可
     this.iframeElement.src = state.trackUrl.replace("&auto_play=true", "&auto_play=false");
     this.resetPlayerUI();
 
     this.iframeElement.onload = () => {
       setTimeout(() => {
-        try {
-          this.widget = SC.Widget(this.iframeElement);
-        } catch (_) {
-          return setTimeout(() => this.restorePlayerState(), 150);
-        }
+        try { this.widget = SC.Widget(this.iframeElement); }
+        catch (_) { return setTimeout(() => this.restorePlayerState(), 150); }
 
         this.widget.bind(SC.Widget.Events.READY, () => {
-          this.widget.getCurrentSound((sound) => {
-            if (sound?.title) { this._applySoundMetadata(sound); }
-            else { this._applySoundMetadata(undefined); }
-
-            this.widget.seekTo(state.position || 0);
-            state.isPlaying ? this.widget.play() : this.widget.pause();
-
-            this.bindWidgetEvents();
-            this.startProgressTracking();
-            this.changeVolume({ target: this.volumeBar });
-
-            this.updateTrackIcon(this.currentTrackId, state.isPlaying);
-            this.setPlayPauseAria(state.isPlaying);
-          });
+          this.widget.getCurrentSound((sound) => this._applySoundMetadata(sound));
+          this.widget.seekTo(state.position || 0);
+          state.isPlaying ? this.widget.play() : this.widget.pause();
+          this.bindWidgetEvents();
+          this.startProgressTracking();
+          this.changeVolume({ target: this.volumeBar });
+          this.updateTrackIcon(this.currentTrackId, state.isPlaying);
+          this.setPlayPauseAria(state.isPlaying);
         });
       }, 150);
     };
@@ -443,59 +388,65 @@ export default class extends Controller {
     this.trackTitleTopEl && (this.trackTitleTopEl.textContent = title);
   }
 
-  // -------------- 外部 URL 再生 -----------------
+  // ---------- iframe作成（visible=true で初回だけ見せる） ----------
+  replaceIframeWithNew(visible) {
+    const oldIframe = document.getElementById("hidden-sc-player");
+    const parent =
+      (oldIframe && oldIframe.parentNode) ||
+      (this.bottomPlayer && this.bottomPlayer.parentNode) ||
+      document.body;
+
+    if (oldIframe) this._safeNukeIframe(oldIframe);
+
+    const newIframe = document.createElement("iframe");
+    newIframe.id = "hidden-sc-player";
+    if (!visible) newIframe.classList.add("is-hidden");
+    newIframe.allow = "autoplay; encrypted-media";
+    newIframe.frameBorder = "no";
+    newIframe.scrolling = "no";
+    newIframe.width = "100%";
+    newIframe.height = "166";
+    newIframe.style.maxWidth = "720px";
+    newIframe.style.margin = "12px auto";
+
+    parent.appendChild(newIframe);
+    return newIframe;
+  }
+
+  // ---------- 外部 URL 再生 ----------
   playFromExternal(playUrl) {
     this.bottomPlayer?.classList.remove("d-none");
     this.bottomPlayer?.offsetHeight;
 
-    if (this.widget) {
-      this.unbindWidgetEvents();
-      clearInterval(this.progressInterval);
-      this.widget = null;
-    }
+    if (this.widget) { this.unbindWidgetEvents(); clearInterval(this.progressInterval); this.widget = null; }
 
-    // ユーザー操作起点なのでジェスチャーウィンドウ開幕
-    this._beginGestureWindow();
+    const show = this._needsHandshake(); // iOS初回は可視
+    if (show) this._showHandshakeHint();
 
-    this.iframeElement = this.replaceIframeWithNew();
-    if (!this.iframeElement) {
-      alert("iframe 生成に失敗しました");
-      return;
-    }
+    this.iframeElement = this.replaceIframeWithNew(show);
+    if (!this.iframeElement) { alert("iframe 生成に失敗しました"); return; }
 
-    // READY後に明示 play()（自動再生フラグは付けない）
-    this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(playUrl)}&auto_play=false`;
+    this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(playUrl)}&auto_play=${show ? "false" : "true"}`;
     this.resetPlayerUI();
 
     this.iframeElement.onload = () => {
       setTimeout(() => {
-        try {
-          this.widget = SC.Widget(this.iframeElement);
-        } catch (_) {
-          return setTimeout(() => this.playFromExternal(playUrl), 120);
-        }
+        try { this.widget = SC.Widget(this.iframeElement); }
+        catch (_) { return setTimeout(() => this.playFromExternal(playUrl), 120); }
 
         this.widget.bind(SC.Widget.Events.READY, () => {
           const getSound = (retry = 0) => {
             this.widget.getCurrentSound((sound) => {
-              if (sound?.title) {
-                this._applySoundMetadata(sound);
-              } else if (retry < 6) {
-                setTimeout(() => getSound(retry + 1), 180);
-              } else {
-                this._applySoundMetadata(undefined);
-              }
+              if (sound?.title) this._applySoundMetadata(sound);
+              else if (retry < 6) setTimeout(() => getSound(retry + 1), 180);
             });
           };
           getSound();
 
           this.bindWidgetEvents();
 
-          // READY直後に一度 play()
-          this.widget.play();
-
-          // iOS限定：停止していたら短期的に蹴り直す
-          this._kickPlayLoop(120, 4);
+          // 初回（可視）時はユーザーがiframe内▶を押すのを待つ
+          if (!show) this.widget.play();
 
           this.startProgressTracking();
           this.changeVolume({ target: this.volumeBar });
@@ -505,7 +456,7 @@ export default class extends Controller {
     };
   }
 
-  // -------------- トラック再生 -----------------
+  // ---------- トラック再生（タイル/アイコン） ----------
   loadAndPlay(event) {
     event?.stopPropagation?.();
     this.updatePlaylistOrder();
@@ -529,51 +480,33 @@ export default class extends Controller {
     this.currentTrackId = newTrackId || null;
     this.cleanup();
 
-    if (this.widget) {
-      this.unbindWidgetEvents();
-      clearInterval(this.progressInterval);
-      this.widget = null;
-    }
+    if (this.widget) { this.unbindWidgetEvents(); clearInterval(this.progressInterval); this.widget = null; }
 
-    // ユーザー操作起点なのでジェスチャーウィンドウ開幕
-    this._beginGestureWindow();
+    const show = this._needsHandshake();
+    if (show) this._showHandshakeHint();
 
-    this.iframeElement = this.replaceIframeWithNew();
+    this.iframeElement = this.replaceIframeWithNew(show);
     if (!this.iframeElement) return;
 
-    // READY後に明示 play()（自動再生フラグは付けない）
-    this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&auto_play=false`;
+    this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&auto_play=${show ? "false" : "true"}`;
 
     this.iframeElement.onload = () => {
       setTimeout(() => {
-        try {
-          this.widget = SC.Widget(this.iframeElement);
-        } catch (_) {
-          // READY前で失敗 → 少し待ってリトライ
-          return setTimeout(() => this.loadAndPlay({ currentTarget: el, stopPropagation() {} }), 120);
-        }
+        try { this.widget = SC.Widget(this.iframeElement); }
+        catch (_) { return setTimeout(() => this.loadAndPlay({ currentTarget: el, stopPropagation() {} }), 120); }
 
         this.widget.bind(SC.Widget.Events.READY, () => {
           const trySetTitle = (retry = 0) => {
             this.widget.getCurrentSound((sound) => {
-              if (sound?.title) {
-                this._applySoundMetadata(sound);
-              } else if (retry < 6) {
-                return setTimeout(() => trySetTitle(retry + 1), 180);
-              } else {
-                this._applySoundMetadata(undefined);
-              }
+              if (sound?.title) this._applySoundMetadata(sound);
+              else if (retry < 6) return setTimeout(() => trySetTitle(retry + 1), 180);
             });
           };
           trySetTitle();
 
           this.bindWidgetEvents();
 
-          // READY直後に一度 play()
-          this.widget.play();
-
-          // iOS限定：停止していたら短期的に蹴り直す
-          this._kickPlayLoop(120, 4);
+          if (!show) this.widget.play(); // 初回以外は従来通り即再生
 
           this.startProgressTracking();
           this.changeVolume({ target: this.volumeBar });
@@ -585,19 +518,17 @@ export default class extends Controller {
     };
   }
 
-  // -------------- プレイ/ポーズトグル -----------------
+  // ---------- トグル ----------
   togglePlayPause(event) {
     event?.stopPropagation?.();
 
     if (!this.widget) {
       this.iframeElement = document.getElementById("hidden-sc-player");
-      if (this.iframeElement && this.iframeElement.src && this.iframeElement.src !== "") {
+      if (this.iframeElement && this.iframeElement.src) {
         try {
           this.widget = SC.Widget(this.iframeElement);
           this.bindWidgetEvents();
-          if (typeof this.restorePlayerState === "function") {
-            this.restorePlayerState();
-          }
+          if (typeof this.restorePlayerState === "function") this.restorePlayerState();
         } catch (_e) {
           alert("プレイヤーの初期化に失敗しました。もう一度曲を選んでください。");
           return;
@@ -608,19 +539,21 @@ export default class extends Controller {
       }
     }
 
-    // ユーザー操作なのでジェスチャーウィンドウを再度開く
-    this._beginGestureWindow();
-
     this.widget.isPaused((paused) => {
       paused ? this.widget.play() : this.widget.pause();
-      // iOSのみ、押下直後に止まってしまったら小さく再蹴り
-      if (this._isIOS()) this._kickPlayLoop(120, 2);
       setTimeout(() => this.savePlayerState(), 500);
     });
   }
 
-  // -------------- SC Widget イベント -----------------
+  // ---------- SC Widget イベント ----------
   onPlay = () => {
+    // （初回握手）PLAYが入った＝ユーザーがiframe内▶を押した → 握手済みにして非表示へ戻す
+    if (this._needsHandshake()) {
+      this._markHandshakeDone();
+      this._hideHandshakeHint();
+      try { this.iframeElement?.classList.add("is-hidden"); } catch (_) {}
+    }
+
     this.playPauseIcon?.classList.replace("fa-play", "fa-pause");
     this.updateTrackIcon(this.currentTrackId, true);
     this.setPlayPauseAria(true);
@@ -628,20 +561,12 @@ export default class extends Controller {
     this.startWaveformAnime();
 
     this.widget.getCurrentSound((sound) => {
-      if (sound?.title && !this.trackTitleEl.textContent) {
-        this._applySoundMetadata(sound);
-      }
+      if (sound?.title && !this.trackTitleEl.textContent) this._applySoundMetadata(sound);
     });
     this.savePlayerState();
   };
 
   onPause = () => {
-    // READY直後にiOSが勝手にPAUSEしてしまうケースだけ、ジェスチャー時間内に一回だけ再蹴り
-    if (this._isIOS() && this._inGestureWindow() && this._kickArmed && this.widget) {
-      this._kickArmed = false; // 単発
-      try { this.widget.play(); } catch (_) {}
-    }
-
     this.playPauseIcon?.classList.replace("fa-pause", "fa-play");
     this.updateTrackIcon(this.currentTrackId, false);
     this.setPlayPauseAria(false);
@@ -665,7 +590,6 @@ export default class extends Controller {
     clearInterval(this.progressInterval);
     this.playStartedAt = null;
 
-    // 自動再生 / リピート / シャッフル
     if (this.isRepeat) {
       const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == this.currentTrackId)
         || this._q(`[data-track-id="${CSS.escape(String(this.currentTrackId))}"]`, this._container());
@@ -725,7 +649,7 @@ export default class extends Controller {
     this.widget.bind(SC.Widget.Events.FINISH, this.onFinish);
   }
 
-  // ---------- 再生位置 / 時間表示 ----------
+  // ---------- 進行状況 ----------
   startProgressTracking() {
     clearInterval(this.progressInterval);
     this.progressInterval = setInterval(() => {
@@ -753,7 +677,7 @@ export default class extends Controller {
     return `${m}:${s.toString().padStart(2, "0")}`;
   }
 
-  // ---------- 前後トラック ----------
+  // ---------- 前後 ----------
   prevTrack(event) {
     event?.stopPropagation?.();
     this.updatePlaylistOrder();
@@ -820,13 +744,12 @@ export default class extends Controller {
     icon && this.loadAndPlay({ currentTarget: icon, stopPropagation() {} });
   }
 
-  /* レイアウト切替（既存のまま） */
+  // レイアウト切替
   switchPlayerTopRow() {
     const isMobile  = window.innerWidth <= 768;
     const desktopRow = document.getElementById("player-top-row-desktop");
     const mobileRow  = document.getElementById("player-top-row-mobile");
     if (!desktopRow || !mobileRow) return;
-
     desktopRow.style.display = isMobile ? "none" : "flex";
     mobileRow.style.display  = isMobile ? "flex" : "none";
   }
