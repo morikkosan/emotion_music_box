@@ -31,12 +31,11 @@ export default class extends Controller {
         || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     } catch (_) { return false; }
   }
-  _needsHandshake() {
-    if (!this._isIOS()) return false;
-    try { return !sessionStorage.getItem("scHandshakeDone"); } catch (_) { return true; }
-  }
+  // iOSは「毎回」ハンドシェイク必須に変更（新規iframeごとに再許可が安定）
+  _needsHandshake() { return this._isIOS(); }
   _markHandshakeDone() {
-    try { sessionStorage.setItem("scHandshakeDone", "1"); } catch (_) {}
+    // 以前は sessionStorage で永続化していたが、iOSはiframe再生成で無効化されやすいので保持しない
+    // ここでは何もしない（互換のため関数は残す）
   }
   _hideScreenCover() {
     try {
@@ -45,7 +44,7 @@ export default class extends Controller {
     } catch (_) {}
   }
 
-  // 小さなヒントバナー（iOS初回のみ表示）
+  // 小さなヒントバナー（iOSのみ表示）
   _showHandshakeHint() {
     if (this._hintEl || !this._isIOS()) return;
     const el = document.createElement("div");
@@ -63,7 +62,7 @@ export default class extends Controller {
     el.style.lineHeight = "1.5";
     el.style.boxShadow = "0 4px 16px rgba(0,0,0,.25)";
     el.style.textAlign = "center";
-    el.textContent = "初回のみ：下のSoundCloudプレイヤー内の ▶ を一度タップして再生を許可してください。（以後は外側のボタンだけで再生されます）";
+    el.textContent = "iPhone：下のSoundCloudプレイヤー内の ▶ をタップして再生を許可してください。曲ごとに最初の1回だけ必要です。";
     el.addEventListener("click", () => this._hideHandshakeHint());
     document.body.appendChild(el);
     this._hintEl = el;
@@ -136,58 +135,39 @@ export default class extends Controller {
     } catch (_) {}
   }
 
-  // ======== iOS Autoplay 補助（追加・既存UIは変更しない）========
-  _getDesiredVolume() {
-    const v = Number(this.volumeBar?.value ?? 100);
-    if (!Number.isFinite(v)) return 100;
-    return Math.max(0, Math.min(100, v));
+  // ======== iOS用：iframe“画面内1px駐車”ユーティリティ（CSSは変えない）========
+  _parkIframeInViewportTiny() {
+    if (!this._isIOS() || !this.iframeElement) return;
+    try {
+      const s = this.iframeElement.style;
+      // 画面内・底辺・不可視・1px・タップ無効化（CSSよりインラインが優先される）
+      s.position = "fixed";
+      s.left     = "0";
+      s.bottom   = "0";
+      s.width    = "1px";
+      s.height   = "1px";
+      s.opacity  = "0";
+      s.pointerEvents = "none";
+      s.zIndex   = "1";
+      // sc-visible は外す（166pxの高さを解除）
+      this.iframeElement.classList.remove("sc-visible");
+    } catch (_) {}
   }
-
-  _autoStartAfterReady() {
-    // iOS で handshake 済み（= 2回目以降）か、デスクトップ/Android → 既存どおり
-    if (this._isIOS()) {
-      this._tempMuteAutoplay(); // 音量0で start → 再生確定後に元音量へ
-    } else {
-      this._forcePlay(); // 既存挙動
-    }
-  }
-
-  _tempMuteAutoplay(maxTries = 5) {
-    if (!this.widget) return;
-    // 既に実施中なら多重実行を避ける
-    if (this._tempMuteRunning) return;
-    this._tempMuteRunning = true;
-
-    // 元の音量を保存（UI値がなければ100）
-    this._savedVolume = this._getDesiredVolume();
-    try { this.widget.setVolume?.(0); } catch (_) {}
-
-    let tries = 0;
-    const tick = () => {
-      if (!this.widget) { this._tempMuteRunning = false; return; }
-      this.widget.isPaused((paused) => {
-        if (!paused) {
-          // 再生が始まった → 少し待ってから元の音量に戻す
-          setTimeout(() => {
-            try {
-              const restoreTo = this._getDesiredVolume();
-              this.widget?.setVolume?.(restoreTo);
-            } catch (_) {}
-            this._tempMuteRunning = false;
-          }, 120);
-          return;
-        }
-        // まだ停止中 → 再試行
-        try { this.widget.play(); } catch (_) {}
-        tries += 1;
-        if (tries < maxTries) setTimeout(tick, 220);
-        else this._tempMuteRunning = false;
-      });
-    };
-
-    // 初回キック
-    try { this.widget.play(); } catch (_) {}
-    setTimeout(tick, 60);
+  _moveIframeOffscreen() {
+    if (!this._isIOS() || !this.iframeElement) return;
+    try {
+      const s = this.iframeElement.style;
+      // 元の「画面外退避」に戻す（停止/終了後）
+      s.position = "";
+      s.left = "";
+      s.bottom = "";
+      s.width = "";
+      s.height = "";
+      s.opacity = "";
+      s.pointerEvents = "";
+      s.zIndex = "";
+      // sc-keepalive のCSSが left:-10000px を適用する
+    } catch (_) {}
   }
 
   // -------- ライフサイクル --------
@@ -431,11 +411,15 @@ export default class extends Controller {
     this.bottomPlayer?.classList.remove("d-none");
 
     if (this.widget) { this.unbindWidgetEvents(); clearInterval(this.progressInterval); this.widget = null; }
-    this.iframeElement = this.replaceIframeWithNew(false); // 復元時は非表示（keepaliveのみ）
+    // 復元でも iOS は可視で読み込んで手動再生に誘導（安定第一）
+    const visible = this._needsHandshake();
+    this.iframeElement = this.replaceIframeWithNew(visible);
     if (!this.iframeElement) return;
 
+    // 復元時はauto_play=false（iOSは毎回手動）
     this.iframeElement.src = state.trackUrl.replace("&auto_play=true", "&auto_play=false");
     this.resetPlayerUI();
+    if (visible) this._showHandshakeHint();
 
     this.iframeElement.onload = () => {
       setTimeout(() => {
@@ -445,18 +429,16 @@ export default class extends Controller {
         this.widget.bind(SC.Widget.Events.READY, () => {
           this.widget.getCurrentSound((sound) => this._applySoundMetadata(sound));
           this.widget.seekTo(state.position || 0);
-          if (state.isPlaying) {
-            // iOS初回以外は自動開始（iOSは一時ミュート再生で安定化）
-            if (!this._needsHandshake()) this._autoStartAfterReady();
-            else this.widget.play(); // ハンドシェイク時はユーザー操作待ちのため軽くplayだけ
-          } else {
-            this.widget.pause();
-          }
+
+          if (state.isPlaying && !this._needsHandshake()) {
+            this._forcePlay();
+          } // iOSはウィジェット内▶で再生
+
           this.bindWidgetEvents();
           this.startProgressTracking();
           this.changeVolume({ target: this.volumeBar });
-          this.updateTrackIcon(this.currentTrackId, state.isPlaying);
-          this.setPlayPauseAria(state.isPlaying);
+          this.updateTrackIcon(this.currentTrackId, state.isPlaying && !this._needsHandshake());
+          this.setPlayPauseAria(state.isPlaying && !this._needsHandshake());
         });
       }, 150);
     };
@@ -484,7 +466,7 @@ export default class extends Controller {
     setTimeout(tick, 50);
   }
 
-  // ---------- iframe作成（visible=true で初回だけ見せる） ----------
+  // ---------- iframe作成（visible=true で見せる） ----------
   replaceIframeWithNew(visible) {
     const oldIframe = document.getElementById("hidden-sc-player");
     const parent =
@@ -496,7 +478,6 @@ export default class extends Controller {
 
     const newIframe = document.createElement("iframe");
     newIframe.id = "hidden-sc-player";
-    // 常に keepalive。見せたい時だけ sc-visible を付与
     newIframe.classList.add("sc-keepalive");
     if (visible) newIframe.classList.add("sc-visible");
 
@@ -515,7 +496,8 @@ export default class extends Controller {
 
     if (this.widget) { this.unbindWidgetEvents(); clearInterval(this.progressInterval); this.widget = null; }
 
-    const show = this._needsHandshake(); // iOS初回は可視
+    // iOSは毎回ハンドシェイク（＝可視でload、auto_play=false）
+    const show = this._needsHandshake();
     if (show) this._showHandshakeHint();
 
     this.iframeElement = this.replaceIframeWithNew(show);
@@ -541,9 +523,9 @@ export default class extends Controller {
           this.bindWidgetEvents();
 
           if (!show) {
-            // 初回以外は自動再生。iOSは一時ミュートで安定再生
-            this._autoStartAfterReady();
-          }
+            this._forcePlay();
+          } // iOSはウィジェット内▶で再生
+
           this.startProgressTracking();
           this.changeVolume({ target: this.volumeBar });
           this.savePlayerState();
@@ -580,7 +562,7 @@ export default class extends Controller {
 
     if (this.widget) { this.unbindWidgetEvents(); clearInterval(this.progressInterval); this.widget = null; }
 
-    const show = this._needsHandshake();
+    const show = this._needsHandshake(); // iOSは常にtrue
     if (show) this._showHandshakeHint();
 
     this.iframeElement = this.replaceIframeWithNew(show);
@@ -605,14 +587,13 @@ export default class extends Controller {
           this.bindWidgetEvents();
 
           if (!show) {
-            // 初回以外は自動再生（iOSは一時ミュート→復帰）
-            this._autoStartAfterReady();
-          }
+            this._forcePlay();
+          } // iOSはウィジェット内▶で再生
 
           this.startProgressTracking();
           this.changeVolume({ target: this.volumeBar });
-          this.updateTrackIcon(this.currentTrackId, true);
-          this.setPlayPauseAria(true);
+          this.updateTrackIcon(this.currentTrackId, !show);
+          this.setPlayPauseAria(!show);
           this.savePlayerState();
         });
       }, 100);
@@ -640,10 +621,16 @@ export default class extends Controller {
       }
     }
 
+    // iOSでハンドシェイク前は外側トグルでの再生は行わず、プレイヤー内を案内
+    if (this._needsHandshake()) {
+      this._showHandshakeHint();
+      try { this.iframeElement?.classList.add("sc-visible"); } catch (_) {}
+      return;
+    }
+
     this.widget.isPaused((paused) => {
       if (paused) {
         this.widget.play();
-        // 念のため一回だけ再試行（ユーザー操作起点なのでほぼ通る）
         setTimeout(() => this._forcePlay(2), 120);
       } else {
         this.widget.pause();
@@ -654,10 +641,12 @@ export default class extends Controller {
 
   // ---------- SC Widget イベント ----------
   onPlay = () => {
-    // （初回握手）PLAYが入った＝ユーザーがiframe内▶を押した → 握手済みにして画面から下げる
-    if (this._needsHandshake()) {
-      this._markHandshakeDone();
+    // iOS：再生が始まったら、ウィジェットを“画面内1px”に駐車して停止されないようにする
+    if (this._isIOS()) {
       this._hideHandshakeHint();
+      this._parkIframeInViewportTiny();
+    } else {
+      // iOS以外は従来通り、見せる必要はない
       try { this.iframeElement?.classList.remove("sc-visible"); } catch (_) {}
     }
 
@@ -667,11 +656,9 @@ export default class extends Controller {
     this.playStartedAt = Date.now();
     this.startWaveformAnime();
 
-    // タイトルが未反映なら念のため反映
     this.widget.getCurrentSound((sound) => {
       if (sound?.title && !this.trackTitleEl.textContent) this._applySoundMetadata(sound);
     });
-
     this.savePlayerState();
   };
 
@@ -692,6 +679,9 @@ export default class extends Controller {
         ? Swal.fire({ icon: "info", title: "試聴終了", text: "この曲の視聴は30秒までです（権利制限）" })
         : alert("この曲の視聴は30秒までです（権利制限）");
     }
+
+    // iOS：終了時は元の画面外に戻す
+    if (this._isIOS()) this._moveIframeOffscreen();
 
     this.playPauseIcon?.classList.replace("fa-pause", "fa-play");
     this.updateTrackIcon(this.currentTrackId, false);
