@@ -128,9 +128,11 @@
 </head>
 
 <body class="<%= [controller_name, action_name, (content_for?(:body_class) ? yield(:body_class) : nil), (current_user.present? ? 'logged-in' : 'guest')].compact.join(' ') %>"
-        data-controller="view-switcher global-player"
-        data-flash-notice="<%= j flash[:notice] %>"
-        data-flash-alert="<%= j flash[:alert] %>">
+      data-controller="view-switcher global-player"
+      data-sc-client-id="<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>"
+      data-flash-notice="<%= j flash[:notice] %>"
+      data-flash-alert="<%= j flash[:alert] %>">
+
 
         <%= render 'shared/footer' %>
 
