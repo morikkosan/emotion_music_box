@@ -136,6 +136,60 @@ export default class extends Controller {
     } catch (_) {}
   }
 
+  // ======== iOS Autoplay 補助（追加・既存UIは変更しない）========
+  _getDesiredVolume() {
+    const v = Number(this.volumeBar?.value ?? 100);
+    if (!Number.isFinite(v)) return 100;
+    return Math.max(0, Math.min(100, v));
+  }
+
+  _autoStartAfterReady() {
+    // iOS で handshake 済み（= 2回目以降）か、デスクトップ/Android → 既存どおり
+    if (this._isIOS()) {
+      this._tempMuteAutoplay(); // 音量0で start → 再生確定後に元音量へ
+    } else {
+      this._forcePlay(); // 既存挙動
+    }
+  }
+
+  _tempMuteAutoplay(maxTries = 5) {
+    if (!this.widget) return;
+    // 既に実施中なら多重実行を避ける
+    if (this._tempMuteRunning) return;
+    this._tempMuteRunning = true;
+
+    // 元の音量を保存（UI値がなければ100）
+    this._savedVolume = this._getDesiredVolume();
+    try { this.widget.setVolume?.(0); } catch (_) {}
+
+    let tries = 0;
+    const tick = () => {
+      if (!this.widget) { this._tempMuteRunning = false; return; }
+      this.widget.isPaused((paused) => {
+        if (!paused) {
+          // 再生が始まった → 少し待ってから元の音量に戻す
+          setTimeout(() => {
+            try {
+              const restoreTo = this._getDesiredVolume();
+              this.widget?.setVolume?.(restoreTo);
+            } catch (_) {}
+            this._tempMuteRunning = false;
+          }, 120);
+          return;
+        }
+        // まだ停止中 → 再試行
+        try { this.widget.play(); } catch (_) {}
+        tries += 1;
+        if (tries < maxTries) setTimeout(tick, 220);
+        else this._tempMuteRunning = false;
+      });
+    };
+
+    // 初回キック
+    try { this.widget.play(); } catch (_) {}
+    setTimeout(tick, 60);
+  }
+
   // -------- ライフサイクル --------
   cleanup = () => {
     clearInterval(this.progressInterval);
@@ -392,8 +446,8 @@ export default class extends Controller {
           this.widget.getCurrentSound((sound) => this._applySoundMetadata(sound));
           this.widget.seekTo(state.position || 0);
           if (state.isPlaying) {
-            // iOS初回以外は強制再生
-            if (!this._needsHandshake()) this._forcePlay();
+            // iOS初回以外は自動開始（iOSは一時ミュート再生で安定化）
+            if (!this._needsHandshake()) this._autoStartAfterReady();
             else this.widget.play(); // ハンドシェイク時はユーザー操作待ちのため軽くplayだけ
           } else {
             this.widget.pause();
@@ -487,8 +541,8 @@ export default class extends Controller {
           this.bindWidgetEvents();
 
           if (!show) {
-            // 初回以外は自動再生。止まる場合は軽く再試行
-            this._forcePlay();
+            // 初回以外は自動再生。iOSは一時ミュートで安定再生
+            this._autoStartAfterReady();
           }
           this.startProgressTracking();
           this.changeVolume({ target: this.volumeBar });
@@ -551,8 +605,8 @@ export default class extends Controller {
           this.bindWidgetEvents();
 
           if (!show) {
-            // 初回以外は自動再生 + 再試行
-            this._forcePlay();
+            // 初回以外は自動再生（iOSは一時ミュート→復帰）
+            this._autoStartAfterReady();
           }
 
           this.startProgressTracking();
@@ -613,9 +667,11 @@ export default class extends Controller {
     this.playStartedAt = Date.now();
     this.startWaveformAnime();
 
+    // タイトルが未反映なら念のため反映
     this.widget.getCurrentSound((sound) => {
       if (sound?.title && !this.trackTitleEl.textContent) this._applySoundMetadata(sound);
     });
+
     this.savePlayerState();
   };
 
