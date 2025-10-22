@@ -35,18 +35,22 @@ export default class extends Controller {
   // ====== iOS: API再生フラグ/状態 ======
   get _scClientId() {
     try {
-      // data属性優先 → <meta name="sc-client-id"> → 環境変数的window
+      // 1) data-sc-client-id
       const d = this.element?.dataset?.scClientId;
       if (d) return d.trim();
-      const meta = document.querySelector('meta[name="sc-client-id"]');
+      // 2) <meta name="soundcloud-client-id">
+      const meta = document.querySelector('meta[name="soundcloud-client-id"]');
       if (meta?.content) return meta.content.trim();
+      // 3) window fallback
+      if (window.SOUNDCLOUD_CLIENT_ID) return String(window.SOUNDCLOUD_CLIENT_ID);
       if (window.SC_CLIENT_ID) return String(window.SC_CLIENT_ID);
     } catch (_) {}
     return "";
   }
   _canUseApiOnIOS() {
-    // iOSのみAPI再生、他OSは従来ウィジェット（既存実装を壊さない）
-    return this._isIOS() && !!this._scClientId;
+    const ok = this._isIOS() && !!this._scClientId;
+    if (this._isIOS()) console.log("[global-player] iOS api-mode:", ok, "client_id:", this._scClientId);
+    return ok;
   }
 
   // iOSで毎回ウィジェット内タップを要求する代わりに、API再生ではハンドシェイク不要
@@ -261,11 +265,13 @@ export default class extends Controller {
 
   // API: resolve → stream URL
   async _resolveStreamUrl(trackUrl) {
+    console.log("[global-player] resolve start:", trackUrl);
     const cid = this._scClientId;
     if (!cid) throw new Error("SoundCloud client_id is missing");
     // 1) Resolve track
     const resolveApi = `https://api-v2.soundcloud.com/resolve?url=${encodeURIComponent(trackUrl)}&client_id=${encodeURIComponent(cid)}`;
     const r1 = await fetch(resolveApi, { credentials: "omit", mode: "cors" });
+    console.log("[global-player] resolve status:", r1.status);
     if (!r1.ok) throw new Error(`Resolve failed: ${r1.status}`);
     const track = await r1.json();
     // メタ覚える（UI同期に使う）
@@ -282,6 +288,7 @@ export default class extends Controller {
     // 2) Get actual stream URL
     const streamApi = `${chosen.url}?client_id=${encodeURIComponent(cid)}`;
     const r2 = await fetch(streamApi, { credentials: "omit", mode: "cors" });
+    console.log("[global-player] stream-locator status:", r2.status, "proto:", chosen?.format?.protocol);
     if (!r2.ok) throw new Error(`Stream location failed: ${r2.status}`);
     const j2 = await r2.json();
     if (!j2?.url) throw new Error("No stream URL in response");
@@ -778,7 +785,8 @@ export default class extends Controller {
     const { resumeMs = 0, autoStart = true } = opts;
     this._lastResolvedTrackUrl = playUrl;
 
-    const { url: streamUrl } = await this._resolveStreamUrl(playUrl);
+    const { url: streamUrl, isHls } = await this._resolveStreamUrl(playUrl);
+    console.log("[global-player] stream url resolved. isHls:", isHls, "url:", streamUrl);
 
     const a = this._ensureAudio();
     a.src = streamUrl;
@@ -790,7 +798,7 @@ export default class extends Controller {
       try { a.currentTime = resumeMs / 1000; } catch (_) {}
     }
 
-    // 進行表示
+    // 進行表示（iOS APIモード用）
     this.startProgressTracking = () => {
       clearInterval(this.progressInterval);
       this.progressInterval = setInterval(() => {
@@ -811,12 +819,20 @@ export default class extends Controller {
     // 音量同期
     this.changeVolume({ target: this.volumeBar });
 
-    // 再生開始（iOSはユーザー操作起点なので開始可）
+    // 再生開始
     if (autoStart !== false) {
-      await a.play().catch(() => {
-        // 失敗時はユーザーにタップ促し（ただしウィジェットではない）
+      try {
+        await a.play();
+        console.log("[global-player] audio.play() ok");
+      } catch (err) {
+        console.warn("[global-player] audio.play() failed:", err?.name || err);
+        if (isHls) {
+          console.warn("[global-player] Fallback to widget because HLS play failed on iOS");
+          this._fallbackToWidgetFromAudio(playUrl);
+          return;
+        }
         alert("再生を開始できませんでした。もう一度 ▶ をタップしてください。");
-      });
+      }
     }
     this.startProgressTracking();
     this.updateTrackIcon(this.currentTrackId, true);
@@ -880,7 +896,6 @@ export default class extends Controller {
         try {
           this.widget = SC.Widget(this.iframeElement);
           this.bindWidgetEvents();
-          if (typeof this.restorePlayerState === "function") this.restorePlayerState();
         } catch (_e) {
           alert("プレイヤーの初期化に失敗しました。もう一度曲を選んでください。");
           return;
