@@ -261,44 +261,93 @@ export default class extends Controller {
 
     const cleanUrl = this._normalizeTrackUrl(trackUrl);
 
-    const resolveApi = `https://api-v2.soundcloud.com/resolve?url=${encodeURIComponent(cleanUrl)}&client_id=${encodeURIComponent(cid)}`;
-    this._log("resolve →", resolveApi);
+    // 1) v2 resolve
+    const v2 = `https://api-v2.soundcloud.com/resolve?url=${encodeURIComponent(cleanUrl)}&client_id=${encodeURIComponent(cid)}`;
+    this._log("resolve (v2) →", v2);
 
-    let r1;
+    let track;
     try {
-      r1 = await fetch(resolveApi, { credentials:"omit", mode:"cors", headers:{ "Accept":"application/json" } });
+      const r1 = await fetch(v2, {
+        credentials: "omit",
+        mode: "cors",
+        redirect: "follow",
+        cache: "no-store",
+        headers: { "Accept": "application/json" },
+        referrerPolicy: "no-referrer"
+      });
+      if (r1.ok) {
+        track = await r1.json();
+      } else {
+        this._log("v2 resolve non-OK", r1.status);
+      }
     } catch (e) {
-      this._log("resolve network error", e);
-      throw new Error(e?.message || "Resolve network error");
+      this._log("v2 resolve network error", e);
     }
-    if (!r1.ok) { this._log("resolve failed status", r1.status); throw new Error(`Resolve failed: ${r1.status}`); }
 
-    const track = await r1.json();
-    this._currentSoundMeta = { title: track?.title, user: { username: track?.user?.username } };
+    // 2) v2 が取れなかったら legacy v1 にフォールバック
+    if (!track) {
+      const v1 = `https://api.soundcloud.com/resolve?url=${encodeURIComponent(cleanUrl)}&client_id=${encodeURIComponent(cid)}`;
+      this._log("resolve (v1 fallback) →", v1);
+      try {
+        const rL = await fetch(v1, {
+          credentials: "omit",
+          mode: "cors",
+          redirect: "follow",
+          cache: "no-store",
+          headers: { "Accept": "application/json" },
+          referrerPolicy: "no-referrer"
+        });
+        if (rL.ok) {
+          track = await rL.json();
+        } else {
+          this._log("v1 resolve non-OK", rL.status);
+        }
+      } catch (e) {
+        this._log("v1 resolve network error", e);
+      }
+    }
 
+    if (!track) throw new Error("Resolve failed (v2/v1)");
+
+    // メタ更新
+    this._currentSoundMeta = {
+      title: track?.title,
+      user: { username: track?.user?.username }
+    };
+
+    // 3) v2 track なら transcodings → stream locator、v1 track なら stream_url 直
+    // v2: track.media.transcodings[]
     const trans = Array.isArray(track?.media?.transcodings) ? track.media.transcodings : [];
-    if (!trans.length) { this._log("no transcodings"); throw new Error("No transcodings available"); }
+    if (trans.length) {
+      let chosen = trans.find(t => /progressive/i.test(t?.format?.protocol || "")) ||
+                   trans.find(t => /hls/i.test(t?.format?.protocol || ""));
+      if (!chosen?.url) throw new Error("No suitable transcoding");
+      const streamApi = `${chosen.url}?client_id=${encodeURIComponent(cid)}`;
+      this._log("stream locator →", streamApi);
 
-    let chosen = trans.find(t=>/progressive/i.test(t?.format?.protocol||"")) || trans.find(t=>/hls/i.test(t?.format?.protocol||""));
-    if (!chosen?.url) { this._log("no suitable transcoding"); throw new Error("No suitable transcoding"); }
-
-    const streamApi = `${chosen.url}?client_id=${encodeURIComponent(cid)}`;
-    this._log("stream locator →", streamApi);
-
-    let r2;
-    try {
-      r2 = await fetch(streamApi, { credentials:"omit", mode:"cors", headers:{ "Accept":"application/json" } });
-    } catch (e) {
-      this._log("stream locator network error", e);
-      throw new Error(e?.message || "Stream locator network error");
+      const r2 = await fetch(streamApi, {
+        credentials: "omit",
+        mode: "cors",
+        redirect: "follow",
+        cache: "no-store",
+        headers: { "Accept": "application/json" },
+        referrerPolicy: "no-referrer"
+      });
+      if (!r2.ok) throw new Error(`Stream location failed: ${r2.status}`);
+      const j2 = await r2.json();
+      if (!j2?.url) throw new Error("No final stream url");
+      this._log("final stream url", j2.url);
+      return { url: j2.url, isHls: /hls/i.test(chosen?.format?.protocol || "") };
     }
-    if (!r2.ok) { this._log("stream locator failed status", r2.status); throw new Error(`Stream location failed: ${r2.status}`); }
 
-    const j2 = await r2.json();
-    if (!j2?.url) { this._log("no final stream url"); throw new Error("No stream URL in response"); }
+    // v1: 直接 stream_url を使用（progressive MP3）
+    if (track?.stream_url) {
+      const finalUrl = `${track.stream_url}?client_id=${encodeURIComponent(cid)}`;
+      this._log("final stream url (v1)", finalUrl);
+      return { url: finalUrl, isHls: false };
+    }
 
-    this._log("final stream url", j2.url);
-    return { url: j2.url, isHls: /hls/i.test(chosen?.format?.protocol||"") };
+    throw new Error("No transcodings / stream_url");
   }
 
   // -------- ライフサイクル --------
