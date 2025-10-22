@@ -183,14 +183,16 @@ export default class extends Controller {
   get _scClientId() {
     try {
       const d = this.element?.dataset?.scClientId; if (d) return d.trim();
-      const meta = document.querySelector('meta[name="soundcloud-client-id"]'); if (meta?.content) return meta.content.trim();
+      const meta1 = document.querySelector('meta[name="sc-client-id"]');
+      if (meta1?.content) return meta1.content.trim();
+      const meta2 = document.querySelector('meta[name="soundcloud-client-id"]');
+      if (meta2?.content) return meta2.content.trim();
       if (window.SOUNDCLOUD_CLIENT_ID) return String(window.SOUNDCLOUD_CLIENT_ID);
       if (window.SC_CLIENT_ID) return String(window.SC_CLIENT_ID);
     } catch(_) {}
     return "";
   }
   _canUseApiOnIOS() {
-    // 一時的にウィジェット固定で切り分けしたい時は true をセット
     if (window.__forceWidgetOnly) return false;
     const ok = this._isIOS() && !!this._scClientId;
     console.log("[global-player] iOS api-mode:", ok, "client_id:", this._scClientId);
@@ -351,51 +353,60 @@ export default class extends Controller {
     if (this.durationEl) this.durationEl.textContent = this.formatTime(dur);
   };
 
-  // --- ここを強化：タイムアウト＆詳細ログ ---
+  // --- iOS Safari 向け：AbortController 非使用の安全版 resolve ---
   async _resolveStreamUrl(trackUrl) {
-    console.log("[global-player] resolve start:", trackUrl);
+    console.log("[global-player] resolve start (safe, no AbortController):", trackUrl);
     const cid = this._scClientId;
     if (!cid) throw new Error("SoundCloud client_id is missing");
 
-    const resolveApi = `https://api-v2.soundcloud.com/resolve?url=${encodeURIComponent(trackUrl)}&client_id=${encodeURIComponent(cid)}`;
-    const controller1 = new AbortController();
-    const t1 = setTimeout(() => controller1.abort("resolve-timeout"), 7000); // 7秒で諦め
+    // キャッシュ回避用タイムスタンプ（SWの干渉も避けやすくする）
+    const ts = `&_ts=${Date.now()}`;
 
-    try {
-      console.log("[global-player] fetching:", resolveApi);
-      const r1 = await fetch(resolveApi, { credentials: "omit", mode: "cors", signal: controller1.signal });
-      clearTimeout(t1);
-      console.log("[global-player] resolve status:", r1.status);
-      if (!r1.ok) throw new Error(`Resolve failed: ${r1.status}`);
+    // 1) Resolve track
+    const resolveApi =
+      `https://api-v2.soundcloud.com/resolve?url=${encodeURIComponent(trackUrl)}&client_id=${encodeURIComponent(cid)}${ts}`;
+    console.log("[global-player] fetching:", resolveApi);
+    const r1 = await fetch(resolveApi, { credentials: "omit", mode: "cors", cache: "no-store" });
+    console.log("[global-player] resolve status:", r1.status);
+    if (!r1.ok) throw new Error(`Resolve failed: ${r1.status}`);
+    const track = await r1.json();
+    this._currentSoundMeta = { title: track?.title, user: { username: track?.user?.username } };
 
-      const track = await r1.json();
-      this._currentSoundMeta = { title: track?.title, user: { username: track?.user?.username } };
+    const trans = Array.isArray(track?.media?.transcodings) ? track.media.transcodings : [];
+    if (!trans.length) throw new Error("No transcodings available");
 
-      const trans = Array.isArray(track?.media?.transcodings) ? track.media.transcodings : [];
-      if (!trans.length) throw new Error("No transcodings available");
-      let chosen = trans.find(t=>/progressive/i.test(t?.format?.protocol||""));
-      if (!chosen) chosen = trans.find(t=>/hls/i.test(t?.format?.protocol||""));
-      if (!chosen?.url) throw new Error("No suitable transcoding");
+    // progressive優先 → 無ければhls
+    let chosen = trans.find(t => /progressive/i.test(t?.format?.protocol || ""));
+    let fallback = trans.find(t => /hls/i.test(t?.format?.protocol || ""));
+    if (!chosen) { chosen = fallback; fallback = null; }
+    if (!chosen?.url) throw new Error("No suitable transcoding");
 
-      const streamApi = `${chosen.url}?client_id=${encodeURIComponent(cid)}`;
-      const controller2 = new AbortController();
-      const t2 = setTimeout(() => controller2.abort("stream-locator-timeout"), 7000);
-
-      const r2 = await fetch(streamApi, { credentials:"omit", mode:"cors", signal: controller2.signal });
-      clearTimeout(t2);
-      console.log("[global-player] stream-locator status:", r2.status, "proto:", chosen?.format?.protocol);
+    // 2) Get actual stream URL（失敗時は別プロトコルを一回だけ試す）
+    const tryStreamLocator = async (t) => {
+      const streamApi = `${t.url}?client_id=${encodeURIComponent(cid)}${ts}`;
+      console.log("[global-player] stream-locator:", streamApi, "proto:", t?.format?.protocol);
+      const r2 = await fetch(streamApi, { credentials: "omit", mode: "cors", cache: "no-store" });
+      console.log("[global-player] stream-locator status:", r2.status);
       if (!r2.ok) throw new Error(`Stream location failed: ${r2.status}`);
-
       const j2 = await r2.json();
       if (!j2?.url) throw new Error("No stream URL in response");
-      const isHls = /hls/i.test(chosen?.format?.protocol||"");
-      console.log("[global-player] stream url resolved. isHls:", isHls);
+      const isHls = /hls/i.test(t?.format?.protocol || "");
       return { url: j2.url, isHls };
+    };
+
+    try {
+      return await tryStreamLocator(chosen);
     } catch (e) {
-      console.error("[global-player] resolve error:", e?.name || e?.message || e);
+      console.warn("[global-player] primary stream-locator failed:", e?.message || e);
+      if (fallback) {
+        try {
+          return await tryStreamLocator(fallback);
+        } catch (e2) {
+          console.error("[global-player] fallback stream-locator failed:", e2?.message || e2);
+          throw e2;
+        }
+      }
       throw e;
-    } finally {
-      clearTimeout(t1);
     }
   }
 
@@ -433,7 +444,7 @@ export default class extends Controller {
 
   connect() {
     // ロガー（#render-log へも必ずミラー）
-    console.log("[global-player] BUILD_ID 2025-10-22-1");
+    console.log("[global-player] BUILD_ID 2025-10-22-safe-noabort-1");
 
     this.logger = new MobileLogger({
       enable: _debugEnabled || this._isIOS(),
