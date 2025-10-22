@@ -74,6 +74,11 @@ Rails.application.routes.draw do
   get "/notifications/test",      to: "notifications#debug_emotion", as: :debug_emotion_notifications  # ← 元: push_notification#debug_emotion
   get "notifications/public_key", to: "notifications#public_key"
 
+  get "/sc/resolve", to: "sc_proxy#resolve"
+  get "/sc/stream",  to: "sc_proxy#stream"
+
+
+
   if Rails.env.test? || Rails.env.development?
     get "/debug/session_info", to: "debug#session_info"
   end
