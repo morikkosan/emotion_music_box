@@ -1,6 +1,121 @@
+
 /* eslint-env browser */
 /* global SC, Swal */
 
+// ============================================================================
+// Lightweight Mobile Logger (overlay + remote)
+// - iPhoneでも画面上でconsoleログを見られる
+// - まとめてサーバにもPOST送信（sendBeacon対応）
+// 有効化: URLに ?debug=1 か、localStorage.setItem('debug-sc-player','1')
+// リモート送信: <meta name="remote-debug-url" content="/debug_logs"> を<head>に追加
+// ============================================================================
+class MobileLogger {
+  constructor({ enable = false, remoteUrl = null, tag = "sc-player", maxInDom = 250 }) {
+    this.enabled = !!enable;
+    this.remoteUrl = remoteUrl || null;
+    this.tag = tag;
+    this.buf = [];
+    this.flushTimer = null;
+    this.maxInDom = maxInDom;
+    if (!this.enabled) return;
+
+    // overlay
+    this.panel = document.createElement("div");
+    Object.assign(this.panel.style, {
+      position: "fixed", left: "6px", right: "6px", bottom: "6px",
+      maxHeight: "40vh", overflow: "auto", background: "rgba(0,0,0,.8)",
+      color: "#0f0", font: "12px/1.4 ui-monospace,monospace",
+      padding: "8px 10px", borderRadius: "10px", zIndex: 100000,
+      boxShadow: "0 6px 16px rgba(0,0,0,.35)", backdropFilter: "blur(3px)"
+    });
+    this.panel.id = "mlog-panel";
+    const bar = document.createElement("div");
+    bar.style.marginBottom = "6px";
+    bar.innerHTML = `
+      <strong style="color:#fff">Debug</strong>
+      <button id="mlog-clear" style="margin-left:8px">clear</button>
+      <button id="mlog-hide"  style="margin-left:6px">hide</button>
+      <span style="color:#aaa;margin-left:8px">${this.tag}</span>
+    `;
+    const pre = document.createElement("pre");
+    pre.style.whiteSpace = "pre-wrap"; pre.style.margin = "0";
+    this.pre = pre;
+    this.panel.appendChild(bar); this.panel.appendChild(pre);
+    document.addEventListener("DOMContentLoaded", () => {
+      // DOM準備前の早期実行に備えてDOMContentLoadedで確実に追加
+      if (!document.getElementById("mlog-panel")) document.body.appendChild(this.panel);
+    });
+
+    document.addEventListener("click", (ev) => {
+      const t = ev.target;
+      if (!(t instanceof HTMLElement)) return;
+      if (t.id === "mlog-clear") { this.pre.textContent = ""; }
+      if (t.id === "mlog-hide")  { try { this.panel.remove(); } catch(_) {} }
+    });
+
+    // hijack console
+    const orig = { log:console.log, warn:console.warn, error:console.error, info:console.info };
+    ["log","info","warn","error"].forEach(level=>{
+      console[level] = (...args)=>{
+        try { this.write(level, args); } catch(_) {}
+        orig[level](...args);
+      };
+    });
+
+    // window errors
+    window.addEventListener("error", (e)=>{
+      this.write("error", [e.message, `${e.filename}:${e.lineno}:${e.colno}`]);
+    });
+    window.addEventListener("unhandledrejection", (e)=>{
+      this.write("error", ["unhandledrejection", String(e.reason && e.reason.stack || e.reason)]);
+    });
+  }
+
+  write(level, args){
+    const ts = new Date().toISOString().split("T")[1].replace("Z","");
+    const line = `[${ts}] ${level.toUpperCase()} ${args.map(a=>{
+      try { return (typeof a==="string") ? a : JSON.stringify(a); }
+      catch(_){ return String(a); }
+    }).join(" ")}`;
+
+    // overlay
+    if (this.pre) {
+      if (this.pre.childNodes.length > this.maxInDom) this.pre.textContent = "";
+      this.pre.appendChild(document.createTextNode(line+"\n"));
+      this.pre.scrollTop = this.pre.scrollHeight;
+    }
+
+    // remote buffer
+    this.buf.push({ t: Date.now(), level, msg: line, tag: this.tag, ua: navigator.userAgent });
+    if (!this.flushTimer) this.flushTimer = setTimeout(()=>this.flush(), 1200);
+  }
+
+  flush(){
+    this.flushTimer = null;
+    if (!this.remoteUrl || !this.buf.length) return;
+    const payload = JSON.stringify({ tag:this.tag, logs:this.buf.splice(0) });
+    try {
+      if (navigator.sendBeacon) {
+        const ok = navigator.sendBeacon(this.remoteUrl, new Blob([payload], { type:"application/json" }));
+        if (!ok) fetch(this.remoteUrl, {method:"POST", headers:{ "Content-Type":"application/json" }, body: payload, keepalive:true});
+      } else {
+        fetch(this.remoteUrl, {method:"POST", headers:{ "Content-Type":"application/json" }, body: payload, keepalive:true});
+      }
+    } catch(_) {}
+  }
+}
+
+// デバッグ有効フラグ & リモートURL（<meta>から拾う）
+const _debugEnabled =
+  /[?&]debug=1\b/.test(location.search) ||
+  (typeof localStorage !== "undefined" && localStorage.getItem("debug-sc-player") === "1");
+
+const _remoteUrl = document.querySelector('meta[name="remote-debug-url"]')?.content || null;
+
+
+// ============================================================================
+// ここから本体
+// ============================================================================
 /**
  * @typedef {{
  *   bind: (event:string, handler:Function) => void,
@@ -351,6 +466,14 @@ export default class extends Controller {
   }
 
   connect() {
+    // --- ロガー初期化（iPhoneでは常時ONでもOK。うるさければ _debugEnabled のみに変更） ---
+    this.logger = new MobileLogger({
+      enable: _debugEnabled || this._isIOS(),
+      remoteUrl: _remoteUrl, // サーバに送りたくなければ meta を置かない
+      tag: "global-player"
+    });
+    console.log("[global-player] connect start, iOS:", this._isIOS(), "api?", this._canUseApiOnIOS());
+
     document.addEventListener("turbo:before-cache", this.cleanup, { once: true });
 
     if (document.body.classList.contains("playlist-show-page")) {
