@@ -45,6 +45,18 @@
   <link rel="dns-prefetch" href="https://api.soundcloud.com">
   <link rel="preconnect" href="https://w.soundcloud.com" crossorigin>
   <link rel="preconnect" href="https://api.soundcloud.com" crossorigin>
+
+<!-- SoundCloud API v2 / HLS CDN へ事前接続（iOSのCORS/ITP対策で安定化） -->
+<link rel="dns-prefetch" href="https://api-v2.soundcloud.com">
+<link rel="preconnect"   href="https://api-v2.soundcloud.com" crossorigin>
+
+<link rel="dns-prefetch" href="https://cf-hls-media.sndcdn.com">
+<link rel="preconnect"   href="https://cf-hls-media.sndcdn.com" crossorigin>
+
+<link rel="dns-prefetch" href="https://hls-media.sndcdn.com">
+<link rel="preconnect"   href="https://hls-media.sndcdn.com" crossorigin>
+
+
   <!-- ✅ preload は crossorigin なし（CORS回避） -->
   <link rel="preload" as="script" href="https://w.soundcloud.com/player/api.js">
 
