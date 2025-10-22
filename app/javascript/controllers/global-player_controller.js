@@ -63,7 +63,6 @@ class MobileLogger {
           margin: "8px 0", background: "#111", color: "#0f0",
           font: "12px/1.4 ui-monospace,monospace"
         });
-        // 可能なら main の先頭、無ければ body の末尾へ
         (document.querySelector("main") || document.body).prepend(r);
       }
       return r;
@@ -90,7 +89,7 @@ class MobileLogger {
     ["log","info","warn","error"].forEach(level=>{
       console[level] = (...args)=>{
         try { this.write(level, args); } catch(_) {}
-        orig[level](...args);
+        try { orig[level](...args); } catch(_) {}
       };
     });
 
@@ -191,6 +190,8 @@ export default class extends Controller {
     return "";
   }
   _canUseApiOnIOS() {
+    // 一時的にウィジェット固定で切り分けしたい時は true をセット
+    if (window.__forceWidgetOnly) return false;
     const ok = this._isIOS() && !!this._scClientId;
     console.log("[global-player] iOS api-mode:", ok, "client_id:", this._scClientId);
     return ok;
@@ -267,7 +268,7 @@ export default class extends Controller {
       this.audio.addEventListener("timeupdate", this._onAudioTime);
       this.audio.addEventListener("durationchange", this._onAudioDur);
       this.audio.addEventListener("error", (e) => {
-        console.error("Audio error", e);
+        console.error("Audio error", e?.message || e);
         if (this._isIOS() && !this.widget) this._fallbackToWidgetFromAudio();
       });
     }
@@ -350,28 +351,52 @@ export default class extends Controller {
     if (this.durationEl) this.durationEl.textContent = this.formatTime(dur);
   };
 
+  // --- ここを強化：タイムアウト＆詳細ログ ---
   async _resolveStreamUrl(trackUrl) {
     console.log("[global-player] resolve start:", trackUrl);
     const cid = this._scClientId;
     if (!cid) throw new Error("SoundCloud client_id is missing");
+
     const resolveApi = `https://api-v2.soundcloud.com/resolve?url=${encodeURIComponent(trackUrl)}&client_id=${encodeURIComponent(cid)}`;
-    const r1 = await fetch(resolveApi, { credentials:"omit", mode:"cors" });
-    console.log("[global-player] resolve status:", r1.status);
-    if (!r1.ok) throw new Error(`Resolve failed: ${r1.status}`);
-    const track = await r1.json();
-    this._currentSoundMeta = { title: track?.title, user: { username: track?.user?.username } };
-    const trans = Array.isArray(track?.media?.transcodings) ? track.media.transcodings : [];
-    if (!trans.length) throw new Error("No transcodings available");
-    let chosen = trans.find(t=>/progressive/i.test(t?.format?.protocol||""));
-    if (!chosen) chosen = trans.find(t=>/hls/i.test(t?.format?.protocol||""));
-    if (!chosen?.url) throw new Error("No suitable transcoding");
-    const streamApi = `${chosen.url}?client_id=${encodeURIComponent(cid)}`;
-    const r2 = await fetch(streamApi, { credentials:"omit", mode:"cors" });
-    console.log("[global-player] stream-locator status:", r2.status, "proto:", chosen?.format?.protocol);
-    if (!r2.ok) throw new Error(`Stream location failed: ${r2.status}`);
-    const j2 = await r2.json();
-    if (!j2?.url) throw new Error("No stream URL in response");
-    return { url: j2.url, isHls: /hls/i.test(chosen?.format?.protocol||"") };
+    const controller1 = new AbortController();
+    const t1 = setTimeout(() => controller1.abort("resolve-timeout"), 7000); // 7秒で諦め
+
+    try {
+      console.log("[global-player] fetching:", resolveApi);
+      const r1 = await fetch(resolveApi, { credentials: "omit", mode: "cors", signal: controller1.signal });
+      clearTimeout(t1);
+      console.log("[global-player] resolve status:", r1.status);
+      if (!r1.ok) throw new Error(`Resolve failed: ${r1.status}`);
+
+      const track = await r1.json();
+      this._currentSoundMeta = { title: track?.title, user: { username: track?.user?.username } };
+
+      const trans = Array.isArray(track?.media?.transcodings) ? track.media.transcodings : [];
+      if (!trans.length) throw new Error("No transcodings available");
+      let chosen = trans.find(t=>/progressive/i.test(t?.format?.protocol||""));
+      if (!chosen) chosen = trans.find(t=>/hls/i.test(t?.format?.protocol||""));
+      if (!chosen?.url) throw new Error("No suitable transcoding");
+
+      const streamApi = `${chosen.url}?client_id=${encodeURIComponent(cid)}`;
+      const controller2 = new AbortController();
+      const t2 = setTimeout(() => controller2.abort("stream-locator-timeout"), 7000);
+
+      const r2 = await fetch(streamApi, { credentials:"omit", mode:"cors", signal: controller2.signal });
+      clearTimeout(t2);
+      console.log("[global-player] stream-locator status:", r2.status, "proto:", chosen?.format?.protocol);
+      if (!r2.ok) throw new Error(`Stream location failed: ${r2.status}`);
+
+      const j2 = await r2.json();
+      if (!j2?.url) throw new Error("No stream URL in response");
+      const isHls = /hls/i.test(chosen?.format?.protocol||"");
+      console.log("[global-player] stream url resolved. isHls:", isHls);
+      return { url: j2.url, isHls };
+    } catch (e) {
+      console.error("[global-player] resolve error:", e?.name || e?.message || e);
+      throw e;
+    } finally {
+      clearTimeout(t1);
+    }
   }
 
   cleanup = () => {
@@ -594,7 +619,10 @@ export default class extends Controller {
     if (!url) return;
     this.bottomPlayer?.classList.remove("d-none");
     this.resetPlayerUI();
-    await this._playViaApi(url, { resumeMs: state.position || 0, autoStart: state.isPlaying });
+    await this._playViaApi(url, { resumeMs: state.position || 0, autoStart: state.isPlaying }).catch((err)=>{
+      console.warn("[global-player] resume via API failed, fallback:", err?.name || err?.message || err);
+      this._fallbackToWidgetFromAudio(url);
+    });
   }
   _extractOriginalPlayUrl(embedUrl) {
     try { if (!embedUrl) return null; const u = new URL(embedUrl); const inner = u.searchParams.get("url"); if (inner) return decodeURIComponent(inner); } catch(_) {}
@@ -675,7 +703,10 @@ export default class extends Controller {
     if (this.widget) { this.unbindWidgetEvents(); clearInterval(this.progressInterval); this.widget = null; }
     if (this._canUseApiOnIOS()) {
       this.resetPlayerUI();
-      await this._playViaApi(playUrl).catch(() => this._fallbackToWidgetFromAudio(playUrl));
+      await this._playViaApi(playUrl).catch((err) => {
+        console.warn("[global-player] _playViaApi failed, fallback to widget:", err?.name || err?.message || err);
+        this._fallbackToWidgetFromAudio(playUrl);
+      });
       return;
     }
     const show = this._needsHandshake(); if (show) this._showHandshakeHint();
@@ -721,7 +752,10 @@ export default class extends Controller {
     this.stopOnlyPlayer();
 
     if (this._canUseApiOnIOS()) {
-      await this._playViaApi(trackUrl).catch(() => this._fallbackToWidgetFromAudio(trackUrl, el));
+      await this._playViaApi(trackUrl).catch((err) => {
+        console.warn("[global-player] _playViaApi failed, fallback to widget:", err?.name || err?.message || err);
+        this._fallbackToWidgetFromAudio(trackUrl, el);
+      });
       return;
     }
 
@@ -749,6 +783,7 @@ export default class extends Controller {
   async _playViaApi(playUrl, opts = {}) {
     const { resumeMs = 0, autoStart = true } = opts;
     this._lastResolvedTrackUrl = playUrl;
+
     const { url: streamUrl, isHls } = await this._resolveStreamUrl(playUrl);
     console.log("[global-player] stream url resolved. isHls:", isHls, "url:", streamUrl);
 
@@ -778,8 +813,12 @@ export default class extends Controller {
     if (autoStart !== false) {
       try { await a.play(); console.log("[global-player] audio.play() ok"); }
       catch (err) {
-        console.error("[global-player] audio.play() failed:", err?.name || err);
-        if (isHls) { console.warn("[global-player] Fallback to widget because HLS failed on iOS"); this._fallbackToWidgetFromAudio(playUrl); return; }
+        console.error("[global-player] audio.play() failed:", err?.name || err?.message || err);
+        if (isHls) {
+          console.warn("[global-player] Fallback to widget because HLS failed on iOS");
+          this._fallbackToWidgetFromAudio(playUrl);
+          return;
+        }
         alert("再生を開始できませんでした。もう一度 ▶ をタップしてください。");
       }
     }
@@ -814,7 +853,8 @@ export default class extends Controller {
     if (this._canUseApiOnIOS()) {
       const a = this._ensureAudio();
       if (!a.src) { alert("プレイヤーが初期化されていません。もう一度曲を選んでください。"); return; }
-      if (a.paused) a.play().catch(()=>alert("再生に失敗しました。もう一度タップしてください。")); else a.pause();
+      if (a.paused) a.play().catch((err)=>{ console.error("resume play failed:", err?.name || err); alert("再生に失敗しました。もう一度タップしてください。"); });
+      else a.pause();
       setTimeout(()=>this.savePlayerState(), 300);
       return;
     }
