@@ -433,6 +433,8 @@ export default class extends Controller {
 
   connect() {
     // ロガー（#render-log へも必ずミラー）
+    console.log("[global-player] BUILD_ID 2025-10-22-1");
+
     this.logger = new MobileLogger({
       enable: _debugEnabled || this._isIOS(),
       remoteUrl: _remoteUrl,
