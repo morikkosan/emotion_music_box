@@ -292,8 +292,12 @@ export default class extends Controller {
     const trans = Array.isArray(track?.media?.transcodings) ? track.media.transcodings : [];
     if (!trans.length) { this._log("no transcodings"); throw new Error("No transcodings available"); }
 
-    const chosen = trans.find(t => /progressive/i.test(t?.format?.protocol || "")) ||
-                   trans.find(t => /hls/i.test(t?.format?.protocol || ""));
+    // ★ iOSはHLS優先、その他はprogressive優先
+    const preferHls = this._isIOS();
+    const byProto = (p) => trans.find(t => new RegExp(p, "i").test(t?.format?.protocol || ""));
+    const chosen = preferHls ? (byProto("hls") || byProto("progressive"))
+                             : (byProto("progressive") || byProto("hls"));
+
     if (!chosen?.url) { this._log("no suitable transcoding"); throw new Error("No suitable transcoding"); }
 
     const streamLocatorViaProxy = `/sc/stream?locator=${encodeURIComponent(chosen.url)}`;
@@ -363,7 +367,8 @@ export default class extends Controller {
       this.progressInterval = null;
       this.unbindWidgetEvents();
       this.widget = null;
-      if (this.audio) this.audio.pause();
+      // Audioは破棄しない（iOSの再生権を保持）。止めるだけ。
+      if (this.audio) { try { this.audio.pause(); } catch(_) {} }
     } catch (_) {}
     try {
       const old = document.getElementById("hidden-sc-player");
@@ -479,6 +484,14 @@ export default class extends Controller {
     this._footerGuardMO = new MutationObserver(() => queueMicrotask(this._updatePlayButton));
     this._footerGuardMO.observe(this._container() || document, { childList:true, subtree:true });
     this._updatePlayButton();
+
+    // ★ Media Session: ロック画面・イヤホン前後ボタン対応（対応環境のみ）
+    try {
+      if ("mediaSession" in navigator) {
+        navigator.mediaSession.setActionHandler("previoustrack", () => this.prevTrack());
+        navigator.mediaSession.setActionHandler("nexttrack",     () => this.nextTrack());
+      }
+    } catch(_) {}
 
     if (window.SC?.Widget) this.restorePlayerState();
     else window.addEventListener("load", () => this.restorePlayerState?.());
@@ -768,6 +781,8 @@ export default class extends Controller {
         }
       }
       if (needsUnlock) setTimeout(()=>{ try { a.muted = false; } catch(_) {} }, 0);
+      // ★ iOSでsrc切替直後の稀失敗に備え、短いtickで追撃
+      if (this._isIOS()) setTimeout(() => { if (a.paused) { try { a.play(); } catch(_) {} } }, 120);
     }
 
     // 進捗（API版に上書き）
