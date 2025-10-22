@@ -43,7 +43,6 @@ export default class extends Controller {
   // ====== iOS: API再生フラグ/状態 ======
   get _scClientId() {
     try {
-      // data-* → <meta name="soundcloud-client-id"> / <meta name="sc-client-id"> → window
       const d = this.element?.dataset?.scClientId || document.body?.dataset?.scClientId;
       if (d) return String(d).trim();
       const meta1 = document.querySelector('meta[name="soundcloud-client-id"]');
@@ -116,7 +115,7 @@ export default class extends Controller {
     } catch (_) {}
   }
 
-  // iOSオーディオアンロック（静音ワンショット）
+  // iOSオーディオアンロック（AudioContext）
   _setupIOSAudioUnlock() {
     try {
       if (!this._isIOS() || window.__iosAudioUnlocked) return;
@@ -135,6 +134,28 @@ export default class extends Controller {
       window.addEventListener("touchend", unlock, true);
       window.addEventListener("click", unlock, true);
     } catch (_) {}
+  }
+
+  // 追加：iOSのユーザー操作直後に audio を「無音で一瞬再生」して再生権を確保
+  _primeAudioForIOS() {
+    if (!this._isIOS()) return;
+    const a = this._ensureAudio();
+    if (a.__primed) return;
+    try {
+      a.muted = true;
+      const p = a.play();
+      if (p && typeof p.then === "function") {
+        p.then(() => {
+          try { a.pause(); } catch(_) {}
+          a.currentTime = 0;
+          a.__primed = true;
+        }).catch(()=>{ /* 失敗しても致命傷ではない */ });
+      } else {
+        try { a.pause(); } catch(_) {}
+        a.currentTime = 0;
+        a.__primed = true;
+      }
+    } catch(_) {}
   }
 
   // ======== iOS(API)用：Audio要素 =========
@@ -633,7 +654,11 @@ export default class extends Controller {
 
   // ---------- トラック再生（タイル/アイコン） ----------
   async loadAndPlay(event) {
-    event?.stopPropagation?.(); this.updatePlaylistOrder();
+    event?.stopPropagation?.();
+    // ★ iOS: ユーザー操作直後にプライム実行
+    this._primeAudioForIOS();
+
+    this.updatePlaylistOrder();
     const el = event?.currentTarget;
     const newTrackId = el?.dataset?.trackId;
     let trackUrl = el?.dataset?.playUrl;
@@ -683,7 +708,7 @@ export default class extends Controller {
     };
   }
 
-  // ---------- iOS(API) 再生本体（アンロック＋再試行＋確実なUI復帰） ----------
+  // ---------- iOS(API) 再生本体 ----------
   async _playViaApi(playUrl, opts = {}) {
     const { resumeMs = 0, autoStart = true } = opts;
     this._lastResolvedTrackUrl = playUrl;
@@ -706,11 +731,11 @@ export default class extends Controller {
       const needsUnlock = this._isIOS();
       if (needsUnlock) a.muted = true;
       try {
-        await a.play(); // 1st try
+        await a.play();
       } catch (err1) {
         this._log("audio.play() rejected (1st)", err1);
         try {
-          a.load(); await a.play(); // 2nd try
+          a.load(); await a.play();
         } catch (err2) {
           this._log("audio.play() rejected (2nd) → fallback", err2);
           if (needsUnlock) try { a.muted = false; } catch(_) {}
@@ -774,6 +799,9 @@ export default class extends Controller {
   // ---------- トグル ----------
   togglePlayPause(event) {
     event?.stopPropagation?.();
+
+    // ★ iOS: タップ直後にプライム実行
+    this._primeAudioForIOS();
 
     if (this._canUseApiOnIOS()) {
       const a = this._ensureAudio();
