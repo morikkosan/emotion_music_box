@@ -1,158 +1,6 @@
 /* eslint-env browser */
 /* global SC, Swal */
 
-// ============================================================================
-// Mobile Logger (overlay + remote + #render-log mirror)
-// - 画面右下オーバーレイ表示
-// - ページ内 #render-log にもミラー出力（無ければ自動生成）
-// - まとめてサーバPOST（sendBeacon対応）
-// 有効化: URLに ?debug=1 か localStorage.setItem('debug-sc-player','1')
-// リモート送信: <meta name="remote-debug-url" content="/debug_logs"> を<head>に
-// ============================================================================
-class MobileLogger {
-  constructor({ enable = false, remoteUrl = null, tag = "sc-player", maxInDom = 500 }) {
-    this.enabled   = !!enable;
-    this.remoteUrl = remoteUrl || null;
-    this.tag       = tag;
-    this.buf       = [];
-    this.flushTimer = null;
-    this.maxInDom  = maxInDom;
-    if (!this.enabled) return;
-
-    // ---- overlay ----
-    this.panel = document.createElement("div");
-    Object.assign(this.panel.style, {
-      position: "fixed", left: "6px", right: "6px", bottom: "6px",
-      maxHeight: "40vh", overflow: "auto", background: "rgba(0,0,0,.8)",
-      color: "#0f0", font: "12px/1.4 ui-monospace,monospace",
-      padding: "8px 10px", borderRadius: "10px", zIndex: 100000,
-      boxShadow: "0 6px 16px rgba(0,0,0,.35)", backdropFilter: "blur(3px)"
-    });
-    this.panel.id = "mlog-panel";
-    const bar = document.createElement("div");
-    bar.style.marginBottom = "6px";
-    bar.innerHTML = `
-      <strong style="color:#fff">Debug</strong>
-      <button id="mlog-clear" style="margin-left:8px">clear</button>
-      <button id="mlog-hide"  style="margin-left:6px">hide</button>
-      <span style="color:#aaa;margin-left:8px">${this.tag}</span>
-    `;
-    const pre = document.createElement("pre");
-    pre.style.whiteSpace = "pre-wrap"; pre.style.margin = "0";
-    this.pre = pre;
-    this.panel.appendChild(bar); this.panel.appendChild(pre);
-    const mountOverlay = () => {
-      if (!document.getElementById("mlog-panel")) document.body.appendChild(this.panel);
-    };
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", mountOverlay, { once: true });
-    } else {
-      mountOverlay();
-    }
-
-    // ---- #render-log mirror ----
-    const ensureRenderLog = () => {
-      let r = document.getElementById("render-log");
-      if (!r) {
-        r = document.createElement("pre");
-        r.id = "render-log";
-        r.setAttribute("aria-live", "polite");
-        Object.assign(r.style, {
-          maxHeight: "50vh", overflow: "auto",
-          border: "1px solid #ccc", padding: "8px",
-          margin: "8px 0", background: "#111", color: "#0f0",
-          font: "12px/1.4 ui-monospace,monospace"
-        });
-        (document.querySelector("main") || document.body).prepend(r);
-      }
-      return r;
-    };
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () => { this.renderLog = ensureRenderLog(); }, { once: true });
-    } else {
-      this.renderLog = ensureRenderLog();
-    }
-
-    // 操作
-    document.addEventListener("click", (ev) => {
-      const t = ev.target;
-      if (!(t instanceof HTMLElement)) return;
-      if (t.id === "mlog-clear") {
-        if (this.pre) this.pre.textContent = "";
-        if (this.renderLog) this.renderLog.textContent = "";
-      }
-      if (t.id === "mlog-hide")  { try { this.panel.remove(); } catch(_) {} }
-    });
-
-    // hijack console
-    const orig = { log:console.log, warn:console.warn, error:console.error, info:console.info };
-    ["log","info","warn","error"].forEach(level=>{
-      console[level] = (...args)=>{
-        try { this.write(level, args); } catch(_) {}
-        try { orig[level](...args); } catch(_) {}
-      };
-    });
-
-    // window errors
-    window.addEventListener("error", (e)=>{
-      this.write("error", [e.message, `${e.filename}:${e.lineno}:${e.colno}`]);
-    });
-    window.addEventListener("unhandledrejection", (e)=>{
-      this.write("error", ["unhandledrejection", String(e.reason && e.reason.stack || e.reason)]);
-    });
-  }
-
-  write(level, args){
-    const ts = new Date().toISOString().split("T")[1].replace("Z","");
-    const line = `[${ts}] ${level.toUpperCase()} ${args.map(a=>{
-      try { return (typeof a==="string") ? a : JSON.stringify(a); }
-      catch(_){ return String(a); }
-    }).join(" ")}`;
-
-    // overlay
-    if (this.pre) {
-      if (this.pre.childNodes.length > this.maxInDom) this.pre.textContent = "";
-      this.pre.appendChild(document.createTextNode(line+"\n"));
-      this.pre.scrollTop = this.pre.scrollHeight;
-    }
-
-    // #render-log mirror
-    if (this.renderLog) {
-      if (this.renderLog.childNodes.length > this.maxInDom) this.renderLog.textContent = "";
-      this.renderLog.appendChild(document.createTextNode(line+"\n"));
-      this.renderLog.scrollTop = this.renderLog.scrollHeight;
-    }
-
-    // remote buffer
-    this.buf.push({ t: Date.now(), level, msg: line, tag: this.tag, ua: navigator.userAgent });
-    if (!this.flushTimer) this.flushTimer = setTimeout(()=>this.flush(), 1200);
-  }
-
-  flush(){
-    this.flushTimer = null;
-    if (!this.remoteUrl || !this.buf.length) return;
-    const payload = JSON.stringify({ tag:this.tag, logs:this.buf.splice(0) });
-    try {
-      if (navigator.sendBeacon) {
-        const ok = navigator.sendBeacon(this.remoteUrl, new Blob([payload], { type:"application/json" }));
-        if (!ok) fetch(this.remoteUrl, {method:"POST", headers:{ "Content-Type":"application/json" }, body: payload, keepalive:true});
-      } else {
-        fetch(this.remoteUrl, {method:"POST", headers:{ "Content-Type":"application/json" }, body: payload, keepalive:true});
-      }
-    } catch(_) {}
-  }
-}
-
-// デバッグ有効フラグ & リモートURL
-const _debugEnabled =
-  /[?&]debug=1\b/.test(location.search) ||
-  (typeof localStorage !== "undefined" && localStorage.getItem("debug-sc-player") === "1");
-const _remoteUrl = document.querySelector('meta[name="remote-debug-url"]')?.content || null;
-
-
-// ============================================================================
-// 本体（Stimulus Controller）
-// ============================================================================
 /**
  * @typedef {{
  *   bind: (event:string, handler:Function) => void,
@@ -167,43 +15,56 @@ const _remoteUrl = document.querySelector('meta[name="remote-debug-url"]')?.cont
  *   setVolume: (pct:number) => void
  * }} SCWidget
  */
+
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
   static targets = ["trackImage", "playIcon"];
 
+  // ---------- ユーティリティ ----------
   _q(sel, root = null) { return (root || this.element || document).querySelector(sel); }
   _qa(sel, root = null) { return Array.from((root || this.element || document).querySelectorAll(sel)); }
   _container() { return this.element || this._q(".playlist-container") || document; }
   _isIOS() {
-    try { return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1); }
-    catch(_) { return false; }
+    try {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent)
+        || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    } catch (_) { return false; }
+  }
+  _normalizeTrackUrl(raw) {
+    // 余計なutm_*は外す（CORS判定が怪しくなる事がある／キャッシュ汚れ回避）
+    try {
+      const u = new URL(raw);
+      ["utm_source","utm_medium","utm_campaign","utm_term","utm_content"].forEach(k=>u.searchParams.delete(k));
+      return u.toString();
+    } catch(_) { return raw; }
   }
 
+  // ====== iOS: API再生フラグ/状態 ======
   get _scClientId() {
     try {
+      // data属性 → <meta name="sc-client-id"> → window.SC_CLIENT_ID
       const d = this.element?.dataset?.scClientId; if (d) return d.trim();
-      const meta1 = document.querySelector('meta[name="sc-client-id"]');
-      if (meta1?.content) return meta1.content.trim();
-      const meta2 = document.querySelector('meta[name="soundcloud-client-id"]');
-      if (meta2?.content) return meta2.content.trim();
-      if (window.SOUNDCLOUD_CLIENT_ID) return String(window.SOUNDCLOUD_CLIENT_ID);
+      const meta = document.querySelector('meta[name="sc-client-id"]');
+      if (meta?.content) return meta.content.trim();
       if (window.SC_CLIENT_ID) return String(window.SC_CLIENT_ID);
-    } catch(_) {}
+    } catch (_) {}
     return "";
   }
   _canUseApiOnIOS() {
-    if (window.__forceWidgetOnly) return false;
-    const ok = this._isIOS() && !!this._scClientId;
-    console.log("[global-player] iOS api-mode:", ok, "client_id:", this._scClientId);
-    return ok;
+    if (window.__forceWidgetOnly) return false; // 明示的にウィジェット縛り
+    return this._isIOS() && !!this._scClientId;
   }
   _needsHandshake() { return this._isIOS() && !this._canUseApiOnIOS(); }
   _markHandshakeDone() {}
   _hideScreenCover() {
-    try { const cover = document.getElementById("screen-cover-loading"); if (cover) { cover.style.display="none"; cover.setAttribute("aria-hidden","true"); } } catch(_) {}
+    try {
+      const cover = document.getElementById("screen-cover-loading");
+      if (cover) { cover.style.display = "none"; cover.setAttribute("aria-hidden", "true"); }
+    } catch (_) {}
   }
 
+  // 小さなヒントバナー（iOSかつウィジェット使用時のみ）
   _showHandshakeHint() {
     if (this._hintEl || !this._needsHandshake()) return;
     const el = document.createElement("div");
@@ -220,35 +81,49 @@ export default class extends Controller {
     this._hintEl = el;
   }
   _hideHandshakeHint() { try { this._hintEl?.remove(); } catch(_) {} this._hintEl = null; }
-  _safeNukeIframe(iframe) { try { if (!iframe) return; iframe.src="about:blank"; iframe.removeAttribute("src"); iframe.parentNode && iframe.parentNode.removeChild(iframe); } catch(_) {} }
 
+  // 旧iframe破棄
+  _safeNukeIframe(iframe) {
+    try {
+      if (!iframe) return;
+      iframe.src = "about:blank";
+      iframe.removeAttribute("src");
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+    } catch (_) {}
+  }
+
+  // メタデータ→UI
   _applySoundMetadata(sound) {
     if (sound?.title) {
       this.setTrackTitle(sound.title);
       const artist = sound.user?.username ? `— ${sound.user.username}` : "";
       this.setArtist(artist);
     } else {
-      this.setTrackTitle("タイトル不明"); this.setArtist("");
+      this.setTrackTitle("タイトル不明");
+      this.setArtist("");
     }
     this.hideLoadingUI();
   }
 
+  // Widgetイベント解除
   unbindWidgetEvents() {
     if (!this.widget) return;
     try {
       this.widget.unbind(SC.Widget.Events.PLAY);
       this.widget.unbind(SC.Widget.Events.PAUSE);
       this.widget.unbind(SC.Widget.Events.FINISH);
-    } catch(_) {}
+    } catch (_) {}
   }
 
+  // iOSオーディオアンロック
   _setupIOSAudioUnlock() {
     try {
       if (!this._isIOS() || window.__iosAudioUnlocked) return;
       const unlock = () => {
         if (window.__iosAudioUnlocked) return;
         try {
-          const AudioCtx = window.AudioContext || window.webkitAudioContext; if (!AudioCtx) throw new Error("No AudioContext");
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (!AudioCtx) throw new Error("No AudioContext");
           const ctx = new AudioCtx(); const osc = ctx.createOscillator(); const gain = ctx.createGain();
           gain.gain.value = 0.0001; osc.connect(gain).connect(ctx.destination); osc.start(0);
           setTimeout(()=>{ try { osc.stop(0); ctx.close(); } catch(_) {} window.__iosAudioUnlocked = true; }, 50);
@@ -258,19 +133,22 @@ export default class extends Controller {
       };
       window.addEventListener("touchend", unlock, true);
       window.addEventListener("click", unlock, true);
-    } catch(_) {}
+    } catch (_) {}
   }
 
+  // ======== iOS(API)用：Audio要素 =========
   _ensureAudio() {
     if (!this.audio) {
-      this.audio = new Audio(); this.audio.preload = "auto"; this.audio.playsInline = true;
+      this.audio = new Audio();
+      this.audio.preload = "auto";
+      this.audio.playsInline = true; // iOS全画面化防止
       this.audio.addEventListener("play", this._onAudioPlay);
       this.audio.addEventListener("pause", this._onAudioPause);
       this.audio.addEventListener("ended", this._onAudioEnded);
       this.audio.addEventListener("timeupdate", this._onAudioTime);
       this.audio.addEventListener("durationchange", this._onAudioDur);
-      this.audio.addEventListener("error", (e) => {
-        console.error("Audio error", e?.message || e);
+      this.audio.addEventListener("error", () => {
+        // 失敗時は安全にウィジェットへ
         if (this._isIOS() && !this.widget) this._fallbackToWidgetFromAudio();
       });
     }
@@ -288,7 +166,6 @@ export default class extends Controller {
     } catch(_) {}
     this.audio = null;
   }
-
   _onAudioPlay = () => {
     this.playPauseIcon?.classList.replace("fa-play", "fa-pause");
     this.updateTrackIcon(this.currentTrackId, true);
@@ -308,9 +185,11 @@ export default class extends Controller {
   _onAudioEnded = () => {
     const playedMs = this.playStartedAt ? Date.now() - this.playStartedAt : 0;
     this.stopWaveformAnime();
-    if (playedMs < 32000 && playedMs > 5000) (window.Swal)
-      ? Swal.fire({ icon:"info", title:"試聴終了", text:"この曲の視聴は30秒までです（権利制限）" })
-      : alert("この曲の視聴は30秒までです（権利制限）");
+    if (playedMs < 32000 && playedMs > 5000) {
+      (window.Swal)
+        ? Swal.fire({ icon:"info", title:"試聴終了", text:"この曲の視聴は30秒までです（権利制限）" })
+        : alert("この曲の視聴は30秒までです（権利制限）");
+    }
     this.playPauseIcon?.classList.replace("fa-pause","fa-play");
     this.updateTrackIcon(this.currentTrackId,false);
     this.setPlayPauseAria(false);
@@ -318,7 +197,7 @@ export default class extends Controller {
     this.playStartedAt = null;
 
     if (this.isRepeat) {
-      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == this.currentTrackId)
+      const icon = this.playIconTargets.find((icn)=>icn.dataset.trackId==this.currentTrackId)
         || this._q(`[data-track-id="${CSS.escape(String(this.currentTrackId))}"]`, this._container());
       icon && setTimeout(()=>this.loadAndPlay({ currentTarget: icon, stopPropagation(){} }),300);
       return;
@@ -327,7 +206,7 @@ export default class extends Controller {
     const curIdx = this.playlistOrder.indexOf(this.currentTrackId);
     const nextId = this.playlistOrder[curIdx + 1];
     if (nextId) {
-      const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == nextId)
+      const icon = this.playIconTargets.find((icn)=>icn.dataset.trackId==nextId)
         || this._q(`[data-track-id="${CSS.escape(String(nextId))}"]`, this._container());
       icon && setTimeout(()=>this.loadAndPlay({ currentTarget: icon, stopPropagation(){} }),300);
       return;
@@ -353,22 +232,24 @@ export default class extends Controller {
     if (this.durationEl) this.durationEl.textContent = this.formatTime(dur);
   };
 
-  // --- iOS Safari 向け：AbortController 非使用の安全版 resolve ---
+  // ---------- SoundCloud API: resolve → stream URL（iOS用） ----------
   async _resolveStreamUrl(trackUrl) {
-    console.log("[global-player] resolve start (safe, no AbortController):", trackUrl);
     const cid = this._scClientId;
     if (!cid) throw new Error("SoundCloud client_id is missing");
 
-    // キャッシュ回避用タイムスタンプ（SWの干渉も避けやすくする）
-    const ts = `&_ts=${Date.now()}`;
+    const cleanUrl = this._normalizeTrackUrl(trackUrl);
 
-    // 1) Resolve track
-    const resolveApi =
-      `https://api-v2.soundcloud.com/resolve?url=${encodeURIComponent(trackUrl)}&client_id=${encodeURIComponent(cid)}${ts}`;
-    console.log("[global-player] fetching:", resolveApi);
-    const r1 = await fetch(resolveApi, { credentials: "omit", mode: "cors", cache: "no-store" });
-    console.log("[global-player] resolve status:", r1.status);
+    // 1) Resolve (iOS SafariでAbortControllerは使わない)
+    const resolveApi = `https://api-v2.soundcloud.com/resolve?url=${encodeURIComponent(cleanUrl)}&client_id=${encodeURIComponent(cid)}`;
+    let r1;
+    try {
+      r1 = await fetch(resolveApi, { credentials:"omit", mode:"cors", headers:{ "Accept":"application/json" } });
+    } catch (e) {
+      // ここでTypeErrorが出やすい → 上位でフォールバック判断できるよう投げる
+      throw new Error(e?.message || "Resolve network error");
+    }
     if (!r1.ok) throw new Error(`Resolve failed: ${r1.status}`);
+
     const track = await r1.json();
     this._currentSoundMeta = { title: track?.title, user: { username: track?.user?.username } };
 
@@ -376,40 +257,27 @@ export default class extends Controller {
     if (!trans.length) throw new Error("No transcodings available");
 
     // progressive優先 → 無ければhls
-    let chosen = trans.find(t => /progressive/i.test(t?.format?.protocol || ""));
-    let fallback = trans.find(t => /hls/i.test(t?.format?.protocol || ""));
-    if (!chosen) { chosen = fallback; fallback = null; }
+    let chosen = trans.find(t=>/progressive/i.test(t?.format?.protocol||""));
+    if (!chosen) chosen = trans.find(t=>/hls/i.test(t?.format?.protocol||""));
     if (!chosen?.url) throw new Error("No suitable transcoding");
 
-    // 2) Get actual stream URL（失敗時は別プロトコルを一回だけ試す）
-    const tryStreamLocator = async (t) => {
-      const streamApi = `${t.url}?client_id=${encodeURIComponent(cid)}${ts}`;
-      console.log("[global-player] stream-locator:", streamApi, "proto:", t?.format?.protocol);
-      const r2 = await fetch(streamApi, { credentials: "omit", mode: "cors", cache: "no-store" });
-      console.log("[global-player] stream-locator status:", r2.status);
-      if (!r2.ok) throw new Error(`Stream location failed: ${r2.status}`);
-      const j2 = await r2.json();
-      if (!j2?.url) throw new Error("No stream URL in response");
-      const isHls = /hls/i.test(t?.format?.protocol || "");
-      return { url: j2.url, isHls };
-    };
-
+    // 2) 実URL
+    const streamApi = `${chosen.url}?client_id=${encodeURIComponent(cid)}`;
+    let r2;
     try {
-      return await tryStreamLocator(chosen);
+      r2 = await fetch(streamApi, { credentials:"omit", mode:"cors", headers:{ "Accept":"application/json" } });
     } catch (e) {
-      console.warn("[global-player] primary stream-locator failed:", e?.message || e);
-      if (fallback) {
-        try {
-          return await tryStreamLocator(fallback);
-        } catch (e2) {
-          console.error("[global-player] fallback stream-locator failed:", e2?.message || e2);
-          throw e2;
-        }
-      }
-      throw e;
+      throw new Error(e?.message || "Stream locator network error");
     }
+    if (!r2.ok) throw new Error(`Stream location failed: ${r2.status}`);
+
+    const j2 = await r2.json();
+    if (!j2?.url) throw new Error("No stream URL in response");
+
+    return { url: j2.url, isHls: /hls/i.test(chosen?.format?.protocol||"") };
   }
 
+  // -------- ライフサイクル --------
   cleanup = () => {
     clearInterval(this.progressInterval);
     try {
@@ -419,42 +287,55 @@ export default class extends Controller {
       this._nextBtn?.removeEventListener("click", this._onNextClick);
       this._container()?.removeEventListener("click", this._onIconClickDelegated);
       document.removeEventListener("mouseup", this._onMouseUpSeek);
-    } catch(_) {}
+    } catch (_) {}
+
     if (this.widget) { this.unbindWidgetEvents(); this.widget = null; }
     this._disposeAudio();
-    try { const old = document.getElementById("hidden-sc-player"); this._safeNukeIframe(old); this.iframeElement = null; } catch(_) {}
+
+    try {
+      const old = document.getElementById("hidden-sc-player");
+      this._safeNukeIframe(old);
+      this.iframeElement = null;
+    } catch (_) {}
+
     try {
       document.removeEventListener("turbo:render", this._updatePlayButton);
       document.removeEventListener("turbo:frame-load", this._updatePlayButton);
       document.removeEventListener("turbo:submit-end", this._updatePlayButton);
-      this._footerGuardMO?.disconnect(); this._footerGuardMO = null;
-    } catch(_) {}
+      this._footerGuardMO?.disconnect();
+      this._footerGuardMO = null;
+    } catch (_) {}
+
     this._hideHandshakeHint();
   };
 
+  // ★ プレイヤーだけ安全に止める（UIイベントは残す）
   stopOnlyPlayer() {
-    try { clearInterval(this.progressInterval); this.progressInterval=null; this.unbindWidgetEvents(); this.widget=null; this.audio && this.audio.pause(); } catch(_) {}
-    try { const old = document.getElementById("hidden-sc-player"); this._safeNukeIframe(old); this.iframeElement = null; } catch(_) {}
+    try {
+      clearInterval(this.progressInterval);
+      this.progressInterval = null;
+      this.unbindWidgetEvents();
+      this.widget = null;
+      if (this.audio) this.audio.pause();
+    } catch (_) {}
+    try {
+      const old = document.getElementById("hidden-sc-player");
+      this._safeNukeIframe(old);
+      this.iframeElement = null;
+    } catch (_) {}
   }
 
   setArtist(text) {
     this.trackArtistEl && (this.trackArtistEl.textContent = text);
-    const mobile = document.getElementById("track-artist-mobile"); mobile && (mobile.textContent = text);
+    const mobile = document.getElementById("track-artist-mobile");
+    mobile && (mobile.textContent = text);
   }
 
   connect() {
-    // ロガー（#render-log へも必ずミラー）
-    console.log("[global-player] BUILD_ID 2025-10-22-safe-noabort-1");
-
-    this.logger = new MobileLogger({
-      enable: _debugEnabled || this._isIOS(),
-      remoteUrl: _remoteUrl,
-      tag: "global-player"
-    });
-    console.log("[global-player] connect start, iOS:", this._isIOS(), "api?", this._canUseApiOnIOS());
-
     document.addEventListener("turbo:before-cache", this.cleanup, { once: true });
-    if (document.body.classList.contains("playlist-show-page")) localStorage.removeItem("playerState");
+    if (document.body.classList.contains("playlist-show-page")) {
+      localStorage.removeItem("playerState");
+    }
 
     this.iframeElement   = document.getElementById("hidden-sc-player");
     this.bottomPlayer    = document.getElementById("bottom-player");
@@ -521,7 +402,10 @@ export default class extends Controller {
     this.switchPlayerTopRow();
     window.addEventListener("resize", () => {
       this.switchPlayerTopRow();
-      if (this.waveformCanvas) { this.waveformCanvas.width = this.waveformCanvas.offsetWidth; this.waveformCanvas.height = this.waveformCanvas.offsetHeight; }
+      if (this.waveformCanvas) {
+        this.waveformCanvas.width  = this.waveformCanvas.offsetWidth;
+        this.waveformCanvas.height = this.waveformCanvas.offsetHeight;
+      }
     });
 
     // 見た目同期
@@ -531,7 +415,7 @@ export default class extends Controller {
     if (repeatBtn) { repeatBtn.classList.toggle("active", this.isRepeat); repeatBtn.setAttribute("aria-pressed", String(this.isRepeat)); }
 
     this.setPlayPauseAria(false);
-    this.updateSeekAria(0,0,0);
+    this.updateSeekAria(0, 0, 0);
     this.updateVolumeAria(this.volumeBar?.value ?? "100");
 
     this._updatePlayButton = () => {
@@ -553,7 +437,7 @@ export default class extends Controller {
     else window.addEventListener("load", () => this.restorePlayerState?.());
   }
 
-  // A11y
+  // ---------- A11y ----------
   setPlayPauseAria(isPlaying) {
     if (!this.playPauseButton) return;
     this.playPauseButton.setAttribute("aria-label", isPlaying ? "一時停止" : "再生");
@@ -561,8 +445,8 @@ export default class extends Controller {
   updateSeekAria(percent, posMs, durMs) {
     if (!this.seekBar) return;
     const p = Math.max(0, Math.min(100, Math.round(percent)));
-    const current = this.formatTime(posMs); const total = this.formatTime(durMs);
     this.seekBar.setAttribute("aria-valuenow", String(p));
+    const current = this.formatTime(posMs), total = this.formatTime(durMs);
     this.seekBar.setAttribute("aria-valuetext", durMs ? `${current} / ${total}` : current);
   }
   updateVolumeAria(valueStr) {
@@ -571,39 +455,38 @@ export default class extends Controller {
     this.volumeBar.setAttribute("aria-valuetext", `${valueStr}%`);
   }
 
-  // 状態保存/復元
+  // ---------- 状態保存 / 復元 ----------
   savePlayerState() {
     try {
       if (this._canUseApiOnIOS() && this.audio) {
         const state = {
-          trackId: this.currentTrackId,
-          trackUrl: this._lastResolvedTrackUrl || null,
-          position: Math.floor((this.audio.currentTime||0)*1000),
-          duration: Math.floor((this.audio.duration||0)*1000),
+          trackId:   this.currentTrackId,
+          trackUrl:  this._lastResolvedTrackUrl || null,
+          position:  Math.floor((this.audio.currentTime||0)*1000),
+          duration:  Math.floor((this.audio.duration||0)*1000),
           isPlaying: !this.audio.paused,
-          apiMode: true
+          apiMode:   true
         };
         localStorage.setItem("playerState", JSON.stringify(state));
         return;
       }
-    } catch(_) {}
-
+    } catch (_) {}
     if (!this.widget) return;
     try {
       this.widget.getPosition((pos) => {
         this.widget.getDuration((dur) => {
           const state = {
-            trackId: this.currentTrackId,
-            trackUrl: this.iframeElement?.src,
-            position: pos ?? 0,
-            duration: dur ?? 0,
+            trackId:   this.currentTrackId,
+            trackUrl:  this.iframeElement?.src,
+            position:  pos ?? 0,
+            duration:  dur ?? 0,
             isPlaying: this.playPauseIcon?.classList.contains("fa-pause"),
-            apiMode: false
+            apiMode:   false
           };
           localStorage.setItem("playerState", JSON.stringify(state));
         });
       });
-    } catch(_) {}
+    } catch (_) {}
   }
 
   tryRestore(state, retry = 0) {
@@ -615,10 +498,7 @@ export default class extends Controller {
     if (!this.widget) return setTimeout(() => this.tryRestore(state, retry), 300);
     this.widget.getDuration((dur) => {
       if (!dur) return setTimeout(() => this.tryRestore(state, retry), 300);
-      this.widget.getCurrentSound((s) => {
-        if (s?.title) this._applySoundMetadata(s);
-        else if (retry < 5) return setTimeout(() => this.tryRestore(state, retry+1), 250);
-      });
+      this.widget.getCurrentSound((s) => { if (s?.title) this._applySoundMetadata(s); else if (retry < 5) return setTimeout(() => this.tryRestore(state, retry+1), 250); });
       this.widget.seekTo(state.position || 0);
       if (!state.isPlaying) this.widget.pause();
       this.setPlayPauseAria(state.isPlaying);
@@ -633,7 +513,8 @@ export default class extends Controller {
     this.bottomPlayer?.classList.remove("d-none");
     this.resetPlayerUI();
     await this._playViaApi(url, { resumeMs: state.position || 0, autoStart: state.isPlaying }).catch((err)=>{
-      console.warn("[global-player] resume via API failed, fallback:", err?.name || err?.message || err);
+      // 復元失敗でも即ウィジェット可視化へ
+      window.__forceWidgetOnly = true;
       this._fallbackToWidgetFromAudio(url);
     });
   }
@@ -681,6 +562,7 @@ export default class extends Controller {
     this.trackTitleTopEl && (this.trackTitleTopEl.textContent = title);
   }
 
+  // ---------- 強制再生（Autoplay対策） ----------
   _forcePlay(maxTries = 5) {
     if (!this.widget) return;
     let tries = 0;
@@ -696,6 +578,7 @@ export default class extends Controller {
     setTimeout(tick, 50);
   }
 
+  // ---------- iframe作成 ----------
   replaceIframeWithNew(visible) {
     const oldIframe = document.getElementById("hidden-sc-player");
     const parent = (oldIframe && oldIframe.parentNode) || (this.bottomPlayer && this.bottomPlayer.parentNode) || document.body;
@@ -711,17 +594,20 @@ export default class extends Controller {
     return newIframe;
   }
 
+  // ---------- 外部 URL 再生 ----------
   async playFromExternal(playUrl) {
     this.bottomPlayer?.classList.remove("d-none"); this.bottomPlayer?.offsetHeight;
     if (this.widget) { this.unbindWidgetEvents(); clearInterval(this.progressInterval); this.widget = null; }
+
     if (this._canUseApiOnIOS()) {
       this.resetPlayerUI();
       await this._playViaApi(playUrl).catch((err) => {
-        console.warn("[global-player] _playViaApi failed, fallback to widget:", err?.name || err?.message || err);
+        window.__forceWidgetOnly = true; // 以降はウィジェット固定
         this._fallbackToWidgetFromAudio(playUrl);
       });
       return;
     }
+
     const show = this._needsHandshake(); if (show) this._showHandshakeHint();
     this.iframeElement = this.replaceIframeWithNew(show); if (!this.iframeElement) { alert("iframe 生成に失敗しました"); return; }
     this.resetPlayerUI();
@@ -742,6 +628,7 @@ export default class extends Controller {
     };
   }
 
+  // ---------- トラック再生（タイル/アイコン） ----------
   async loadAndPlay(event) {
     event?.stopPropagation?.(); this.updatePlaylistOrder();
     const el = event?.currentTarget;
@@ -766,7 +653,7 @@ export default class extends Controller {
 
     if (this._canUseApiOnIOS()) {
       await this._playViaApi(trackUrl).catch((err) => {
-        console.warn("[global-player] _playViaApi failed, fallback to widget:", err?.name || err?.message || err);
+        window.__forceWidgetOnly = true;
         this._fallbackToWidgetFromAudio(trackUrl, el);
       });
       return;
@@ -775,7 +662,6 @@ export default class extends Controller {
     const show = this._needsHandshake(); if (show) this._showHandshakeHint();
     this.iframeElement = this.replaceIframeWithNew(show); if (!this.iframeElement) return;
     this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&auto_play=${show ? "false" : "true"}`;
-
     this.iframeElement.onload = () => {
       setTimeout(() => {
         try { this.widget = SC.Widget(this.iframeElement); } catch(_) { return setTimeout(() => this.loadAndPlay({ currentTarget: el, stopPropagation(){} }), 120); }
@@ -793,17 +679,38 @@ export default class extends Controller {
     };
   }
 
+  // ---------- iOS(API) 再生本体 ----------
   async _playViaApi(playUrl, opts = {}) {
     const { resumeMs = 0, autoStart = true } = opts;
     this._lastResolvedTrackUrl = playUrl;
 
-    const { url: streamUrl, isHls } = await this._resolveStreamUrl(playUrl);
-    console.log("[global-player] stream url resolved. isHls:", isHls, "url:", streamUrl);
+    let streamUrl, isHls;
+    try {
+      ({ url: streamUrl, isHls } = await this._resolveStreamUrl(playUrl));
+    } catch (err) {
+      // ここで毎回 TypeError などが出る環境では速やかにウィジェット固定に切替
+      window.__forceWidgetOnly = true;
+      this._fallbackToWidgetFromAudio(playUrl);
+      return;
+    }
 
     const a = this._ensureAudio();
     a.src = streamUrl; a.crossOrigin = "anonymous"; a.load();
+
     if (resumeMs > 0) { try { a.currentTime = resumeMs/1000; } catch(_) {} }
 
+    // iOS自動再生はユーザー起点ならOK。失敗時は即ウィジェットに退避
+    if (autoStart !== false) {
+      try {
+        await a.play();
+      } catch (err) {
+        window.__forceWidgetOnly = true;
+        this._fallbackToWidgetFromAudio(playUrl);
+        return;
+      }
+    }
+
+    // 進捗トラッキング（API版で上書き）
     this.startProgressTracking = () => {
       clearInterval(this.progressInterval);
       this.progressInterval = setInterval(() => {
@@ -822,31 +729,22 @@ export default class extends Controller {
     };
 
     this.changeVolume({ target: this.volumeBar });
-
-    if (autoStart !== false) {
-      try { await a.play(); console.log("[global-player] audio.play() ok"); }
-      catch (err) {
-        console.error("[global-player] audio.play() failed:", err?.name || err?.message || err);
-        if (isHls) {
-          console.warn("[global-player] Fallback to widget because HLS failed on iOS");
-          this._fallbackToWidgetFromAudio(playUrl);
-          return;
-        }
-        alert("再生を開始できませんでした。もう一度 ▶ をタップしてください。");
-      }
-    }
     this.startProgressTracking();
     this.updateTrackIcon(this.currentTrackId, true);
     this.setPlayPauseAria(true);
     this.savePlayerState();
   }
 
-  _fallbackToWidgetFromAudio(trackUrl) {
+  _fallbackToWidgetFromAudio(trackUrl, el = null) {
     this._disposeAudio();
     const url = trackUrl || this._lastResolvedTrackUrl; if (!url) return;
-    const show = this._needsHandshake(); if (show) this._showHandshakeHint();
+
+    const show = this._isIOS(); // iOSは必ず可視（ハンドシェイクのため）
+    if (show) this._showHandshakeHint();
+
     this.iframeElement = this.replaceIframeWithNew(show); if (!this.iframeElement) return;
-    this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&auto_play=${show ? "false" : "true"}`;
+    this.iframeElement.classList.add("sc-visible");
+    this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(this._normalizeTrackUrl(url))}&auto_play=${show ? "false" : "true"}`;
     this.iframeElement.onload = () => {
       setTimeout(() => {
         try { this.widget = SC.Widget(this.iframeElement); } catch(_) { return; }
@@ -860,31 +758,36 @@ export default class extends Controller {
     };
   }
 
-  // 再生/一時停止
+  // ---------- トグル ----------
   togglePlayPause(event) {
     event?.stopPropagation?.();
+
     if (this._canUseApiOnIOS()) {
       const a = this._ensureAudio();
       if (!a.src) { alert("プレイヤーが初期化されていません。もう一度曲を選んでください。"); return; }
-      if (a.paused) a.play().catch((err)=>{ console.error("resume play failed:", err?.name || err); alert("再生に失敗しました。もう一度タップしてください。"); });
+      if (a.paused) a.play().catch(()=>alert("再生に失敗しました。もう一度タップしてください。"));
       else a.pause();
       setTimeout(()=>this.savePlayerState(), 300);
       return;
     }
+
     if (!this.widget) {
       this.iframeElement = document.getElementById("hidden-sc-player");
       if (this.iframeElement && this.iframeElement.src) {
-        try { this.widget = SC.Widget(this.iframeElement); this.bindWidgetEvents(); }
+        try { this.widget = SC.Widget(this.iframeElement); this.bindWidgetEvents(); if (typeof this.restorePlayerState === "function") this.restorePlayerState(); }
         catch { alert("プレイヤーの初期化に失敗しました。もう一度曲を選んでください。"); return; }
       } else { alert("プレイヤーが初期化されていません。もう一度曲を選んでください。"); return; }
     }
+
     if (this._needsHandshake()) { this._showHandshakeHint(); try { this.iframeElement?.classList.add("sc-visible"); } catch(_) {} return; }
+
     this.widget.isPaused((paused) => {
       if (paused) { this.widget.play(); setTimeout(()=>this._forcePlay(2),120); } else { this.widget.pause(); }
       setTimeout(()=>this.savePlayerState(), 500);
     });
   }
 
+  // ---------- SC Widget イベント ----------
   onPlay = () => {
     if (this._needsHandshake()) { this._markHandshakeDone(); this._hideHandshakeHint(); try { this.iframeElement?.classList.remove("sc-visible"); } catch(_) {} }
     this.playPauseIcon?.classList.replace("fa-play","fa-pause");
@@ -905,9 +808,11 @@ export default class extends Controller {
   onFinish = () => {
     const playedMs = this.playStartedAt ? Date.now()-this.playStartedAt : 0;
     this.stopWaveformAnime();
-    if (playedMs < 32000 && playedMs > 5000) (window.Swal)
-      ? Swal.fire({ icon:"info", title:"試聴終了", text:"この曲の視聴は30秒までです（権利制限）" })
-      : alert("この曲の視聴は30秒までです（権利制限）");
+    if (playedMs < 32000 && playedMs > 5000) {
+      (window.Swal)
+        ? Swal.fire({ icon:"info", title:"試聴終了", text:"この曲の視聴は30秒までです（権利制限）" })
+        : alert("この曲の視聴は30秒までです（権利制限）");
+    }
     this.playPauseIcon?.classList.replace("fa-pause","fa-play");
     this.updateTrackIcon(this.currentTrackId,false);
     this.setPlayPauseAria(false);
@@ -933,6 +838,7 @@ export default class extends Controller {
     this.savePlayerState();
   };
 
+  // ---------- アイコン更新 / バインド ----------
   updateTrackIcon(trackId, playing) {
     if (!this.hasPlayIconTarget) {
       this._qa('[data-track-id]', this._container()).forEach((node) => {
@@ -968,7 +874,9 @@ export default class extends Controller {
     this.widget.bind(SC.Widget.Events.FINISH, this.onFinish);
   }
 
+  // ---------- 進行状況 ----------
   startProgressTracking() {
+    // ウィジェット用（API時は _playViaApi 内で上書き）
     clearInterval(this.progressInterval);
     this.progressInterval = setInterval(() => {
       if (!this.widget || this.isSeeking) return;
@@ -986,9 +894,11 @@ export default class extends Controller {
     }, 1000);
   }
 
+  // ---------- シーク / ボリューム ----------
   seek(e) {
     const percent = Number(e?.target?.value ?? this.seekBar?.value ?? 0);
     this.isSeeking = true;
+
     if (this._canUseApiOnIOS() && this.audio) {
       const dur = Math.max(0, (this.audio.duration||0)*1000); if (!dur) { this.isSeeking=false; return; }
       const ms = Math.max(0, Math.min(dur, Math.round((percent/100)*dur)));
@@ -998,6 +908,7 @@ export default class extends Controller {
       setTimeout(()=>{ this.isSeeking=false; }, 50);
       return;
     }
+
     if (!this.widget || !this.seekBar) return;
     this.widget.getDuration((dur) => {
       if (!dur) { this.isSeeking=false; return; }
@@ -1017,6 +928,7 @@ export default class extends Controller {
     this.updateVolumeAria(String(clamped));
   }
 
+  // ---------- プレイアイコン ----------
   onPlayIconClick(evt) { this.loadAndPlay(evt); }
 
   formatTime(ms) {
@@ -1025,6 +937,7 @@ export default class extends Controller {
     return `${m}:${s.toString().padStart(2,"0")}`;
   }
 
+  // ---------- 前後 ----------
   prevTrack(event) {
     event?.stopPropagation?.(); this.updatePlaylistOrder();
     if (!this.playlistOrder?.length) return;
@@ -1070,6 +983,7 @@ export default class extends Controller {
     icon && this.loadAndPlay({ currentTarget: icon, stopPropagation(){} });
   }
 
+  // レイアウト切替
   switchPlayerTopRow() {
     const isMobile = window.innerWidth <= 768;
     const desktopRow = document.getElementById("player-top-row-desktop");
@@ -1079,6 +993,7 @@ export default class extends Controller {
     mobileRow.style.display  = isMobile ? "flex" : "none";
   }
 
+  // ---------- UI表示 ----------
   showLoadingUI() {
     this.playPauseIcon?.classList.add("is-hidden");
     this.playPauseButton?.setAttribute("disabled","disabled");
@@ -1114,7 +1029,7 @@ export default class extends Controller {
   }
   resetPlayerUI() {
     this.currentTimeEl && (this.currentTimeEl.textContent = "0:00");
-    this.durationEl && (this.durationEl.textContent = "0:00");
+    this.durationEl && (this.durationEl.textContent   = "0:00");
     this.seekBar && (this.seekBar.value = 0);
     this.updateSeekAria(0,0,0);
     if (this.hasPlayIconTarget) this.playIconTargets.forEach((icn)=>{ icn.classList.add("fa-play"); icn.classList.remove("fa-pause"); });
@@ -1124,6 +1039,7 @@ export default class extends Controller {
     this.showLoadingUI();
   }
 
+  // ---------- シャッフル / リピート ----------
   toggleShuffle() {
     this.isShuffle = !this.isShuffle;
     const btn = document.getElementById("shuffle-button");
