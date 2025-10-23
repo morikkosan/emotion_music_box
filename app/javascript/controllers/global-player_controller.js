@@ -701,6 +701,7 @@ export default class extends Controller {
 
   // -------------- トラック再生（iOSは<audio>、それ以外はWidget） -----------------
   async loadAndPlay(event) {
+    
     event?.stopPropagation?.();
     this.updatePlaylistOrder();
 
@@ -708,7 +709,12 @@ export default class extends Controller {
     const newTrackId = el?.dataset?.trackId;
     let playUrl  = el?.dataset?.playUrl;
     let streamUrl = el?.dataset?.streamUrl || el?.dataset?.hlsUrl; // ★iOS用（任意）
-
+    console.log("[loadAndPlay]", {
+    ios: this._isIOS(),
+    playUrl,
+    hasStream: !!streamUrl,
+    hasResolver: typeof window.SC_IOS_STREAM_RESOLVER === "function"
+  });
     if (!playUrl && newTrackId) {
       const img = this.trackImageTargets.find((t) => t.dataset.trackId == newTrackId);
       playUrl   = img?.dataset.playUrl || playUrl;
