@@ -103,6 +103,7 @@ export default class extends Controller {
     a.preload = "metadata";
     a.crossOrigin = "anonymous";
     a.playsInline = true; // iOS Safari
+    a.autoplay = true;    // ユーザー操作直後の自動再生を許可
     a.setAttribute("webkit-playsinline", "true");
     a.style.display = "none";
     document.body.appendChild(a);
@@ -199,9 +200,12 @@ export default class extends Controller {
   async _playViaAudio({ streamUrl, hlsUrl, title, artist, artwork }) {
     const a = this._ensureAudio();
 
-    // HLSよりprogressive優先（短いレイテンシと安定性）。HLSしか無ければHLSを使う。
+    // Progressive を優先。無ければ HLS。
     const src = streamUrl || hlsUrl;
     if (!src) throw new Error("No stream URL for iOS");
+
+    // 初回成功率向上：ミュート→play→canplayでアンミュート
+    a.muted = true;
 
     if (a.src !== src) {
       a.src = src;
@@ -225,8 +229,22 @@ export default class extends Controller {
       a.volume = v;
     }
 
-    // 初回タップ直後に必ず発火するので iOSでも通る
-    await a.play();
+    // 再生（失敗したら muted を維持したままリトライ）
+    try {
+      await a.play();
+    } catch (e) {
+      // iOS 初回で稀に失敗するケースに備える
+      try {
+        await a.play();
+      } catch (e2) {
+        console.warn("[iOS audio] play() 失敗:", e2);
+        throw e2;
+      }
+    }
+
+    // 再生可能になったらアンミュート（聴こえるように）
+    const unmute = () => { a.muted = false; a.removeEventListener("canplay", unmute); };
+    a.addEventListener("canplay", unmute);
   }
 
   // ====== ライフサイクル ======
