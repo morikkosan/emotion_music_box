@@ -100,6 +100,35 @@
   <!-- ✅ player API を defer で非ブロッキング化（機能は変わりません） -->
   <script defer src="https://w.soundcloud.com/player/api.js"></script>
 
+   <!-- ✅ ここに追加（iOS用 直URLリゾルバ） -->
+  <script nonce="<%= content_security_policy_nonce %>">
+  // iOS: SoundCloud再生ページURL(playUrl) → 実ストリームURLを返す最小リゾルバ
+  window.SC_IOS_STREAM_RESOLVER = async function(playUrl) {
+    const qs = (obj) => Object.entries(obj).map(([k,v]) =>
+      `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+
+    // 1) プレイURLを解決（transcodings を取る）
+    const r = await fetch(`/sc/resolve?${qs({ url: playUrl })}`, { credentials: "same-origin" });
+    if (!r.ok) throw new Error("resolve failed");
+    const meta = await r.json();
+    const list = (meta && meta.media && meta.media.transcodings) || [];
+    if (!list.length) throw new Error("no transcodings");
+
+    // 2) iOSはHLS優先、なければprogressive
+    const hls  = list.find(t => t.format?.protocol === "hls");
+    const prog = list.find(t => t.format?.protocol === "progressive");
+    const pick = hls || prog;
+    if (!pick) throw new Error("no supported transcoding");
+
+    // 3) サイン済み最終URLを取得
+    const s = await fetch(`/sc/stream?${qs({ locator: pick.url })}`, { credentials: "same-origin" });
+    if (!s.ok) throw new Error("stream sign failed");
+    const j = await s.json();
+    if (!j?.url) throw new Error("no stream url");
+    return j.url;
+  };
+  </script>
+
   <!-- Railsのapplication.js（defer必須！） -->
   <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module", defer: true %>
 
