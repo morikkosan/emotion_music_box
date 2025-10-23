@@ -14,10 +14,8 @@
  *   seekTo: (ms:number) => void,
  *   setVolume: (pct:number) => void
  * }} SCWidget
- * @typedef {{ trackId:string|null, trackUrl?:string, position:number, duration:number, isPlaying:boolean }} PlayerState
  */
 
-// app/javascript/controllers/global_player_controller.js
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
@@ -67,7 +65,7 @@ export default class extends Controller {
     } catch (_) {}
   }
 
-  // ===== iOS: AudioContext unlock（念のため維持。UIは変えない） =====
+  // ===== iOS: AudioContext unlock =====
   _setupIOSAudioUnlock() {
     try {
       if (!this._isIOS()) return;
@@ -102,8 +100,8 @@ export default class extends Controller {
     a.id = "ios-hidden-audio";
     a.preload = "metadata";
     a.crossOrigin = "anonymous";
-    a.playsInline = true; // iOS Safari
-    a.autoplay = true;    // ユーザー操作直後の自動再生を許可
+    a.playsInline = true;
+    a.autoplay = true;
     a.setAttribute("webkit-playsinline", "true");
     a.style.display = "none";
     document.body.appendChild(a);
@@ -164,7 +162,6 @@ export default class extends Controller {
       clearInterval(this.progressInterval);
       this.playStartedAt = null;
 
-      // 既存と同じ自動遷移
       if (this.isRepeat) {
         const icon = this.playIconTargets.find((icn) => icn.dataset.trackId == this.currentTrackId)
           || this._q(`[data-track-id="${CSS.escape(String(this.currentTrackId))}"]`, this._container());
@@ -186,7 +183,6 @@ export default class extends Controller {
       this.savePlayerState();
     });
 
-    // Media Session（ロック画面の前/次）
     if ("mediaSession" in navigator) {
       try {
         navigator.mediaSession.setActionHandler("play",  () => this.audio?.play());
@@ -199,12 +195,9 @@ export default class extends Controller {
 
   async _playViaAudio({ streamUrl, hlsUrl, title, artist, artwork }) {
     const a = this._ensureAudio();
-
-    // Progressive を優先。無ければ HLS。
     const src = streamUrl || hlsUrl;
     if (!src) throw new Error("No stream URL for iOS");
 
-    // 初回成功率向上：ミュート→play→canplayでアンミュート
     a.muted = true;
 
     if (a.src !== src) {
@@ -212,7 +205,6 @@ export default class extends Controller {
       try { await a.load?.(); } catch (_) {}
     }
 
-    // Media Session metadata
     if ("mediaSession" in navigator) {
       try {
         navigator.mediaSession.metadata = new window.MediaMetadata({
@@ -223,22 +215,15 @@ export default class extends Controller {
       } catch (_) {}
     }
 
-    // 音量／UI同期
     if (this.volumeBar) {
       const v = Math.max(0, Math.min(1, Number(this.volumeBar.value) / 100 || 1));
       a.volume = v;
     }
 
-    // 再生（失敗したら muted を維持したままリトライ）
     try {
       await a.play();
     } catch (e) {
-      try {
-        await a.play();
-      } catch (e2) {
-        console.warn("[iOS audio] play() 失敗:", e2);
-        throw e2;
-      }
+      try { await a.play(); } catch (e2) { console.warn("[iOS audio] play() 失敗:", e2); throw e2; }
     }
 
     const unmute = () => { a.muted = false; a.removeEventListener("canplay", unmute); };
@@ -320,7 +305,6 @@ export default class extends Controller {
 
     this._setupIOSAudioUnlock();
 
-    // シークバーのドラッグ制御
     this._onMouseUpSeek = () => {
       if (this.isSeeking) {
         this.isSeeking = false;
@@ -333,7 +317,6 @@ export default class extends Controller {
     });
     document.addEventListener("mouseup", this._onMouseUpSeek);
 
-    // 保険ハンドラ
     this._onSeekInput   = (e) => this.seek(e);
     this._onVolumeInput = (e) => this.changeVolume(e);
     this._onPrevClick   = (e) => this.prevTrack(e);
@@ -345,7 +328,6 @@ export default class extends Controller {
     this._prevBtn?.addEventListener("click", this._onPrevClick);
     this._nextBtn?.addEventListener("click", this._onNextClick);
 
-    // クリック委譲（UIそのまま）
     this._onIconClickDelegated = (e) => {
       const target = e.target.closest("[data-track-id]");
       if (!target) return;
@@ -363,7 +345,6 @@ export default class extends Controller {
     };
     this._container()?.addEventListener("click", this._onIconClickDelegated);
 
-    // 外部検索から再生
     window.addEventListener("play-from-search", (e) => {
       const { playUrl } = e.detail;
       this.playFromExternal(playUrl);
@@ -378,7 +359,6 @@ export default class extends Controller {
       }
     });
 
-    // 初期見た目とA11y
     const shuffleBtn = document.getElementById("shuffle-button");
     if (shuffleBtn) { shuffleBtn.classList.toggle("active", this.isShuffle); shuffleBtn.setAttribute("aria-pressed", String(this.isShuffle)); }
     const repeatBtn = document.getElementById("repeat-button");
@@ -387,7 +367,6 @@ export default class extends Controller {
     this.updateSeekAria(0, 0, 0);
     this.updateVolumeAria(this.volumeBar?.value ?? "100");
 
-    // フッター「再生」活性/非活性
     this._updatePlayButton = () => {
       const btn = document.querySelector(".mobile-footer-menu .playfirst");
       if (!btn) return;
@@ -442,7 +421,6 @@ export default class extends Controller {
   }
 
   tryRestore(state, retry = 0) {
-    // iOS audio では使わない（復元時は自動再生しない）
     if (!this.widget) return;
     this.widget.getDuration((dur) => {
       if (!dur) return setTimeout(() => this.tryRestore(state, retry), 300);
@@ -469,13 +447,9 @@ export default class extends Controller {
     this.bottomPlayer?.classList.remove("d-none");
 
     if (this._isIOS()) {
-      // iOS: audio での復元（自動再生はしない）
       this._ensureAudio();
       this.resetPlayerUI();
-      try {
-        this.audio.src = state.trackUrl;
-      } catch (_) {}
-      // 位置は復元するが、勝手に再生はしない
+      try { this.audio.src = state.trackUrl; } catch (_) {}
       const pos = (state.position || 0) / 1000;
       if (Number.isFinite(pos) && pos > 0) {
         const onMeta = () => {
@@ -484,14 +458,12 @@ export default class extends Controller {
         };
         this.audio.addEventListener("loadedmetadata", onMeta);
       }
-      // UIだけ同期
       this.updateTrackIcon(this.currentTrackId, state.isPlaying);
       this.setPlayPauseAria(false);
       this.startProgressTracking();
       return;
     }
 
-    // 非iOS: 既存Widgetの復元
     if (this.widget) {
       this.unbindWidgetEvents();
       clearInterval(this.progressInterval);
@@ -531,9 +503,8 @@ export default class extends Controller {
     this.trackTitleTopEl && (this.trackTitleTopEl.textContent = title);
   }
 
-  // -------------- 外部 URL 再生（検索など） -----------------
+  // -------------- 外部 URL 再生 -----------------
   playFromExternal(playUrl) {
-    // 外部経路は従来のWidgetルート（iOSでもデータ属性に stream が無い想定のため）
     this.bottomPlayer?.classList.remove("d-none");
     this.bottomPlayer?.offsetHeight;
 
@@ -676,7 +647,7 @@ export default class extends Controller {
     this.showLoadingUI();
   }
 
-  // -------------- iframe 差し替え（非iOS用） -----------------
+  // -------------- iframe 差し替え -----------------
   replaceIframeWithNew() {
     const oldIframe = document.getElementById("hidden-sc-player");
     const parent = (oldIframe && oldIframe.parentNode)
@@ -694,7 +665,6 @@ export default class extends Controller {
     newIframe.height = "166";
 
     if (this._isIOS()) {
-      // iOS は display:none の iframe が再生ブロックされやすいので非表示にしない
       Object.assign(newIframe.style, {
         position: "fixed",
         width: "1px",
@@ -711,17 +681,16 @@ export default class extends Controller {
     return newIframe;
   }
 
-  // -------------- トラック再生（iOSは<audio>、それ以外はWidget） -----------------
+  // -------------- トラック再生（iOSは必ず直URLに解決） -----------------
   async loadAndPlay(event) {
     event?.stopPropagation?.();
     this.updatePlaylistOrder();
 
     const el = event?.currentTarget;
     const newTrackId = el?.dataset?.trackId;
-    let playUrl  = el?.dataset?.playUrl;
-    let streamUrl = el?.dataset?.streamUrl || el?.dataset?.hlsUrl; // ★iOS用（任意）
+    let playUrl   = el?.dataset?.playUrl;
+    let streamUrl = el?.dataset?.streamUrl || el?.dataset?.hlsUrl;
 
-    // 参照元から補完
     if (!playUrl && newTrackId) {
       const img = this.trackImageTargets.find((t) => t.dataset.trackId == newTrackId);
       playUrl   = img?.dataset.playUrl || playUrl;
@@ -734,65 +703,71 @@ export default class extends Controller {
     }
     if (!playUrl) return;
 
-    // 状態とUI
+    console.log("[loadAndPlay]", {
+      ios: this._isIOS(),
+      playUrl,
+      hasStream: !!streamUrl,
+      hasResolver: typeof window.SC_IOS_STREAM_RESOLVER === "function"
+    });
+
     this.resetPlayerUI();
     this.bottomPlayer?.classList.remove("d-none");
     this.currentTrackId = newTrackId || null;
 
-    // === iOS: まず自前で streamUrl を解決して <audio> へ ===
+    // iOS: 必ず直URLを取って <audio> 再生
     if (this._isIOS()) {
-      // streamUrl が無い場合は /sc/resolve → /sc/stream で直URLを取得
-      if (!streamUrl && playUrl) {
-        try {
-          const qs = (obj) => Object.entries(obj).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
-          const r = await fetch(`/sc/resolve?${qs({ url: playUrl })}`, { credentials: "same-origin" });
-          const meta = await r.json();
-          const list = meta?.media?.transcodings || [];
-          const pick = list.find(t => t.format?.protocol === "hls") || list[0];
-          if (pick?.url) {
-            const s = await fetch(`/sc/stream?${qs({ locator: pick.url })}`, { credentials: "same-origin" });
-            const j = await s.json();
-            if (j?.url) streamUrl = j.url;
-          }
-        } catch (e) {
-          console.warn("[iOS inline resolver] 失敗", e);
+      try {
+        // クリック直後に無音を再生して“鍵開け”
+        const a = this._ensureAudio();
+        a.muted = true;
+        if (!a.src) {
+          // 1フレームの無音dataURI（短ければ何でもOK）
+          a.src = "data:audio/mp4;base64,AAAAIGZ0eXBtcDQyAAAAAG1wNDFpc29t";
+          try { await a.play(); } catch (_) {}
         }
-      }
 
-      console.log("[loadAndPlay]", {
-        ios: this._isIOS(),
-        playUrl,
-        hasStream: !!streamUrl,
-        hasResolver: typeof window.SC_IOS_STREAM_RESOLVER === "function"
-      });
-
-      if (streamUrl || window.SC_IOS_STREAM_RESOLVER) {
-        try {
-          // タイトル・アーティスト（DOMから拾う / MediaSessionで上書き）
-          const title  = (this._q(`[data-track-title][data-track-id="${CSS.escape(String(this.currentTrackId))}"]`)?.textContent || "").trim();
-          const artist = (this._q(`[data-track-artist][data-track-id="${CSS.escape(String(this.currentTrackId))}"]`)?.textContent || "").trim();
-          const artwork = this._q(`[data-track-artwork][data-track-id="${CSS.escape(String(this.currentTrackId))}"]`)?.getAttribute("data-track-artwork") || "";
-
-          let resolved = streamUrl;
-          if (!resolved && typeof window.SC_IOS_STREAM_RESOLVER === "function") {
-            resolved = await window.SC_IOS_STREAM_RESOLVER(playUrl);
-          }
-
-          await this._playViaAudio({ streamUrl: resolved, title, artist, artwork });
-          // UI同期
-          this.setTrackTitle(title || this.trackTitleEl?.textContent || "");
-          this.setArtist(artist || this.trackArtistEl?.textContent || "");
-          this.hideLoadingUI();
-          this.startProgressTracking();
-          return;
-        } catch (e) {
-          console.warn("[iOS audio] フォールバック to Widget:", e);
-          // 失敗時はWidgetルートにフォールバック
+        // 直URL解決
+        if (!streamUrl && playUrl) {
+          const qs = (o) => Object.entries(o).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+          try {
+            const r = await fetch(`/sc/resolve?${qs({ url: playUrl })}`, { credentials: "same-origin" });
+            const meta = await r.json();
+            const list = meta?.media?.transcodings || [];
+            const pick = list.find(t=>t.format?.protocol==="hls") || list[0];
+            if (pick?.url) {
+              const s = await fetch(`/sc/stream?${qs({ locator: pick.url })}`, { credentials: "same-origin" });
+              const j = await s.json();
+              if (j?.url) streamUrl = j.url;
+            }
+          } catch (e) { console.warn("[iOS inline resolver] 失敗", e); }
         }
+        if (!streamUrl && typeof window.SC_IOS_STREAM_RESOLVER === "function") {
+          streamUrl = await window.SC_IOS_STREAM_RESOLVER(playUrl);
+        }
+        if (!streamUrl) throw new Error("streamUrl not resolved");
+
+        // メタ
+        const title  = (this._q(`[data-track-title][data-track-id="${CSS.escape(String(this.currentTrackId))}"]`)?.textContent || "").trim();
+        const artist = (this._q(`[data-track-artist][data-track-id="${CSS.escape(String(this.currentTrackId))}"]`)?.textContent || "").trim();
+        const artwork = this._q(`[data-track-artwork][data-track-id="${CSS.escape(String(this.currentTrackId))}"]`)?.getAttribute("data-track-artwork") || "";
+
+        // 無音 → 本番URLへ差し替え
+        a.src = streamUrl;
+        try { await a.load?.(); } catch (_) {}
+        await this._playViaAudio({ streamUrl, title, artist, artwork });
+        a.muted = false;
+
+        this.setTrackTitle(title || this.trackTitleEl?.textContent || "");
+        this.setArtist(artist || this.trackArtistEl?.textContent || "");
+        this.hideLoadingUI();
+        this.startProgressTracking();
+        return;
+      } catch (e) {
+        console.warn("[iOS audio] フォールバック to Widget:", e);
       }
     }
 
-    // === 非iOS or iOSでstreamUrl取得失敗: 従来のWidgetルート ===
+    // 非iOS or iOS失敗時：Widget
     if (this.widget) { this.unbindWidgetEvents(); clearInterval(this.progressInterval); this.widget = null; }
     this.iframeElement = this.replaceIframeWithNew();
     if (!this.iframeElement) return;
@@ -831,15 +806,13 @@ export default class extends Controller {
     event?.stopPropagation?.();
 
     if (this._isIOS()) {
-      // iOS: <audio>
       const a = this._ensureAudio();
-      if (!a.src) return; // まだ曲を選んでいない
+      if (!a.src) return;
       if (a.paused) a.play(); else a.pause();
       setTimeout(() => this.savePlayerState(), 300);
       return;
     }
 
-    // 非iOS: Widget
     if (!this.widget) {
       this.iframeElement = document.getElementById("hidden-sc-player");
       if (this.iframeElement && this.iframeElement.src) {
@@ -905,7 +878,6 @@ export default class extends Controller {
     this.loadAndPlay(event);
   }
 
-  /* ---------- 再生イベント（Widget用） ---------- */
   onPlay = () => {
     console.log("onPlayイベント発火！");
     this.playPauseIcon?.classList.replace("fa-play", "fa-pause");
@@ -965,7 +937,6 @@ export default class extends Controller {
     this.savePlayerState();
   };
 
-  /* ---------- アイコン更新 / バインド ---------- */
   updateTrackIcon(trackId, playing) {
     if (!this.hasPlayIconTarget) {
       this._qa('[data-track-id]', this._container()).forEach((node) => {
@@ -1003,7 +974,6 @@ export default class extends Controller {
     this.widget.bind(SC.Widget.Events.FINISH, this.onFinish);
   }
 
-  /* ---------- 再生位置 / 時間表示 ---------- */
   startProgressTracking() {
     clearInterval(this.progressInterval);
     this.progressInterval = setInterval(() => {
@@ -1046,7 +1016,6 @@ export default class extends Controller {
     return `${m}:${s.toString().padStart(2, "0")}`;
   }
 
-  /* ---------- 前後トラック ---------- */
   prevTrack(event) {
     event?.stopPropagation?.();
     this.updatePlaylistOrder();
@@ -1112,9 +1081,6 @@ export default class extends Controller {
     icon && this.loadAndPlay({ currentTarget: icon, stopPropagation() {} });
   }
 
-  /* ==================================================
-   *  レイアウト（PC / モバイル）切替
-   * ================================================== */
   switchPlayerTopRow() {
     const isMobile  = window.innerWidth <= 768;
     const desktopRow = document.getElementById("player-top-row-desktop");
