@@ -102,32 +102,50 @@
 
    <!-- ✅ ここに追加（iOS用 直URLリゾルバ） -->
   <script nonce="<%= content_security_policy_nonce %>">
-  // iOS: SoundCloud再生ページURL(playUrl) → 実ストリームURLを返す最小リゾルバ
-  window.SC_IOS_STREAM_RESOLVER = async function(playUrl) {
-    const qs = (obj) => Object.entries(obj).map(([k,v]) =>
-      `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+// iOS: SoundCloud再生ページ(playUrl) → 実ストリームURLを返す解決器（詳細ログ付）
+window.SC_IOS_STREAM_RESOLVER = async function(playUrl) {
+  const t0 = performance.now();
+  const log = (...a) => console.log("[resolver]", ...a);
 
-    // 1) プレイURLを解決（transcodings を取る）
+  const qs = (obj) => Object.entries(obj)
+    .map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+
+  try {
+    log("start", { playUrl });
+
+    // 1) resolve
     const r = await fetch(`/sc/resolve?${qs({ url: playUrl })}`, { credentials: "same-origin" });
-    if (!r.ok) throw new Error("resolve failed");
-    const meta = await r.json();
-    const list = (meta && meta.media && meta.media.transcodings) || [];
-    if (!list.length) throw new Error("no transcodings");
+    log("resolve status:", r.status);
+    const meta = await r.json().catch(e => ({ error: String(e) }));
+    log("resolve body:", meta);
 
-    // 2) iOSはHLS優先、なければprogressive
+    if (!r.ok || !meta || !meta.media || !Array.isArray(meta.media.transcodings)) {
+      throw new Error("resolve failed or missing transcodings");
+    }
+    const list = meta.media.transcodings;
     const hls  = list.find(t => t.format?.protocol === "hls");
     const prog = list.find(t => t.format?.protocol === "progressive");
     const pick = hls || prog;
-    if (!pick) throw new Error("no supported transcoding");
+    if (!pick) throw new Error("no supported transcoding in list");
 
-    // 3) サイン済み最終URLを取得
+    // 2) stream (署名URL)
     const s = await fetch(`/sc/stream?${qs({ locator: pick.url })}`, { credentials: "same-origin" });
-    if (!s.ok) throw new Error("stream sign failed");
-    const j = await s.json();
-    if (!j?.url) throw new Error("no stream url");
+    log("stream status:", s.status);
+    const j = await s.json().catch(e => ({ error: String(e) }));
+    log("stream body:", j);
+
+    if (!s.ok || !j?.url) throw new Error("no stream url in stream response");
+
+    const t1 = performance.now();
+    log("done", { ms: Math.round(t1 - t0), picked: pick.format?.protocol, url: j.url });
     return j.url;
-  };
-  </script>
+  } catch (e) {
+    log("error:", e);
+    throw e;
+  }
+};
+</script>
+
 
   <!-- Railsのapplication.js（defer必須！） -->
   <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module", defer: true %>
