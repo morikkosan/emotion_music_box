@@ -233,7 +233,6 @@ export default class extends Controller {
     try {
       await a.play();
     } catch (e) {
-      // iOS 初回で稀に失敗するケースに備える
       try {
         await a.play();
       } catch (e2) {
@@ -242,7 +241,6 @@ export default class extends Controller {
       }
     }
 
-    // 再生可能になったらアンミュート（聴こえるように）
     const unmute = () => { a.muted = false; a.removeEventListener("canplay", unmute); };
     a.addEventListener("canplay", unmute);
   }
@@ -689,19 +687,32 @@ export default class extends Controller {
 
     const newIframe = document.createElement("iframe");
     newIframe.id = "hidden-sc-player";
-    newIframe.classList.add("is-hidden");
     newIframe.allow = "autoplay; encrypted-media";
     newIframe.frameBorder = "no";
     newIframe.scrolling = "no";
     newIframe.width = "100%";
     newIframe.height = "166";
+
+    if (this._isIOS()) {
+      // iOS は display:none の iframe が再生ブロックされやすいので非表示にしない
+      Object.assign(newIframe.style, {
+        position: "fixed",
+        width: "1px",
+        height: "1px",
+        bottom: "-9999px",
+        opacity: "0",
+        pointerEvents: "none",
+      });
+    } else {
+      newIframe.classList.add("is-hidden");
+    }
+
     parent.appendChild(newIframe);
     return newIframe;
   }
 
   // -------------- トラック再生（iOSは<audio>、それ以外はWidget） -----------------
   async loadAndPlay(event) {
-    
     event?.stopPropagation?.();
     this.updatePlaylistOrder();
 
@@ -709,12 +720,8 @@ export default class extends Controller {
     const newTrackId = el?.dataset?.trackId;
     let playUrl  = el?.dataset?.playUrl;
     let streamUrl = el?.dataset?.streamUrl || el?.dataset?.hlsUrl; // ★iOS用（任意）
-    console.log("[loadAndPlay]", {
-    ios: this._isIOS(),
-    playUrl,
-    hasStream: !!streamUrl,
-    hasResolver: typeof window.SC_IOS_STREAM_RESOLVER === "function"
-  });
+
+    // 参照元から補完
     if (!playUrl && newTrackId) {
       const img = this.trackImageTargets.find((t) => t.dataset.trackId == newTrackId);
       playUrl   = img?.dataset.playUrl || playUrl;
@@ -727,38 +734,65 @@ export default class extends Controller {
     }
     if (!playUrl) return;
 
+    // 状態とUI
     this.resetPlayerUI();
     this.bottomPlayer?.classList.remove("d-none");
     this.currentTrackId = newTrackId || null;
 
-    // iOS: <audio> を優先（streamUrlが無い時はWidgetにフォールバック）
-    if (this._isIOS() && (streamUrl || window.SC_IOS_STREAM_RESOLVER)) {
-      try {
-        // タイトル・アーティスト（DOMから拾う or 後でMediaSessionで上書き）
-        const title  = (this._q(`[data-track-title][data-track-id="${CSS.escape(String(this.currentTrackId))}"]`)?.textContent || "").trim();
-        const artist = (this._q(`[data-track-artist][data-track-id="${CSS.escape(String(this.currentTrackId))}"]`)?.textContent || "").trim();
-        const artwork = this._q(`[data-track-artwork][data-track-id="${CSS.escape(String(this.currentTrackId))}"]`)?.getAttribute("data-track-artwork") || "";
-
-        let resolved = streamUrl;
-        if (!resolved && typeof window.SC_IOS_STREAM_RESOLVER === "function") {
-          // 任意: 開発側で window.SC_IOS_STREAM_RESOLVER(playUrl) を定義しておけば、ここで取得して使える
-          resolved = await window.SC_IOS_STREAM_RESOLVER(playUrl);
+    // === iOS: まず自前で streamUrl を解決して <audio> へ ===
+    if (this._isIOS()) {
+      // streamUrl が無い場合は /sc/resolve → /sc/stream で直URLを取得
+      if (!streamUrl && playUrl) {
+        try {
+          const qs = (obj) => Object.entries(obj).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+          const r = await fetch(`/sc/resolve?${qs({ url: playUrl })}`, { credentials: "same-origin" });
+          const meta = await r.json();
+          const list = meta?.media?.transcodings || [];
+          const pick = list.find(t => t.format?.protocol === "hls") || list[0];
+          if (pick?.url) {
+            const s = await fetch(`/sc/stream?${qs({ locator: pick.url })}`, { credentials: "same-origin" });
+            const j = await s.json();
+            if (j?.url) streamUrl = j.url;
+          }
+        } catch (e) {
+          console.warn("[iOS inline resolver] 失敗", e);
         }
+      }
 
-        await this._playViaAudio({ streamUrl: resolved, title, artist, artwork });
-        // UI同期
-        this.setTrackTitle(title || this.trackTitleEl?.textContent || "");
-        this.setArtist(artist || this.trackArtistEl?.textContent || "");
-        this.hideLoadingUI();
-        this.startProgressTracking();
-        return;
-      } catch (e) {
-        console.warn("[iOS audio] フォールバック to Widget:", e);
-        // 失敗時はWidgetルートにフォールバック
+      console.log("[loadAndPlay]", {
+        ios: this._isIOS(),
+        playUrl,
+        hasStream: !!streamUrl,
+        hasResolver: typeof window.SC_IOS_STREAM_RESOLVER === "function"
+      });
+
+      if (streamUrl || window.SC_IOS_STREAM_RESOLVER) {
+        try {
+          // タイトル・アーティスト（DOMから拾う / MediaSessionで上書き）
+          const title  = (this._q(`[data-track-title][data-track-id="${CSS.escape(String(this.currentTrackId))}"]`)?.textContent || "").trim();
+          const artist = (this._q(`[data-track-artist][data-track-id="${CSS.escape(String(this.currentTrackId))}"]`)?.textContent || "").trim();
+          const artwork = this._q(`[data-track-artwork][data-track-id="${CSS.escape(String(this.currentTrackId))}"]`)?.getAttribute("data-track-artwork") || "";
+
+          let resolved = streamUrl;
+          if (!resolved && typeof window.SC_IOS_STREAM_RESOLVER === "function") {
+            resolved = await window.SC_IOS_STREAM_RESOLVER(playUrl);
+          }
+
+          await this._playViaAudio({ streamUrl: resolved, title, artist, artwork });
+          // UI同期
+          this.setTrackTitle(title || this.trackTitleEl?.textContent || "");
+          this.setArtist(artist || this.trackArtistEl?.textContent || "");
+          this.hideLoadingUI();
+          this.startProgressTracking();
+          return;
+        } catch (e) {
+          console.warn("[iOS audio] フォールバック to Widget:", e);
+          // 失敗時はWidgetルートにフォールバック
+        }
       }
     }
 
-    // === 非iOS or iOSでstreamUrlなし: 従来のWidgetルート ===
+    // === 非iOS or iOSでstreamUrl取得失敗: 従来のWidgetルート ===
     if (this.widget) { this.unbindWidgetEvents(); clearInterval(this.progressInterval); this.widget = null; }
     this.iframeElement = this.replaceIframeWithNew();
     if (!this.iframeElement) return;
