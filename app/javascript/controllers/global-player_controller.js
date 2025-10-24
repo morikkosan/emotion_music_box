@@ -1362,6 +1362,7 @@ export default class extends Controller {
     };
     animate();
   }
+  
   stopWaveformAnime() {
     this.waveformAnimating = false;
     this.waveformCtx && this.waveformCtx.clearRect(0,0,this.waveformCanvas.width,this.waveformCanvas.height);
