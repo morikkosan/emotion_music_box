@@ -319,8 +319,15 @@ export default class extends Controller {
 
     let track;
     try {
-      const r1 = await fetch(v2ViaProxy, { cache: "no-store", credentials: "same-origin" });
-      if (!r1.ok) throw new Error(`proxy resolve non-OK ${r1.status}`);
+      const r1 = await fetch(v2ViaProxy, {
+  cache: "no-store",
+  credentials: "same-origin",
+  headers: window.soundcloudToken ? { "X-SC-OAUTH": window.soundcloudToken } : {}
+});
+      if (!r1.ok) {
+    const txt = await r1.text().catch(()=> "");
+    throw new Error(`proxy resolve non-OK ${r1.status} ${txt.slice(0,160)}`);
+  }
       track = await r1.json();
     } catch (e) {
       this._log("proxy resolve error", e);
@@ -357,8 +364,15 @@ export default class extends Controller {
 
     let j2;
     try {
-      const r2 = await fetch(streamLocatorViaProxy, { cache: "no-store", credentials: "same-origin" });
-      if (!r2.ok) throw new Error(`proxy stream non-OK ${r2.status}`);
+      const r2 = await fetch(streamLocatorViaProxy, {
+    cache: "no-store",
+    credentials: "same-origin",
+  headers: window.soundcloudToken ? { "X-SC-OAUTH": window.soundcloudToken } : {}
+  });
+      if (!r2.ok) {
+    const txt = await r2.text().catch(()=> "");
+    throw new Error(`proxy stream non-OK ${r2.status} ${txt.slice(0,160)}`);
+  }
       j2 = await r2.json();
     } catch (e) {
       this._log("proxy stream error", e);
@@ -857,7 +871,7 @@ export default class extends Controller {
     if (show) this._showHandshakeHint();
 
     this.iframeElement = this.replaceIframeWithNew(show); if (!this.iframeElement) return;
-    this.iframeElement.classList.add("sc-visible");
+   if (show) this.iframeElement.classList.add("sc-visible"); // ★ iOSだけ見せるyy
     this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(this._normalizeTrackUrl(url))}&auto_play=${show ? "false" : "true"}`;
     this.iframeElement.onload = () => {
       setTimeout(() => {

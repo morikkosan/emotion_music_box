@@ -32,7 +32,8 @@
   <%= tag.meta name: "theme-color", content: "#ff69b4" %>
 
   <!-- SoundCloudメタ -->
-  <meta name="soundcloud-client-id" content="<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>">
+  <meta name="soundcloud-client-id" content="<%= ENV['SOUNDCLOUD_CLIENT_ID'].presence || (Rails.application.credentials.dig(:soundcloud, :client_id) rescue nil) %>">
+
   <% if current_user&.soundcloud_token.present? %>
     <meta name="soundcloud-oauth-token" content="<%= current_user.soundcloud_token %>">
   <% end %>
