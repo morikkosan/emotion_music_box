@@ -1,4 +1,4 @@
-/* eslint-env browser */
+/* eslint-env browser */ 
 /* global SC, Swal */
 
 /**
@@ -54,7 +54,17 @@ export default class extends Controller {
     } catch (_) {}
     return "";
   }
-  _canUseApiOnIOS() { return this._isIOS() && !!this._scClientId && !window.__forceWidgetOnly; }
+
+  _hasOAuthToken() {
+    try { return typeof window.soundcloudToken === "string" && window.soundcloudToken.length > 0; }
+    catch (_) { return false; }
+  }
+
+  // ★ iOS で API 再生を使う条件を「client_id かつ OAuth トークン かつ forceフラグが立ってない」に厳格化
+  _canUseApiOnIOS() {
+    return this._isIOS() && !!this._scClientId && this._hasOAuthToken() && !window.__forceWidgetOnly;
+  }
+
   _needsHandshake() { return this._isIOS() && !this._canUseApiOnIOS(); }
   _markHandshakeDone() {}
   _hideScreenCover() {
@@ -313,25 +323,25 @@ export default class extends Controller {
 
     const cleanUrl = this._normalizeTrackUrl(trackUrl);
 
-    // ① 同一オリジンの軽量プロキシで /resolve を叩く
+    // ① 同一オリジンの軽量プロキシで /resolve を叩く（※ トークンがあればヘッダ付与）
     const v2ViaProxy = `/sc/resolve?url=${encodeURIComponent(cleanUrl)}`;
     this._log("resolve (proxy) →", v2ViaProxy);
 
     let track;
     try {
       const r1 = await fetch(v2ViaProxy, {
-  cache: "no-store",
-  credentials: "same-origin",
-  headers: window.soundcloudToken ? { "X-SC-OAUTH": window.soundcloudToken } : {}
-});
+        cache: "no-store",
+        credentials: "same-origin",
+        headers: this._hasOAuthToken() ? { "X-SC-OAUTH": window.soundcloudToken } : {}
+      });
       if (!r1.ok) {
-    const txt = await r1.text().catch(()=> "");
-    throw new Error(`proxy resolve non-OK ${r1.status} ${txt.slice(0,160)}`);
-  }
+        const txt = await r1.text().catch(()=> "");
+        throw new Error(`proxy resolve non-OK ${r1.status} ${txt.slice(0,160)}`);
+      }
       track = await r1.json();
     } catch (e) {
       this._log("proxy resolve error", e);
-      // ② 保険で直アクセス（失敗したら最終的にウィジェットへフォールバック）
+      // ② 保険で直アクセス
       const resolveApi = `https://api-v2.soundcloud.com/resolve?url=${encodeURIComponent(cleanUrl)}&client_id=${encodeURIComponent(cid)}`;
       this._log("resolve (v2 direct) →", resolveApi);
       const r1b = await fetch(resolveApi, {
@@ -351,7 +361,7 @@ export default class extends Controller {
     const trans = Array.isArray(track?.media?.transcodings) ? track.media.transcodings : [];
     if (!trans.length) { this._log("no transcodings"); throw new Error("No transcodings available"); }
 
-    // ★ iOS は progressive 最優先、無ければ HLS（その他も progressive → HLS）
+    // iOS は progressive 最優先、無ければ HLS
     const byProto = (p) => trans.find(t => new RegExp(p, "i").test(t?.format?.protocol || ""));
     const chosen = this._isIOS()
       ? (byProto("progressive") || byProto("hls"))
@@ -365,14 +375,14 @@ export default class extends Controller {
     let j2;
     try {
       const r2 = await fetch(streamLocatorViaProxy, {
-    cache: "no-store",
-    credentials: "same-origin",
-  headers: window.soundcloudToken ? { "X-SC-OAUTH": window.soundcloudToken } : {}
-  });
+        cache: "no-store",
+        credentials: "same-origin",
+        headers: this._hasOAuthToken() ? { "X-SC-OAUTH": window.soundcloudToken } : {}
+      });
       if (!r2.ok) {
-    const txt = await r2.text().catch(()=> "");
-    throw new Error(`proxy stream non-OK ${r2.status} ${txt.slice(0,160)}`);
-  }
+        const txt = await r2.text().catch(()=> "");
+        throw new Error(`proxy stream non-OK ${r2.status} ${txt.slice(0,160)}`);
+      }
       j2 = await r2.json();
     } catch (e) {
       this._log("proxy stream error", e);
@@ -453,6 +463,11 @@ export default class extends Controller {
     document.addEventListener("turbo:before-cache", this.cleanup, { once: true });
     if (document.body.classList.contains("playlist-show-page")) {
       localStorage.removeItem("playerState");
+    }
+
+    // ★★ ログイン後にウィジェット固定から復帰できるよう、トークンがあるなら強制解除
+    if (this._hasOAuthToken()) {
+      window.__forceWidgetOnly = false;
     }
 
     this.iframeElement   = document.getElementById("hidden-sc-player");
@@ -782,6 +797,7 @@ export default class extends Controller {
     this.stopOnlyPlayer();
 
     if (this._canUseApiOnIOS()) {
+      this._log("iOS API mode start");
       await this._playViaApi(trackUrl).catch((err) => {
         this._log("loadAndPlay API failed → fallback", err);
         window.__forceWidgetOnly = true;
@@ -836,6 +852,9 @@ export default class extends Controller {
       return;
     }
 
+    // ★ 成功したら widget強制フラグを完全解除（以降は常にオリジナルUI）
+    window.__forceWidgetOnly = false;
+
     // 進捗（API版に上書き）
     this.startProgressTracking = () => {
       clearInterval(this.progressInterval);
@@ -871,7 +890,7 @@ export default class extends Controller {
     if (show) this._showHandshakeHint();
 
     this.iframeElement = this.replaceIframeWithNew(show); if (!this.iframeElement) return;
-   if (show) this.iframeElement.classList.add("sc-visible"); // ★ iOSだけ見せるyy
+    if (show) this.iframeElement.classList.add("sc-visible"); // iOSだけ見せる
     this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(this._normalizeTrackUrl(url))}&auto_play=${show ? "false" : "true"}`;
     this.iframeElement.onload = () => {
       setTimeout(() => {
@@ -890,7 +909,7 @@ export default class extends Controller {
   togglePlayPause(event) {
     event?.stopPropagation?.();
 
-    // ★ iOS: タップ直後にプライム実行
+    // iOS: タップ直後にプライム実行
     this._primeAudioForIOS();
 
     if (this._canUseApiOnIOS()) {
