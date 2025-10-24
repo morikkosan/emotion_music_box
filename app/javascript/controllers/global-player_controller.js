@@ -115,9 +115,18 @@ export default class extends Controller {
     return "";
   }
 
+  // ★ 厳格化: "undefined"/"null" 文字列はトークン無し扱い
   _hasOAuthToken() {
-    try { return typeof window.soundcloudToken === "string" && window.soundcloudToken.length > 0; }
-    catch (_) { return false; }
+    try {
+      const t = window.soundcloudToken;
+      if (typeof t !== "string") return false;
+      const v = t.trim();
+      if (v.length === 0) return false;
+      if (/^(undefined|null)$/i.test(v)) return false;
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   // ★ iOSでのAPI再生条件：
