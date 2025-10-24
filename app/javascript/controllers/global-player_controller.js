@@ -1,5 +1,7 @@
-/* eslint-env browser */ 
+/* eslint-env browser */
 /* global SC, Swal */
+
+import { Controller } from "@hotwired/stimulus";
 
 /**
  * @typedef {{
@@ -15,8 +17,6 @@
  *   setVolume: (pct:number) => void
  * }} SCWidget
  */
-
-import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
   static targets = ["trackImage", "playIcon"];
@@ -40,6 +40,66 @@ export default class extends Controller {
   }
   _log(...args){ try{ console.info("[global-player]", ...args);}catch(_){} }
 
+  // === 画面内デバッグ（#gpdebug で有効化）========================
+  _debugEnabled() {
+    try {
+      if (this.__dbgEnabled != null) return this.__dbgEnabled;
+      const on =
+        location.hash.includes("gpdebug") ||
+        localStorage.getItem("gpdebug") === "1" ||
+        window.__showPlayerDebug === true;
+      this.__dbgEnabled = !!on;
+      return this.__dbgEnabled;
+    } catch { return false; }
+  }
+  _debugInit() {
+    if (!this._debugEnabled() || this.__dbgEl) return;
+    const el = document.createElement("div");
+    el.id = "gp-debug";
+    Object.assign(el.style, {
+      position:"fixed", left:"8px", bottom:"8px", zIndex:"99999",
+      background:"rgba(0,0,0,0.8)", color:"#fff", fontSize:"12px",
+      padding:"6px 8px", borderRadius:"8px", lineHeight:"1.4",
+      maxWidth:"90vw", maxHeight:"40vh", overflow:"auto"
+    });
+    el.setAttribute("role","status");
+    el.setAttribute("aria-live","polite");
+    document.body.appendChild(el);
+    this.__dbgEl = el;
+    this._debugSnapshot("init");
+  }
+  _debug(...args) {
+    if (!this._debugEnabled()) return;
+    try {
+      this.__dbgEl ||= document.getElementById("gp-debug");
+      if (!this.__dbgEl) return;
+      const line = document.createElement("div");
+      line.textContent = args.map(a=>{
+        try { return (typeof a === "object") ? JSON.stringify(a) : String(a); }
+        catch { return String(a); }
+      }).join(" ");
+      this.__dbgEl.appendChild(line);
+      this.__dbgEl.scrollTop = this.__dbgEl.scrollHeight;
+    } catch {}
+  }
+  _debugSnapshot(tag="snap") {
+    if (!this._debugEnabled()) return;
+    const info = {
+      tag,
+      ios: this._isIOS(),
+      hasToken: this._hasOAuthToken(),
+      scClientId: !!this._scClientId,
+      canUseApiOnIOS: this._canUseApiOnIOS(),
+      needsHandshake: this._needsHandshake(),
+      forceWidgetOnly: !!window.__forceWidgetOnly,
+      hasWidget: !!this.widget,
+      hasAudioEl: !!this.audio,
+      currentTrackId: this.currentTrackId || null
+    };
+    this._debug("state", info);
+  }
+  // ============================================================
+
   // ====== iOS: API再生フラグ/状態 ======
   get _scClientId() {
     try {
@@ -60,9 +120,13 @@ export default class extends Controller {
     catch (_) { return false; }
   }
 
-  // ★ iOS で API 再生を使う条件を「client_id かつ OAuth トークン かつ forceフラグが立ってない」に厳格化
+  // ★ iOSでのAPI再生条件：
+  //   - トークンがあれば client_id は不要
+  //   - トークンが無い場合のみ client_id を要求
   _canUseApiOnIOS() {
-    return this._isIOS() && !!this._scClientId && this._hasOAuthToken() && !window.__forceWidgetOnly;
+    if (!this._isIOS() || window.__forceWidgetOnly) return false;
+    if (this._hasOAuthToken()) return true;
+    return !!this._scClientId;
   }
 
   _needsHandshake() { return this._isIOS() && !this._canUseApiOnIOS(); }
@@ -74,7 +138,6 @@ export default class extends Controller {
     } catch (_) {}
   }
 
-  // 小さなヒントバナー（iOSかつウィジェット使用時のみ）
   _showHandshakeHint() {
     if (this._hintEl || !this._needsHandshake()) return;
     const el = document.createElement("div");
@@ -89,10 +152,10 @@ export default class extends Controller {
     el.addEventListener("click", () => this._hideHandshakeHint());
     document.body.appendChild(el);
     this._hintEl = el;
+    this._debug("needs handshake (iOS widget visible)");
   }
   _hideHandshakeHint() { try { this._hintEl?.remove(); } catch(_) {} this._hintEl = null; }
 
-  // 旧 iframe を安全に破棄
   _safeNukeIframe(iframe) {
     try {
       if (!iframe) return;
@@ -102,7 +165,6 @@ export default class extends Controller {
     } catch (_) {}
   }
 
-  // メタデータ→UI
   _applySoundMetadata(sound) {
     if (sound?.title) {
       this.setTrackTitle(sound.title);
@@ -115,7 +177,6 @@ export default class extends Controller {
     this.hideLoadingUI();
   }
 
-  // Widgetイベント解除
   unbindWidgetEvents() {
     if (!this.widget) return;
     try {
@@ -125,7 +186,6 @@ export default class extends Controller {
     } catch (_) {}
   }
 
-  // iOSオーディオアンロック（AudioContext）
   _setupIOSAudioUnlock() {
     try {
       if (!this._isIOS() || window.__iosAudioUnlocked) return;
@@ -146,7 +206,6 @@ export default class extends Controller {
     } catch (_) {}
   }
 
-  // 追加：iOSのユーザー操作直後に audio を「無音で一瞬再生」して再生権を確保
   _primeAudioForIOS() {
     if (!this._isIOS()) return;
     const a = this._ensureAudio();
@@ -159,16 +218,18 @@ export default class extends Controller {
           try { a.pause(); } catch(_) {}
           a.currentTime = 0;
           a.__primed = true;
-        }).catch(()=>{ /* 失敗しても致命傷ではない */ });
+          this._debug("audio primed");
+        }).catch(()=>{});
       } else {
         try { a.pause(); } catch(_) {}
         a.currentTime = 0;
         a.__primed = true;
+        this._debug("audio primed (sync)");
       }
     } catch(_) {}
   }
 
-  // ======== iOS(API)用：Audio要素 =========
+  // ======== iOS(API)用：Media要素 =========
   _ensureAudio() {
     if (!this.audio) {
       this.audio = new Audio();
@@ -181,6 +242,7 @@ export default class extends Controller {
       this.audio.addEventListener("durationchange", this._onAudioDur);
       this.audio.addEventListener("error", (e) => {
         this._log("Audio error", e);
+        this._debug("audio error", { code: this.audio?.error?.code });
         if (this._isIOS() && !this.widget) this._fallbackToWidgetFromAudio();
       });
     }
@@ -205,6 +267,7 @@ export default class extends Controller {
     this.playStartedAt = Date.now();
     this.startWaveformAnime();
     if (this._currentSoundMeta) this._applySoundMetadata(this._currentSoundMeta);
+    this._debugSnapshot("onPlay");
     this.savePlayerState();
   };
   _onAudioPause = () => {
@@ -212,6 +275,7 @@ export default class extends Controller {
     this.updateTrackIcon(this.currentTrackId, false);
     this.setPlayPauseAria(false);
     this.stopWaveformAnime();
+    this._debugSnapshot("onPause");
     this.savePlayerState();
   };
   _onAudioEnded = () => {
@@ -264,12 +328,11 @@ export default class extends Controller {
     if (this.durationEl) this.durationEl.textContent = this.formatTime(dur);
   };
 
-  // ---------- 追加：audio/video を状況で使い分ける ----------
+  // ---------- audio/video を状況で使い分け ----------
   _ensureMedia({ useVideo = false } = {}) {
     const tag = useVideo ? "video" : "audio";
     if (this.media && this.media.tagName?.toLowerCase() === tag) return this.media;
 
-    // 既存と型が違うなら作り直し
     if (this.media) { try { this.media.pause(); } catch(_) {} try { this.media.remove(); } catch(_) {} }
 
     const el = document.createElement(tag);
@@ -281,7 +344,6 @@ export default class extends Controller {
     el.style.display = "none";
     document.body.appendChild(el);
 
-    // 既存の audio 系コールバックをそのまま流用
     el.addEventListener("play", this._onAudioPlay);
     el.addEventListener("pause", this._onAudioPause);
     el.addEventListener("ended", this._onAudioEnded);
@@ -289,7 +351,7 @@ export default class extends Controller {
     el.addEventListener("durationchange", this._onAudioDur);
 
     this.media = el;
-    this.audio = el; // 既存参照（this.audio）も更新して互換維持
+    this.audio = el;
     return el;
   }
 
@@ -318,21 +380,22 @@ export default class extends Controller {
 
   // ---------- SoundCloud API: resolve → stream URL（まず自サイトのプロキシを使う） ----------
   async _resolveStreamUrl(trackUrl) {
-    const cid = this._scClientId;
-    if (!cid) { this._log("client_id missing"); throw new Error("SoundCloud client_id is missing"); }
+    const hasToken = this._hasOAuthToken();
+    const cid = this._scClientId; // 未ログイン時の保険
 
     const cleanUrl = this._normalizeTrackUrl(trackUrl);
 
     // ① 同一オリジンの軽量プロキシで /resolve を叩く（※ トークンがあればヘッダ付与）
     const v2ViaProxy = `/sc/resolve?url=${encodeURIComponent(cleanUrl)}`;
     this._log("resolve (proxy) →", v2ViaProxy);
+    this._debug("resolve start", { via:"proxy", hasToken });
 
     let track;
     try {
       const r1 = await fetch(v2ViaProxy, {
         cache: "no-store",
         credentials: "same-origin",
-        headers: this._hasOAuthToken() ? { "X-SC-OAUTH": window.soundcloudToken } : {}
+        headers: hasToken ? { "X-SC-OAUTH": window.soundcloudToken } : {}
       });
       if (!r1.ok) {
         const txt = await r1.text().catch(()=> "");
@@ -341,17 +404,25 @@ export default class extends Controller {
       track = await r1.json();
     } catch (e) {
       this._log("proxy resolve error", e);
-      // ② 保険で直アクセス
-      const resolveApi = `https://api-v2.soundcloud.com/resolve?url=${encodeURIComponent(cleanUrl)}&client_id=${encodeURIComponent(cid)}`;
-      this._log("resolve (v2 direct) →", resolveApi);
-      const r1b = await fetch(resolveApi, {
-        credentials: "omit",
-        mode: "cors",
-        headers: { "Accept": "application/json" },
-        referrerPolicy: "no-referrer"
-      });
-      if (!r1b.ok) throw new Error(`resolve failed: ${r1b.status}`);
-      track = await r1b.json();
+      this._debug("resolve proxy error", String(e));
+
+      // ② 保険で直アクセス（未ログイン時のみ）
+      if (!hasToken) {
+        if (!cid) throw new Error("SoundCloud client_id is missing");
+        const resolveApi = `https://api-v2.soundcloud.com/resolve?url=${encodeURIComponent(cleanUrl)}&client_id=${encodeURIComponent(cid)}`;
+        this._log("resolve (v2 direct) →", resolveApi);
+        this._debug("resolve retry", { via:"direct v2" });
+        const r1b = await fetch(resolveApi, {
+          credentials: "omit",
+          mode: "cors",
+          headers: { "Accept": "application/json" },
+          referrerPolicy: "no-referrer"
+        });
+        if (!r1b.ok) throw new Error(`resolve failed: ${r1b.status}`);
+        track = await r1b.json();
+      } else {
+        throw e;
+      }
     }
 
     // メタ更新
@@ -359,25 +430,25 @@ export default class extends Controller {
 
     // ③ v2 track の transcodings → /sc/stream でロケータ取得
     const trans = Array.isArray(track?.media?.transcodings) ? track.media.transcodings : [];
-    if (!trans.length) { this._log("no transcodings"); throw new Error("No transcodings available"); }
+    if (!trans.length) { this._log("no transcodings"); this._debug("no transcodings"); throw new Error("No transcodings available"); }
 
-    // iOS は progressive 最優先、無ければ HLS
     const byProto = (p) => trans.find(t => new RegExp(p, "i").test(t?.format?.protocol || ""));
     const chosen = this._isIOS()
       ? (byProto("progressive") || byProto("hls"))
       : (byProto("progressive") || byProto("hls"));
 
-    if (!chosen?.url) { this._log("no suitable transcoding"); throw new Error("No suitable transcoding"); }
+    if (!chosen?.url) { this._log("no suitable transcoding"); this._debug("no suitable transcoding"); throw new Error("No suitable transcoding"); }
 
     const streamLocatorViaProxy = `/sc/stream?locator=${encodeURIComponent(chosen.url)}`;
     this._log("stream locator (proxy) →", streamLocatorViaProxy);
+    this._debug("stream locator start", { via:"proxy", proto: chosen?.format?.protocol });
 
     let j2;
     try {
       const r2 = await fetch(streamLocatorViaProxy, {
         cache: "no-store",
         credentials: "same-origin",
-        headers: this._hasOAuthToken() ? { "X-SC-OAUTH": window.soundcloudToken } : {}
+        headers: hasToken ? { "X-SC-OAUTH": window.soundcloudToken } : {}
       });
       if (!r2.ok) {
         const txt = await r2.text().catch(()=> "");
@@ -386,21 +457,30 @@ export default class extends Controller {
       j2 = await r2.json();
     } catch (e) {
       this._log("proxy stream error", e);
-      // ④ 保険で直アクセス
-      const streamApi = `${chosen.url}?client_id=${encodeURIComponent(cid)}`;
-      this._log("stream locator (direct) →", streamApi);
-      const r2b = await fetch(streamApi, {
-        credentials: "omit",
-        mode: "cors",
-        headers: { "Accept": "application/json" },
-        referrerPolicy: "no-referrer"
-      });
-      if (!r2b.ok) throw new Error(`Stream location failed: ${r2b.status}`);
-      j2 = await r2b.json();
+      this._debug("stream locator proxy error", String(e));
+
+      // ④ 保険で直アクセス（未ログイン時のみ client_id を付与）
+      if (!hasToken) {
+        if (!cid) throw new Error("SoundCloud client_id is missing");
+        const streamApi = `${chosen.url}?client_id=${encodeURIComponent(cid)}`;
+        this._log("stream locator (direct) →", streamApi);
+        this._debug("stream locator retry", { via:"direct v2" });
+        const r2b = await fetch(streamApi, {
+          credentials: "omit",
+          mode: "cors",
+          headers: { "Accept": "application/json" },
+          referrerPolicy: "no-referrer"
+        });
+        if (!r2b.ok) throw new Error(`Stream location failed: ${r2b.status}`);
+        j2 = await r2b.json();
+      } else {
+        throw e;
+      }
     }
 
-    if (!j2?.url) { this._log("no final stream url"); throw new Error("No stream URL in response"); }
+    if (!j2?.url) { this._log("no final stream url"); this._debug("no final stream url"); throw new Error("No stream URL in response"); }
     this._log("final stream url", j2.url);
+    this._debug("final url resolved");
     return { url: j2.url, isHls: /hls/i.test(chosen?.format?.protocol || "") };
   }
 
@@ -443,7 +523,6 @@ export default class extends Controller {
       this.progressInterval = null;
       this.unbindWidgetEvents();
       this.widget = null;
-      // Audioは破棄しない（iOSの再生権を保持）。止めるだけ。
       if (this.audio) { try { this.audio.pause(); } catch(_) {} }
     } catch (_) {}
     try {
@@ -460,12 +539,19 @@ export default class extends Controller {
   }
 
   connect() {
+    // デバッグ初期化＆簡易スイッチ
+    this._debugInit();
+    if (location.hash.includes("gpclear")) { localStorage.removeItem("playerState"); this._debug("playerState cleared"); }
+    if (location.hash.includes("gpwidget")) { window.__forceWidgetOnly = true; this._debug("force widget only = true"); }
+    if (location.hash.includes("gpapi"))    { window.__forceWidgetOnly = false; this._debug("force widget only = false"); }
+    this._debug("connect");
+
     document.addEventListener("turbo:before-cache", this.cleanup, { once: true });
     if (document.body.classList.contains("playlist-show-page")) {
       localStorage.removeItem("playerState");
     }
 
-    // ★★ ログイン後にウィジェット固定から復帰できるよう、トークンがあるなら強制解除
+    // ログイン後にウィジェット固定から復帰できるよう、トークンがあるなら強制解除
     if (this._hasOAuthToken()) {
       window.__forceWidgetOnly = false;
     }
@@ -566,7 +652,7 @@ export default class extends Controller {
     this._footerGuardMO.observe(this._container() || document, { childList:true, subtree:true });
     this._updatePlayButton();
 
-    // ★ Media Session: ロック画面・イヤホン前後ボタン対応（対応環境のみ）
+    // Media Session
     try {
       if ("mediaSession" in navigator) {
         navigator.mediaSession.setActionHandler("previoustrack", () => this.prevTrack());
@@ -653,7 +739,7 @@ export default class extends Controller {
     if (!url) return;
     this.bottomPlayer?.classList.remove("d-none");
     this.resetPlayerUI();
-    await this._playViaApi(url, { resumeMs: state.position || 0, autoStart: state.isPlaying }).catch((err)=>{
+    await this._playViaApi(url, { resumeMs: state.position || 0, autoStart: state.isPlaying }).catch(()=>{
       window.__forceWidgetOnly = true;
       this._fallbackToWidgetFromAudio(url);
     });
@@ -741,8 +827,10 @@ export default class extends Controller {
 
     if (this._canUseApiOnIOS()) {
       this.resetPlayerUI();
+      this._debug("playFromExternal via API");
       await this._playViaApi(playUrl).catch((err) => {
         this._log("playFromExternal API failed → fallback", err);
+        this._debug("playFromExternal API failed → fallback", String(err));
         window.__forceWidgetOnly = true;
         this._fallbackToWidgetFromAudio(playUrl);
       });
@@ -764,6 +852,7 @@ export default class extends Controller {
           this.bindWidgetEvents();
           if (!show) this._forcePlay();
           this.startProgressTracking(); this.changeVolume({ target: this.volumeBar }); this.savePlayerState();
+          this._debug("playFromExternal via widget");
         });
       }, 100);
     };
@@ -772,7 +861,7 @@ export default class extends Controller {
   // ---------- トラック再生（タイル/アイコン） ----------
   async loadAndPlay(event) {
     event?.stopPropagation?.();
-    // ★ iOS: ユーザー操作直後にプライム実行
+    // iOS: ユーザー操作直後にプライム実行
     this._primeAudioForIOS();
 
     this.updatePlaylistOrder();
@@ -795,11 +884,14 @@ export default class extends Controller {
     this.currentTrackId = newTrackId || null;
 
     this.stopOnlyPlayer();
+    this._debug("loadAndPlay", { trackId: this.currentTrackId, url: trackUrl });
 
     if (this._canUseApiOnIOS()) {
       this._log("iOS API mode start");
+      this._debug("iOS API mode start");
       await this._playViaApi(trackUrl).catch((err) => {
         this._log("loadAndPlay API failed → fallback", err);
+        this._debug("loadAndPlay API failed → fallback", String(err));
         window.__forceWidgetOnly = true;
         this._fallbackToWidgetFromAudio(trackUrl, el);
       });
@@ -821,6 +913,7 @@ export default class extends Controller {
           if (!show) this._forcePlay();
           this.startProgressTracking(); this.changeVolume({ target: this.volumeBar });
           this.updateTrackIcon(this.currentTrackId, !show); this.setPlayPauseAria(!show); this.savePlayerState();
+          this._debug("playing via widget", { handshake: show });
         });
       }, 100);
     };
@@ -828,7 +921,7 @@ export default class extends Controller {
 
   // ---------- iOS(API) 再生本体 ----------
   async _playViaApi(playUrl, opts = {}) {
-    const { resumeMs = 0, autoStart = true } = opts;
+    const { resumeMs = 0 } = opts;
     this._lastResolvedTrackUrl = playUrl;
 
     let streamUrl, isHls = false;
@@ -837,6 +930,7 @@ export default class extends Controller {
       streamUrl = r.url; isHls = !!r.isHls;
     } catch (err) {
       this._log("resolve/stream failed → fallback", err);
+      this._debug("resolve/stream failed → fallback", String(err));
       this.hideLoadingUI();
       this._fallbackToWidgetFromAudio(playUrl);
       return;
@@ -844,15 +938,25 @@ export default class extends Controller {
 
     // iOS: HLSは<video>、progressiveは<audio>
     try {
+      this._debug("play via API", { isHls });
       await this._playViaMedia({ streamUrl, useVideo: this._isIOS() && isHls, resumeMs });
     } catch (e) {
       this._log("media play failed → fallback", e);
+      this._debug("media play failed → fallback", String(e));
       this.hideLoadingUI();
       this._fallbackToWidgetFromAudio(playUrl);
       return;
     }
 
-    // ★ 成功したら widget強制フラグを完全解除（以降は常にオリジナルUI）
+    // ★ 成功：widgetを完全破棄し、強制フラグ解除＆ヒント非表示（ウィジェット復活防止）
+    try {
+      this.unbindWidgetEvents();
+      this.widget = null;
+      const old = document.getElementById("hidden-sc-player");
+      this._safeNukeIframe(old);
+      this.iframeElement = null;
+      this._hideHandshakeHint();
+    } catch(_) {}
     window.__forceWidgetOnly = false;
 
     // 進捗（API版に上書き）
@@ -879,6 +983,7 @@ export default class extends Controller {
     this.updateTrackIcon(this.currentTrackId, true);
     this.setPlayPauseAria(true);
     this.hideLoadingUI();
+    this._debug("playing via API");
     this.savePlayerState();
   }
 
@@ -890,7 +995,7 @@ export default class extends Controller {
     if (show) this._showHandshakeHint();
 
     this.iframeElement = this.replaceIframeWithNew(show); if (!this.iframeElement) return;
-    if (show) this.iframeElement.classList.add("sc-visible"); // iOSだけ見せる
+    if (show) this.iframeElement.classList.add("sc-visible");
     this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(this._normalizeTrackUrl(url))}&auto_play=${show ? "false" : "true"}`;
     this.iframeElement.onload = () => {
       setTimeout(() => {
@@ -900,6 +1005,7 @@ export default class extends Controller {
           if (!show) this._forcePlay();
           this.startProgressTracking(); this.changeVolume({ target: this.volumeBar });
           this.updateTrackIcon(this.currentTrackId, !show); this.setPlayPauseAria(!show); this.savePlayerState();
+          this._debug("fallback → widget");
         });
       }, 80);
     };
@@ -908,8 +1014,6 @@ export default class extends Controller {
   // ---------- トグル ----------
   togglePlayPause(event) {
     event?.stopPropagation?.();
-
-    // iOS: タップ直後にプライム実行
     this._primeAudioForIOS();
 
     if (this._canUseApiOnIOS()) {
@@ -946,6 +1050,7 @@ export default class extends Controller {
     this.playStartedAt = Date.now();
     this.startWaveformAnime();
     this.widget.getCurrentSound((s) => { if (s?.title && !this.trackTitleEl.textContent) this._applySoundMetadata(s); });
+    this._debugSnapshot("widget onPlay");
     this.savePlayerState();
   };
   onPause = () => {
@@ -953,6 +1058,7 @@ export default class extends Controller {
     this.updateTrackIcon(this.currentTrackId, false);
     this.setPlayPauseAria(false);
     this.stopWaveformAnime();
+    this._debugSnapshot("widget onPause");
     this.savePlayerState();
   };
   onFinish = () => {
