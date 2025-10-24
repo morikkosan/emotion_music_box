@@ -4,18 +4,17 @@
 import { Controller } from "@hotwired/stimulus";
 
 /**
- * @typedef {{
- *   bind: (event:string, handler:Function) => void,
- *   unbind: (event:string) => void,
- *   play: () => void,
- *   pause: () => void,
- *   isPaused: (cb:(paused:boolean)=>void) => void,
- *   getDuration: (cb:(ms:number)=>void) => void,
- *   getPosition: (cb:(ms:number)=>void) => void,
- *   getCurrentSound: (cb:(sound?:{ title?:string, user?:{ username?:string } })=>void) => void,
- *   seekTo: (ms:number) => void,
- *   setVolume: (pct:number) => void
- * }} SCWidget
+ * @typedef {Object} SCWidget
+ * @property {(event:string, handler:Function)=>void} bind
+ * @property {(event:string)=>void} unbind
+ * @property {()=>void} play
+ * @property {()=>void} pause
+ * @property {(cb:(paused:boolean)=>void)=>void} isPaused
+ * @property {(cb:(ms:number)=>void)=>void} getDuration
+ * @property {(cb:(ms:number)=>void)=>void} getPosition
+ * @property {(cb:(sound?:{ title?:string, user?:{ username?:string } })=>void)=>void} getCurrentSound
+ * @property {(ms:number)=>void} seekTo
+ * @property {(pct:number)=>void} setVolume
  */
 
 export default class extends Controller {
@@ -47,7 +46,8 @@ export default class extends Controller {
       const on =
         location.hash.includes("gpdebug") ||
         localStorage.getItem("gpdebug") === "1" ||
-        window.__showPlayerDebug === true;
+        window.__showPlayerDebug === true ||
+        window.EMOMU_DEBUG === true;
       this.__dbgEnabled = !!on;
       return this.__dbgEnabled;
     } catch { return false; }
@@ -115,7 +115,7 @@ export default class extends Controller {
     return "";
   }
 
-  // ★ 厳格化: "undefined"/"null" 文字列はトークン無し扱い
+  // 厳格化: "undefined"/"null" 文字列はトークン無し扱い
   _hasOAuthToken() {
     try {
       const t = window.soundcloudToken;
@@ -129,11 +129,11 @@ export default class extends Controller {
     }
   }
 
-  // ★ iOSでのAPI再生条件：
+  // iOSでのAPI再生条件：
   _canUseApiOnIOS() {
     if (!this._isIOS() || window.__forceWidgetOnly) return false;
     if (this._hasOAuthToken()) return true;
-    return !!this._scClientId;
+    return !!this._scClientId; // 念のため
   }
 
   _needsHandshake() { return this._isIOS() && !this._canUseApiOnIOS(); }
@@ -387,20 +387,16 @@ export default class extends Controller {
     }
   }
 
-  // ---------- SoundCloud API: resolve → stream URL（まず自サイトのプロキシを使う） ----------
+  // ---------- SoundCloud API: resolve → stream URL（プロキシのみ） ----------
   async _resolveStreamUrl(trackUrl) {
     const hasToken = this._hasOAuthToken();
-    const cid = this._scClientId; // 未ログイン時の保険
     const cleanUrl = this._normalizeTrackUrl(trackUrl);
 
-    // ① proxyで /resolve
-    const v2ViaProxy = `/sc/resolve?url=${encodeURIComponent(cleanUrl)}`;
-    this._log("resolve (proxy) →", v2ViaProxy);
-    this._debug("resolve start", { via:"proxy", hasToken });
-
-    let track;
     try {
-      const r1 = await fetch(v2ViaProxy, {
+      this._log("resolve (proxy only) →", cleanUrl);
+      this._debug("resolve start", { via:"proxy", hasToken });
+
+      const r1 = await fetch(`/sc/resolve?url=${encodeURIComponent(cleanUrl)}`, {
         cache: "no-store",
         credentials: "same-origin",
         headers: hasToken ? { "X-SC-OAUTH": window.soundcloudToken } : {}
@@ -409,50 +405,25 @@ export default class extends Controller {
         const txt = await r1.text().catch(()=> "");
         throw new Error(`proxy resolve non-OK ${r1.status} ${txt.slice(0,160)}`);
       }
-      track = await r1.json();
-    } catch (e) {
-      this._log("proxy resolve error", e);
-      this._debug("resolve proxy error", String(e));
+      const track = await r1.json();
 
-      // ② 未ログインなら v2 直
-      if (!hasToken) {
-        if (!cid) throw new Error("SoundCloud client_id is missing");
-        const resolveApi = `https://api-v2.soundcloud.com/resolve?url=${encodeURIComponent(cleanUrl)}&client_id=${encodeURIComponent(cid)}`;
-        this._log("resolve (v2 direct) →", resolveApi);
-        this._debug("resolve retry", { via:"direct v2" });
-        const r1b = await fetch(resolveApi, {
-          credentials: "omit",
-          mode: "cors",
-          headers: { "Accept": "application/json" },
-          referrerPolicy: "no-referrer"
-        });
-        if (!r1b.ok) throw new Error(`resolve failed: ${r1b.status}`);
-        track = await r1b.json();
-      } else {
-        throw e;
-      }
-    }
+      // メタ更新
+      this._currentSoundMeta = { title: track?.title, user: { username: track?.user?.username } };
 
-    // メタ更新
-    this._currentSoundMeta = { title: track?.title, user: { username: track?.user?.username } };
+      // transcodings → /sc/stream
+      const trans = Array.isArray(track?.media?.transcodings) ? track.media.transcodings : [];
+      if (!trans.length) { this._debug("no transcodings"); throw new Error("No transcodings available"); }
 
-    // ③ transcodings → /sc/stream
-    const trans = Array.isArray(track?.media?.transcodings) ? track.media.transcodings : [];
-    if (!trans.length) { this._log("no transcodings"); this._debug("no transcodings"); throw new Error("No transcodings available"); }
+      const byProto = (p) => trans.find(t => new RegExp(p, "i").test(t?.format?.protocol || ""));
+      const chosen = this._isIOS()
+        ? (byProto("progressive") || byProto("hls"))
+        : (byProto("progressive") || byProto("hls"));
+      if (!chosen?.url) { this._debug("no suitable transcoding"); throw new Error("No suitable transcoding"); }
 
-    const byProto = (p) => trans.find(t => new RegExp(p, "i").test(t?.format?.protocol || ""));
-    const chosen = this._isIOS()
-      ? (byProto("progressive") || byProto("hls"))
-      : (byProto("progressive") || byProto("hls"));
+      const streamLocatorViaProxy = `/sc/stream?locator=${encodeURIComponent(chosen.url)}`;
+      this._log("stream locator (proxy) →", streamLocatorViaProxy);
+      this._debug("stream locator start", { via:"proxy", proto: chosen?.format?.protocol });
 
-    if (!chosen?.url) { this._log("no suitable transcoding"); this._debug("no suitable transcoding"); throw new Error("No suitable transcoding"); }
-
-    const streamLocatorViaProxy = `/sc/stream?locator=${encodeURIComponent(chosen.url)}`;
-    this._log("stream locator (proxy) →", streamLocatorViaProxy);
-    this._debug("stream locator start", { via:"proxy", proto: chosen?.format?.protocol });
-
-    let j2;
-    try {
       const r2 = await fetch(streamLocatorViaProxy, {
         cache: "no-store",
         credentials: "same-origin",
@@ -462,34 +433,17 @@ export default class extends Controller {
         const txt = await r2.text().catch(()=> "");
         throw new Error(`proxy stream non-OK ${r2.status} ${txt.slice(0,160)}`);
       }
-      j2 = await r2.json();
+      const j2 = await r2.json();
+
+      if (!j2?.url) { this._debug("no final stream url"); throw new Error("No stream URL in response"); }
+      this._log("final stream url", j2.url);
+      this._debug("final url resolved");
+      return { url: j2.url, isHls: /hls/i.test(chosen?.format?.protocol || "") };
     } catch (e) {
-      this._log("proxy stream error", e);
-      this._debug("stream locator proxy error", String(e));
-
-      // ④ 未ログインなら v2 直（client_id 付与）
-      if (!hasToken) {
-        if (!cid) throw new Error("SoundCloud client_id is missing");
-        const streamApi = `${chosen.url}?client_id=${encodeURIComponent(cid)}`;
-        this._log("stream locator (direct) →", streamApi);
-        this._debug("stream locator retry", { via:"direct v2" });
-        const r2b = await fetch(streamApi, {
-          credentials: "omit",
-          mode: "cors",
-          headers: { "Accept": "application/json" },
-          referrerPolicy: "no-referrer"
-        });
-        if (!r2b.ok) throw new Error(`Stream location failed: ${r2b.status}`);
-        j2 = await r2b.json();
-      } else {
-        throw e;
-      }
+      this._log("SoundCloud proxy resolve/stream error", e);
+      this._debug("resolve proxy error", String(e));
+      throw e;
     }
-
-    if (!j2?.url) { this._log("no final stream url"); this._debug("no final stream url"); throw new Error("No stream URL in response"); }
-    this._log("final stream url", j2.url);
-    this._debug("final url resolved");
-    return { url: j2.url, isHls: /hls/i.test(chosen?.format?.protocol || "") };
   }
 
   // -------- ライフサイクル --------
@@ -842,7 +796,7 @@ export default class extends Controller {
     newIframe.scrolling = "no";
     parent.appendChild(newIframe);
     this.iframeElement = newIframe;
-    // 作成時は必ず不可視
+    // 作成時は必ず不可視（visible=true のときのみ見せる）
     this._setIframeVisibility(!!visible);
     return newIframe;
   }
@@ -978,7 +932,7 @@ export default class extends Controller {
       return;
     }
 
-    // ★ 成功：widget破棄＆不可視
+    // 成功：widget破棄＆不可視
     try {
       this.unbindWidgetEvents();
       this.widget = null;
@@ -1371,7 +1325,7 @@ export default class extends Controller {
     };
     animate();
   }
-  
+
   stopWaveformAnime() {
     this.waveformAnimating = false;
     this.waveformCtx && this.waveformCtx.clearRect(0,0,this.waveformCanvas.width,this.waveformCanvas.height);
