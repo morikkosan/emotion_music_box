@@ -121,8 +121,6 @@ export default class extends Controller {
   }
 
   // ★ iOSでのAPI再生条件：
-  //   - トークンがあれば client_id は不要
-  //   - トークンが無い場合のみ client_id を要求
   _canUseApiOnIOS() {
     if (!this._isIOS() || window.__forceWidgetOnly) return false;
     if (this._hasOAuthToken()) return true;
@@ -143,7 +141,7 @@ export default class extends Controller {
     const el = document.createElement("div");
     el.id = "sc-handshake-hint";
     Object.assign(el.style, {
-      position:"fixed", left:"12px", right:"12px", bottom:"12px", zIndex:"99999",
+      position:"fixed", left:"12px", right:"12px", bottom:"12px", zIndex:"99998",
       padding:"10px 12px", fontSize:"14px", borderRadius:"10px",
       background:"rgba(0,0,0,0.85)", color:"#fff", lineHeight:"1.5",
       boxShadow:"0 4px 16px rgba(0,0,0,.25)", textAlign:"center"
@@ -152,6 +150,8 @@ export default class extends Controller {
     el.addEventListener("click", () => this._hideHandshakeHint());
     document.body.appendChild(el);
     this._hintEl = el;
+    // ウィジェットを一時表示
+    this._setIframeVisibility(true);
     this._debug("needs handshake (iOS widget visible)");
   }
   _hideHandshakeHint() { try { this._hintEl?.remove(); } catch(_) {} this._hintEl = null; }
@@ -382,10 +382,9 @@ export default class extends Controller {
   async _resolveStreamUrl(trackUrl) {
     const hasToken = this._hasOAuthToken();
     const cid = this._scClientId; // 未ログイン時の保険
-
     const cleanUrl = this._normalizeTrackUrl(trackUrl);
 
-    // ① 同一オリジンの軽量プロキシで /resolve を叩く（※ トークンがあればヘッダ付与）
+    // ① proxyで /resolve
     const v2ViaProxy = `/sc/resolve?url=${encodeURIComponent(cleanUrl)}`;
     this._log("resolve (proxy) →", v2ViaProxy);
     this._debug("resolve start", { via:"proxy", hasToken });
@@ -406,7 +405,7 @@ export default class extends Controller {
       this._log("proxy resolve error", e);
       this._debug("resolve proxy error", String(e));
 
-      // ② 保険で直アクセス（未ログイン時のみ）
+      // ② 未ログインなら v2 直
       if (!hasToken) {
         if (!cid) throw new Error("SoundCloud client_id is missing");
         const resolveApi = `https://api-v2.soundcloud.com/resolve?url=${encodeURIComponent(cleanUrl)}&client_id=${encodeURIComponent(cid)}`;
@@ -428,7 +427,7 @@ export default class extends Controller {
     // メタ更新
     this._currentSoundMeta = { title: track?.title, user: { username: track?.user?.username } };
 
-    // ③ v2 track の transcodings → /sc/stream でロケータ取得
+    // ③ transcodings → /sc/stream
     const trans = Array.isArray(track?.media?.transcodings) ? track.media.transcodings : [];
     if (!trans.length) { this._log("no transcodings"); this._debug("no transcodings"); throw new Error("No transcodings available"); }
 
@@ -459,7 +458,7 @@ export default class extends Controller {
       this._log("proxy stream error", e);
       this._debug("stream locator proxy error", String(e));
 
-      // ④ 保険で直アクセス（未ログイン時のみ client_id を付与）
+      // ④ 未ログインなら v2 直（client_id 付与）
       if (!hasToken) {
         if (!cid) throw new Error("SoundCloud client_id is missing");
         const streamApi = `${chosen.url}?client_id=${encodeURIComponent(cid)}`;
@@ -551,10 +550,8 @@ export default class extends Controller {
       localStorage.removeItem("playerState");
     }
 
-    // ログイン後にウィジェット固定から復帰できるよう、トークンがあるなら強制解除
-    if (this._hasOAuthToken()) {
-      window.__forceWidgetOnly = false;
-    }
+    // ログイン後にウィジェット固定から復帰
+    if (this._hasOAuthToken()) window.__forceWidgetOnly = false;
 
     this.iframeElement   = document.getElementById("hidden-sc-player");
     this.bottomPlayer    = document.getElementById("bottom-player");
@@ -804,6 +801,25 @@ export default class extends Controller {
     setTimeout(tick, 50);
   }
 
+  // ---------- iframeの可視制御 ----------
+  _setIframeVisibility(show) {
+    const ifr = this.iframeElement || document.getElementById("hidden-sc-player");
+    if (!ifr) return;
+    if (show) {
+      ifr.classList.add("sc-visible");
+      Object.assign(ifr.style, {
+        display:"block", position:"relative", width:"100%", height:"180px",
+        border:"0", zIndex:"99997"
+      });
+    } else {
+      ifr.classList.remove("sc-visible");
+      Object.assign(ifr.style, {
+        display:"none", position:"absolute", width:"0px", height:"0px",
+        border:"0", left:"-9999px", top:"-9999px", zIndex:"-1"
+      });
+    }
+  }
+
   // ---------- iframe作成 ----------
   replaceIframeWithNew(visible) {
     const oldIframe = document.getElementById("hidden-sc-player");
@@ -812,11 +828,13 @@ export default class extends Controller {
     const newIframe = document.createElement("iframe");
     newIframe.id = "hidden-sc-player";
     newIframe.classList.add("sc-keepalive");
-    if (visible) newIframe.classList.add("sc-visible");
     newIframe.allow = "autoplay; encrypted-media";
     newIframe.frameBorder = "no";
     newIframe.scrolling = "no";
     parent.appendChild(newIframe);
+    this.iframeElement = newIframe;
+    // 作成時は必ず不可視
+    this._setIframeVisibility(!!visible);
     return newIframe;
   }
 
@@ -841,6 +859,8 @@ export default class extends Controller {
     this.iframeElement = this.replaceIframeWithNew(show); if (!this.iframeElement) { alert("iframe 生成に失敗しました"); return; }
     this.resetPlayerUI();
     this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(playUrl)}&auto_play=${show ? "false" : "true"}`;
+    if (!show) this._setIframeVisibility(false); // 非ハンドシェイク時は隠したまま
+
     this.iframeElement.onload = () => {
       setTimeout(() => {
         try { this.widget = SC.Widget(this.iframeElement); } catch(_) { return setTimeout(() => this.playFromExternal(playUrl), 120); }
@@ -861,7 +881,6 @@ export default class extends Controller {
   // ---------- トラック再生（タイル/アイコン） ----------
   async loadAndPlay(event) {
     event?.stopPropagation?.();
-    // iOS: ユーザー操作直後にプライム実行
     this._primeAudioForIOS();
 
     this.updatePlaylistOrder();
@@ -901,6 +920,8 @@ export default class extends Controller {
     const show = this._needsHandshake(); if (show) this._showHandshakeHint();
     this.iframeElement = this.replaceIframeWithNew(show); if (!this.iframeElement) return;
     this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&auto_play=${show ? "false" : "true"}`;
+    if (!show) this._setIframeVisibility(false);
+
     this.iframeElement.onload = () => {
       setTimeout(() => {
         try { this.widget = SC.Widget(this.iframeElement); } catch(_) { return setTimeout(() => this.loadAndPlay({ currentTarget: el, stopPropagation(){} }), 120); }
@@ -948,7 +969,7 @@ export default class extends Controller {
       return;
     }
 
-    // ★ 成功：widgetを完全破棄し、強制フラグ解除＆ヒント非表示（ウィジェット復活防止）
+    // ★ 成功：widget破棄＆不可視
     try {
       this.unbindWidgetEvents();
       this.widget = null;
@@ -995,8 +1016,9 @@ export default class extends Controller {
     if (show) this._showHandshakeHint();
 
     this.iframeElement = this.replaceIframeWithNew(show); if (!this.iframeElement) return;
-    if (show) this.iframeElement.classList.add("sc-visible");
     this.iframeElement.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(this._normalizeTrackUrl(url))}&auto_play=${show ? "false" : "true"}`;
+    if (!show) this._setIframeVisibility(false);
+
     this.iframeElement.onload = () => {
       setTimeout(() => {
         try { this.widget = SC.Widget(this.iframeElement); } catch(_) { return; }
@@ -1033,7 +1055,7 @@ export default class extends Controller {
       } else { alert("プレイヤーが初期化されていません。もう一度曲を選んでください。"); return; }
     }
 
-    if (this._needsHandshake()) { this._showHandshakeHint(); try { this.iframeElement?.classList.add("sc-visible"); } catch(_) {} return; }
+    if (this._needsHandshake()) { this._showHandshakeHint(); this._setIframeVisibility(true); return; }
 
     this.widget.isPaused((paused) => {
       if (paused) { this.widget.play(); setTimeout(()=>this._forcePlay(2),120); } else { this.widget.pause(); }
@@ -1043,7 +1065,12 @@ export default class extends Controller {
 
   // ---------- SC Widget イベント ----------
   onPlay = () => {
-    if (this._needsHandshake()) { this._markHandshakeDone(); this._hideHandshakeHint(); try { this.iframeElement?.classList.remove("sc-visible"); } catch(_) {} }
+    if (this._needsHandshake()) {
+      this._markHandshakeDone();
+      this._hideHandshakeHint();
+      // 再生が始まったら即不可視に戻す
+      this._setIframeVisibility(false);
+    }
     this.playPauseIcon?.classList.replace("fa-play","fa-pause");
     this.updateTrackIcon(this.currentTrackId, true);
     this.setPlayPauseAria(true);
@@ -1335,6 +1362,7 @@ export default class extends Controller {
     };
     animate();
   }
+  
   stopWaveformAnime() {
     this.waveformAnimating = false;
     this.waveformCtx && this.waveformCtx.clearRect(0,0,this.waveformCanvas.width,this.waveformCanvas.height);
