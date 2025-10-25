@@ -36,9 +36,26 @@
 
   <% if current_user&.soundcloud_token.present? %>
     <meta name="soundcloud-oauth-token" content="<%= current_user.soundcloud_token %>">
+    <!-- iOSでも確実に送るためのCookie設定（SameSite=None; Secure; Domain=...） -->
+    <script nonce="<%= content_security_policy_nonce %>">
+      (function () {
+        var t = document.querySelector('meta[name="soundcloud-oauth-token"]')?.content || "";
+        var maxAge = 30 * 60; // 30分
+        var cookie = [
+          "sc_oauth=" + encodeURIComponent(t),
+          "Path=/",
+          "Secure",
+          "SameSite=None",
+          "Domain=moriappli-emotion.com",
+          "Max-Age=" + maxAge
+        ].join("; ");
+        document.cookie = cookie;
+        console.log("[SC] token meta:", !!t, "cookie set:", document.cookie.includes("sc_oauth="));
+      })();
+    </script>
   <% end %>
 
-  <!-- （任意）SoundCloud SDK：未使用ならコメントアウトでOK。一応怖ければ残しても動作は同じ -->
+  <!-- （任意）SoundCloud SDK：未使用ならコメントアウトでOK -->
   <!-- <script src="https://connect.soundcloud.com/sdk/sdk-3.3.2.js"></script> -->
 
   <!-- SoundCloud Player API の最適化 -->
@@ -47,16 +64,15 @@
   <link rel="preconnect" href="https://w.soundcloud.com" crossorigin>
   <link rel="preconnect" href="https://api.soundcloud.com" crossorigin>
 
-<!-- SoundCloud API v2 / HLS CDN へ事前接続（iOSのCORS/ITP対策で安定化） -->
-<link rel="dns-prefetch" href="https://api-v2.soundcloud.com">
-<link rel="preconnect"   href="https://api-v2.soundcloud.com" crossorigin>
+  <!-- SoundCloud API v2 / HLS CDN へ事前接続（iOSのCORS/ITP対策で安定化） -->
+  <link rel="dns-prefetch" href="https://api-v2.soundcloud.com">
+  <link rel="preconnect"   href="https://api-v2.soundcloud.com" crossorigin>
 
-<link rel="dns-prefetch" href="https://cf-hls-media.sndcdn.com">
-<link rel="preconnect"   href="https://cf-hls-media.sndcdn.com" crossorigin>
+  <link rel="dns-prefetch" href="https://cf-hls-media.sndcdn.com">
+  <link rel="preconnect"   href="https://cf-hls-media.sndcdn.com" crossorigin>
 
-<link rel="dns-prefetch" href="https://hls-media.sndcdn.com">
-<link rel="preconnect"   href="https://hls-media.sndcdn.com" crossorigin>
-
+  <link rel="dns-prefetch" href="https://hls-media.sndcdn.com">
+  <link rel="preconnect"   href="https://hls-media.sndcdn.com" crossorigin>
 
   <!-- ✅ preload は crossorigin なし（CORS回避） -->
   <link rel="preload" as="script" href="https://w.soundcloud.com/player/api.js">
@@ -98,90 +114,99 @@
     </script>
   <% end %>
 
-  <!-- ✅ player API を defer で非ブロッキング化（機能は変わりません） -->
+  <!-- ✅ player API を defer で非ブロッキング化 -->
   <script defer src="https://w.soundcloud.com/player/api.js"></script>
 
-   <!-- ✅ ここに追加（iOS用 直URLリゾルバ） -->
+  <!-- ✅ すべての /sc/* に X-SC-OAUTH を付与する fetch ラッパ -->
   <script nonce="<%= content_security_policy_nonce %>">
-// iOS: SoundCloud再生ページ(playUrl) → 実ストリームURLを返す解決器（詳細ログ付）
-window.SC_IOS_STREAM_RESOLVER = async function(playUrl) {
-  const t0 = performance.now();
-  const log = (...a) => console.log("[resolver]", ...a);
+    window.SC_fetchWithToken = function(url, init) {
+      var headers = new Headers((init && init.headers) || {});
+      var meta  = document.querySelector('meta[name="soundcloud-oauth-token"]');
+      var token = (meta && meta.content) || (window.soundcloudToken || "");
+      if (token && !headers.has("X-SC-OAUTH")) headers.set("X-SC-OAUTH", token);
+      return fetch(url, Object.assign({ credentials: "include" }, init, { headers: headers }));
+    };
+  </script>
 
-  const qs = (obj) => Object.entries(obj)
-    .map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+  <!-- ✅ iOS用 直URLリゾルバ（SC_fetchWithToken を必ず使う版） -->
+  <script nonce="<%= content_security_policy_nonce %>">
+  // SoundCloud再生ページ(playUrl) → 直再生URLを返す（HLS優先、なければprogressive）
+  // Widgetフォールバックは行わない。
+  window.SC_IOS_STREAM_RESOLVER = async function(playUrl) {
+    const t0 = performance.now();
+    const log = (...a) => console.log("[resolver]", ...a);
+    const qs = (obj) => Object.entries(obj).map(([k,v]) =>
+      `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
 
-  try {
-    log("start", { playUrl });
+    try {
+      log("start", { playUrl });
 
-    // 1) resolve
-    const r = await fetch(`/sc/resolve?${qs({ url: playUrl })}`, { credentials: "same-origin" });
-    log("resolve status:", r.status);
-    const meta = await r.json().catch(e => ({ error: String(e) }));
-    log("resolve body:", meta);
+      // 1) resolve（必ずヘッダで OAuth を送る）
+      const r = await window.SC_fetchWithToken(`/sc/resolve?${qs({ url: playUrl, cb: Date.now() })}`);
+      const text1 = await r.text();
+      let meta = null; try { meta = JSON.parse(text1); } catch(e) {}
+      log("resolve status:", r.status); log("resolve body:", meta || text1);
 
-    if (!r.ok || !meta || !meta.media || !Array.isArray(meta.media.transcodings)) {
-      throw new Error("resolve failed or missing transcodings");
+      if (!r.ok || !meta || !meta.media || !Array.isArray(meta.media.transcodings)) {
+        throw new Error("resolve failed or missing transcodings");
+      }
+
+      const list = meta.media.transcodings;
+      const hls  = list.find(t => /hls/i.test(t?.format?.protocol));
+      const prog = list.find(t => /progressive/i.test(t?.format?.protocol));
+      const pick = hls || prog;
+      if (!pick) throw new Error("no supported transcoding in list");
+
+      // 2) stream（署名URL取得：こちらもヘッダ付）
+      const s = await window.SC_fetchWithToken(`/sc/stream?${qs({ locator: pick.url, cb: Date.now() })}`);
+      const text2 = await s.text();
+      let j = null; try { j = JSON.parse(text2); } catch(e) {}
+      log("stream status:", s.status); log("stream body:", j || text2);
+
+      if (!s.ok || !j?.url) throw new Error("no stream url in stream response");
+
+      const t1 = performance.now();
+      log("done", { ms: Math.round(t1 - t0), picked: pick.format?.protocol, url: j.url });
+      return j.url;
+    } catch (e) {
+      log("error:", e);
+      throw e;
     }
-    const list = meta.media.transcodings;
-    const hls  = list.find(t => t.format?.protocol === "hls");
-    const prog = list.find(t => t.format?.protocol === "progressive");
-    const pick = hls || prog;
-    if (!pick) throw new Error("no supported transcoding in list");
-
-    // 2) stream (署名URL)
-    const s = await fetch(`/sc/stream?${qs({ locator: pick.url })}`, { credentials: "same-origin" });
-    log("stream status:", s.status);
-    const j = await s.json().catch(e => ({ error: String(e) }));
-    log("stream body:", j);
-
-    if (!s.ok || !j?.url) throw new Error("no stream url in stream response");
-
-    const t1 = performance.now();
-    log("done", { ms: Math.round(t1 - t0), picked: pick.format?.protocol, url: j.url });
-    return j.url;
-  } catch (e) {
-    log("error:", e);
-    throw e;
-  }
-};
-</script>
-
+  };
+  </script>
 
   <!-- Railsのapplication.js（defer必須！） -->
   <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module", defer: true %>
 
   <!-- ✅ グローバル変数 -->
   <script nonce="<%= content_security_policy_nonce %>">
-  // 公開してよいID（OK）
-  window.SOUNDCLOUD_CLIENT_ID      = "<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>";
+    // 公開してよいID（OK）
+    window.SOUNDCLOUD_CLIENT_ID = "<%= ENV['SOUNDCLOUD_CLIENT_ID'] %>";
 
-  // アクセストークンは「本人ログイン時だけ」出す（安全）
-  <% if current_user&.soundcloud_token.present? %>
-    window.soundcloudToken = "<%= current_user.soundcloud_token %>";
+    // アクセストークンは「本人ログイン時だけ」出す（安全）
+    <% if current_user&.soundcloud_token.present? %>
+      window.soundcloudToken = "<%= current_user.soundcloud_token %>";
+    <% else %>
+      window.soundcloudToken = null;
+    <% end %>
+
+    window.CLOUDINARY_CLOUD_NAME    = "<%= ENV['CLOUDINARY_CLOUD_NAME'] %>";
+    window.CLOUDINARY_UPLOAD_PRESET = "<%= ENV['CLOUDINARY_UPLOAD_PRESET'] %>";
+    window.VAPID_PUBLIC_KEY         = "<%= ENV['VAPID_PUBLIC_KEY'] %>";
+    window.isLoggedIn               = <%= current_user.present? ? 'true' : 'false' %>;
+  </script>
+
+  <%# ===== 正規URL（canonical） ===== %>
+  <% if controller_name == 'home' && action_name == 'index' %>
+    <link rel="canonical" href="https://moriappli-emotion.com/">
   <% else %>
-    window.soundcloudToken = null;
+    <link rel="canonical" href="<%= canonical_url %>">
   <% end %>
 
-  window.CLOUDINARY_CLOUD_NAME     = "<%= ENV['CLOUDINARY_CLOUD_NAME'] %>";
-  window.CLOUDINARY_UPLOAD_PRESET  = "<%= ENV['CLOUDINARY_UPLOAD_PRESET'] %>";
-  window.VAPID_PUBLIC_KEY          = "<%= ENV['VAPID_PUBLIC_KEY'] %>";
-  window.isLoggedIn                = <%= current_user.present? ? 'true' : 'false' %>;
-</script>
-
-
-<%# ===== 正規URL（canonical） ===== %>
-<% if controller_name == 'home' && action_name == 'index' %>
-  <link rel="canonical" href="https://moriappli-emotion.com/">
-<% else %>
-  <link rel="canonical" href="<%= canonical_url %>">
-<% end %>
-
-<%# ===== ?view=... のときは“載せないがリンクは辿る” ===== %>
-<% if params[:view].present? %>
-  <meta name="robots" content="noindex,follow">
-<% end %>
-
+  <%# ===== ?view=... のときは“載せないがリンクは辿る” ===== %>
+  <% if params[:view].present? %>
+    <meta name="robots" content="noindex,follow">
+  <% end %>
 
   <%= yield :head %>
   <%= Sentry.get_trace_propagation_meta.html_safe %>
@@ -227,7 +252,6 @@ window.SC_IOS_STREAM_RESOLVER = async function(playUrl) {
       </div>
     </div>
   </div>
-
 
   <!-- ──────────── 下部カスタムプレーヤー & 隠し iframe ──────────── -->
 

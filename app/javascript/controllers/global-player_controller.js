@@ -446,9 +446,10 @@ export default class extends Controller {
       if (!trans.length) { this._debug("no transcodings"); throw new Error("No transcodings available"); }
 
       const byProto = (p) => trans.find(t => new RegExp(p, "i").test(t?.format?.protocol || ""));
-      const chosen = this._isIOS()
-        ? (byProto("progressive") || byProto("hls"))
-        : (byProto("progressive") || byProto("hls"));
+       // iOS は HLS 優先、PC等は progressive 優先
+    const chosen = this._isIOS()
+    ? (byProto("hls") || byProto("progressive"))
+    : (byProto("progressive") || byProto("hls"));
       if (!chosen?.url) { this._debug("no suitable transcoding"); throw new Error("No suitable transcoding"); }
 
       const streamLocatorViaProxy = `/sc/stream?locator=${encodeURIComponent(chosen.url)}`;
