@@ -434,7 +434,8 @@ export default class extends Controller {
         "X-SC-OAUTH": tok,
         "Authorization": `OAuth ${tok}`
       };
-    }
+  }
+  
 
   async _resolveStreamUrl(trackUrl) {
     const cleanUrl = this._normalizeTrackUrl(trackUrl);
