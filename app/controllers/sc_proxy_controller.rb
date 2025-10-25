@@ -100,7 +100,25 @@ class ScProxyController < ApplicationController
       end
     Rails.logger.info("[sc_proxy] token source=#{picked}") unless picked == :none
 
+    # レスポンスに情報（デバッグ用）
+    set_token_source_headers(picked, token.present?)
     token
+  end
+
+  # ===== CDN向けキャッシュ無効化＆Vary =====
+  def set_no_cache_headers!
+    response.set_header("Cache-Control", "no-store, no-cache, must-revalidate, private")
+    response.set_header("Pragma", "no-cache")
+    response.set_header("Expires", "0")
+    # 認証手段によってレスポンスが変わるので Vary を明示
+    vary = (%w[Authorization Cookie X-SC-OAUTH] + Array(response.get_header("Vary"))).flatten.uniq
+    response.set_header("Vary", vary.join(", "))
+  end
+
+  # ===== デバッグ用レスポンスヘッダ（ブラウザNetworkで確認用） =====
+  def set_token_source_headers(source, present)
+    response.set_header("X-Proxy-Token-Present", present ? "true" : "false")
+    response.set_header("X-Proxy-Token-From", source.to_s)
   end
 
   # =========== v2(匿名 client_id) 解決 ===========
@@ -136,6 +154,8 @@ class ScProxyController < ApplicationController
 
   # GET /sc/resolve?url=...
   def resolve
+    set_no_cache_headers!
+
     play_url = params[:url].to_s
     return render json: { error: "missing url" }, status: 400 if play_url.blank?
 
@@ -237,6 +257,8 @@ class ScProxyController < ApplicationController
 
   # GET /sc/stream?locator=...
   def stream
+    set_no_cache_headers!
+
     locator = params[:locator].to_s
     return render json: { error: "missing locator" }, status: 400 if locator.blank?
 
