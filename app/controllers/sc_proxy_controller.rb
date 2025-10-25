@@ -115,7 +115,12 @@ class ScProxyController < ApplicationController
 
     cid   = ENV["SOUNDCLOUD_CLIENT_ID"].to_s.presence ||
             (Rails.application.credentials.dig(:soundcloud, :client_id) rescue nil).to_s
-    token = sanitize_oauth_token(request.headers["HTTP_X_SC_OAUTH"] || request.headers["X-SC-OAUTH"])
+    # ← ここを修正：Authorization も受ける
+    token = sanitize_oauth_token(
+      request.headers["HTTP_X_SC_OAUTH"] ||
+      request.headers["X-SC-OAUTH"] ||
+      strip_scheme_prefix(request.headers["Authorization"])
+    )
 
     # ========= トークンの有無で v1 → 失敗なら v2 に自動フォールバック =========
     if token.present?
@@ -205,7 +210,12 @@ class ScProxyController < ApplicationController
     locator = params[:locator].to_s
     return render json: { error: "missing locator" }, status: 400 if locator.blank?
 
-    token = sanitize_oauth_token(request.headers["HTTP_X_SC_OAUTH"] || request.headers["X-SC-OAUTH"])
+    # ← ここを修正：Authorization も受ける
+    token = sanitize_oauth_token(
+      request.headers["HTTP_X_SC_OAUTH"] ||
+      request.headers["X-SC-OAUTH"] ||
+      strip_scheme_prefix(request.headers["Authorization"])
+    )
     cid   = ENV["SOUNDCLOUD_CLIENT_ID"].to_s.presence ||
             (Rails.application.credentials.dig(:soundcloud, :client_id) rescue nil).to_s
 
