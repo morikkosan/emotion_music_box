@@ -1,4 +1,5 @@
-# app/controllers/sc_proxy_controller.rb
+# frozen_string_literal: true
+
 class ScProxyController < ApplicationController
   include ActionController::MimeResponds
   skip_before_action :verify_authenticity_token
@@ -133,7 +134,7 @@ class ScProxyController < ApplicationController
           req1["Authorization"] = auth
         end
 
-        res1 = http1.request(req1)
+        res1  = http1.request(req1)
         code1 = res1.code.to_i
         loc   = res1["location"].to_s
 
@@ -158,7 +159,7 @@ class ScProxyController < ApplicationController
           req2["Authorization"] = auth
         end
 
-        res2 = http2.request(req2)
+        res2  = http2.request(req2)
         code2 = res2.code.to_i
         unless code2.between?(200, 299)
           Rails.logger.info("[sc_proxy#resolve] v1 track failed code=#{code2} → fallback v2")
@@ -239,7 +240,7 @@ class ScProxyController < ApplicationController
       req["Authorization"] = auth
     end
 
-    res = http.request(req)
+    res   = http.request(req)
     code  = res.code.to_i
     ctype = res["content-type"].presence || "application/json"
 
