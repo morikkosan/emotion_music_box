@@ -135,6 +135,52 @@ export default class extends Controller {
     } catch (_) { return false; }
   }
 
+  // === ログイン判定（再生許可） ===
+  _isAuthenticatedForPlayback() {
+    try {
+      if (this._hasOAuthToken()) return true; // SC直再生OK
+      if (window.isLoggedIn === true) return true;
+      const body = document.body;
+      if (body && (body.classList.contains("logged-in") || body.dataset.loggedIn === "true")) return true;
+      return false;
+    } catch(_) { return false; }
+  }
+  _loginUrl() {
+    try {
+      const m = document.querySelector('meta[name="login-url"]')?.content?.trim();
+      if (m) return m;
+      const b = document.body?.dataset?.loginUrl;
+      if (b) return String(b);
+    } catch(_) {}
+    return "/login"; // フォールバック
+  }
+  async _promptLogin(reason = "再生にはログインが必要です。") {
+    const go = () => { try { window.location.href = this._loginUrl(); } catch(_) { window.location.assign(this._loginUrl()); } };
+    // SweetAlert2 がある場合
+    if (window.Swal && typeof Swal.fire === "function") {
+      const ret = await Swal.fire({
+        icon: "info",
+        title: "ログインが必要です",
+        text: reason,
+        confirmButtonText: "OK（ログインへ）",
+        cancelButtonText: "他",
+        showCancelButton: true,
+        allowOutsideClick: true,
+      });
+      if (ret.isConfirmed) go();
+      return false;
+    }
+    // ブラウザ標準
+    if (window.confirm(`${reason}\nログインしますか？`)) go();
+    return false;
+  }
+  // 任意の再生入口の前に呼ぶ
+  async _gateIfLoggedOut() {
+    if (this._isAuthenticatedForPlayback()) return true;
+    await this._promptLogin();
+    return false;
+  }
+
   // === ここが重要：API直再生フラグ（全環境で採用） ===
   _shouldUseApi() {
     if (window.__forceWidgetOnly) return false;
@@ -284,7 +330,9 @@ export default class extends Controller {
 
     if (isHls && !canNativeHls && window.Hls && window.Hls.isSupported()) {
       // hls.js パス
-      if (this.__hls) { try { this.__hls.destroy(); } catch(_) {} this.__hls = null; }
+      if (this.__hls) {
+  try { this.__hls.destroy(); } catch(_) { /* noop */ }
+}
       const hls = new window.Hls({ maxBufferLength: 30 });
       hls.attachMedia(el);
       hls.loadSource(streamUrl);
@@ -507,8 +555,8 @@ export default class extends Controller {
     // 保険ハンドラ
     this._onSeekInput   = (e) => this.seek(e);
     this._onVolumeInput = (e) => this.changeVolume(e);
-    this._onPrevClick   = (e) => this.prevTrack(e);
-    this._onNextClick   = (e) => this.nextTrack(e);
+    this._onPrevClick   = async (e) => { if (!(await this._gateIfLoggedOut())) return; this.prevTrack(e); };
+    this._onNextClick   = async (e) => { if (!(await this._gateIfLoggedOut())) return; this.nextTrack(e); };
     this.seekBar?.addEventListener("input", this._onSeekInput);
     this.volumeBar?.addEventListener("input", this._onVolumeInput);
     this._prevBtn = document.getElementById("prev-track-button");
@@ -516,9 +564,10 @@ export default class extends Controller {
     this._prevBtn?.addEventListener("click", this._onPrevClick);
     this._nextBtn?.addEventListener("click", this._onNextClick);
 
-    // 画像/アイコンのイベント委譲
-    this._onIconClickDelegated = (e) => {
+    // 画像/アイコンのイベント委譲（未ログインならゲートして即return）
+    this._onIconClickDelegated = async (e) => {
       const target = e.target.closest("[data-track-id]"); if (!target) return;
+      if (!(await this._gateIfLoggedOut())) return;
       if (target.matches('[data-global-player-target="playIcon"], .play-overlay-icon') || target.classList.contains("fa") || target.dataset.playUrl) {
         if (target.dataset.trackId && !target.dataset.playUrl) this.onPlayIconClick({ currentTarget: target, stopPropagation(){} });
         else this.loadAndPlay({ currentTarget: target, stopPropagation(){} });
@@ -527,7 +576,10 @@ export default class extends Controller {
     this._container()?.addEventListener("click", this._onIconClickDelegated);
 
     // 外部検索から再生
-    window.addEventListener("play-from-search", (e) => this.playFromExternal(e.detail.playUrl));
+    window.addEventListener("play-from-search", async (e) => {
+      if (!(await this._gateIfLoggedOut())) return;
+      this.playFromExternal(e.detail.playUrl);
+    });
 
     // レイアウト
     this.switchPlayerTopRow();
@@ -556,6 +608,14 @@ export default class extends Controller {
       btn.toggleAttribute("disabled", !has);
       btn.setAttribute("aria-disabled", String(!has));
       btn.classList.toggle("is-disabled", !has);
+      // 「未ログインで押したらログインを促す」
+      if (!btn.__gpBound) {
+        btn.addEventListener("click", async (ev) => {
+          if (!(await this._gateIfLoggedOut())) { ev.preventDefault?.(); ev.stopPropagation?.(); return false; }
+          this.playFirstTrack(ev);
+        });
+        btn.__gpBound = true;
+      }
     };
     document.addEventListener("turbo:render", this._updatePlayButton);
     document.addEventListener("turbo:frame-load", this._updatePlayButton);
@@ -567,8 +627,8 @@ export default class extends Controller {
     // Media Session
     try {
       if ("mediaSession" in navigator) {
-        navigator.mediaSession.setActionHandler("previoustrack", () => this.prevTrack());
-        navigator.mediaSession.setActionHandler("nexttrack",     () => this.nextTrack());
+        navigator.mediaSession.setActionHandler("previoustrack", async () => { if (!(await this._gateIfLoggedOut())) return; this.prevTrack(); });
+        navigator.mediaSession.setActionHandler("nexttrack",     async () => { if (!(await this._gateIfLoggedOut())) return; this.nextTrack(); });
       }
     } catch(_) {}
 
@@ -805,6 +865,7 @@ export default class extends Controller {
   // ---------- タイル/アイコンから再生 ----------
   async loadAndPlay(event) {
     event?.stopPropagation?.();
+    if (!(await this._gateIfLoggedOut())) return; // ★ 未ログインなら早期リターン
     if (this._isIOS()) this._primeAudioForIOS();
 
     this.updatePlaylistOrder();
@@ -960,8 +1021,12 @@ export default class extends Controller {
   }
 
   // ---------- トグル ----------
-  togglePlayPause(event) {
+  async togglePlayPause(event) {
     event?.stopPropagation?.();
+
+    // ★ 未ログインならポップアップのみ
+    if (!(await this._gateIfLoggedOut())) return;
+
     if (this._isIOS()) this._primeAudioForIOS();
 
     if (this._shouldUseApi()) {
