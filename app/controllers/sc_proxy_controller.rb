@@ -121,23 +121,32 @@ class ScProxyController < ApplicationController
     response.set_header("X-Proxy-Token-From", source.to_s)
   end
 
-  # =========== v2(匿名 client_id) 解決 ===========
-  def resolve_v2!(play_url, cid:)
+  # =========== v2 解決（OAuth もしくは 匿名 client_id） ===========
+  # token があれば Authorization で v2 を叩く。無ければ client_id を付けて匿名で叩く。
+  def resolve_v2!(play_url, cid:, token: nil)
     u = URI.parse("https://api-v2.soundcloud.com/resolve")
     q = { url: play_url }
-    q[:client_id] = cid if cid.present?
+    q[:client_id] = cid if cid.present? && token.blank? # OAuth時は client_id 付けない
     u.query = Rack::Utils.build_query(q)
 
-    res = http_get_follow(u, headers: {
+    headers = {
       "Accept"          => "application/json",
       "Accept-Encoding" => "identity",
       "User-Agent"      => "emomu-proxy/1.4"
-    })
+    }
+    if token.present?
+      if (auth = build_auth_header(token)).present?
+        headers["Authorization"] = auth
+      end
+    end
+
+    res = http_get_follow(u, headers: headers)
 
     code  = res.code.to_i
     ctype = res["content-type"].presence || "application/json"
 
     if code.between?(200, 299)
+      response.set_header("X-Proxy-V2-Auth", token.present? ? "oauth" : "client_id")
       render plain: res.body, status: code, content_type: ctype and return
     else
       render json: {
@@ -172,7 +181,7 @@ class ScProxyController < ApplicationController
             (Rails.application.credentials.dig(:soundcloud, :client_id) rescue nil).to_s
     token = extract_oauth_token
 
-    # ========= トークン有: v1 → 失敗時 v2 フォールバック =========
+    # ========= トークン有: v1 → 失敗時 v2(OAuth) フォールバック =========
     if token.present?
       begin
         v1_resolve = URI.parse("https://api.soundcloud.com/resolve?#{Rack::Utils.build_query(url: play_url)}")
@@ -193,10 +202,10 @@ class ScProxyController < ApplicationController
         code1 = res1.code.to_i
         loc   = res1["location"].to_s
 
-        # 401/403/その他 → 匿名(v2)へ即フォールバック
+        # 302 以外（=失敗）は v2(OAuth) に切り替え
         unless code1 == 302 && loc.present?
-          Rails.logger.info("[sc_proxy#resolve] v1 resolve failed code=#{code1} → fallback v2")
-          return resolve_v2!(play_url, cid: cid)
+          Rails.logger.info("[sc_proxy#resolve] v1 resolve failed code=#{code1} → fallback v2(OAuth)")
+          return resolve_v2!(play_url, cid: cid, token: token)
         end
 
         # 302 先（tracks/...）でトラックJSON取得
@@ -217,8 +226,8 @@ class ScProxyController < ApplicationController
         res2  = http2.request(req2)
         code2 = res2.code.to_i
         unless code2.between?(200, 299)
-          Rails.logger.info("[sc_proxy#resolve] v1 track failed code=#{code2} → fallback v2")
-          return resolve_v2!(play_url, cid: cid)
+          Rails.logger.info("[sc_proxy#resolve] v1 track failed code=#{code2} → fallback v2(OAuth)")
+          return resolve_v2!(play_url, cid: cid, token: token)
         end
 
         track = JSON.parse(res2.body) rescue nil
@@ -246,13 +255,13 @@ class ScProxyController < ApplicationController
 
         return render json: v2ish, status: 200
       rescue => e
-        Rails.logger.warn("[sc_proxy#resolve v1] #{e.class}: #{e.message} → fallback v2")
-        return resolve_v2!(play_url, cid: cid)
+        Rails.logger.warn("[sc_proxy#resolve v1] #{e.class}: #{e.message} → fallback v2(OAuth)")
+        return resolve_v2!(play_url, cid: cid, token: token)
       end
     end
 
     # ---- トークン無しは匿名（client_id）経路：v2 ----
-    resolve_v2!(play_url, cid: cid)
+    resolve_v2!(play_url, cid: cid, token: nil)
   end
 
   # GET /sc/stream?locator=...
