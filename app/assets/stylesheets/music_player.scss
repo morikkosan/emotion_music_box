@@ -367,3 +367,11 @@
 .hidden-frame {
   display: none !important;
 }
+
+
+/* iOS だけ body に is-ios を付けています。UI全体で使い回し可能 */
+.is-ios .ios-volume-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  opacity: 0.8;
+}

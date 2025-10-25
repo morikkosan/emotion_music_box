@@ -326,7 +326,8 @@ export default class extends Controller {
       });
     }
 
-    if (this.volumeBar) {
+    // 初期音量：iOSでは audio.volume は無視されるため触らない
+    if (this.volumeBar && !this._isIOS()) {
       const v = Math.max(0, Math.min(1, Number(this.volumeBar.value)/100 || 1));
       el.volume = v;
     }
@@ -426,6 +427,7 @@ export default class extends Controller {
     } catch (_) {}
 
     this._hideHandshakeHint();
+    this._removeIOSVolumeHint();
   };
 
   // ★ プレイヤーだけ安全に止める（UIイベントは残す）
@@ -569,6 +571,14 @@ export default class extends Controller {
         navigator.mediaSession.setActionHandler("nexttrack",     () => this.nextTrack());
       }
     } catch(_) {}
+
+    // --- iOS専用：音量スライダーを隠し、ヒントを表示 ---
+    if (this._isIOS()) {
+      this._setupIOSVolumeUI();
+    } else {
+      this._removeIOSVolumeHint();
+      this._showVolumeBar();
+    }
 
     if (window.SC?.Widget) this.restorePlayerState();
     else window.addEventListener("load", () => this.restorePlayerState?.());
@@ -913,7 +923,7 @@ export default class extends Controller {
       }, 1000);
     };
 
-    // 音量/UI
+    // 音量/UI（iOSはvolumeいじらない）
     this.changeVolume({ target: this.volumeBar });
     this.startProgressTracking();
     this.updateTrackIcon(this.currentTrackId, true);
@@ -1121,6 +1131,10 @@ export default class extends Controller {
   changeVolume(e) {
     const val = Number(e?.target?.value ?? this.volumeBar?.value ?? 100);
     const clamped = Math.max(0, Math.min(100, val));
+
+    // iOS では audio.volume は制御不可。UIだけ同期し、早期return。
+    if (this._isIOS()) { this.updateVolumeAria(String(clamped)); return; }
+
     if (this._shouldUseApi() && this.audio) { try { this.audio.volume = clamped/100; } catch(_) {} this.updateVolumeAria(String(clamped)); return; }
     try { this.widget?.setVolume?.(clamped); } catch(_) {}
     this.updateVolumeAria(String(clamped));
@@ -1282,5 +1296,74 @@ export default class extends Controller {
   stopWaveformAnime() {
     this.waveformAnimating = false;
     this.waveformCtx && this.waveformCtx.clearRect(0,0,this.waveformCanvas.width,this.waveformCanvas.height);
+  }
+
+  // ====== ここから：内部ヘルパー（追加） ======
+
+  _disposeAudio() {
+    try { if (this.__hls) { this.__hls.destroy(); this.__hls = null; } } catch(_) {}
+    try {
+      if (this.media) { try { this.media.pause(); } catch(_) {}
+        try { this.media.removeAttribute("src"); this.media.load?.(); } catch(_) {}
+        try { this.media.remove(); } catch(_) {}
+      }
+    } catch(_) {}
+    this.audio = null;
+    this.media = null;
+  }
+
+  _onAudioPlay = () => {
+    this.playPauseIcon?.classList.replace("fa-play","fa-pause");
+    this.updateTrackIcon(this.currentTrackId, true);
+    this.setPlayPauseAria(true);
+  };
+  _onAudioPause = () => {
+    this.playPauseIcon?.classList.replace("fa-pause","fa-play");
+    this.updateTrackIcon(this.currentTrackId, false);
+    this.setPlayPauseAria(false);
+  };
+  _onAudioEnded = () => { this.onFinish(); };
+  _onAudioTime  = () => {};
+  _onAudioDur   = () => {};
+
+  _setupIOSVolumeUI() {
+    // body に is-ios が付いている前提（無ければ付ける）
+    try { document.body.classList.add("is-ios"); } catch(_) {}
+
+    // スライダー非表示＋無効化（スクリーンリーダ対応）
+    if (this.volumeBar) {
+      this.volumeBar.setAttribute("hidden","hidden");
+      this.volumeBar.setAttribute("aria-hidden","true");
+      this.volumeBar.setAttribute("disabled","disabled");
+      this.volumeBar.style.display = "none";
+      try { this.volumeBar.removeEventListener("input", this._onVolumeInput); } catch(_) {}
+    }
+
+    // ヒントを挿入（重複生成しない）
+    if (!document.getElementById("ios-volume-hint")) {
+      const hint = document.createElement("div");
+      hint.id = "ios-volume-hint";
+      hint.className = "ios-volume-hint";
+      hint.setAttribute("role","note");
+      hint.setAttribute("aria-live","polite");
+      hint.textContent = "iPhone / iPad は本体の音量ボタンで調整してください";
+      const container = this.bottomPlayer?.querySelector(".bottom-player-extra-controls") || this.bottomPlayer || document.body;
+      container?.appendChild(hint);
+    }
+  }
+
+  _removeIOSVolumeHint() {
+    try { document.getElementById("ios-volume-hint")?.remove(); } catch(_) {}
+  }
+
+  _showVolumeBar() {
+    if (!this.volumeBar) return;
+    this.volumeBar.removeAttribute("hidden");
+    this.volumeBar.removeAttribute("aria-hidden");
+    this.volumeBar.removeAttribute("disabled");
+    this.volumeBar.style.display = "";
+    // 念のためイベントを付け直す
+    try { this.volumeBar.removeEventListener("input", this._onVolumeInput); } catch(_) {}
+    this.volumeBar.addEventListener("input", this._onVolumeInput);
   }
 }
