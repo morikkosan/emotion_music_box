@@ -20,6 +20,21 @@ import { Controller } from "@hotwired/stimulus";
 export default class extends Controller {
   static targets = ["trackImage", "playIcon"];
 
+   _getOAuthToken() {
+    try {
+      const m = document.querySelector('meta[name="soundcloud-oauth-token"]');
+      const t1 = m?.content?.trim();
+      if (t1) return t1;
+      const t2 = (typeof window.soundcloudToken === "string") ? window.soundcloudToken.trim() : "";
+      if (t2) return t2;
+      // 最後の保険（同一オリジンのみ）。Cookie はサーバ側でも読めるのでJSで無理に読む必要はないが、
+      // デバッグ時に「入っているか」の確認用として残す。
+      // const mm = document.cookie.match(/(?:^|;\s*)sc_oauth=([^;]+)/);
+      // if (mm) return decodeURIComponent(mm[1] || "");
+      return "";
+    } catch(_) { return ""; }
+  }
+
   // ---------- ユーティリティ ----------
   _q(sel, root = null) { return (root || this.element || document).querySelector(sel); }
   _qa(sel, root = null) { return Array.from((root || this.element || document).querySelectorAll(sel)); }
@@ -118,7 +133,7 @@ export default class extends Controller {
   // 厳格化: "undefined"/"null" 文字列はトークン無し扱い
   _hasOAuthToken() {
     try {
-      const t = window.soundcloudToken;
+      const t = this._getOAuthToken();
       if (typeof t !== "string") return false;
       const v = t.trim();
       if (v.length === 0) return false;
@@ -131,9 +146,9 @@ export default class extends Controller {
 
   // iOSでのAPI再生条件：
   _canUseApiOnIOS() {
-    if (!this._isIOS() || window.__forceWidgetOnly) return false;
-    if (this._hasOAuthToken()) return true;
-    return !!this._scClientId; // 念のため
+      if (!this._isIOS() || window.__forceWidgetOnly) return false;
+   // iOS APIモードは「OAuthトークンがある時だけ」に限定（匿名client_idでは行かない）
+    return this._hasOAuthToken();
   }
 
   _needsHandshake() { return this._isIOS() && !this._canUseApiOnIOS(); }
@@ -413,11 +428,13 @@ export default class extends Controller {
 
   // ---------- SoundCloud API: resolve → stream URL（プロキシのみ） ----------
   _authHeaders() {
-    return this._hasOAuthToken() ? {
-      "X-SC-OAUTH": window.soundcloudToken,
-      "Authorization": `OAuth ${window.soundcloudToken}`
-    } : {};
-  }
+      if (!this._hasOAuthToken()) return {};
+      const tok = this._getOAuthToken();
+      return {
+        "X-SC-OAUTH": tok,
+        "Authorization": `OAuth ${tok}`
+      };
+    }
 
   async _resolveStreamUrl(trackUrl) {
     const cleanUrl = this._normalizeTrackUrl(trackUrl);
