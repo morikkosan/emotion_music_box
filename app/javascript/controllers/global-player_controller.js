@@ -66,12 +66,7 @@ export default class extends Controller {
     if (!this._debugEnabled() || this.__dbgEl) return;
     const el = document.createElement("div");
     el.id = "gp-debug";
-    Object.assign(el.style, {
-      position:"fixed", left:"8px", bottom:"8px", zIndex:"99999",
-      background:"rgba(0,0,0,0.8)", color:"#fff", fontSize:"12px",
-      padding:"6px 8px", borderRadius:"8px", lineHeight:"1.4",
-      maxWidth:"90vw", maxHeight:"40vh", overflow:"auto"
-    });
+    el.className = "gp-debug"; // ← すべてCSS側で
     el.setAttribute("role","status");
     el.setAttribute("aria-live","polite");
     document.body.appendChild(el);
@@ -159,49 +154,66 @@ export default class extends Controller {
     const msg = "ログインが必要です。ログインしますか？";
     const loginUrl = this._getLoginUrl();
 
-    // 1) SweetAlert2 がある場合
+    // 1) SweetAlert2 がある場合（装飾はcustomClassで）
     if (typeof Swal?.fire === "function") {
       Swal.fire({
         icon: "info",
-        title: "ログインしてください",
-        text: "再生するにはログインが必要です。",
-        showCancelButton: true,
-        confirmButtonText: "OK",
-        cancelButtonText: "閉じる",
-        allowOutsideClick: true,
-        allowEscapeKey: true,
-      }).then((r) => { if (r.isConfirmed) window.location.href = loginUrl; });
+        title: "再生するにはログインが必要です",
+        text: "上部のログインか新規登録を行ってください",
+        showCancelButton: false,
+        confirmButtonText: "閉じる",
+        didClose: () => {},
+        customClass: {
+          popup:  "cyber-popup",
+          title:  "cyber-title",
+          htmlContainer: "cyber-text",
+          confirmButton: "cyber-btn-ok"
+        },
+        buttonsStyling: false
+      });
       return;
     }
 
-    // 2) 簡易カスタムポップアップ
+    // 2) 簡易カスタムポップアップ（インライン禁止対応）
     try {
       const id = "login-popup-min";
       if (document.getElementById(id)) return;
+
       const wrap = document.createElement("div");
       wrap.id = id;
-      Object.assign(wrap.style, {
-        position: "fixed", inset: "0", background: "rgba(0,0,0,.35)", zIndex: "999999",
-        display: "flex", alignItems: "center", justifyContent: "center"
-      });
-      const box = document.createElement("div");
-      Object.assign(box.style, {
-        background: "#111", color: "#fff", padding: "16px 18px", borderRadius: "10px",
-        boxShadow: "0 10px 30px rgba(0,0,0,.35)", width: "min(90vw, 360px)", textAlign: "center"
-      });
-      box.innerHTML = `
-        <div style="font-size:18px; font-weight:700; margin-bottom:8px;">ログインしてください</div>
-        <div style="font-size:14px; opacity:.9; margin-bottom:14px;">${msg}</div>
-        <div style="display:flex; gap:10px; justify-content:center;">
-          <button id="login-ok" style="padding:8px 14px; border:0; border-radius:8px;">OK</button>
-          <button id="login-cancel" style="padding:8px 14px; border:0; border-radius:8px; background:#333; color:#fff;">閉じる</button>
-        </div>`;
+      wrap.className = "gp-overlay";
+
+      const box  = document.createElement("div");
+      box.className = "gp-modal";
+
+      const h    = document.createElement("div");
+      h.className = "gp-modal-title";
+      h.textContent = "ログインしてください";
+
+      const p    = document.createElement("p");
+      p.className = "gp-modal-text";
+      p.textContent = "再生するにはログインが必要です。";
+
+      const btns = document.createElement("div");
+      btns.className = "gp-modal-actions";
+
+      const btnClose = document.createElement("button");
+      btnClose.type = "button";
+      btnClose.className = "btn gp-btn gp-btn-secondary";
+      btnClose.textContent = "閉じる";
+
+      btns.appendChild(btnClose);
+      box.appendChild(h);
+      box.appendChild(p);
+      box.appendChild(btns);
+
       wrap.appendChild(box);
       document.body.appendChild(wrap);
+
       const close = () => { try { wrap.remove(); } catch(_) {} };
-      box.querySelector("#login-ok").addEventListener("click", () => { window.location.href = loginUrl; });
-      box.querySelector("#login-cancel").addEventListener("click", close);
+      btnClose.addEventListener("click", close);
       wrap.addEventListener("click", (e) => { if (e.target === wrap) close(); });
+
       return;
     } catch(_) {}
 
@@ -227,7 +239,7 @@ export default class extends Controller {
   _hideScreenCover() {
     try {
       const cover = document.getElementById("screen-cover-loading");
-      if (cover) { cover.style.display = "none"; cover.setAttribute("aria-hidden", "true"); }
+      if (cover) { cover.classList.add("is-hidden"); cover.setAttribute("aria-hidden", "true"); }
     } catch (_) {}
   }
 
@@ -235,12 +247,7 @@ export default class extends Controller {
     if (this._hintEl || !this._needsHandshake()) return;
     const el = document.createElement("div");
     el.id = "sc-handshake-hint";
-    Object.assign(el.style, {
-      position:"fixed", left:"12px", right:"12px", bottom:"12px", zIndex:"99998",
-      padding:"10px 12px", fontSize:"14px", borderRadius:"10px",
-      background:"rgba(0,0,0,0.85)", color:"#fff", lineHeight:"1.5",
-      boxShadow:"0 4px 16px rgba(0,0,0,.25)", textAlign:"center"
-    });
+    el.className = "sc-handshake-hint"; // ← すべてCSS側で
     el.textContent = "iPhone：下のSoundCloudプレイヤー内の ▶ をタップして再生を許可してください。曲ごとに最初の1回だけ必要です。";
     el.addEventListener("click", () => this._hideHandshakeHint());
     document.body.appendChild(el);
@@ -338,7 +345,7 @@ export default class extends Controller {
     el.playsInline = true;
     el.setAttribute("webkit-playsinline","true");
     el.autoplay = false;
-    el.style.display = "none";
+    el.classList.add("media-hidden"); // ← CSSで非表示に
     document.body.appendChild(el);
 
     el.addEventListener("play", this._onAudioPlay);
@@ -359,18 +366,16 @@ export default class extends Controller {
     el.autoplay = false;
 
     // HLSなら video を使い、Safari以外は hls.js を優先
-    const isHls = useVideo; // 呼び出し側が HLS のとき true を渡す
+    const isHls = useVideo;
     const canNativeHls = !!el.canPlayType && el.canPlayType('application/vnd.apple.mpegurl');
 
     if (isHls && !canNativeHls && window.Hls && window.Hls.isSupported()) {
-      // hls.js パス
       if (this.__hls) { try { this.__hls.destroy(); } catch(_) {} this.__hls = null; }
       const hls = new window.Hls({ maxBufferLength: 30 });
       hls.attachMedia(el);
       hls.loadSource(streamUrl);
       this.__hls = hls;
     } else {
-      // Progressive か、Safari のネイティブ HLS
       if (el.src !== streamUrl) {
         el.src = streamUrl;
         try { await el.load?.(); } catch(_) {}
@@ -385,11 +390,9 @@ export default class extends Controller {
       try { await el.play(); } catch (e2) { throw e2; }
     }
 
-    // Safari: playing で unmute（canplay より確実）
     const unmute = () => { el.muted = false; el.removeEventListener("playing", unmute); };
     el.addEventListener("playing", unmute);
 
-    // 早期 pause を1回だけ自動再試行
     setTimeout(() => {
       try {
         if (el.paused && (el.readyState >= 2)) {
@@ -406,7 +409,6 @@ export default class extends Controller {
       });
     }
 
-    // 初期音量：iOSでは audio.volume は無視されるため触らない
     if (this.volumeBar && !this._isIOS()) {
       const v = Math.max(0, Math.min(1, Number(this.volumeBar.value)/100 || 1));
       el.volume = v;
@@ -446,7 +448,6 @@ export default class extends Controller {
       if (!trans.length) { this._debug("no transcodings"); throw new Error("No transcodings available"); }
 
       const byProto = (p) => trans.find(t => new RegExp(p, "i").test(t?.format?.protocol || ""));
-      // 全環境で HLS 最優先（なければ progressive）
       const chosen = (byProto("hls") || byProto("progressive"));
       if (!chosen?.url) { this._debug("no suitable transcoding"); throw new Error("No suitable transcoding"); }
 
@@ -640,7 +641,6 @@ export default class extends Controller {
       btn.toggleAttribute("disabled", !has);
       btn.setAttribute("aria-disabled", String(!has));
       btn.classList.toggle("is-disabled", !has);
-      // 未ログイン時は押せてもポップで止める（アクセシビリティ確保のため非disable）
     };
     document.addEventListener("turbo:render", this._updatePlayButton);
     document.addEventListener("turbo:frame-load", this._updatePlayButton);
@@ -814,19 +814,8 @@ export default class extends Controller {
   _setIframeVisibility(show) {
     const ifr = this.iframeElement || document.getElementById("hidden-sc-player");
     if (!ifr) return;
-    if (show) {
-      ifr.classList.add("sc-visible");
-      Object.assign(ifr.style, {
-        display:"block", position:"relative", width:"100%", height:"180px",
-        border:"0", zIndex:"99997"
-      });
-    } else {
-      ifr.classList.remove("sc-visible");
-      Object.assign(ifr.style, {
-        display:"none", position:"absolute", width:"0px", height:"0px",
-        border:"0", left:"-9999px", top:"-9999px", zIndex:"-1"
-      });
-    }
+    ifr.classList.toggle("sc-visible", !!show);
+    ifr.classList.toggle("sc-hidden", !show);
   }
 
   // ---------- iframe作成 ----------
@@ -842,13 +831,13 @@ export default class extends Controller {
     newIframe.scrolling = "no";
     parent.appendChild(newIframe);
     this.iframeElement = newIframe;
-    this._setIframeVisibility(!!visible); // 作成時は不可視
+    this._setIframeVisibility(!!visible);
     return newIframe;
   }
 
   // ---------- 外部 URL 再生 ----------
   async playFromExternal(playUrl) {
-    if (this._requireLogin()) return; // 未ログインブロック
+    if (this._requireLogin()) return;
     this.bottomPlayer?.classList.remove("d-none"); this.bottomPlayer?.offsetHeight;
     if (this.widget) { this.unbindWidgetEvents(); clearInterval(this.progressInterval); this.widget = null; }
 
@@ -890,7 +879,7 @@ export default class extends Controller {
 
   // ---------- タイル/アイコンから再生 ----------
   async loadAndPlay(event) {
-    if (this._requireLogin()) return; // 未ログインブロック
+    if (this._requireLogin()) return;
     event?.stopPropagation?.();
     if (this._isIOS()) this._primeAudioForIOS();
 
@@ -971,7 +960,6 @@ export default class extends Controller {
 
     try {
       this._debug("play via API", { isHls });
-      // HLS のときは常に video（Safariはネイティブ、他は hls.js）、Progressive は audio
       await this._playViaMedia({ streamUrl, useVideo: isHls, resumeMs });
     } catch (e) {
       this._log("media play failed → fallback", e);
@@ -1021,7 +1009,6 @@ export default class extends Controller {
   }
 
   _fallbackToWidgetFromAudio(trackUrl, el = null) {
-    // どうしてもダメな時の最終手段（ユーザ意向は「極力出さない」）
     this._disposeAudio();
     const url = trackUrl || this._lastResolvedTrackUrl; if (!url) return;
 
@@ -1048,7 +1035,7 @@ export default class extends Controller {
 
   // ---------- トグル ----------
   togglePlayPause(event) {
-    if (this._requireLogin()) return; // 未ログインブロック
+    if (this._requireLogin()) return;
     event?.stopPropagation?.();
     if (this._isIOS()) this._primeAudioForIOS();
 
@@ -1239,7 +1226,7 @@ export default class extends Controller {
 
   // ---------- 前後 ----------
   prevTrack(event) {
-    if (this._requireLogin()) return; // 未ログインブロック
+    if (this._requireLogin()) return;
     event?.stopPropagation?.(); this.updatePlaylistOrder();
     if (!this.playlistOrder?.length) return;
     if (!this.currentTrackId) {
@@ -1258,7 +1245,7 @@ export default class extends Controller {
   }
 
   nextTrack(event) {
-    if (this._requireLogin()) return; // 未ログインブロック
+    if (this._requireLogin()) return;
     event?.stopPropagation?.(); this.updatePlaylistOrder();
     if (!this.playlistOrder?.length) return;
     if (!this.currentTrackId) {
@@ -1278,7 +1265,7 @@ export default class extends Controller {
   }
 
   playFirstTrack(event) {
-    if (this._requireLogin()) return; // 未ログインブロック
+    if (this._requireLogin()) return;
     event?.stopPropagation?.(); this.updatePlaylistOrder();
     if (!this.playlistOrder?.length) return;
     const firstId = this.playlistOrder[0];
@@ -1286,14 +1273,14 @@ export default class extends Controller {
     icon && this.loadAndPlay({ currentTarget: icon, stopPropagation(){} });
   }
 
-  // レイアウト切替
+  // レイアウト切替（クラス切替のみ）
   switchPlayerTopRow() {
     const isMobile = window.innerWidth <= 768;
     const desktopRow = document.getElementById("player-top-row-desktop");
     const mobileRow  = document.getElementById("player-top-row-mobile");
     if (!desktopRow || !mobileRow) return;
-    desktopRow.style.display = isMobile ? "none" : "flex";
-    mobileRow.style.display  = isMobile ? "flex" : "none";
+    desktopRow.classList.toggle("is-hidden", isMobile);
+    mobileRow.classList.toggle("is-hidden", !isMobile);
   }
 
   // ---------- UI表示 ----------
@@ -1418,19 +1405,16 @@ export default class extends Controller {
   _onAudioDur   = () => {};
 
   _setupIOSVolumeUI() {
-    // body に is-ios が付いている前提（無ければ付ける）
     try { document.body.classList.add("is-ios"); } catch(_) {}
 
-    // スライダー非表示＋無効化（スクリーンリーダ対応）
     if (this.volumeBar) {
       this.volumeBar.setAttribute("hidden","hidden");
       this.volumeBar.setAttribute("aria-hidden","true");
       this.volumeBar.setAttribute("disabled","disabled");
-      this.volumeBar.style.display = "none";
+      this.volumeBar.classList.add("is-hidden"); // ← CSSで非表示
       try { this.volumeBar.removeEventListener("input", this._onVolumeInput); } catch(_) {}
     }
 
-    // ヒントを挿入（重複生成しない）
     if (!document.getElementById("ios-volume-hint")) {
       const hint = document.createElement("div");
       hint.id = "ios-volume-hint";
@@ -1452,8 +1436,7 @@ export default class extends Controller {
     this.volumeBar.removeAttribute("hidden");
     this.volumeBar.removeAttribute("aria-hidden");
     this.volumeBar.removeAttribute("disabled");
-    this.volumeBar.style.display = "";
-    // 念のためイベントを付け直す
+    this.volumeBar.classList.remove("is-hidden"); // ← CSSで表示
     try { this.volumeBar.removeEventListener("input", this._onVolumeInput); } catch(_) {}
     this.volumeBar.addEventListener("input", this._onVolumeInput);
   }
