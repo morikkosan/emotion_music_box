@@ -403,7 +403,8 @@ export default class extends Controller {
       });
       if (!r1.ok) {
         const txt = await r1.text().catch(()=> "");
-        throw new Error(`proxy resolve non-OK ${r1.status} ${txt.slice(0,160)}`);
+        this._log("resolve fail detail", { status: r1.status, body: txt.slice(0,800) });
+        throw new Error(`proxy resolve non-OK ${r1.status}`);
       }
       const track = await r1.json();
 
@@ -431,7 +432,8 @@ export default class extends Controller {
       });
       if (!r2.ok) {
         const txt = await r2.text().catch(()=> "");
-        throw new Error(`proxy stream non-OK ${r2.status} ${txt.slice(0,160)}`);
+        this._log("stream fail detail", { status: r2.status, body: txt.slice(0,800) });
+        throw new Error(`proxy stream non-OK ${r2.status}`);
       }
       const j2 = await r2.json();
 

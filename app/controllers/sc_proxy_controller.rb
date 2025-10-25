@@ -3,15 +3,22 @@ class ScProxyController < ApplicationController
   include ActionController::MimeResponds
   skip_before_action :verify_authenticity_token
 
-  # SoundCloudだけを許可（必要なら追加）
-  SC_HOST_ALLOWLIST = %w[
-    soundcloud.com www.soundcloud.com m.soundcloud.com
-    api-v2.soundcloud.com api.soundcloud.com
-    w.soundcloud.com cf-hls-media.sndcdn.com cf-media.sndcdn.com
-    playback.media-streaming.soundcloud.cloud media-streaming.soundcloud.cloud
+  # ===== ホスト許可：末尾一致で判定（短縮・CDN含む） =====
+  SC_HOST_SUFFIXES = %w[
+    soundcloud.com
+    snd.sc
+    soundcloud.app.goo.gl
+    sndcdn.com
+    soundcloud.cloud
   ].freeze
 
   private
+
+  def allowed_sc_host?(host)
+    h = host.to_s.downcase
+    return false if h.blank?
+    SC_HOST_SUFFIXES.any? { |suf| h == suf || h.end_with?(".#{suf}") }
+  end
 
   # "undefined" や "null"（文字列）を弾くサニタイズ
   def sanitize_oauth_token(raw)
@@ -21,9 +28,33 @@ class ScProxyController < ApplicationController
     t
   end
 
+  # Net::HTTP GET（最大5回までリダイレクト追従）
+  def http_get_follow(uri, headers: {}, limit: 5)
+    raise "too many redirects" if limit <= 0
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = (uri.scheme == "https")
+    http.open_timeout = 5
+    http.read_timeout = 15
+
+    req = Net::HTTP::Get.new(uri.request_uri)
+    headers.each { |k, v| req[k] = v }
+    res = http.request(req)
+
+    case res
+    when Net::HTTPRedirection
+      loc = res["location"]
+      raise "redirect without location" if loc.blank?
+      new_uri = URI.parse(loc)
+      new_uri = uri + new_uri if new_uri.relative?
+      http_get_follow(new_uri, headers: headers, limit: limit - 1)
+    else
+      res
+    end
+  end
+
   public
 
-  # app/controllers/sc_proxy_controller.rb の中
+  # GET /sc/resolve?url=...
   def resolve
     play_url = params[:url].to_s
     return render json: { error: "missing url" }, status: 400 if play_url.blank?
@@ -32,7 +63,7 @@ class ScProxyController < ApplicationController
     begin
       u = URI.parse(play_url)
       return render json: { error: "invalid scheme" }, status: 400 unless %w[http https].include?(u.scheme)
-      return render json: { error: "forbidden host" }, status: 400 unless SC_HOST_ALLOWLIST.include?(u.host)
+      return render json: { error: "forbidden host", host: u.host }, status: 400 unless allowed_sc_host?(u.host)
     rescue URI::InvalidURIError
       return render json: { error: "invalid url" }, status: 400
     end
@@ -112,37 +143,38 @@ class ScProxyController < ApplicationController
     end
 
     # ---- ここからは従来の匿名（client_id）経路：v2 ----
-    upstream = URI.parse("https://api-v2.soundcloud.com/resolve")
-    qp = { url: play_url }
-    qp[:client_id] = cid if cid.present?
+    begin
+      u = URI.parse("https://api-v2.soundcloud.com/resolve")
+      q = { url: play_url }
+      q[:client_id] = cid if cid.present?
+      u.query = Rack::Utils.build_query(q)
 
-    http = Net::HTTP.new(upstream.host, upstream.port)
-    http.use_ssl = true
-    http.open_timeout = 3
-    http.read_timeout = 8
+      res = http_get_follow(u, headers: {
+        "Accept"          => "application/json",
+        "Accept-Encoding" => "identity",
+        "User-Agent"      => "emomu-proxy/1.3"
+      })
 
-    req = Net::HTTP::Get.new("#{upstream.path}?#{Rack::Utils.build_query(qp)}")
-    req["Accept"]           = "application/json"
-    req["Accept-Encoding"]  = "identity"
-    req["User-Agent"]       = "emomu-proxy/1.3"
+      code  = res.code.to_i
+      ctype = res["content-type"].presence || "application/json"
 
-    res = http.request(req)
-    code  = res.code.to_i
-    ctype = res["content-type"].presence || "application/json"
-
-    if code.between?(200, 299)
-      render plain: res.body, status: code, content_type: ctype
-    else
-      render json: {
-        error:  "upstream_error",
-        status: code,
-        rate:   { limit: res["x-ratelimit-limit"], remaining: res["x-ratelimit-remaining"], reset: res["x-ratelimit-reset"] },
-        body:   res.body.to_s
-      }, status: 502
+      if code.between?(200, 299)
+        render plain: res.body, status: code, content_type: ctype
+      else
+        render json: {
+          error:  "upstream_error",
+          status: code,
+          rate:   { limit: res["x-ratelimit-limit"], remaining: res["x-ratelimit-remaining"], reset: res["x-ratelimit-reset"] },
+          body:   res.body.to_s
+        }, status: 502
+      end
+    rescue => e
+      Rails.logger.warn("[sc_proxy#resolve v2] #{e.class}: #{e.message}")
+      render json: { error: "proxy_error", message: e.message }, status: 502
     end
   end
 
-  # app/controllers/sc_proxy_controller.rb の stream をまるごと置換
+  # GET /sc/stream?locator=...
   def stream
     locator = params[:locator].to_s
     return render json: { error: "missing locator" }, status: 400 if locator.blank?
@@ -155,7 +187,7 @@ class ScProxyController < ApplicationController
     begin
       uri = URI.parse(locator)
       return render json: { error: "invalid scheme" }, status: 400 unless %w[http https].include?(uri.scheme)
-      return render json: { error: "forbidden host" }, status: 400 unless SC_HOST_ALLOWLIST.include?(uri.host)
+      return render json: { error: "forbidden host", host: uri.host }, status: 400 unless allowed_sc_host?(uri.host)
     rescue URI::InvalidURIError
       return render json: { error: "invalid locator" }, status: 400
     end
