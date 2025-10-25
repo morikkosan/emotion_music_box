@@ -135,51 +135,85 @@ export default class extends Controller {
     } catch (_) { return false; }
   }
 
-  // === ログイン判定（再生許可） ===
-  _isAuthenticatedForPlayback() {
+  // === ログイン判定＆ログイン導線 ==========================
+  _isLoggedIn() {
     try {
-      if (this._hasOAuthToken()) return true; // SC直再生OK
-      if (window.isLoggedIn === true) return true;
-      const body = document.body;
-      if (body && (body.classList.contains("logged-in") || body.dataset.loggedIn === "true")) return true;
-      return false;
-    } catch(_) { return false; }
-  }
-  _loginUrl() {
-    try {
-      const m = document.querySelector('meta[name="login-url"]')?.content?.trim();
-      if (m) return m;
-      const b = document.body?.dataset?.loginUrl;
-      if (b) return String(b);
+      if (this._hasOAuthToken()) return true; // SC連携トークンがあれば実質ログイン済み
+      const b = document.body;
+      if (b?.classList?.contains("logged-in")) return true;
+      if (b?.dataset?.loggedIn === "true") return true;
+      const metaUser = document.querySelector('meta[name="current-user-id"]')?.content?.trim();
+      if (metaUser) return true;
+      if (typeof window.CURRENT_USER_ID === "number" || (typeof window.CURRENT_USER_ID === "string" && window.CURRENT_USER_ID)) return true;
     } catch(_) {}
-    return "/login"; // フォールバック
+    return false;
   }
-  async _promptLogin(reason = "再生にはログインが必要です。") {
-    const go = () => { try { window.location.href = this._loginUrl(); } catch(_) { window.location.assign(this._loginUrl()); } };
-    // SweetAlert2 がある場合
-    if (window.Swal && typeof Swal.fire === "function") {
-      const ret = await Swal.fire({
+  _getLoginUrl() {
+    const m = document.querySelector('meta[name="login-url"]')?.content?.trim();
+    if (m) return m;
+    const d = document.body?.dataset?.loginUrl;
+    if (d) return d;
+    return "/login";
+  }
+  _promptLogin() {
+    const msg = "ログインが必要です。ログインしますか？";
+    const loginUrl = this._getLoginUrl();
+
+    // 1) SweetAlert2 がある場合
+    if (typeof Swal?.fire === "function") {
+      Swal.fire({
         icon: "info",
-        title: "ログインが必要です",
-        text: reason,
-        confirmButtonText: "OK（ログインへ）",
-        cancelButtonText: "他",
+        title: "ログインしてください",
+        text: "再生するにはログインが必要です。",
         showCancelButton: true,
+        confirmButtonText: "OK",
+        cancelButtonText: "閉じる",
         allowOutsideClick: true,
-      });
-      if (ret.isConfirmed) go();
-      return false;
+        allowEscapeKey: true,
+      }).then((r) => { if (r.isConfirmed) window.location.href = loginUrl; });
+      return;
     }
-    // ブラウザ標準
-    if (window.confirm(`${reason}\nログインしますか？`)) go();
-    return false;
+
+    // 2) 簡易カスタムポップアップ
+    try {
+      const id = "login-popup-min";
+      if (document.getElementById(id)) return;
+      const wrap = document.createElement("div");
+      wrap.id = id;
+      Object.assign(wrap.style, {
+        position: "fixed", inset: "0", background: "rgba(0,0,0,.35)", zIndex: "999999",
+        display: "flex", alignItems: "center", justifyContent: "center"
+      });
+      const box = document.createElement("div");
+      Object.assign(box.style, {
+        background: "#111", color: "#fff", padding: "16px 18px", borderRadius: "10px",
+        boxShadow: "0 10px 30px rgba(0,0,0,.35)", width: "min(90vw, 360px)", textAlign: "center"
+      });
+      box.innerHTML = `
+        <div style="font-size:18px; font-weight:700; margin-bottom:8px;">ログインしてください</div>
+        <div style="font-size:14px; opacity:.9; margin-bottom:14px;">${msg}</div>
+        <div style="display:flex; gap:10px; justify-content:center;">
+          <button id="login-ok" style="padding:8px 14px; border:0; border-radius:8px;">OK</button>
+          <button id="login-cancel" style="padding:8px 14px; border:0; border-radius:8px; background:#333; color:#fff;">閉じる</button>
+        </div>`;
+      wrap.appendChild(box);
+      document.body.appendChild(wrap);
+      const close = () => { try { wrap.remove(); } catch(_) {} };
+      box.querySelector("#login-ok").addEventListener("click", () => { window.location.href = loginUrl; });
+      box.querySelector("#login-cancel").addEventListener("click", close);
+      wrap.addEventListener("click", (e) => { if (e.target === wrap) close(); });
+      return;
+    } catch(_) {}
+
+    // 3) 最終フォールバック
+    if (window.confirm(msg)) window.location.href = loginUrl;
   }
-  // 任意の再生入口の前に呼ぶ
-  async _gateIfLoggedOut() {
-    if (this._isAuthenticatedForPlayback()) return true;
-    await this._promptLogin();
-    return false;
+  _requireLogin() {
+    if (this._isLoggedIn()) return false;
+    this._promptLogin();
+    return true;
   }
+  // ============================================================
 
   // === ここが重要：API直再生フラグ（全環境で採用） ===
   _shouldUseApi() {
@@ -330,9 +364,7 @@ export default class extends Controller {
 
     if (isHls && !canNativeHls && window.Hls && window.Hls.isSupported()) {
       // hls.js パス
-      if (this.__hls) {
-  try { this.__hls.destroy(); } catch(_) { /* noop */ }
-}
+      if (this.__hls) { try { this.__hls.destroy(); } catch(_) {} this.__hls = null; }
       const hls = new window.Hls({ maxBufferLength: 30 });
       hls.attachMedia(el);
       hls.loadSource(streamUrl);
@@ -555,8 +587,8 @@ export default class extends Controller {
     // 保険ハンドラ
     this._onSeekInput   = (e) => this.seek(e);
     this._onVolumeInput = (e) => this.changeVolume(e);
-    this._onPrevClick   = async (e) => { if (!(await this._gateIfLoggedOut())) return; this.prevTrack(e); };
-    this._onNextClick   = async (e) => { if (!(await this._gateIfLoggedOut())) return; this.nextTrack(e); };
+    this._onPrevClick   = (e) => this.prevTrack(e);
+    this._onNextClick   = (e) => this.nextTrack(e);
     this.seekBar?.addEventListener("input", this._onSeekInput);
     this.volumeBar?.addEventListener("input", this._onVolumeInput);
     this._prevBtn = document.getElementById("prev-track-button");
@@ -564,11 +596,11 @@ export default class extends Controller {
     this._prevBtn?.addEventListener("click", this._onPrevClick);
     this._nextBtn?.addEventListener("click", this._onNextClick);
 
-    // 画像/アイコンのイベント委譲（未ログインならゲートして即return）
-    this._onIconClickDelegated = async (e) => {
+    // 画像/アイコンのイベント委譲
+    this._onIconClickDelegated = (e) => {
       const target = e.target.closest("[data-track-id]"); if (!target) return;
-      if (!(await this._gateIfLoggedOut())) return;
       if (target.matches('[data-global-player-target="playIcon"], .play-overlay-icon') || target.classList.contains("fa") || target.dataset.playUrl) {
+        if (this._requireLogin()) return; // ← 未ログイン時はここで止める
         if (target.dataset.trackId && !target.dataset.playUrl) this.onPlayIconClick({ currentTarget: target, stopPropagation(){} });
         else this.loadAndPlay({ currentTarget: target, stopPropagation(){} });
       }
@@ -576,8 +608,8 @@ export default class extends Controller {
     this._container()?.addEventListener("click", this._onIconClickDelegated);
 
     // 外部検索から再生
-    window.addEventListener("play-from-search", async (e) => {
-      if (!(await this._gateIfLoggedOut())) return;
+    window.addEventListener("play-from-search", (e) => {
+      if (this._requireLogin()) return;
       this.playFromExternal(e.detail.playUrl);
     });
 
@@ -608,14 +640,7 @@ export default class extends Controller {
       btn.toggleAttribute("disabled", !has);
       btn.setAttribute("aria-disabled", String(!has));
       btn.classList.toggle("is-disabled", !has);
-      // 「未ログインで押したらログインを促す」
-      if (!btn.__gpBound) {
-        btn.addEventListener("click", async (ev) => {
-          if (!(await this._gateIfLoggedOut())) { ev.preventDefault?.(); ev.stopPropagation?.(); return false; }
-          this.playFirstTrack(ev);
-        });
-        btn.__gpBound = true;
-      }
+      // 未ログイン時は押せてもポップで止める（アクセシビリティ確保のため非disable）
     };
     document.addEventListener("turbo:render", this._updatePlayButton);
     document.addEventListener("turbo:frame-load", this._updatePlayButton);
@@ -627,8 +652,8 @@ export default class extends Controller {
     // Media Session
     try {
       if ("mediaSession" in navigator) {
-        navigator.mediaSession.setActionHandler("previoustrack", async () => { if (!(await this._gateIfLoggedOut())) return; this.prevTrack(); });
-        navigator.mediaSession.setActionHandler("nexttrack",     async () => { if (!(await this._gateIfLoggedOut())) return; this.nextTrack(); });
+        navigator.mediaSession.setActionHandler("previoustrack", () => this.prevTrack());
+        navigator.mediaSession.setActionHandler("nexttrack",     () => this.nextTrack());
       }
     } catch(_) {}
 
@@ -823,6 +848,7 @@ export default class extends Controller {
 
   // ---------- 外部 URL 再生 ----------
   async playFromExternal(playUrl) {
+    if (this._requireLogin()) return; // 未ログインブロック
     this.bottomPlayer?.classList.remove("d-none"); this.bottomPlayer?.offsetHeight;
     if (this.widget) { this.unbindWidgetEvents(); clearInterval(this.progressInterval); this.widget = null; }
 
@@ -864,8 +890,8 @@ export default class extends Controller {
 
   // ---------- タイル/アイコンから再生 ----------
   async loadAndPlay(event) {
+    if (this._requireLogin()) return; // 未ログインブロック
     event?.stopPropagation?.();
-    if (!(await this._gateIfLoggedOut())) return; // ★ 未ログインなら早期リターン
     if (this._isIOS()) this._primeAudioForIOS();
 
     this.updatePlaylistOrder();
@@ -1021,12 +1047,9 @@ export default class extends Controller {
   }
 
   // ---------- トグル ----------
-  async togglePlayPause(event) {
+  togglePlayPause(event) {
+    if (this._requireLogin()) return; // 未ログインブロック
     event?.stopPropagation?.();
-
-    // ★ 未ログインならポップアップのみ
-    if (!(await this._gateIfLoggedOut())) return;
-
     if (this._isIOS()) this._primeAudioForIOS();
 
     if (this._shouldUseApi()) {
@@ -1216,6 +1239,7 @@ export default class extends Controller {
 
   // ---------- 前後 ----------
   prevTrack(event) {
+    if (this._requireLogin()) return; // 未ログインブロック
     event?.stopPropagation?.(); this.updatePlaylistOrder();
     if (!this.playlistOrder?.length) return;
     if (!this.currentTrackId) {
@@ -1234,6 +1258,7 @@ export default class extends Controller {
   }
 
   nextTrack(event) {
+    if (this._requireLogin()) return; // 未ログインブロック
     event?.stopPropagation?.(); this.updatePlaylistOrder();
     if (!this.playlistOrder?.length) return;
     if (!this.currentTrackId) {
@@ -1253,6 +1278,7 @@ export default class extends Controller {
   }
 
   playFirstTrack(event) {
+    if (this._requireLogin()) return; // 未ログインブロック
     event?.stopPropagation?.(); this.updatePlaylistOrder();
     if (!this.playlistOrder?.length) return;
     const firstId = this.playlistOrder[0];
