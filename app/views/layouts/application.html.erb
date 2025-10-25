@@ -34,9 +34,12 @@
   <!-- SoundCloudメタ -->
   <meta name="soundcloud-client-id" content="<%= ENV['SOUNDCLOUD_CLIENT_ID'].presence || (Rails.application.credentials.dig(:soundcloud, :client_id) rescue nil) %>">
 
+  <script defer src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
   <% if current_user&.soundcloud_token.present? %>
     <meta name="soundcloud-oauth-token" content="<%= current_user.soundcloud_token %>">
     <!-- iOSでも確実に送るためのCookie設定（SameSite=None; Secure; Domain=...） -->
+    
     <script nonce="<%= content_security_policy_nonce %>">
       (function () {
         var t = document.querySelector('meta[name="soundcloud-oauth-token"]')?.content || "";
