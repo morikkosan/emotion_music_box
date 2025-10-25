@@ -29,7 +29,7 @@ class ScProxyController < ApplicationController
     t
   end
 
-  # 先頭の "OAuth " / "Bearer " を剥がして生トークンにする（ログ安全化などで利用可）
+  # 先頭の "OAuth " / "Bearer " を剥がして生トークンにする
   def strip_scheme_prefix(str)
     return "" if str.blank?
     str.to_s.strip.sub(/\A(?:OAuth|Bearer)\s+/i, "")
@@ -40,8 +40,8 @@ class ScProxyController < ApplicationController
   def build_auth_header(raw)
     return nil if raw.blank?
     s = raw.to_s.strip
-    return s if s =~ /\A(?:OAuth|Bearer)\s+/i  # すでにスキーム付きならそのまま
-    "OAuth #{s}"                               # なければ OAuth で送る
+    return s if s =~ /\A(?:OAuth|Bearer)\s+/i
+    "OAuth #{s}"
   end
 
   # Net::HTTP GET（最大5回までリダイレクト追従）
@@ -66,6 +66,41 @@ class ScProxyController < ApplicationController
     else
       res
     end
+  end
+
+  # =========== トークン抽出（ヘッダ / Authorization / クエリ / Cookie） ===========
+  def extract_oauth_token
+    # 1) カスタムヘッダ
+    h1 = request.get_header("HTTP_X_SC_OAUTH") || request.headers["X-SC-OAUTH"]
+
+    # 2) Authorization: OAuth xxx / Bearer xxx
+    auth = request.get_header("HTTP_AUTHORIZATION") || request.authorization
+    h2 = strip_scheme_prefix(auth) if auth.present? && auth =~ /\A(?:OAuth|Bearer)\s+/i
+
+    # 3) クエリ (?oauth=...) ― CDNがヘッダを落とす環境向けの保険
+    q1 = params[:oauth]
+
+    # 4) Cookie（同上）
+    c1 = cookies[:sc_oauth]
+
+    token = sanitize_oauth_token(h1.presence || h2.presence || q1.presence || c1.presence)
+
+    # 取り込み経路の簡易ログ（本文は出さない）
+    picked =
+      if h1.present?
+        :x_header
+      elsif h2.present?
+        :authorization
+      elsif q1.present?
+        :query
+      elsif c1.present?
+        :cookie
+      else
+        :none
+      end
+    Rails.logger.info("[sc_proxy] token source=#{picked}") unless picked == :none
+
+    token
   end
 
   # =========== v2(匿名 client_id) 解決 ===========
@@ -115,14 +150,9 @@ class ScProxyController < ApplicationController
 
     cid   = ENV["SOUNDCLOUD_CLIENT_ID"].to_s.presence ||
             (Rails.application.credentials.dig(:soundcloud, :client_id) rescue nil).to_s
-    # ← ここを修正：Authorization も受ける
-    token = sanitize_oauth_token(
-      request.headers["HTTP_X_SC_OAUTH"] ||
-      request.headers["X-SC-OAUTH"] ||
-      strip_scheme_prefix(request.headers["Authorization"])
-    )
+    token = extract_oauth_token
 
-    # ========= トークンの有無で v1 → 失敗なら v2 に自動フォールバック =========
+    # ========= トークン有: v1 → 失敗時 v2 フォールバック =========
     if token.present?
       begin
         v1_resolve = URI.parse("https://api.soundcloud.com/resolve?#{Rack::Utils.build_query(url: play_url)}")
@@ -180,15 +210,15 @@ class ScProxyController < ApplicationController
           "kind"  => "track",
           "id"    => track["id"],
           "title" => track["title"],
-          "user"  => { "username" => track.dig("user","username") },
+          "user"  => { "username" => track.dig("user", "username") },
           "media" => {
             "transcodings" => [
               {
-                "url" => stream_locator,
-                "preset" => "mp3_128",
+                "url"      => stream_locator,
+                "preset"   => "mp3_128",
                 "duration" => track["duration"],
-                "snipped" => false,
-                "format" => { "protocol" => "progressive", "mime_type" => "audio/mpeg" }
+                "snipped"  => false,
+                "format"   => { "protocol" => "progressive", "mime_type" => "audio/mpeg" }
               }
             ]
           }
@@ -201,7 +231,7 @@ class ScProxyController < ApplicationController
       end
     end
 
-    # ---- トークン無しは従来の匿名（client_id）経路：v2 ----
+    # ---- トークン無しは匿名（client_id）経路：v2 ----
     resolve_v2!(play_url, cid: cid)
   end
 
@@ -210,12 +240,7 @@ class ScProxyController < ApplicationController
     locator = params[:locator].to_s
     return render json: { error: "missing locator" }, status: 400 if locator.blank?
 
-    # ← ここを修正：Authorization も受ける
-    token = sanitize_oauth_token(
-      request.headers["HTTP_X_SC_OAUTH"] ||
-      request.headers["X-SC-OAUTH"] ||
-      strip_scheme_prefix(request.headers["Authorization"])
-    )
+    token = extract_oauth_token
     cid   = ENV["SOUNDCLOUD_CLIENT_ID"].to_s.presence ||
             (Rails.application.credentials.dig(:soundcloud, :client_id) rescue nil).to_s
 
