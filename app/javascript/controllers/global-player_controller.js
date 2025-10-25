@@ -383,11 +383,11 @@ export default class extends Controller {
       try { await el.play(); } catch (e2) { throw e2; }
     }
 
-    // Safari は canplay が出ても無音停止することがあるため playing をトリガに unmute
+    // Safari: playing で unmute（canplay より確実）
     const unmute = () => { el.muted = false; el.removeEventListener("playing", unmute); };
     el.addEventListener("playing", unmute);
 
-    // 早期 pause（gesture消失）を1回だけ自動リトライ
+    // 早期 pause を1回だけ自動再試行
     setTimeout(() => {
       try {
         if (el.paused && (el.readyState >= 2)) {
@@ -412,18 +412,24 @@ export default class extends Controller {
   }
 
   // ---------- SoundCloud API: resolve → stream URL（プロキシのみ） ----------
+  _authHeaders() {
+    return this._hasOAuthToken() ? {
+      "X-SC-OAUTH": window.soundcloudToken,
+      "Authorization": `OAuth ${window.soundcloudToken}`
+    } : {};
+  }
+
   async _resolveStreamUrl(trackUrl) {
-    const hasToken = this._hasOAuthToken();
     const cleanUrl = this._normalizeTrackUrl(trackUrl);
 
     try {
       this._log("resolve (proxy only) →", cleanUrl);
-      this._debug("resolve start", { via:"proxy", hasToken });
+      this._debug("resolve start", { via:"proxy", hasToken: this._hasOAuthToken() });
 
       const r1 = await fetch(`/sc/resolve?url=${encodeURIComponent(cleanUrl)}`, {
         cache: "no-store",
         credentials: "same-origin",
-        headers: hasToken ? { "X-SC-OAUTH": window.soundcloudToken } : {}
+        headers: this._authHeaders()
       });
       if (!r1.ok) {
         const txt = await r1.text().catch(()=> "");
@@ -452,7 +458,7 @@ export default class extends Controller {
       const r2 = await fetch(streamLocatorViaProxy, {
         cache: "no-store",
         credentials: "same-origin",
-        headers: hasToken ? { "X-SC-OAUTH": window.soundcloudToken } : {}
+        headers: this._authHeaders()
       });
       if (!r2.ok) {
         const txt = await r2.text().catch(()=> "");
@@ -1057,7 +1063,6 @@ export default class extends Controller {
     if (this._needsHandshake()) {
       this._markHandshakeDone();
       this._hideHandshakeHint();
-      // 再生が始まったら即不可視に戻す
       this._setIframeVisibility(false);
     }
     this.playPauseIcon?.classList.replace("fa-play","fa-pause");
@@ -1213,7 +1218,7 @@ export default class extends Controller {
     event?.stopPropagation?.(); this.updatePlaylistOrder();
     if (!this.playlistOrder?.length) return;
     if (!this.currentTrackId) {
-      const lastId = this.playlistOrder[this.playlist.length-1];
+      const lastId = this.playlistOrder[this.playlistOrder.length-1];
       const icon = this.playIconTargets.find((icn)=>icn.dataset.trackId==lastId) || this._q(`[data-track-id="${CSS.escape(String(lastId))}"]`, this._container());
       icon && this.loadAndPlay({ currentTarget: icon, stopPropagation(){} }); return;
     }
