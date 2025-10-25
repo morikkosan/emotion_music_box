@@ -7,7 +7,7 @@ Rails.application.configure do
   config.content_security_policy do |policy|
     policy.default_src :self, :https
 
-    policy.font_src  :self, :https, "https://fonts.gstatic.com"
+    policy.font_src  :self, :https, "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"
     policy.style_src :self, :https, "https://fonts.googleapis.com", :unsafe_inline
 
     # ★ 画像は sndcdn 全域も許可（ジャケット類で別ホストに出る）
@@ -23,11 +23,13 @@ Rails.application.configure do
                        "https://api.soundcloud.com",
                        "https://api-v2.soundcloud.com",
                        "https://w.soundcloud.com",
+                        "https://cf-hls-media.sndcdn.com",
+                        "https://hls-media.sndcdn.com",
                        "https://sndcdn.com", "https://*.sndcdn.com"
 
     # ★ <audio> で音声を読めるように（HLS/MP3は *.sndcdn.com から来る）
     policy.media_src :self, :https,
-                     "https://sndcdn.com", "https://*.sndcdn.com", :data
+                      "https://sndcdn.com", "https://*.sndcdn.com", :data, :blob
 
     policy.base_uri  :self
     policy.frame_src :self, :https, "https://w.soundcloud.com"
