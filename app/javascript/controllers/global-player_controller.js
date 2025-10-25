@@ -221,6 +221,7 @@ export default class extends Controller {
     if (a.__primed) return;
     try {
       a.muted = true;
+      a.autoplay = false;
       const p = a.play();
       if (p && typeof p.then === "function") {
         p.then(() => {
@@ -349,7 +350,7 @@ export default class extends Controller {
     el.crossOrigin = "anonymous";
     el.playsInline = true;
     el.setAttribute("webkit-playsinline","true");
-    el.autoplay = true;
+    el.autoplay = false;
     el.style.display = "none";
     document.body.appendChild(el);
 
@@ -364,9 +365,12 @@ export default class extends Controller {
     return el;
   }
 
+  // ===== iOS安定化：playing での unmute + 早期pauseの自動リトライ =====
   async _playViaMedia({ streamUrl, useVideo = false, resumeMs = 0 }) {
     const el = this._ensureMedia({ useVideo });
     el.muted = true;
+    el.autoplay = false;
+
     if (el.src !== streamUrl) {
       el.src = streamUrl;
       try { await el.load?.(); } catch(_) {}
@@ -378,8 +382,28 @@ export default class extends Controller {
     } catch (e1) {
       try { await el.play(); } catch (e2) { throw e2; }
     }
-    const unmute = () => { el.muted = false; el.removeEventListener("canplay", unmute); };
-    el.addEventListener("canplay", unmute);
+
+    // Safari は canplay が出ても無音停止することがあるため playing をトリガに unmute
+    const unmute = () => { el.muted = false; el.removeEventListener("playing", unmute); };
+    el.addEventListener("playing", unmute);
+
+    // 早期 pause（gesture消失）を1回だけ自動リトライ
+    setTimeout(() => {
+      try {
+        if (el.paused && (el.readyState >= 2)) {
+          this._debug("retry play once (early pause)");
+          el.play().catch(()=>{});
+        }
+      } catch(_) {}
+    }, 600);
+
+    // デバッグ時のみイベント記録
+    if (this._debugEnabled()) {
+      const log = (ev) => this._debug("media", ev.type, { rs: el.readyState, ct: el.currentTime });
+      ["waiting","stalled","suspend","abort","emptied","error"].forEach(t => {
+        el.addEventListener(t, log, { once: true });
+      });
+    }
 
     if (this.volumeBar) {
       const v = Math.max(0, Math.min(1, Number(this.volumeBar.value)/100 || 1));
