@@ -375,3 +375,139 @@
   font-size: 12px;
   opacity: 0.8;
 }
+
+/* ===== 汎用 ===== */
+.is-hidden { display: none !important; }
+
+/* 画面外に隠す（音だけ再生するaudio/video用） */
+.media-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: -1px !important;
+}
+
+/* ===== デバッグパネル (#gp-debug) ===== */
+#gp-debug {
+  position: fixed;
+  left: 8px;
+  bottom: 8px;
+  z-index: 99999;
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 6px 8px;
+  border-radius: 8px;
+  max-width: 90vw;
+  max-height: 40vh;
+  overflow: auto;
+  box-shadow: 0 6px 16px rgba(0,0,0,.3);
+}
+
+/* ===== iOS ハンドシェイクヒント ===== */
+#sc-handshake-hint {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 99998;
+  padding: 10px 12px;
+  font-size: 14px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  text-align: center;
+  line-height: 1.5;
+  box-shadow: 0 4px 16px rgba(0,0,0,.25);
+  cursor: pointer;
+}
+
+/* ===== SC iframe の表示/非表示 ===== */
+#hidden-sc-player.sc-visible {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 180px;     /* 必要に応じて */
+  border: 0;
+  z-index: 99997;
+}
+#hidden-sc-player.sc-hidden {
+  display: none;
+  position: absolute;
+  width: 0;
+  height: 0;
+  left: -9999px;
+  top: -9999px;
+  border: 0;
+  z-index: -1;
+}
+
+/* ===== ログインモーダル（簡易版）===== */
+.gp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 100000;
+  display: grid;
+  place-items: center;
+}
+.gp-modal {
+  width: 92vw;
+  max-width: 480px;
+  background: #111;
+  color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.35);
+  padding: 20px;
+}
+.gp-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.gp-modal-text {
+  font-size: 14px;
+  opacity: .9;
+  margin-bottom: 16px;
+}
+.gp-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.gp-btn {
+  appearance: none;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.gp-btn-primary { background: #0ea5e9; color: #fff; }
+.gp-btn-secondary { background: #333; color: #fff; }
+
+/* ===== iOS用ボリュームヒント ===== */
+.ios-volume-hint {
+  font-size: 12px;
+  color: #999;
+  margin-left: 8px;
+}
+
+
+
+/* ===== SweetAlert2 の customClass（任意）===== */
+.cyber-popup { border-radius: 14px !important; }
+.cyber-title { font-weight: 800 !important; }
+.cyber-text { font-size: 14px !important; }
+.cyber-btn-ok {
+  background: #0ea5e9 !important;
+  color: #fff !important;
+  border-radius: 10px !important;
+  padding: 8px 14px !important;
+}
