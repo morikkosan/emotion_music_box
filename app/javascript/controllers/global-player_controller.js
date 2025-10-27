@@ -275,7 +275,7 @@ export default class extends Controller {
       this.setTrackTitle("タイトル不明");
       this.setArtist("");
     }
-    this.hideLoadingUI();
+    this.hideLoadingUI(); // （_applySoundMetadataでもhideするが二重でも無害）this.hideLoadingUI();
   }
 
   unbindWidgetEvents() {
@@ -997,6 +997,8 @@ export default class extends Controller {
         this.savePlayerState();
       }, 1000);
     };
+// 曲名・アーティストを即表示（解決済みメタがあれば）
+      if (this._currentSoundMeta?.title) this._applySoundMetadata(this._currentSoundMeta);
 
     // 音量/UI（iOSはvolumeいじらない）
     this.changeVolume({ target: this.volumeBar });
@@ -1077,7 +1079,7 @@ export default class extends Controller {
     this.setPlayPauseAria(true);
     this.playStartedAt = Date.now();
     this.startWaveformAnime();
-    this.widget.getCurrentSound((s) => { if (s?.title && !this.trackTitleEl.textContent) this._applySoundMetadata(s); });
+    this.widget.getCurrentSound((s) => { if (s?.title) this._applySoundMetadata(s); });
     this._debugSnapshot("widget onPlay");
     this.savePlayerState();
   };
