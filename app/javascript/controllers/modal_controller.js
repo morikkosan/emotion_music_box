@@ -99,5 +99,59 @@ document.addEventListener("turbo:before-stream-render", (event) => {
         inst.hide()
       })
     } catch (_) {}
+
+    
   }
+  
 })
+
+
+// ---- グローバル: ログイン要求イベントを拾ってモーダルを出す（既存と非干渉）----
+(function setupLoginRequiredListener() {
+  if (window.__loginListenerInstalled) return;
+  window.__loginListenerInstalled = true;
+
+  window.addEventListener("app:login-required", async (ev) => {
+    // すでに他のモーダルが開いていたら何もしない（干渉しない）
+    if (document.querySelector(".modal.show")) return;
+
+    // 1) 既存の #login-modal がDOMにあれば、それを開く
+    const existing = document.getElementById("login-modal");
+    if (existing) {
+      const inst = bootstrap.Modal.getOrCreateInstance(existing);
+      inst.show();
+      return;
+    }
+
+    // 2) サーバからログイン用モーダルを取って #modal-container に差し込む
+    const container = document.getElementById("modal-container");
+    const url = ev?.detail?.url || "/session/login_modal"; // ←あなたのルートに合わせて変更
+
+    if (!container) return;
+
+    try {
+      const res = await fetch(url, {
+        headers: { "Accept": "text/vnd.turbo-stream.html, text/html" },
+        credentials: "same-origin"
+      });
+      const html = await res.text();
+
+      if (html.includes("<turbo-stream")) {
+        // Turbo Streamで返す場合
+        if (window.Turbo && Turbo.renderStreamMessage) {
+          Turbo.renderStreamMessage(html);
+        } else {
+          document.documentElement.insertAdjacentHTML("beforeend", html);
+        }
+      } else {
+        // 素のHTMLで返す場合：#modal-container に差し込む
+        // 挿入される .modal に data-controller="modal" が付いていれば connect() で自動 show
+        container.innerHTML = html;
+      }
+    } catch (e) {
+      // フォールバック：失敗時はログインページへ遷移
+      location.href = "/users/sign_in";
+    }
+  });
+})();
+

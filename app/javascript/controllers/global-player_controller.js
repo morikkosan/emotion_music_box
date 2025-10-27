@@ -172,6 +172,7 @@ export default class extends Controller {
     e?.preventDefault?.();
     e?.stopPropagation?.();
     this._promptLogin();
+    this.stopOnlyPlayer?.(); // 念のため即停止（
     return true;
   }
   // ============================================================
