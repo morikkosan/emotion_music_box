@@ -330,6 +330,18 @@ export default class extends Controller {
     } catch (_) {}
   }
 
+  // --- 追加：どこから呼んでも確実にアンミュートする保険 ---
+  _reallyUnmute(el) {
+    try {
+      if (!el) return;
+      el.muted = false;
+      if (!this._isIOS()) {
+        const v = this.volumeBar ? Math.max(0, Math.min(1, Number(this.volumeBar.value)/100 || 1)) : 1;
+        el.volume = v;
+      }
+    } catch (_) {}
+  }
+
   _primeAudioForIOS() {
     if (!this._isIOS()) return;
     const a = this._ensureMedia({useVideo:false});
@@ -342,14 +354,17 @@ export default class extends Controller {
         p.then(() => {
           try { a.pause(); } catch(_) {}
           a.currentTime = 0;
+          // ★プライム後は無音状態を持ち越さない
+          a.muted = false;
           a.__primed = true;
-          this._debug("audio primed");
-        }).catch(()=>{});
+          this._debug("audio primed + unmuted");
+        }).catch(()=>{ /* noop */ });
       } else {
         try { a.pause(); } catch(_) {}
         a.currentTime = 0;
+        a.muted = false; // 同上
         a.__primed = true;
-        this._debug("audio primed (sync)");
+        this._debug("audio primed (sync) + unmuted");
       }
     } catch(_) {}
   }
@@ -384,10 +399,18 @@ export default class extends Controller {
   // ===== HLS/Progressiveの再生器（hls.js 対応） =====
   async _playViaMedia({ streamUrl, useVideo = false, resumeMs = 0 }) {
     const el = this._ensureMedia({ useVideo });
-    el.muted = true;
+
+    // ---- 初期化：最初から“音が出る側”を強制 ----
+    el.muted = false;
     el.autoplay = false;
 
-    // HLSなら video を使い、Safari以外は hls.js を優先
+    // iOS以外は希望音量を先に反映
+    if (!this._isIOS() && this.volumeBar) {
+      const v = Math.max(0, Math.min(1, Number(this.volumeBar.value)/100 || 1));
+      try { el.volume = v; } catch(_) {}
+    }
+
+    // HLSなら video / Safari以外は hls.js
     const isHls = useVideo;
     const canNativeHls = !!el.canPlayType && el.canPlayType('application/vnd.apple.mpegurl');
 
@@ -406,34 +429,56 @@ export default class extends Controller {
 
     if (resumeMs > 0) { try { el.currentTime = resumeMs / 1000; } catch(_) {} }
 
+    // ---- どのイベント順でも確実にアンミュートされるよう多重フック ----
+    const unmuteOnce = () => {
+      this._reallyUnmute(el);
+      el.removeEventListener("playing", unmuteOnce);
+      el.removeEventListener("canplay", unmuteOnce);
+      el.removeEventListener("loadeddata", unmuteOnce);
+      el.removeEventListener("canplaythrough", unmuteOnce);
+      el.removeEventListener("loadedmetadata", unmuteOnce);
+    };
+    el.addEventListener("playing",        unmuteOnce);
+    el.addEventListener("canplay",        unmuteOnce);
+    el.addEventListener("loadeddata",     unmuteOnce);
+    el.addEventListener("canplaythrough", unmuteOnce);
+    el.addEventListener("loadedmetadata", unmuteOnce);
+
+    // ---- 再生：resolve後にも“明示アンミュート”でダブル保証 ----
     try {
       await el.play();
+      this._reallyUnmute(el);
     } catch (e1) {
-      try { await el.play(); } catch (e2) { throw e2; }
+      try {
+        await new Promise(r => setTimeout(r, 150));
+        await el.play();
+        this._reallyUnmute(el);
+      } catch (e2) {
+        throw e2;
+      }
     }
 
-    const unmute = () => { el.muted = false; el.removeEventListener("playing", unmute); };
-    el.addEventListener("playing", unmute);
-
+    // ---- 早期停止対策：readyStateは十分・pausedなら1回だけキック ----
     setTimeout(() => {
       try {
-        if (el.paused && (el.readyState >= 2)) {
+        if (el.readyState >= 2 && el.paused) {
           this._debug("retry play once (early pause)");
-          el.play().catch(()=>{});
+          el.play().then(() => this._reallyUnmute(el)).catch(()=>{});
         }
       } catch(_) {}
     }, 600);
 
     if (this._debugEnabled()) {
-      const log = (ev) => this._debug("media", ev.type, { rs: el.readyState, ct: el.currentTime });
+      const log = (ev) => this._debug("media", ev.type, { rs: el.readyState, ct: el.currentTime, muted: el.muted });
       ["waiting","stalled","suspend","abort","emptied","error"].forEach(t => {
         el.addEventListener(t, log, { once: true });
       });
     }
 
+    // 成功後にもう一度音量を明示（非iOS）
     if (this.volumeBar && !this._isIOS()) {
       const v = Math.max(0, Math.min(1, Number(this.volumeBar.value)/100 || 1));
-      el.volume = v;
+      try { el.volume = v; } catch(_) {}
     }
   }
 
