@@ -149,8 +149,21 @@ export default class extends Controller {
     } catch(_) {}
     return false;
   }
+<<<<<<< HEAD
 
   // 🔰 ここを“モーダルコントローラーへ委譲”に修正
+=======
+  _getLoginUrl() {
+    const m = document.querySelector('meta[name="login-url"]')?.content?.trim();
+    if (m) return m;
+    const d = document.body?.dataset?.loginUrl;
+    if (d) return d;
+    return "/login";
+  }
+
+  __loginShowing = false;
+
+>>>>>>> 9d56053f (fix;modal2重直し#428)
   _promptLogin() {
     const now = Date.now();
     if (this.__loginShowing) return;
@@ -158,6 +171,7 @@ export default class extends Controller {
     this.__loginShowing = true;
     window.__loginGuardTs = now;
 
+<<<<<<< HEAD
     // グローバルにブロードキャスト → modal_controller.js 側で受けてモーダル表示
     window.dispatchEvent(new CustomEvent("app:login-required", {
       detail: { source: "global-player" }
@@ -165,6 +179,89 @@ export default class extends Controller {
 
     // 表示本体はモーダル側が管理するので即解除
     setTimeout(() => { this.__loginShowing = false; }, 100);
+=======
+    // ローディングカバーが残っていたら消す
+    this._hideScreenCover();
+
+    // デバウンス & 多重表示防止（0.8s）
+    const now = Date.now();
+    if (this.__loginShowing) return;
+    if (window.__loginGuardTs && (now - window.__loginGuardTs) < 800) return;
+    this.__loginShowing = true;
+    window.__loginGuardTs = now;
+
+    // 1) SweetAlert2 がある場合
+    if (typeof Swal?.fire === "function") {
+      Swal.fire({
+        icon: "info",
+        title: "再生するにはログインが必要です",
+        text: "上部のログインか新規登録を行ってください",
+        showCancelButton: false,
+        confirmButtonText: "閉じる",
+        didClose: () => {},
+        customClass: {
+          popup:  "cyber-popup",
+          title:  "cyber-title",
+          htmlContainer: "cyber-text",
+          confirmButton: "cyber-btn-ok"
+        },
+        buttonsStyling: false
+      }).finally(() => { this.__loginShowing = false; });
+      return;
+    }
+
+    // 2) 簡易カスタムポップアップ
+    try {
+      const id = "login-popup-min";
+      if (document.getElementById(id)) { this.__loginShowing = false; return; }
+
+      const wrap = document.createElement("div");
+      wrap.id = id;
+      wrap.className = "gp-overlay";
+
+      const box  = document.createElement("div");
+      box.className = "gp-modal";
+
+      const h    = document.createElement("div");
+      h.className = "gp-modal-title";
+      h.textContent = "ログインしてください";
+
+      const p    = document.createElement("p");
+      p.className = "gp-modal-text";
+      p.textContent = "再生するにはログインが必要です。";
+
+      const btns = document.createElement("div");
+      btns.className = "gp-modal-actions";
+
+      const btnClose = document.createElement("button");
+      btnClose.type = "button";
+      btnClose.className = "btn gp-btn gp-btn-secondary";
+      btnClose.textContent = "閉じる";
+
+      btns.appendChild(btnClose);
+      box.appendChild(h);
+      box.appendChild(p);
+      box.appendChild(btns);
+
+      wrap.appendChild(box);
+      document.body.appendChild(wrap);
+
+      const close = () => { try { wrap.remove(); } catch(_) {} this.__loginShowing = false; };
+      btnClose.addEventListener("click", close);
+      wrap.addEventListener("click", (e) => { if (e.target === wrap) close(); });
+
+      return;
+    } catch(_) {
+      // fallthrough to confirm
+    }
+
+    // 3) 最終フォールバック
+    try {
+      if (window.confirm(msg)) window.location.href = loginUrl;
+    } finally {
+      this.__loginShowing = false;
+    }
+>>>>>>> 9d56053f (fix;modal2重直し#428)
   }
 
   _requireLogin(e = null) {
@@ -548,6 +645,7 @@ export default class extends Controller {
     // 画像/アイコンのイベント委譲
     this._onIconClickDelegated = (e) => {
       const target = e.target.closest("[data-track-id]"); if (!target) return;
+<<<<<<< HEAD
       if (
         target.matches('[data-global-player-target="playIcon"], .play-overlay-icon') ||
         target.classList.contains("fa") ||
@@ -559,6 +657,12 @@ export default class extends Controller {
         } else {
           this.loadAndPlay({ currentTarget: target, stopPropagation(){} });
         }
+=======
+      if (target.matches('[data-global-player-target="playIcon"], .play-overlay-icon') || target.classList.contains("fa") || target.dataset.playUrl) {
+        if (this._requireLogin(e)) return; // ← e を渡して遷移を止める
+        if (target.dataset.trackId && !target.dataset.playUrl) this.onPlayIconClick({ currentTarget: target, stopPropagation(){} });
+        else this.loadAndPlay({ currentTarget: target, stopPropagation(){} });
+>>>>>>> 9d56053f (fix;modal2重直し#428)
       }
     };
     this._container()?.addEventListener("click", this._onIconClickDelegated);
@@ -952,6 +1056,11 @@ export default class extends Controller {
         this.savePlayerState();
       }, 1000);
     };
+<<<<<<< HEAD
+=======
+    // 曲名・アーティストを即表示（解決済みメタがあれば）
+    if (this._currentSoundMeta?.title) this._applySoundMetadata(this._currentSoundMeta);
+>>>>>>> 9d56053f (fix;modal2重直し#428)
 
     // 解決済みメタがあれば即表示
     if (this._currentSoundMeta?.title) this._applySoundMetadata(this._currentSoundMeta);
@@ -1221,6 +1330,7 @@ export default class extends Controller {
   }
 
   playFirstTrack(event) {
+<<<<<<< HEAD
   if (this._requireLogin(event)) return;
   event?.stopPropagation?.(); this.updatePlaylistOrder();
   if (!this.playlistOrder?.length) return;
@@ -1229,6 +1339,14 @@ export default class extends Controller {
     this.playIconTargets.find((icn) => icn.dataset.trackId == firstId) ||
     this._q(`[data-track-id="${CSS.escape(String(firstId))}"]`, this._container());
   if (icon) this.loadAndPlay({ currentTarget: icon, stopPropagation(){} });
+=======
+    if (this._requireLogin(event)) return;
+    event?.stopPropagation?.(); this.updatePlaylistOrder();
+    if (!this.playlistOrder?.length) return;
+    const firstId = this.playlistOrder[0];
+    const icon = this.playIconTargets.find((icn)=>icn.dataset.trackId==firstId) || this._q(`[data-track-id="${CSS.escape(String(firstId))}"]`, this._container());
+    icon && this.loadAndPlay({ currentTarget: icon, stopPropagation(){} });
+>>>>>>> 9d56053f (fix;modal2重直し#428)
   }
 
   // レイアウト切替（クラス切替のみ）
