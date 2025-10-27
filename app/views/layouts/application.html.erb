@@ -375,5 +375,37 @@
   <div id="mobile-super-search-root" data-turbo-permanent>
     <%= render "emotion_logs/mobile_super_search" %>
   </div>
+  <!-- ▼ ログインが必要ですモーダル（常駐・遷移なし・閉じるだけ） -->
+   <div class="modal fade"
+     id="login-modal"
+     tabindex="-1"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="loginModalLabel"
+     aria-describedby="login-modal-desc"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="loginModalLabel">ログインが必要です</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+      </div>
+
+      <div class="modal-body" id="login-modal-desc">
+        再生するにはログインが必要です。<br>
+        「はい」を押すか、モーダルの外をタップすると閉じます（遷移しません）。
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal" aria-label="はい">はい</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="閉じる">閉じる</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
 </body>
 </html>
