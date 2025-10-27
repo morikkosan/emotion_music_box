@@ -1,5 +1,5 @@
 /* eslint-env browser */
-/* global SC */
+/* global SC, Swal */
 
 import { Controller } from "@hotwired/stimulus";
 
@@ -19,12 +19,6 @@ import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
   static targets = ["trackImage", "playIcon"];
-
-  // === 内部フラグ ===
-  __dbgEnabled = null;
-  __dbgEl = null;
-  __hls = null;
-  __loginShowing = false; // 二重表示防止
 
   // ===== 基本ユーティリティ =====
   _getOAuthToken() {
@@ -149,10 +143,6 @@ export default class extends Controller {
     } catch(_) {}
     return false;
   }
-<<<<<<< HEAD
-
-  // 🔰 ここを“モーダルコントローラーへ委譲”に修正
-=======
   _getLoginUrl() {
     const m = document.querySelector('meta[name="login-url"]')?.content?.trim();
     if (m) return m;
@@ -163,23 +153,10 @@ export default class extends Controller {
 
   __loginShowing = false;
 
->>>>>>> 9d56053f (fix;modal2重直し#428)
   _promptLogin() {
-    const now = Date.now();
-    if (this.__loginShowing) return;
-    if (window.__loginGuardTs && (now - window.__loginGuardTs) < 800) return; // 0.8sデバウンス
-    this.__loginShowing = true;
-    window.__loginGuardTs = now;
+    const msg = "ログインが必要です。ログインしますか？";
+    const loginUrl = this._getLoginUrl();
 
-<<<<<<< HEAD
-    // グローバルにブロードキャスト → modal_controller.js 側で受けてモーダル表示
-    window.dispatchEvent(new CustomEvent("app:login-required", {
-      detail: { source: "global-player" }
-    }));
-
-    // 表示本体はモーダル側が管理するので即解除
-    setTimeout(() => { this.__loginShowing = false; }, 100);
-=======
     // ローディングカバーが残っていたら消す
     this._hideScreenCover();
 
@@ -261,7 +238,6 @@ export default class extends Controller {
     } finally {
       this.__loginShowing = false;
     }
->>>>>>> 9d56053f (fix;modal2重直し#428)
   }
 
   _requireLogin(e = null) {
@@ -269,18 +245,17 @@ export default class extends Controller {
     e?.preventDefault?.();
     e?.stopPropagation?.();
     this._promptLogin();
-    this.stopOnlyPlayer?.(); // 念のため即停止（
     return true;
   }
   // ============================================================
 
-  // === ここが重要：API直再生フラグ
+  // === ここが重要：API直再生フラグ（全環境で採用） ===
   _shouldUseApi() {
     if (window.__forceWidgetOnly) return false;
     return this._hasOAuthToken(); // トークンがある環境はAPI直再生
   }
 
-  // iOS かつ APIが使えない時だけハンドシェイク表示
+  // iOS かつ APIが使えない（＝手動許可が必要）時だけハンドシェイク表示
   _needsHandshake() { return this._isIOS() && !this._shouldUseApi(); }
   _markHandshakeDone() {}
   _hideScreenCover() {
@@ -294,7 +269,7 @@ export default class extends Controller {
     if (this._hintEl || !this._needsHandshake()) return;
     const el = document.createElement("div");
     el.id = "sc-handshake-hint";
-    el.className = "sc-handshake-hint"; // ← CSSで装飾
+    el.className = "sc-handshake-hint"; // ← すべてCSS側で
     el.textContent = "iPhone：下のSoundCloudプレイヤー内の ▶ をタップして再生を許可してください。曲ごとに最初の1回だけ必要です。";
     el.addEventListener("click", () => this._hideHandshakeHint());
     document.body.appendChild(el);
@@ -412,6 +387,7 @@ export default class extends Controller {
     el.muted = true;
     el.autoplay = false;
 
+    // HLSなら video を使い、Safari以外は hls.js を優先
     const isHls = useVideo;
     const canNativeHls = !!el.canPlayType && el.canPlayType('application/vnd.apple.mpegurl');
 
@@ -461,7 +437,7 @@ export default class extends Controller {
     }
   }
 
-  // ---------- SoundCloud API（プロキシ） ----------
+  // ---------- SoundCloud API: resolve → stream URL（プロキシのみ） ----------
   _authHeaders() {
     if (!this._hasOAuthToken()) return {};
     const tok = this._getOAuthToken();
@@ -489,6 +465,7 @@ export default class extends Controller {
       // メタ更新
       this._currentSoundMeta = { title: track?.title, user: { username: track?.user?.username } };
 
+      // transcodings → /sc/stream
       const trans = Array.isArray(track?.media?.transcodings) ? track.media.transcodings : [];
       if (!trans.length) { this._debug("no transcodings"); throw new Error("No transcodings available"); }
 
@@ -645,31 +622,17 @@ export default class extends Controller {
     // 画像/アイコンのイベント委譲
     this._onIconClickDelegated = (e) => {
       const target = e.target.closest("[data-track-id]"); if (!target) return;
-<<<<<<< HEAD
-      if (
-        target.matches('[data-global-player-target="playIcon"], .play-overlay-icon') ||
-        target.classList.contains("fa") ||
-        target.dataset.playUrl
-      ) {
-        if (this._requireLogin(e)) return; // ← 必ず event を渡す
-        if (target.dataset.trackId && !target.dataset.playUrl) {
-          this.onPlayIconClick({ currentTarget: target, stopPropagation(){} });
-        } else {
-          this.loadAndPlay({ currentTarget: target, stopPropagation(){} });
-        }
-=======
       if (target.matches('[data-global-player-target="playIcon"], .play-overlay-icon') || target.classList.contains("fa") || target.dataset.playUrl) {
         if (this._requireLogin(e)) return; // ← e を渡して遷移を止める
         if (target.dataset.trackId && !target.dataset.playUrl) this.onPlayIconClick({ currentTarget: target, stopPropagation(){} });
         else this.loadAndPlay({ currentTarget: target, stopPropagation(){} });
->>>>>>> 9d56053f (fix;modal2重直し#428)
       }
     };
     this._container()?.addEventListener("click", this._onIconClickDelegated);
 
     // 外部検索から再生
     window.addEventListener("play-from-search", (e) => {
-      if (this._requireLogin(e)) return;
+      if (this._requireLogin()) return;
       this.playFromExternal(e.detail.playUrl);
     });
 
@@ -1056,16 +1019,10 @@ export default class extends Controller {
         this.savePlayerState();
       }, 1000);
     };
-<<<<<<< HEAD
-=======
     // 曲名・アーティストを即表示（解決済みメタがあれば）
     if (this._currentSoundMeta?.title) this._applySoundMetadata(this._currentSoundMeta);
->>>>>>> 9d56053f (fix;modal2重直し#428)
 
-    // 解決済みメタがあれば即表示
-    if (this._currentSoundMeta?.title) this._applySoundMetadata(this._currentSoundMeta);
-
-    // 音量/UI
+    // 音量/UI（iOSはvolumeいじらない）
     this.changeVolume({ target: this.volumeBar });
     this.startProgressTracking();
     this.updateTrackIcon(this.currentTrackId, true);
@@ -1160,7 +1117,9 @@ export default class extends Controller {
     const playedMs = this.playStartedAt ? Date.now()-this.playStartedAt : 0;
     this.stopWaveformAnime();
     if (playedMs < 32000 && playedMs > 5000) {
-      alert("この曲の視聴は30秒までです（権利制限）");
+      (window.Swal)
+        ? Swal.fire({ icon:"info", title:"試聴終了", text:"この曲の視聴は30秒までです（権利制限）" })
+        : alert("この曲の視聴は30秒までです（権利制限）");
     }
     this.playPauseIcon?.classList.replace("fa-pause","fa-play");
     this.updateTrackIcon(this.currentTrackId,false);
@@ -1272,7 +1231,7 @@ export default class extends Controller {
     const val = Number(e?.target?.value ?? this.volumeBar?.value ?? 100);
     const clamped = Math.max(0, Math.min(100, val));
 
-    // iOS は本体ボタンで調整
+    // iOS では audio.volume は制御不可。UIだけ同期し、早期return。
     if (this._isIOS()) { this.updateVolumeAria(String(clamped)); return; }
 
     if (this._shouldUseApi() && this.audio) { try { this.audio.volume = clamped/100; } catch(_) {} this.updateVolumeAria(String(clamped)); return; }
@@ -1330,23 +1289,12 @@ export default class extends Controller {
   }
 
   playFirstTrack(event) {
-<<<<<<< HEAD
-  if (this._requireLogin(event)) return;
-  event?.stopPropagation?.(); this.updatePlaylistOrder();
-  if (!this.playlistOrder?.length) return;
-  const firstId = this.playlistOrder[0];
-  const icon =
-    this.playIconTargets.find((icn) => icn.dataset.trackId == firstId) ||
-    this._q(`[data-track-id="${CSS.escape(String(firstId))}"]`, this._container());
-  if (icon) this.loadAndPlay({ currentTarget: icon, stopPropagation(){} });
-=======
     if (this._requireLogin(event)) return;
     event?.stopPropagation?.(); this.updatePlaylistOrder();
     if (!this.playlistOrder?.length) return;
     const firstId = this.playlistOrder[0];
     const icon = this.playIconTargets.find((icn)=>icn.dataset.trackId==firstId) || this._q(`[data-track-id="${CSS.escape(String(firstId))}"]`, this._container());
     icon && this.loadAndPlay({ currentTarget: icon, stopPropagation(){} });
->>>>>>> 9d56053f (fix;modal2重直し#428)
   }
 
   // レイアウト切替（クラス切替のみ）
@@ -1428,7 +1376,7 @@ export default class extends Controller {
     }
   }
 
-  // 波形アニメ
+  // 波形アニメ（そのまま）
   startWaveformAnime() {
     if (!this.waveformCtx) return;
     this.waveformAnimating = true;
@@ -1452,7 +1400,8 @@ export default class extends Controller {
     this.waveformCtx && this.waveformCtx.clearRect(0,0,this.waveformCanvas.width,this.waveformCanvas.height);
   }
 
-  // ====== 内部ヘルパー ======
+  // ====== ここから：内部ヘルパー（追加） ======
+
   _disposeAudio() {
     try { if (this.__hls) { this.__hls.destroy(); this.__hls = null; } } catch(_) {}
     try {
@@ -1486,7 +1435,7 @@ export default class extends Controller {
       this.volumeBar.setAttribute("hidden","hidden");
       this.volumeBar.setAttribute("aria-hidden","true");
       this.volumeBar.setAttribute("disabled","disabled");
-      this.volumeBar.classList.add("is-hidden");
+      this.volumeBar.classList.add("is-hidden"); // ← CSSで非表示
       try { this.volumeBar.removeEventListener("input", this._onVolumeInput); } catch(_) {}
     }
 
@@ -1511,7 +1460,7 @@ export default class extends Controller {
     this.volumeBar.removeAttribute("hidden");
     this.volumeBar.removeAttribute("aria-hidden");
     this.volumeBar.removeAttribute("disabled");
-    this.volumeBar.classList.remove("is-hidden");
+    this.volumeBar.classList.remove("is-hidden"); // ← CSSで表示
     try { this.volumeBar.removeEventListener("input", this._onVolumeInput); } catch(_) {}
     this.volumeBar.addEventListener("input", this._onVolumeInput);
   }
