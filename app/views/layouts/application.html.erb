@@ -1,31 +1,69 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <title><%= content_for(:title) || "EMOTION MUSIC BOX" %></title>
+  <title><%= content_for(:title) || "Emotion Music Box（エモム）" %></title>
+
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
   <meta name="description" content="感情と音楽をシェアする爽感覚アプリ EMOTION MUSIC BOX。今の気持ちを音楽に変えて最高な体験を。">
-  <%= favicon_link_tag 'favicon.ico' %>
 
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=4">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=4">
-  <link rel="icon" type="image/svg+xml" href="/icon.svg?v=4">
-  <link rel="mask-icon" href="/icon.svg?v=4" color="#ff69b4">
 
-  <% og_image = image_url('ogp.png') %>
-  <meta property="og:title" content="Emotion Music Box (EMOMU)">
+<script type="application/ld+json" nonce="<%= content_security_policy_nonce %>">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "url": "https://moriappli-emotion.com",
+  "name": "Emotion Music Box（EMOMU）",
+  "alternateName": "EMOMU（エモム）",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://moriappli-emotion.com/emotion_logs?query={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+
+
+
+<!-- favicon 関連：実在ファイルへ統一（?v=6 はキャッシュバスター） -->
+<!-- favicon / icons -->
+<link rel="icon" type="image/svg+xml" href="/icon.svg?v=8">
+<link rel="icon" type="image/x-icon" href="/favicon.ico?v=8">
+<link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=8">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=8">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=8">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=8">
+
+
+
+    <%# ===== OGP / Twitter Card（PNGを第1候補、WebPを第2候補）===== %>
+  <% og_png  = image_url('ogp.png')  %>
+  <% og_webp = image_url('ogp.webp') %>
+  <meta property="og:site_name" content="Emotion Music Box">
+
   <meta property="og:description" content="感情と音楽をシェアする新感覚アプリ">
-  <meta property="og:image" content="<%= og_image %>">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://moriappli-emotion.com">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Emotion Music Box (EMOMU)">
+
+
+  <!-- ⭐ 第1候補：互換性最強のPNG -->
+  <meta property="og:image"        content="<%= og_png %>">
+  <meta property="og:image:width"  content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:type"   content="image/png">
+
+  <!-- ✅ 第2候補：対応環境で高画質・軽量なWebP（複数指定OK） -->
+  <meta property="og:image"      content="<%= og_webp %>">
+  <meta property="og:image:type" content="image/webp">
+
+  <!-- Twitter（X）はPNGを指すのが安定 -->
+  <meta name="twitter:card"        content="summary_large_image">
   <meta name="twitter:description" content="感情と音楽をシェアする新感覚アプリ">
-  <meta name="twitter:image" content="<%= og_image %>">
-  <meta name="twitter:url" content="https://moriappli-emotion.com">
+  <meta name="twitter:image"       content="<%= og_png %>">
+  <meta name="twitter:url"         content="https://moriappli-emotion.com">
+
 
   <!-- PWA 対応 -->
   <%= tag.link rel: "manifest", href: "/manifest.json" %>

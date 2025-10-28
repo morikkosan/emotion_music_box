@@ -1,9 +1,35 @@
+<%# app/views/emotion_logs/index.html.erb の先頭に置く %>
+<%
+  title =
+    if @bookmark_page.present?
+      "#{@bookmark_page} | Emotion Music Box（エモム）"
+    elsif @mypage_title.present?
+      "#{@mypage_title} | Emotion Music Box（エモム）"
+    elsif @recommended_page.present?
+      "おすすめ | Emotion Music Box（エモム）"
+    else
+      "エモログ一覧 | Emotion Music Box（エモム）"
+    end
+%>
+
+<% provide :title, title %>
+
+
+<%# --- OGP / Twitter もこのページだけ短い形に統一 --- %>
+<% content_for :head do %>
+  <meta property="og:title" content="EMOMU（エモム）">
+  <meta name="twitter:title" content="EMOMU（エモム）">
+<% end %>
+
+
+
 <div data-controller="view-switcher">
 <div id="comment-container" class="comment-container"></div>
 
   <div id="desktop-view">
     <!-- ❌ 追加していた「一番上のフッター」は削除（フッターはlayoutで一元管理） -->
-    <% content_for :title, "エモミュ" %>
+
+
     <%= render 'shared/header' %>
 
     <!-- ↑↑ ここまでそのまま。ここから下、デスクトップはフレーム内にまとめて入れ替え ↑↑ -->
@@ -218,7 +244,6 @@
   <div id="mobile-view">
     <!-- ❌ 追加していた「一番上のフッター」は削除（フッターはlayoutで一元管理） -->
 
-    <% content_for :title, "エモミュ" %>
     <div class="container mt-3 position-relative">
 
       <% if user_signed_in? %>

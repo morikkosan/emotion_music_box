@@ -1,4 +1,4 @@
-# EMOTION MUSIC BOX
+# EMOTION MUSIC BOX (EMOMU)
 音楽と感情のアプリ
 
 

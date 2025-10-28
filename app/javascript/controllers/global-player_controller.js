@@ -49,6 +49,30 @@ export default class extends Controller {
   }
   _log(...args){ try{ console.info("[global-player]", ...args);}catch(_){} }
 
+  // ★追加: 統一ポップアップ（Swalがあればそれを使う）
+  _notify({icon="info", title="", text=""} = {}) {
+    // 連打防止（800ms）
+    const now = Date.now();
+    if (window.__gpNotifyTs && (now - window.__gpNotifyTs) < 800) return;
+    window.__gpNotifyTs = now;
+
+    if (typeof Swal?.fire === "function") {
+      return Swal.fire({
+        icon, title, text,
+        confirmButtonText: "閉じる",
+        customClass: {
+          popup:  "cyber-popup",
+          title:  "cyber-title",
+          htmlContainer: "cyber-text",
+          confirmButton: "cyber-btn-ok"
+        },
+        buttonsStyling: false
+      });
+    } else {
+      alert(title ? `${title}\n\n${text||""}` : (text || ""));
+    }
+  }
+
   // === 画面内デバッグ（#gpdebug で有効化）========================
   _debugEnabled() {
     try {
@@ -489,6 +513,25 @@ export default class extends Controller {
     return { "X-SC-OAUTH": tok, "Authorization": `OAuth ${tok}` };
   }
 
+  // ★追加: 削除判定ヘルパ
+  _looksDeleted({status, bodyText, trackJson}) {
+    try {
+      if (status === 404 || status === 410) return true;
+      const t = (bodyText || "").toLowerCase();
+      if (/not\s*found|deleted|removed|gone|does\s*not\s*exist/.test(t)) return true;
+      const policy = (trackJson?.policy || "").toString().toLowerCase();
+      const state  = (trackJson?.state  || "").toString().toLowerCase();
+      if (policy.includes("blocked") || policy.includes("block")) return false; // ブロックは別扱い
+      if (state.includes("removed") || state.includes("deleted")) return true;
+      // media.transcodings が完全にゼロで、かつ streamable=false 等も“実質不可”
+      if (trackJson && Array.isArray(trackJson?.media?.transcodings) && trackJson.media.transcodings.length === 0) {
+        // 明確な deleted までは断定しない
+        return false;
+      }
+    } catch(_) {}
+    return false;
+  }
+
   async _resolveStreamUrl(trackUrl) {
     const cleanUrl = this._normalizeTrackUrl(trackUrl);
     try {
@@ -503,9 +546,21 @@ export default class extends Controller {
       if (!r1.ok) {
         const txt = await r1.text().catch(()=> "");
         this._log("resolve fail detail", { status: r1.status, body: txt.slice(0,800) });
-        throw new Error(`proxy resolve non-OK ${r1.status}`);
+
+        // ★変更: 404/410など→“削除”として扱うフラグ付きエラーを投げる
+        const del = this._looksDeleted({ status: r1.status, bodyText: txt });
+        const err = new Error(`proxy resolve non-OK ${r1.status}`);
+        if (del) err.__deleted = true;
+        throw err;
       }
       const track = await r1.json();
+
+      // ★追加: track JSON内容からも削除相当を判定
+      if (this._looksDeleted({ status: 200, bodyText: "", trackJson: track })) {
+        const err = new Error("track seems deleted");
+        err.__deleted = true;
+        throw err;
+      }
 
       // メタ更新
       this._currentSoundMeta = { title: track?.title, user: { username: track?.user?.username } };
@@ -530,7 +585,12 @@ export default class extends Controller {
       if (!r2.ok) {
         const txt = await r2.text().catch(()=> "");
         this._log("stream fail detail", { status: r2.status, body: txt.slice(0,800) });
-        throw new Error(`proxy stream non-OK ${r2.status}`);
+
+        // ★変更: ここでも 404/410 等を“削除”扱いに昇格
+        const del = this._looksDeleted({ status: r2.status, bodyText: txt });
+        const err = new Error(`proxy stream non-OK ${r2.status}`);
+        if (del) err.__deleted = true;
+        throw err;
       }
       const j2 = await r2.json();
 
@@ -912,6 +972,14 @@ export default class extends Controller {
       this.resetPlayerUI();
       this._debug("playFromExternal via API");
       await this._playViaApi(playUrl).catch((err) => {
+        // ★変更: 削除フラグならポップアップ出して中止。その他はフォールバック。
+        if (err?.__deleted) {
+          this.hideLoadingUI();
+          this._notify({ icon: "warning", title: "再生できません", text: "この音楽はSoundCloud上で削除されています。" });
+          this.updateTrackIcon(this.currentTrackId, false);
+          this.setPlayPauseAria(false);
+          return;
+        }
         this._log("playFromExternal API failed → fallback", err);
         this._debug("playFromExternal API failed → fallback", String(err));
         window.__forceWidgetOnly = true;
@@ -976,6 +1044,14 @@ export default class extends Controller {
       this._log("API mode start");
       this._debug("API mode start");
       await this._playViaApi(trackUrl).catch((err) => {
+        // ★変更: 削除なら通知して中止。その他はフォールバック。
+        if (err?.__deleted) {
+          this.hideLoadingUI();
+          this._notify({ icon: "warning", title: "再生できません", text: "この音楽はSoundCloud上で削除されています。" });
+          this.updateTrackIcon(this.currentTrackId, false);
+          this.setPlayPauseAria(false);
+          return;
+        }
         this._log("loadAndPlay API failed → fallback", err);
         this._debug("loadAndPlay API failed → fallback", String(err));
         window.__forceWidgetOnly = true;
@@ -1018,6 +1094,10 @@ export default class extends Controller {
       const r = await this._resolveStreamUrl(playUrl);
       streamUrl = r.url; isHls = !!r.isHls;
     } catch (err) {
+      // ★変更: 削除フラグはここで通知して中止。それ以外は従来フォールバックへ委譲（呼び出し側で処理）
+      if (err?.__deleted) {
+        throw err; // 呼び出し側で通知＆停止
+      }
       this._log("resolve/stream failed → fallback", err);
       this._debug("resolve/stream failed → fallback", String(err));
       this.hideLoadingUI();

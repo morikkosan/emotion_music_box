@@ -69,7 +69,7 @@
 
             <% page_url = request.original_url %>
             <% tweet_text = "今日の感情は #{@emotion_log.emotion}！！ この気分できいた曲は #{@emotion_log.track_name}！" %>
-            <% hashtag = " #EmotionMusicBox #エモミュ" %>
+            <% hashtag = " #EmotionMusicBox #エモム" %>
             <% share_text = "#{tweet_text}#{hashtag}" %>
             <% tweet_url = "https://twitter.com/intent/tweet?text=#{CGI.escape(share_text)}&url=#{CGI.escape(page_url)}" %>
 
