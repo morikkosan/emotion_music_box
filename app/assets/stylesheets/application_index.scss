@@ -2,9 +2,9 @@
 
 :root{
   /* フッターの実高さに合わせる。56〜64pxの間で実機に合わせて */
-  --mobile-footer-h: 64px;
-  /* iPhoneのセーフエリアも考慮した下余白（+24pxは呼吸スペース） */
-  --mobile-bottom-gap: calc(env(safe-area-inset-bottom) + var(--mobile-footer-h) + 24px);
+  --mobile-footer-h: 84px; /* ★変更: 64px → 84px（実機で被るならここで上げる） */
+  /* iPhoneのセーフエリアも考慮した下余白（＋呼吸スペースを大きめに） */
+  --mobile-bottom-gap: calc(env(safe-area-inset-bottom, 0px) + var(--mobile-footer-h) + 72px); /* ★強化: fallback追加＋+72pxで“がっつり” */
 }
 
 // ロゴ用
@@ -670,7 +670,6 @@
   box-sizing: border-box;
 }
 
-
 /* ブックマークやタイトル */
 .bookmark_title {
   display: inline-block;
@@ -734,7 +733,6 @@ button[type="submit"].mobile-super-search-btn {
 
 /* 真ん中のスクロール領域（固定フッターに被らせない本命） */
 #mobile-view {
-  padding-top: 60px;                           /* 既存のまま */
-  padding-bottom: var(--mobile-bottom-gap) !important;
+  padding-top: 60px;                           /* 既存のまま（上部フッターぶん） */
+  padding-bottom: var(--mobile-bottom-gap) !important; /* ★強化: ここも“がっつり” */
 }
-
