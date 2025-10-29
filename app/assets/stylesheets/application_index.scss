@@ -775,14 +775,14 @@ body.player-visible{
     box-sizing: border-box;
   }
 
-  /* ページネーション固定を使うページ向けの保険（なければ無視） */
+  /* ✅ ページネーション固定を使うページ向けの保険（修正済み） */
   .mobile-pagination-center .pagination{
     position: static !important;
     left: auto !important;
     bottom: auto !important;
     transform: none !important;
-    margin: 12px auto calc(var(--mobile-bottom-gap) - 12px) !important;
     display: flex;
+    margin: 12px auto 12px !important; /* ✅修正: 余白を固定化（大きすぎる下余白をやめる） */
   }
 
   /* スペーサ要素を使う場合の保険（なければ無視） */
@@ -794,4 +794,22 @@ body.player-visible{
 /* デスクトップ側（必要なら有効。不要なら削除可） */
 #desktop-view .scroll-content{
   padding-bottom: calc(24px + var(--bottom-player-h)) !important;
+}
+
+
+/* =========================================================
+   ▼ ページネーション上の無駄な空白を戻す補正
+      （下の余白だけ効かせるための上書き）
+   ========================================================= */
+@media (max-width: 996px) {
+  .mobile-pagination-center {
+    margin-top: 0 !important;    /* ✅修正: 上を完全に詰める */
+    margin-bottom: 0 !important; /* ← 下余白は .pagination 側で管理 */
+  }
+
+  /* ページネーションと投稿一覧の間の余白を詰める */
+  .mobile-pagination-center + .mobile-content {
+    margin-top: 0 !important; /* ←上の空きを完全にリセット */
+    padding-top: 0 !important;
+  }
 }
