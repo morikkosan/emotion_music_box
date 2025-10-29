@@ -657,9 +657,12 @@
 
 /* その他全体 */
 .mobile-content {
-  margin-bottom: 80px; /* フッター分の余白 */
-}
+  /* 外側の余白はゼロにして… */
+  margin-bottom: 0;
 
+  /* …内側(スクロール領域の中)だけ下余白を確保する */
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+}
 /* ブックマークやタイトル */
 .bookmark_title {
   display: inline-block;
