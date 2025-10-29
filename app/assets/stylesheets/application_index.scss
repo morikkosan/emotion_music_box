@@ -1,5 +1,12 @@
 // ヘッダーインラインスタイル
 
+:root{
+  /* フッターの実高さに合わせる。56〜64pxの間で実機に合わせて */
+  --mobile-footer-h: 64px;
+  /* iPhoneのセーフエリアも考慮した下余白（+24pxは呼吸スペース） */
+  --mobile-bottom-gap: calc(env(safe-area-inset-bottom) + var(--mobile-footer-h) + 24px);
+}
+
 // ロゴ用
 .logo-main {
   max-width: 400px;
@@ -656,9 +663,13 @@
 }
 
 /* その他全体 */
+/* 投稿一覧の直包み：マージンだと潰れるので内側パディングで底上げ */
 .mobile-content {
-  margin-bottom: 80px; /* フッター分の余白 */
+  padding-bottom: var(--mobile-bottom-gap) !important;
+  margin-bottom: 0 !important;
+  box-sizing: border-box;
 }
+
 
 /* ブックマークやタイトル */
 .bookmark_title {
@@ -721,8 +732,9 @@ button[type="submit"].mobile-super-search-btn {
   z-index: 1100;
 }
 
-/* 真ん中のスクロール領域 */
+/* 真ん中のスクロール領域（固定フッターに被らせない本命） */
 #mobile-view {
-  padding-top: 60px;   /* ↑と同じ数値に */
-  padding-bottom: 160px;
+  padding-top: 60px;                           /* 既存のまま */
+  padding-bottom: var(--mobile-bottom-gap) !important;
 }
+
