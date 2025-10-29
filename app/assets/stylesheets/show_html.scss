@@ -549,3 +549,132 @@ body.playlist-show-page {
   opacity: .4;
   pointer-events: none;
 }
+
+
+
+
+/* =========================================================
+   感情詳細ページ（デスクトップ/モバイル共通）
+   ― プレーヤーに被らないための下余白制御（CSSのみ）
+   ビューは一切変更不要
+   ========================================================= */
+
+/* 既に定義がある場合でも上書き安全（値は同じでOK） */
+:root{
+  /* プレーヤーの見た目高さ（必要に応じて調整） */
+  --bottom-player-h: 96px;
+
+  /* モバイルのフッター高さ（既存値と合わせる） */
+  --mobile-footer-h: 84px;
+
+  /* モバイルの下側の基本余白（セーフエリア＋フッター＋呼吸スペース） */
+  --mobile-bottom-gap-base: calc(env(safe-area-inset-bottom, 0px) + var(--mobile-footer-h) + 72px);
+
+  /* 実際に使う下余白（後で :has / .player-visible で加算） */
+  --mobile-bottom-gap: var(--mobile-bottom-gap-base);
+}
+
+/* :has 対応ブラウザはCSSのみで自動加算（プレーヤーがDOMに居る時） */
+body:has(#bottom-player){
+  --mobile-bottom-gap: calc(var(--mobile-bottom-gap-base) + var(--bottom-player-h));
+}
+
+/* :has 未対応(iOS古め等)のフォールバック：
+   既存JSで body に .player-visible を付与していれば自動で効く */
+body.player-visible{
+  --mobile-bottom-gap: calc(var(--mobile-bottom-gap-base) + var(--bottom-player-h));
+}
+
+/* プレーヤー自身の最低高さを与えておくと重なり事故が減る */
+#bottom-player{
+  min-height: var(--bottom-player-h);
+  z-index: 100; /* 既存どおり */
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+}
+
+/* =======================
+   ▼ デスクトップ側の下余白（感情詳細ページ）
+   ======================= */
+
+/* メインコンテナ（.container）に十分な下余白を常時付与。
+   ※ これでカードがプレーヤーに潜り込まない */
+main.container[aria-labelledby="page-title"]{
+  padding-bottom: calc(24px + var(--bottom-player-h)) !important;
+}
+
+/* 詳細カード/コメントカードの下マージンも少し厚めに */
+.emotion-detail-card,
+.emotion-comments-card{
+  margin-bottom: clamp(16px, 4vh, 40px) !important;
+}
+
+/* コメント内のページネーションが最下部に来ても被らないように */
+.emotion-comments-card .pagination{
+  margin: 12px auto clamp(16px, 4vh, 40px) !important;
+  position: static !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+}
+
+/* =======================
+   ▼ モバイル側の下余白（/show_mobile も含む）
+   ======================= */
+
+@media (max-width: 996px){
+
+  /* モバイル側のスクロール領域には “計算済みの” 安全余白を付与 */
+  .mobile-content,
+  .mobile-container,
+  #mobile-view{
+    padding-bottom: var(--mobile-bottom-gap) !important;
+    margin-bottom: 0 !important;
+    box-sizing: border-box;
+  }
+
+  /* モバイルのカード類にも余白を確保（_show_mobile.html.erb 相当） */
+  .mobile-card,
+  .mobile-comment-card{
+    margin-bottom: clamp(16px, 5vh, 56px) !important;
+  }
+
+  /* コメントのページネーションも沈まないように */
+  .mobile-comment-card .pagination{
+    margin: 8px auto clamp(20px, 5vh, 64px) !important;
+    position: static !important;
+    left: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    display: flex;
+  }
+
+  /* もしスペーサを使う場合の保険（要素が無ければ無視される） */
+  .player-space-spacer{
+    height: var(--mobile-bottom-gap) !important;
+  }
+
+  /* 共有の“下部固定フッター”があるページでも上書きで守る */
+  .mobile-footer{
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    min-height: 56px;
+    z-index: 1100;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* =======================
+   ▼ 追加の保険（共通）
+   ======================= */
+
+/* 画像や大きめ要素がプレーヤーの直上で切れないよう、最後のカードに余白を足す */
+.emotion-comments-card:last-of-type,
+.emotion-detail-card:last-of-type{
+  margin-bottom: clamp(24px, 6vh, 80px) !important;
+}
+
+/* 万一、別レイアウトで .scroll-content を使っている場合の保険 */
+#desktop-view .scroll-content{
+  padding-bottom: calc(24px + var(--bottom-player-h)) !important;
+}
