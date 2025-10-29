@@ -657,12 +657,9 @@
 
 /* その他全体 */
 .mobile-content {
-  /* 外側の余白はゼロにして… */
-  margin-bottom: 0;
-
-  /* …内側(スクロール領域の中)だけ下余白を確保する */
-  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  margin-bottom: 80px; /* フッター分の余白 */
 }
+
 /* ブックマークやタイトル */
 .bookmark_title {
   display: inline-block;
@@ -727,5 +724,5 @@ button[type="submit"].mobile-super-search-btn {
 /* 真ん中のスクロール領域 */
 #mobile-view {
   padding-top: 60px;   /* ↑と同じ数値に */
-  padding-bottom: 56px;
+  padding-bottom: 120px;
 }
