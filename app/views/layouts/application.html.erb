@@ -9,18 +9,6 @@
   <%= csp_meta_tag %>
   <meta name="description" content="感情と音楽をシェアする爽感覚アプリ EMOTION MUSIC BOX。今の気持ちを音楽に変えて最高な体験を。">
 
-<!-- ✅ これだけ残す：nonce付き -->
-<script nonce="<%= content_security_policy_nonce %>">
-  if (location.hash && /gpdebug/i.test(location.hash)) {
-    history.replaceState(null, "", location.pathname + location.search);
-  }
-</script>
-
-<!-- ✅ これも nonce付き -->
-<script nonce="<%= content_security_policy_nonce %>">
-  window.__disablePlayerDebug = true;
-  localStorage.removeItem("gpdebug");
-</script>
 
 
 <script type="application/ld+json" nonce="<%= content_security_policy_nonce %>">
@@ -88,26 +76,28 @@
   <script defer src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
   <% if current_user&.soundcloud_token.present? %>
-    <meta name="soundcloud-oauth-token" content="<%= current_user.soundcloud_token %>">
-    <!-- iOSでも確実に送るためのCookie設定（SameSite=None; Secure; Domain=...） -->
-    
-    <script nonce="<%= content_security_policy_nonce %>">
-      (function () {
-        var t = document.querySelector('meta[name="soundcloud-oauth-token"]')?.content || "";
-        var maxAge = 30 * 60; // 30分
-        var cookie = [
-          "sc_oauth=" + encodeURIComponent(t),
-          "Path=/",
-          "Secure",
-          "SameSite=None",
-          "Domain=moriappli-emotion.com",
-          "Max-Age=" + maxAge
-        ].join("; ");
-        document.cookie = cookie;
-        console.log("[SC] token meta:", !!t, "cookie set:", document.cookie.includes("sc_oauth="));
-      })();
-    </script>
-  <% end %>
+  <meta name="soundcloud-oauth-token" content="<%= current_user.soundcloud_token %>">
+  <script nonce="<%= content_security_policy_nonce %>">
+    (function () {
+      var t = document.querySelector('meta[name="soundcloud-oauth-token"]')?.content || "";
+      var maxAge = 30 * 60; // 30分
+      var cookie = [
+        "sc_oauth=" + encodeURIComponent(t),
+        "Path=/",
+        "Secure",
+        "SameSite=None",
+        "Domain=moriappli-emotion.com",
+        "Max-Age=" + maxAge
+      ].join("; ");
+      document.cookie = cookie;
+
+      <% unless Rails.env.production? %>
+      console.log("[SC] token meta:", !!t, "cookie set:", document.cookie.includes("sc_oauth="));
+      <% end %>
+    })();
+  </script>
+<% end %>
+
 
   <!-- （任意）SoundCloud SDK：未使用ならコメントアウトでOK -->
   <!-- <script src="https://connect.soundcloud.com/sdk/sdk-3.3.2.js"></script> -->
