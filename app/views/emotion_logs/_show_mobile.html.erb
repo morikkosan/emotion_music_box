@@ -60,11 +60,33 @@
       </div>
       <%# ▲▲ ここまで共有ボタン ▲▲ %>
 
+      <%# ===== 再生ジャケット + 再生オーバーレイ（index と同じ構成） ===== %>
       <% if @emotion_log.music_art_url.present? %>
-        <div class="music-art-wrapper mt-2">
-          <%= image_tag @emotion_log.music_art_url, alt: "ジャケット画像", class: "music-art-img mobile-music-art-img" %>
+        <div class="music-art-box mt-2 position-relative">
+          <%= image_tag(@emotion_log.music_art_url,
+                alt: "ジャケット画像",
+                class: "music-art-img mobile-music-art-img",
+                data: {
+                  "play-url"             => @emotion_log.music_url,           # ★ 再生URL
+                  "global-player-target" => "trackImage",                     # ★ Stimulus target
+                  "track-id"             => @emotion_log.id                   # ★ 識別子
+                }) %>
+
+          <%# 再生アイコン（クリックで global-player#onPlayIconClick 発火） %>
+          <i class="fa fa-play play-overlay-icon"
+             data-action="click->global-player#onPlayIconClick"
+             data-global-player-target="playIcon"
+             data-track-id="<%= @emotion_log.id %>"></i>
+        </div>
+      <% else %>
+        <%# ジャケットが無い場合のプレースホルダー（再生は不可） %>
+        <div class="music-art-box mt-2 position-relative">
+          <%= image_tag "placeholder.png",
+                alt: "ジャケット画像（なし）",
+                class: "music-art-img mobile-music-art-img" %>
         </div>
       <% end %>
+      <%# ===== /再生ジャケット ===== %>
     </div>
   </div>
 
