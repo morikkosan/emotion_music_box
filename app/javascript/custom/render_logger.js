@@ -3,17 +3,30 @@
   if (window.__renderLoggerBooted) return;
   window.__renderLoggerBooted = true;
 
-  const isIOS = (() => {
-    try {
-      const ua = navigator.userAgent || "";
-      return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    } catch (_) { return false; }
-  })();
+  // ===== 強制OFFスイッチ（どれかが真なら完全停止）=====
+  // 1) 本番ドメインならOFF
+  // 2) <meta name="render-debug-off" content="1">
+  // 3) window.__renderLoggerOff = true
+  const FORCE_OFF =
+    /(^|\.)moriappli-emotion\.com$/i.test(location.hostname) ||
+    document.querySelector('meta[name="render-debug-off"]')?.content === "1" ||
+    window.__renderLoggerOff === true;
 
+  if (FORCE_OFF) return;
+
+  // ===== iOS自動起動は廃止（常時OFFの原因を排除）=====
+  // const isIOS = (() => {
+  //   try {
+  //     const ua = navigator.userAgent || "";
+  //     return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  //   } catch (_) { return false; }
+  // })();
+
+  // ===== 明示起動のみ（URL ?debug=1 or localStorage）=====
   const enabled =
     /[?&]debug=1\b/.test(location.search) ||
-    (typeof localStorage !== "undefined" && localStorage.getItem("debug-sc-player") === "1") ||
-    isIOS;
+    (typeof localStorage !== "undefined" && localStorage.getItem("debug-sc-player") === "1");
+    // ← ここから isIOS を削除
 
   if (!enabled) return;
 

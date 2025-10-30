@@ -1,4 +1,4 @@
-/* eslint-env browser */
+/* eslint-env browser */ 
 /* global SC, Swal */
 
 import { Controller } from "@hotwired/stimulus";
@@ -47,8 +47,9 @@ export default class extends Controller {
       return u.toString();
     } catch(_) { return raw; }
   }
-  _log(...args){ try{ console.info("[global-player]", ...args);}catch(_){} }
-
+_log(/* ...args */) { /* no-op */ }
+// もしくはデバッグスイッチに連動させたい場合
+// _log(...args){ if (!this._debugEnabled()) return; try{ console.info("[global-player]", ...args);}catch(_){} }
   // ★追加: 統一ポップアップ（Swalがあればそれを使う）
   _notify({icon="info", title="", text=""} = {}) {
     // 連打防止（800ms）
@@ -73,81 +74,12 @@ export default class extends Controller {
     }
   }
 
-  // === 画面内デバッグ（#gpdebug で有効化）========================
-  // === 画面内デバッグの有効判定（“許可メタ”が無い限り絶対に出さない）===
-_debugEnabled() {
-  try {
-    if (this.__dbgEnabled != null) return this.__dbgEnabled;
-
-    // ❶ 本番キルスイッチ（強制OFF）
-    if (window.__disablePlayerDebug === true) {
-      this.__dbgEnabled = false;
-      return this.__dbgEnabled;
-    }
-
-    // ❷ サーバが埋め込む“許可メタ”をチェック（管理者だけ出す用）
-    // 例: <meta name="player-debug-allow" content="1">
-    const allowMeta = document.querySelector('meta[name="player-debug-allow"]')?.content?.trim() === "1";
-    if (!allowMeta) {
-      // サーバから許可が出ていないなら、ハッシュ/LSでの要求があっても常に無効
-      this.__dbgEnabled = false;
-      return this.__dbgEnabled;
-    }
-
-    // ❸ ここまで来たら“許可された端末”。明示要求がある時だけON
-    const byHash   = /\bgpdebug\b/i.test(location.hash);
-    const byLS     = localStorage.getItem("gpdebug") === "1";
-    const byFlag   = (window.__showPlayerDebug === true) || (window.EMOMU_DEBUG === true);
-
-    this.__dbgEnabled = !!(byHash || byLS || byFlag);
-    return this.__dbgEnabled;
-  } catch {
-    return false;
-  }
-}
-
-  _debugInit() {
-    if (!this._debugEnabled() || this.__dbgEl) return;
-    const el = document.createElement("div");
-    el.id = "gp-debug";
-    el.className = "gp-debug"; // ← すべてCSS側で
-    el.setAttribute("role","status");
-    el.setAttribute("aria-live","polite");
-    document.body.appendChild(el);
-    this.__dbgEl = el;
-    this._debugSnapshot("init");
-  }
-  _debug(...args) {
-    if (!this._debugEnabled()) return;
-    try {
-      this.__dbgEl ||= document.getElementById("gp-debug");
-      if (!this.__dbgEl) return;
-      const line = document.createElement("div");
-      line.textContent = args.map(a=>{
-        try { return (typeof a === "object") ? JSON.stringify(a) : String(a); }
-        catch { return String(a); }
-      }).join(" ");
-      this.__dbgEl.appendChild(line);
-      this.__dbgEl.scrollTop = this.__dbgEl.scrollHeight;
-    } catch {}
-  }
-  _debugSnapshot(tag="snap") {
-    if (!this._debugEnabled()) return;
-    const info = {
-      tag,
-      ios: this._isIOS(),
-      hasToken: this._hasOAuthToken(),
-      scClientId: !!this._scClientId,
-      shouldUseApi: this._shouldUseApi(),
-      needsHandshake: this._needsHandshake(),
-      forceWidgetOnly: !!window.__forceWidgetOnly,
-      hasWidget: !!this.widget,
-      hasAudioEl: !!this.audio,
-      currentTrackId: this.currentTrackId || null
-    };
-    this._debug("state", info);
-  }
-  // ============================================================
+  // === 画面内デバッグ：ここだけ空実装 ========================
+  _debugEnabled() { return false; }
+  _debugInit() { this.__dbgEl = null; }
+  _debug(/* ...args */) {}
+  _debugSnapshot(/* tag="snap" */) {}
+  // ==========================================================
 
   get _scClientId() {
     try {
