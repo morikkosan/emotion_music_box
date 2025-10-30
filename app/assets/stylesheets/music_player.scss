@@ -393,21 +393,13 @@
 }
 
 /* ===== デバッグパネル (#gp-debug) ===== */
-#gp-debug {
-  position: fixed;
-  left: 8px;
-  bottom: 8px;
-  z-index: 99999;
-  background: rgba(0,0,0,0.85);
-  color: #fff;
-  font-size: 12px;
-  line-height: 1.4;
-  padding: 6px 8px;
-  border-radius: 8px;
-  max-width: 90vw;
-  max-height: 40vh;
-  overflow: auto;
-  box-shadow: 0 6px 16px rgba(0,0,0,.3);
+/* === 画面内デバッグUIを完全に無効化（強制非表示）=== */
+#gp-debug,
+.gp-debug {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* ===== iOS ハンドシェイクヒント ===== */
