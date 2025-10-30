@@ -74,18 +74,38 @@ export default class extends Controller {
   }
 
   // === 画面内デバッグ（#gpdebug で有効化）========================
-  _debugEnabled() {
-    try {
-      if (this.__dbgEnabled != null) return this.__dbgEnabled;
-      const on =
-        location.hash.includes("gpdebug") ||
-        localStorage.getItem("gpdebug") === "1" ||
-        window.__showPlayerDebug === true ||
-        window.EMOMU_DEBUG === true;
-      this.__dbgEnabled = !!on;
+  // === 画面内デバッグの有効判定（“許可メタ”が無い限り絶対に出さない）===
+_debugEnabled() {
+  try {
+    if (this.__dbgEnabled != null) return this.__dbgEnabled;
+
+    // ❶ 本番キルスイッチ（強制OFF）
+    if (window.__disablePlayerDebug === true) {
+      this.__dbgEnabled = false;
       return this.__dbgEnabled;
-    } catch { return false; }
+    }
+
+    // ❷ サーバが埋め込む“許可メタ”をチェック（管理者だけ出す用）
+    // 例: <meta name="player-debug-allow" content="1">
+    const allowMeta = document.querySelector('meta[name="player-debug-allow"]')?.content?.trim() === "1";
+    if (!allowMeta) {
+      // サーバから許可が出ていないなら、ハッシュ/LSでの要求があっても常に無効
+      this.__dbgEnabled = false;
+      return this.__dbgEnabled;
+    }
+
+    // ❸ ここまで来たら“許可された端末”。明示要求がある時だけON
+    const byHash   = /\bgpdebug\b/i.test(location.hash);
+    const byLS     = localStorage.getItem("gpdebug") === "1";
+    const byFlag   = (window.__showPlayerDebug === true) || (window.EMOMU_DEBUG === true);
+
+    this.__dbgEnabled = !!(byHash || byLS || byFlag);
+    return this.__dbgEnabled;
+  } catch {
+    return false;
   }
+}
+
   _debugInit() {
     if (!this._debugEnabled() || this.__dbgEl) return;
     const el = document.createElement("div");
