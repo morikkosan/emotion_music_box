@@ -9,6 +9,19 @@
   <%= csp_meta_tag %>
   <meta name="description" content="感情と音楽をシェアする爽感覚アプリ EMOTION MUSIC BOX。今の気持ちを音楽に変えて最高な体験を。">
 
+<!-- ✅ これだけ残す：nonce付き -->
+<script nonce="<%= content_security_policy_nonce %>">
+  if (location.hash && /gpdebug/i.test(location.hash)) {
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+</script>
+
+<!-- ✅ これも nonce付き -->
+<script nonce="<%= content_security_policy_nonce %>">
+  window.__disablePlayerDebug = true;
+  localStorage.removeItem("gpdebug");
+</script>
+
 
 <script type="application/ld+json" nonce="<%= content_security_policy_nonce %>">
 {
