@@ -1,27 +1,50 @@
-<!-- app/views/shared/_notification_toggle.html.erb -->
+<%# app/views/shared/_notification_toggle.html.erb %>
 <%# frame_id が未提供でも落ちないようにフォールバックを用意 %>
 <% fid = local_assigns[:frame_id] || (defined?(mobile_device?) && mobile_device? ? "notification-toggle-mobile" : "notification-toggle-desktop") %>
 
 <turbo-frame id="<%= fid %>">
-  <% if current_user.push_enabled? %>
-    <%= link_to disable_push_notifications_path,
-                method: :patch,
-                class: "dropdown-item d-flex align-items-center text-warning",
-                data: { turbo_method: :patch, turbo_frame: fid } do %>
-      <%= image_tag "bell_on.webp", class: "dropdown-icon me-2", alt: "" %> 通知をオフにする
-    <% end %>
+  <%# ======== スマホ(iPhone/Android/iPad)は「未読件数バッジ＋リンク」へ ======== %>
+  <% if defined?(mobile_device?) && mobile_device? %>
+    <div
+      class="dropdown-item d-flex align-items-center gap-2"
+      data-controller="notif-badge"
+      data-notif-badge-endpoint-value="<%= unread_count_notifications_path(format: :json) %>"
+      data-notif-badge-poll-interval-value="30000">
+      <%# アイコン画像は「今まで通り」: bell_on / bell_off どちらでもOK。ここでは bell_on.webp を使用 %>
+      <%= image_tag "bell_on.webp",
+            class: "dropdown-icon", alt: "",
+            loading: "lazy", decoding: "async",
+            width: 24, height: 24 %>
 
-    <%= link_to debug_emotion_notifications_path,
-                class: "dropdown-item d-flex align-items-center text-success",
-                data: { turbo: false } do %>
-      <%= image_tag "bell_on.webp", class: "dropdown-icon me-2", alt: "" %> 通知テストを送信
-    <% end %>
+      <%# 赤い“角のない四角”バッジ（白い数字） %>
+      <span class="notif-count-badge" data-notif-badge-target="badge" aria-live="polite" hidden>0</span>
+
+      <%# ラベル文言 %>
+      <%= link_to "通知数", notifications_path, class: "stretched-link text-decoration-none text-body" %>
+    </div>
+
+  <%# ======== デスクトップは従来のPushトグルを維持 ======== %>
   <% else %>
-    <%= link_to enable_push_notifications_path,
-                method: :patch,
-                class: "dropdown-item d-flex align-items-center text-primary",
-                data: { turbo_method: :patch, turbo_frame: fid } do %>
-      <%= image_tag "bell_off.webp", class: "dropdown-icon me-2", alt: "" %> 通知をオンにする
+    <% if current_user.push_enabled? %>
+      <%= link_to disable_push_notifications_path,
+                  method: :patch,
+                  class: "dropdown-item d-flex align-items-center text-warning",
+                  data: { turbo_method: :patch, turbo_frame: fid } do %>
+        <%= image_tag "bell_on.webp", class: "dropdown-icon me-2", alt: "" %> 通知をオフにする
+      <% end %>
+
+      <%= link_to debug_emotion_notifications_path,
+                  class: "dropdown-item d-flex align-items-center text-success",
+                  data: { turbo: false } do %>
+        <%= image_tag "bell_on.webp", class: "dropdown-icon me-2", alt: "" %> 通知テストを送信
+      <% end %>
+    <% else %>
+      <%= link_to enable_push_notifications_path,
+                  method: :patch,
+                  class: "dropdown-item d-flex align-items-center text-primary",
+                  data: { turbo_method: :patch, turbo_frame: fid } do %>
+        <%= image_tag "bell_off.webp", class: "dropdown-icon me-2", alt: "" %> 通知をオンにする
+      <% end %>
     <% end %>
   <% end %>
 </turbo-frame>

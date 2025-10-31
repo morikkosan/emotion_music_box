@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_10_29_111935) do
+ActiveRecord::Schema[7.2].define(version: 2025_10_31_120434) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -124,6 +124,20 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_29_111935) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "notifications", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "kind", default: "generic", null: false
+    t.string "title", default: "", null: false
+    t.text "body"
+    t.string "url"
+    t.datetime "read_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_notifications_on_created_at"
+    t.index ["user_id", "read_at"], name: "index_notifications_on_user_id_and_read_at"
+    t.index ["user_id"], name: "index_notifications_on_user_id"
+  end
+
   create_table "playlist_items", force: :cascade do |t|
     t.bigint "playlist_id", null: false
     t.bigint "emotion_log_id", null: false
@@ -208,6 +222,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_29_111935) do
   add_foreign_key "emotion_logs", "users"
   add_foreign_key "identities", "users"
   add_foreign_key "line_link_tokens", "users"
+  add_foreign_key "notifications", "users"
   add_foreign_key "playlist_items", "emotion_logs", name: "fk_playlist_items_emotion_logs_cascade", on_delete: :cascade
   add_foreign_key "playlist_items", "playlists"
   add_foreign_key "playlists", "users"

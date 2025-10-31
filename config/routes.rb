@@ -63,6 +63,21 @@ Rails.application.routes.draw do
   get "/sign_in",       to: redirect("/")
   get "/sc_resolve",    to: "sound_cloud#resolve"
 
+  # ======== 通知（一覧／未読件数バッジ／既読化）========
+  # /notifications            -> notifications#index        （一覧）
+  # /notifications/unread_count.json -> 未読件数(JSON)
+  # /notifications/:id/read   -> notifications#read         （個別既読）
+  # /notifications/read_all   -> notifications#read_all     （一括既読）
+  resources :notifications, only: [:index] do
+    collection do
+      get  :unread_count
+      post :read_all
+    end
+    member do
+      post :read
+    end
+  end
+
   # ▼▼▼ ここを NotificationsController に寄せる（PushNotificationController は存在しないので使わない）▼▼▼
   post "push/emotion",           to: "notifications#send_emotion_log"   # ← 元: push_notification#send_emotion_log
   post "/push_subscription",     to: "push_subscriptions#create"
@@ -76,8 +91,6 @@ Rails.application.routes.draw do
 
   get "/sc/resolve", to: "sc_proxy#resolve"
   get "/sc/stream",  to: "sc_proxy#stream"
-
-
 
   if Rails.env.test? || Rails.env.development?
     get "/debug/session_info", to: "debug#session_info"

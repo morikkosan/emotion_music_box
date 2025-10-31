@@ -1,0 +1,24 @@
+/* app/assets/stylesheets/notifications.scss */
+.notif-count-badge {
+  display: inline-flex;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 6px;      /* 角のない四角 */
+  background: #dc3545;     /* 赤 */
+  color: #fff;             /* 白い数字 */
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 20px;
+  justify-content: center;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.notif-dot-placeholder {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  opacity: .25;
+  background: currentColor;
+}
