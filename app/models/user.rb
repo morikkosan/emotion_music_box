@@ -17,6 +17,7 @@ class User < ApplicationRecord
   has_many :comment_reactions, dependent: :destroy
   has_many :comments, dependent: :destroy
   has_many :playlists, dependent: :destroy
+  has_many :notifications, dependent: :destroy
   has_many :line_link_tokens
   has_one :push_subscription, dependent: :destroy
 
