@@ -12,12 +12,13 @@
     <p class="text-center">まだ曲が追加されていません。</p>
   </div>
 <% else %>
-  <div class="playlist-container" data-controller="global-player">
+  <div class="playlist-container">
     <%= render "playlists/playlist_contents",
                playlist: @playlist,
                playlist_items: @playlist_items %>
   </div>
 <% end %>
+
 
 <nav class="mobile-footer-menu">
   <!-- 再生（曲がない時はCSSで無効化するのでJSはそのまま） -->
