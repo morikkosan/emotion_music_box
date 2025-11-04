@@ -31,8 +31,13 @@
           <%= image_tag "profile_edit.webp", class: "dropdown-icon me-2", alt: "" %>
           プロフィール編集
         <% end %>
+        
+<%= render "shared/notification_toggle",      frame_id: "notification-toggle-desktop" %>
 
-  <%= render "shared/notification_toggle", frame_id: "notification-toggle-desktop" %>
+  <%= render "shared/notification_push_toggle", frame_id: "notification-push-toggle-desktop" %>
+
+
+
 
         <%= link_to new_contact_path, class: "dropdown-item d-flex align-items-center" do %>
           <%= image_tag "form_contact.webp", class: "dropdown-icon me-2", alt: "" %>

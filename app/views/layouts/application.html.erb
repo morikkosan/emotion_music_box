@@ -410,11 +410,14 @@
   </div>
 
   <div id="modal-container"></div>
+  <div id="notifications-modal-container"></div>
+
   <div id="playlist-modal-root" data-turbo-permanent>
     <%= render "emotion_logs/playlist_modal", playlist: Playlist.new, modal_id: "playlist-modal" %>
   </div>
   <div id="mobile-super-search-root" data-turbo-permanent>
     <%= render "emotion_logs/mobile_super_search" %>
+    
   </div>
 </body>
 </html>

@@ -1,7 +1,7 @@
 # app/controllers/notifications_controller.rb
 class NotificationsController < ApplicationController
   before_action :authenticate_user!
-  before_action :ensure_test_endpoints_allowed!, only: [ :test, :debug_emotion ]
+  before_action :ensure_test_endpoints_allowed!, only: [:test, :debug_emotion]
   before_action :set_notification, only: :read
 
   # =========================
@@ -17,7 +17,7 @@ class NotificationsController < ApplicationController
     # 2) 既読反映後の一覧を新着順で取得
     @notifications = current_user.notifications.order(created_at: :desc)
 
-    # ページング使うならここで：
+    # ページングを使うなら：
     # @notifications = @notifications.page(params[:page])
   end
 
@@ -50,7 +50,7 @@ class NotificationsController < ApplicationController
   end
 
   # =========================
-  # Pushトグル（デスクトップ向け既存UI）
+  # Pushトグル（デスクトップ向け）
   # =========================
   def enable
     current_user.update!(push_enabled: true)
@@ -103,26 +103,62 @@ class NotificationsController < ApplicationController
     head :ok
   end
 
+  # ==========================================================
+  # ★ 追加：通知モーダル（外枠をTurbo Streamで差し込み → 自動で開く）
+  #     /notifications/modal (GET, turbo_stream)
+  # ==========================================================
+  def modal
+    respond_to do |format|
+      format.turbo_stream
+    end
+  end
+
+  # ==========================================================
+  # ★ 追加：通知モーダルの1ページ分（10件／最新30件まで）
+  #     /notifications/modal_page?page=1..3
+  #   - 表示された10件のみ既読化
+  #   - Turbo Frame（notifications-modal-frame）へ読み込まれる
+  # ==========================================================
+  def modal_page
+    # 最新30件に制限
+    scope = current_user.notifications.order(created_at: :desc).limit(30)
+
+    # 1ページ10件（Kaminari想定）
+    @notifications = scope.page(params[:page]).per(10)
+
+    # 今回表示される10件のみ既読化（見たものだけ既読にするUX）
+    ids = @notifications.map(&:id)
+    if ids.present?
+      current_user.notifications.where(id: ids, read_at: nil).update_all(read_at: Time.current)
+    end
+
+    # 総数（30以内）
+    @total_count = scope.count
+  end
+
   private
 
-  # ====== ここから下は共通ヘルパ ======
+  # ====== 共通ヘルパ ======
   def set_notification
     @notification = current_user.notifications.find(params[:id])
   end
 
+  # Push ON/OFF 後に、デスクトップの Push トグル枠だけ更新
   def render_toggle
     respond_to do |format|
       format.turbo_stream do
         render turbo_stream: [
+          # 新：デスクトップ専用 Push トグル枠
+          turbo_stream.replace(
+            "notification-push-toggle-desktop",
+            partial: "shared/notification_push_toggle",
+            locals: { frame_id: "notification-push-toggle-desktop" }
+          ),
+          # 互換：旧IDが残っている環境向け（存在しなくてもOK）
           turbo_stream.replace(
             "notification-toggle-desktop",
-            partial: "shared/notification_toggle",
+            partial: "shared/notification_push_toggle",
             locals: { frame_id: "notification-toggle-desktop" }
-          ),
-          turbo_stream.replace(
-            "notification-toggle-mobile",
-            partial: "shared/notification_toggle",
-            locals: { frame_id: "notification-toggle-mobile" }
           )
         ]
       end
