@@ -1,0 +1,23 @@
+/* app/assets/stylesheets/notifications/_notif_menu_click_only.scss */
+
+/* ===== 通知は“クリックでモーダル”前提：ホバー開きを完全に殺す ===== */
+#notif-menu-wrapper:hover [data-menu],
+.user-dropdown-wrapper:hover [data-menu],
+.header-user:hover [data-menu],
+[data-menu]:hover {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* 念のため data-menu を常時無効化（残骸対策） */
+#notif-menu-wrapper [data-menu],
+.user-dropdown-wrapper [data-menu],
+.header-user [data-menu],
+[data-menu] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

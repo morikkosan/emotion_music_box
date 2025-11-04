@@ -1,5 +1,4 @@
 <%# app/views/shared/_notification_toggle.html.erb %>
-<%# frame_id が未提供でも落ちないようにフォールバックを用意 %>
 <% fid = local_assigns[:frame_id] || (defined?(mobile_device?) && mobile_device? ? "notification-toggle-mobile" : "notification-toggle-desktop") %>
 
 <turbo-frame id="<%= fid %>">
@@ -7,7 +6,9 @@
     class="dropdown-item d-flex align-items-center gap-2 position-relative"
     data-controller="notif-badge"
     data-notif-badge-endpoint-value="<%= unread_count_notifications_path(format: :json) %>"
-    data-notif-badge-poll-interval-value="30000">
+    data-notif-badge-poll-interval-value="30000"
+    data-notif-badge-modal-url-value="<%= modal_notifications_path(format: :turbo_stream) %>"
+    data-action="click->notif-badge#openModal"><!-- ← ラッパーにclick -->
 
     <%= image_tag "bell_on.webp",
           class: "dropdown-icon", alt: "",
@@ -18,6 +19,6 @@
 
     <%= link_to "通知（一覧）",
           modal_notifications_path(format: :turbo_stream),
-          class: "stretched-link text-decoration-none text-body" %>
+          class: "text-decoration-none text-body" %>
   </div>
 </turbo-frame>

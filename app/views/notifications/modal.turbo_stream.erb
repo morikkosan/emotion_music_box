@@ -1,5 +1,11 @@
 <%= turbo_stream.update "notifications-modal-container" do %>
-  <div id="notifications-modal" class="modal fade" tabindex="-1" aria-hidden="true">
+  <div id="notifications-modal"
+       class="modal fade"
+       tabindex="-1"
+       aria-hidden="true"
+       data-controller="notif-page"
+       data-notif-page-role-value="modal"
+       data-notif-page-modal-container-id-value="notifications-modal-container">
     <div class="modal-dialog modal-fullscreen-sm-down modal-lg">
       <div class="modal-content">
         <div class="modal-header">
@@ -13,19 +19,4 @@
       </div>
     </div>
   </div>
-
-  <script nonce="<%= content_security_policy_nonce %>">
-    (function () {
-      var el = document.getElementById('notifications-modal');
-      if (el && window.bootstrap) {
-        var modal = window.bootstrap.Modal.getOrCreateInstance(el, { backdrop: true, keyboard: true });
-        modal.show();
-        el.addEventListener('hidden.bs.modal', function() {
-          try { modal.dispose(); } catch(e) {}
-          var c = document.getElementById('notifications-modal-container');
-          if (c) c.innerHTML = '';
-        });
-      }
-    })();
-  </script>
 <% end %>

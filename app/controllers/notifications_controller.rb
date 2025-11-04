@@ -120,21 +120,23 @@ class NotificationsController < ApplicationController
   #   - Turbo Frame（notifications-modal-frame）へ読み込まれる
   # ==========================================================
   def modal_page
-    # 最新30件に制限
-    scope = current_user.notifications.order(created_at: :desc).limit(30)
+  # 最新30件に制限（Kaminari利用）
+  scope = current_user.notifications.order(created_at: :desc).limit(30)
+  @notifications = scope.page(params[:page]).per(10)
 
-    # 1ページ10件（Kaminari想定）
-    @notifications = scope.page(params[:page]).per(10)
-
-    # 今回表示される10件のみ既読化（見たものだけ既読にするUX）
-    ids = @notifications.map(&:id)
-    if ids.present?
-      current_user.notifications.where(id: ids, read_at: nil).update_all(read_at: Time.current)
-    end
-
-    # 総数（30以内）
-    @total_count = scope.count
+  # 今回表示される10件のみ既読化
+  ids = @notifications.map(&:id)
+  if ids.present?
+    current_user.notifications.where(id: ids, read_at: nil).update_all(read_at: Time.current)
   end
+
+  # 総数（30以内）
+  @total_count = scope.count
+
+  # ★ここが重要：レイアウトを使わない（必ずビュー内の turbo-frame を返す）
+  render :modal_page, layout: false
+end
+
 
   private
 
