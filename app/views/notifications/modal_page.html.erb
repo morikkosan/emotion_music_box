@@ -21,12 +21,7 @@
               <% if n.body.present? %>
                 <p class="mb-1 text-break"><%= n.body %></p>
               <% end %>
-
-              <% if n.url.present? %>
-                <%= link_to "開く", n.url,
-                      class: "small text-decoration-underline",
-                      data: { turbo: false } %>
-              <% end %>
+              <%# ※ 「開く」リンク関連の処理は削除 %>
             </div>
           </div>
         <% end %>
