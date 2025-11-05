@@ -1,23 +1,233 @@
-/* app/assets/stylesheets/notifications/_notif_menu_click_only.scss */
+/* app/assets/stylesheets/notifications_modal.scss */
 
-/* ===== 通知は“クリックでモーダル”前提：ホバー開きを完全に殺す ===== */
+/* ===== クリック専用。ホバー開閉を全殺し ===== */
 #notif-menu-wrapper:hover [data-menu],
 .user-dropdown-wrapper:hover [data-menu],
 .header-user:hover [data-menu],
-[data-menu]:hover {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-/* 念のため data-menu を常時無効化（残骸対策） */
+[data-menu]:hover { display:none!important; visibility:hidden!important; opacity:0!important; pointer-events:none!important; }
 #notif-menu-wrapper [data-menu],
 .user-dropdown-wrapper [data-menu],
 .header-user [data-menu],
-[data-menu] {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
+[data-menu] { display:none!important; visibility:hidden!important; opacity:0!important; pointer-events:none!important; }
+
+/* =================================================================
+ * Notifications Modal — AURORA FROST（ガラス×グラデ境界×微ノイズ）
+ *   - 白は“やや灰み”。境界線に青〜青紫の光彩
+ *   - ノイズで質感、外周にごく薄いブルーム
+ *   - スマホは sticky pagination + safe-area で欠け防止
+ * ================================================================= */
+
+#notifications-modal {
+  /* ---- トークン（このID配下だけで作用） ---- */
+  --nm-panel-0: #f7f8fb;             /* 面の基調（白すぎない灰み） */
+  --nm-panel-1: #eef1f8;
+  --nm-panel-2: #e9edf7;
+  --nm-ink: #11141a;
+  --nm-muted: #707789;
+  --nm-divider: rgba(16,19,26,.10);
+
+  /* “冷色”アクセント（マゼンタとは被らない） */
+  --nm-aurora-1: #5aa0ff;            /* 青 */
+  --nm-aurora-2: #7b6cff;            /* 青紫 */
+  --nm-aurora-3: #38c6ff;            /* シアン寄り */
+
+  --nm-border: color-mix(in srgb, #7e8aa7 40%, white 60%);
+  --nm-glow: rgba(90,160,255,.35);
+  --nm-shadow-1: rgba(10,14,30,.22);
+  --nm-shadow-2: rgba(10,14,30,.12);
+  --nm-backdrop: rgba(8,10,20,.66);
+
+  /* ---- backdrop を落ち着かせる ---- */
+  ~ .modal-backdrop,
+  + .modal-backdrop,
+  .modal-backdrop {
+    background-color: var(--nm-backdrop);
+    &.show { opacity:1; }
+  }
+
+  .modal-dialog {
+    margin: 3.2rem auto;
+    max-width: clamp(720px, 74vw, 980px);
+    @media (max-width: 576px) {
+      margin: 0;
+      max-width: 100%;
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  .modal-content {
+    /* ガラス：多層グラデ＋微ノイズ＋内側ハイライト */
+    background:
+      /* 微ノイズ（低コントラスト） */
+      radial-gradient(1px 1px at 25% 20%, rgba(0,0,0,.03) 0 1px, transparent 1px) 0 0/6px 6px,
+      linear-gradient(180deg, var(--nm-panel-0) 0%, var(--nm-panel-1) 52%, var(--nm-panel-2) 100%);
+    color: var(--nm-ink);
+    border-radius: 22px;
+    border: 1px solid var(--nm-border);
+    box-shadow:
+      0 28px 64px var(--nm-shadow-1),
+      0 10px 24px var(--nm-shadow-2),
+      inset 0 1px 0 rgba(255,255,255,.55),
+      0 0 0 1px rgba(255,255,255,.25); /* 薄い外周 */
+    overflow: clip;
+    backdrop-filter: saturate(115%) blur(6px);
+    -webkit-backdrop-filter: saturate(115%) blur(6px);
+
+    /* 外縁グラデ枠（青→青紫→シアン） */
+    position: relative;
+    &::before {
+      content:"";
+      position:absolute; inset:-1px;
+      border-radius: 23px;
+      pointer-events:none;
+      background: linear-gradient(135deg, var(--nm-aurora-1), var(--nm-aurora-2) 48%, var(--nm-aurora-3));
+      opacity:.25;
+      mask: radial-gradient(closest-side, transparent 85%, black 100%);
+    }
+
+    @media (max-width:576px){ border-radius:18px 18px 0 0; }
+  }
+
+  .modal-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--nm-divider);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--nm-panel-0) 92%, var(--nm-aurora-1) 8%), var(--nm-panel-1));
+    /* タイトル行に細い“光”を通す */
+    position: relative;
+    &::after{
+      content:"";
+      position:absolute; left:12px; right:12px; bottom:-1px; height:1px;
+      background: linear-gradient(90deg, transparent, var(--nm-aurora-2), transparent);
+      opacity:.35;
+    }
+    .modal-title{
+      font-weight:800; letter-spacing:.01em; color:var(--nm-ink);
+      text-shadow: 0 1px 0 rgba(255,255,255,.35);
+    }
+    .btn-close{
+      --bs-btn-close-opacity:.7; --bs-btn-close-hover-opacity:1;
+      border-radius:10px; transition:background-color .15s ease, transform .08s ease;
+      &:hover{ background: color-mix(in srgb, var(--nm-aurora-2) 14%, white 86%); }
+      &:active{ transform:scale(.96); }
+    }
+  }
+
+  /* ---- 本文（宣言→ネストの順：mixed-decls回避） ---- */
+  .modal-body{
+    background: transparent;
+    padding: 0;
+    max-height: min(72vh, calc(100dvh - 152px));
+    overflow: auto;
+    /* スクロールUI */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(120,128,160,.32) transparent;
+    &::-webkit-scrollbar{ width:10px; height:10px; }
+    &::-webkit-scrollbar-thumb{
+      background: rgba(120,128,160,.32);
+      border-radius:10px; border:2px solid transparent; background-clip:padding-box;
+    }
+    @media (max-width:576px){ max-height: calc(100dvh - 138px); }
+  }
+
+  /* ---- 通知アイテム：カード感＋オーロラの“縁光” ---- */
+  .list-group .list-group-item{
+    background: transparent; border:0; padding:14px 16px;
+    border-radius:14px;
+    transition: background-color .18s ease, box-shadow .18s ease, transform .08s ease, outline-color .18s ease;
+
+    /* 通常 */
+    outline: 1px solid transparent;
+
+    /* hover で淡い縁光 */
+    &:hover{
+      background: linear-gradient(180deg,
+        color-mix(in srgb, var(--nm-panel-0) 92%, var(--nm-aurora-1) 8%),
+        var(--nm-panel-2));
+      box-shadow:
+        0 6px 18px var(--nm-shadow-2),
+        inset 0 1px 0 rgba(255,255,255,.55);
+      outline-color: color-mix(in srgb, var(--nm-aurora-2) 30%, transparent 70%);
+    }
+    &:active{ transform: translateY(1px); }
+
+    strong{ color:var(--nm-ink); font-weight:800; }
+    small{ color:var(--nm-muted); }
+    p{ color:var(--nm-ink); }
+
+    .notif-dot-placeholder{
+      width:10px; height:10px; border-radius:999px; flex:0 0 auto;
+      background: radial-gradient(circle at 30% 30%, var(--nm-aurora-2) 0%,
+        color-mix(in srgb, var(--nm-aurora-2) 55%, white 45%) 60%, transparent 61%);
+      box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--nm-aurora-2) 22%, transparent 78%),
+        0 0 18px var(--nm-glow);
+    }
+
+    a{
+      color: color-mix(in srgb, var(--nm-aurora-1) 78%, #0a0d14 22%);
+      text-decoration:none; border-bottom:1px solid transparent;
+      background-image: linear-gradient(0deg, var(--nm-aurora-1) 0 0);
+      background-size:0% 1px; background-repeat:no-repeat; background-position:0 100%;
+      transition: color .15s ease, background-size .15s ease;
+      &:hover{ color: color-mix(in srgb, var(--nm-aurora-1) 88%, black 12%); background-size: 100% 1px; }
+    }
+  }
+
+  .border-top{ border-top:1px solid var(--nm-divider)!important; }
+
+  /* ---- ページネーション：ガラスPillを“浮かせて”sticky ---- */
+  .notif-pagination-bar{
+    position: sticky; bottom: 0; z-index: 2;
+    padding: 10px 12px;
+    background:
+      linear-gradient(180deg, rgba(247,248,252,.78), rgba(236,240,248,.84));
+    backdrop-filter: blur(8px) saturate(115%);
+    -webkit-backdrop-filter: blur(8px) saturate(115%);
+    border-top: 1px solid var(--nm-divider);
+    box-shadow: 0 -12px 28px rgba(10,14,30,.10);
+    /* iOS 安全域 */
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .pagination{
+    gap: 8px; overflow-x: auto; overflow-y:hidden; white-space: nowrap; -webkit-overflow-scrolling: touch;
+
+    .page-item .page-link{
+      color: var(--nm-ink);
+      background: linear-gradient(180deg, var(--nm-panel-0), var(--nm-panel-1));
+      border: 1px solid var(--nm-divider);
+      border-radius: 999px;
+      min-width: 36px; padding: 8px 12px; line-height:1.1;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.55);
+      transition: background-color .15s ease, box-shadow .15s ease, color .15s ease, transform .08s ease;
+      &:hover{
+        background: linear-gradient(180deg,
+          color-mix(in srgb, var(--nm-panel-0) 88%, var(--nm-aurora-1) 12%),
+          var(--nm-panel-2));
+        box-shadow: 0 6px 14px var(--nm-shadow-2), inset 0 1px 0 rgba(255,255,255,.55);
+      }
+      &:active{ transform: translateY(1px); }
+    }
+    .page-item.active .page-link{
+      color: color-mix(in srgb, var(--nm-aurora-2) 85%, black 15%);
+      border-color: color-mix(in srgb, var(--nm-aurora-2) 46%, var(--nm-divider) 54%);
+      box-shadow: 0 8px 18px var(--nm-shadow-2), inset 0 1px 0 rgba(255,255,255,.55);
+      font-weight:800;
+    }
+    .page-item.disabled .page-link{ color:var(--nm-muted); opacity:.6; pointer-events:none; }
+  }
+}
+
+/* ---- ダークモード（同コンセプトで反転） ---- */
+@media (prefers-color-scheme: dark){
+  #notifications-modal{
+    --nm-panel-0:#171a22; --nm-panel-1:#1b2030; --nm-panel-2:#1f2536;
+    --nm-ink:#e9edf7; --nm-muted:#a0a7b8; --nm-divider:rgba(233,237,247,.08);
+    --nm-border: rgba(190,200,220,.20);
+    --nm-glow: rgba(90,160,255,.45);
+    --nm-shadow-1: rgba(0,0,0,.55); --nm-shadow-2: rgba(0,0,0,.35);
+    --nm-backdrop: rgba(8,10,16,.78);
+  }
 }

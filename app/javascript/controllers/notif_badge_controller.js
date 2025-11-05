@@ -264,8 +264,9 @@ export default class extends Controller {
             const cs = getComputedStyle(n)
             const zi = parseInt(cs.zIndex, 10)
             if (!Number.isNaN(zi) && zi >= limit && (cs.position === "fixed" || cs.position === "sticky" || cs.position === "absolute")) {
-              if (!n.dataset._notifDemoted) {
-                n.dataset._notifDemoted = cs.zIndex
+              if (!n.hasAttribute("data-notif-demoted")) {
+                // ★修正：dataset ではなく attribute でマーキング
+                n.setAttribute("data-notif-demoted", cs.zIndex || "")
                 n.style.zIndex = String(limit - 1)
               }
             }
@@ -279,10 +280,12 @@ export default class extends Controller {
         try { modalEl.remove() } catch {}
         try { container.innerHTML = "" } catch {}
         try {
-          document.querySelectorAll("[data-_notif-demoted]").forEach(n => {
-            const old = n.dataset._notifDemoted
-            delete n.dataset._notifDemoted
-            if (old) n.style.zIndex = old; else n.style.removeProperty("z-index")
+          // ★修正：正しい属性名で復元
+          document.querySelectorAll("[data-notif-demoted]").forEach(n => {
+            const old = n.getAttribute("data-notif-demoted")
+            n.removeAttribute("data-notif-demoted")
+            if (old) n.style.zIndex = old
+            else n.style.removeProperty("z-index")
           })
         } catch {}
       }, { once: true })
