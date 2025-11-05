@@ -10,7 +10,7 @@ Rails.application.configure do
     policy.font_src  :self, :https, "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"
     policy.style_src :self, :https, "https://fonts.googleapis.com", :unsafe_inline
 
-    # ★ 画像は sndcdn 全域も許可（ジャケット類で別ホストに出る）
+    # 画像（SoundCloud系含む）
     policy.img_src   :self, :https,
                      "https://res.cloudinary.com", :data,
                      "https://cf-media.sndcdn.com", "https://i1.sndcdn.com",
@@ -18,16 +18,20 @@ Rails.application.configure do
 
     policy.object_src :none
 
-    # ★ SoundCloud API/Player/CDN へ fetch できるように拡張
+    # ★ ここを追加（今回の肝）：unsafe-inlineは付けない＝厳格
+    policy.script_src :self, :https
+    policy.script_src :self, :https, :unsafe_eval if Rails.env.development?
+
+    # SoundCloud API/Player/CDN
     policy.connect_src :self, :https,
                        "https://api.soundcloud.com",
                        "https://api-v2.soundcloud.com",
                        "https://w.soundcloud.com",
-                        "https://cf-hls-media.sndcdn.com",
-                        "https://hls-media.sndcdn.com",
+                       "https://cf-hls-media.sndcdn.com",
+                       "https://hls-media.sndcdn.com",
                        "https://sndcdn.com", "https://*.sndcdn.com"
 
-    # ★ <audio> で音声を読めるように（HLS/MP3は *.sndcdn.com から来る）
+    # <audio> 読み込み許可
     policy.media_src :self, :https,
                       "https://sndcdn.com", "https://*.sndcdn.com", :data, :blob
 

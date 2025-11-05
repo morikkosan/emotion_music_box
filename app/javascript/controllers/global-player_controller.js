@@ -47,9 +47,9 @@ export default class extends Controller {
       return u.toString();
     } catch(_) { return raw; }
   }
-_log(/* ...args */) { /* no-op */ }
-// もしくはデバッグスイッチに連動させたい場合
-// _log(...args){ if (!this._debugEnabled()) return; try{ console.info("[global-player]", ...args);}catch(_){} }
+  _log(/* ...args */) { /* no-op */ }
+  // もしくはデバッグスイッチに連動させたい場合
+  // _log(...args){ if (!this._debugEnabled()) return; try{ console.info("[global-player]", ...args);}catch(_){} }
   // ★追加: 統一ポップアップ（Swalがあればそれを使う）
   _notify({icon="info", title="", text=""} = {}) {
     // 連打防止（800ms）
@@ -590,6 +590,11 @@ _log(/* ...args */) { /* no-op */ }
     this._removeIOSVolumeHint();
   };
 
+  // ★ 追加：ログイン時のみプレーヤーを表示
+  _showBottomPlayerIfLoggedIn() {
+    if (this._isLoggedIn()) this.bottomPlayer?.classList.remove("d-none");
+  }
+
   // ★ プレイヤーだけ安全に止める（UIイベントは残す）
   stopOnlyPlayer() {
     try {
@@ -744,6 +749,12 @@ _log(/* ...args */) { /* no-op */ }
       this._showVolumeBar();
     }
 
+    // ★ 未ログイン時はプレーヤーを一切表示しない（安全ガード）
+    if (!this._isLoggedIn()) {
+      this.bottomPlayer?.classList.add("d-none");
+      try { this._setIframeVisibility(false); } catch(_) {}
+    }
+
     if (window.SC?.Widget) this.restorePlayerState();
     else window.addEventListener("load", () => this.restorePlayerState?.());
   }
@@ -821,7 +832,7 @@ _log(/* ...args */) { /* no-op */ }
   async _resumeAudioFromState(state) {
     const url = this._extractOriginalPlayUrl(state.trackUrl) || state.trackUrl;
     if (!url) return;
-    this.bottomPlayer?.classList.remove("d-none");
+    this._showBottomPlayerIfLoggedIn();
     this.resetPlayerUI();
     await this._playViaApi(url, { resumeMs: state.position || 0, autoStart: state.isPlaying }).catch(()=>{
       window.__forceWidgetOnly = true;
@@ -834,10 +845,13 @@ _log(/* ...args */) { /* no-op */ }
   }
 
   restorePlayerState() {
+    // ★ 未ログイン時は一切復元しない（=表示もしない）
+    if (!this._isLoggedIn()) return;
+
     const saved = localStorage.getItem("playerState"); if (!saved) return;
     const state = JSON.parse(saved); if (!state.trackUrl) return;
     this.currentTrackId = state.trackId || null;
-    this.bottomPlayer?.classList.remove("d-none");
+    this._showBottomPlayerIfLoggedIn();
 
     if (state.apiMode && this._shouldUseApi()) {
       this._resumeAudioFromState(state).catch(() => this._fallbackToWidgetFromAudio());
@@ -917,7 +931,7 @@ _log(/* ...args */) { /* no-op */ }
   // ---------- 外部 URL 再生 ----------
   async playFromExternal(playUrl) {
     if (this._requireLogin()) return;
-    this.bottomPlayer?.classList.remove("d-none"); this.bottomPlayer?.offsetHeight;
+    this._showBottomPlayerIfLoggedIn(); this.bottomPlayer?.offsetHeight;
     if (this.widget) { this.unbindWidgetEvents(); clearInterval(this.progressInterval); this.widget = null; }
 
     if (this._shouldUseApi()) {
@@ -986,7 +1000,7 @@ _log(/* ...args */) { /* no-op */ }
     if (!trackUrl) return;
 
     this.resetPlayerUI();
-    this.bottomPlayer?.classList.remove("d-none");
+    this._showBottomPlayerIfLoggedIn();
     this.currentTrackId = newTrackId || null;
 
     this.stopOnlyPlayer();

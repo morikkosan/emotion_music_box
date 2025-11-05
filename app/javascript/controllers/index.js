@@ -24,6 +24,7 @@ import FlashThenRedirectController from "./flash_then_redirect_controller";
 import TapGuardController from "./tap_guard_controller"; // 追加
 import SelectionCounterController from "./selection_counter_controller"; // 追加
 import NotifBadgeController from "./notif_badge_controller"; // 追加
+import NotifPageController from "./notif_page_controller"; // 追加
 
 const application = Application.start();
 
@@ -51,3 +52,4 @@ application.register("flash-then-redirect", FlashThenRedirectController);
 application.register("tap-guard", TapGuardController);
 application.register("selection-counter", SelectionCounterController);
 application.register("notif-badge", NotifBadgeController);
+application.register("notif-page", NotifPageController);

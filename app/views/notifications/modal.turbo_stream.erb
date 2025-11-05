@@ -1,0 +1,25 @@
+<%= turbo_stream.update "notifications-modal-container" do %>
+  <div id="notifications-modal"
+       class="modal fade"
+       tabindex="-1"
+       aria-hidden="true"
+       data-bs-backdrop="true"
+       data-bs-keyboard="true"
+       data-bs-focus="false"
+       data-controller="notif-page"
+       data-notif-page-role-value="modal"
+       data-notif-page-modal-container-id-value="notifications-modal-container">
+    <div class="modal-dialog modal-fullscreen-sm-down modal-lg" tabindex="-1">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title m-0">通知</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+        </div>
+        <div class="modal-body p-0">
+          <%= turbo_frame_tag "notifications-modal-frame",
+                src: modal_page_notifications_path(page: (params[:page] || 1)) %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

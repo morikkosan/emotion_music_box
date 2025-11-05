@@ -16,6 +16,7 @@
 @use "swal_flash_craft";
 @use "music_player";
 @use "notifications";
+@use "notifications_modal";
 
 // 🔴 外部テーマCSS（Bootswatch等）は読み込まない（競合防止）
 // @import url("...bootswatch...");  ← 使わない

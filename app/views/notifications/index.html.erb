@@ -1,7 +1,10 @@
 <!-- app/views/notifications/index.html.erb -->
 <% provide :title, "通知 | Emotion Music Box（エモム）" %>
 
-<div class="container my-4">
+<div class="container my-4"
+     data-controller="notif-page"
+     data-notif-page-role-value="index"
+     data-notif-page-just-marked-value="<%= @just_marked_all_read ? 'true' : 'false' %>">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h4 m-0">通知</h1>
     <span class="text-muted small">※ このページを開くと未読は自動で既読になります</span>
@@ -28,7 +31,10 @@
             <% end %>
 
             <% if n.url.present? %>
-              <%= link_to "開く", n.url, class: "small text-decoration-underline", data: { turbo: false } %>
+              <%= link_to "開く", n.url,
+                    class: "small text-decoration-underline",
+                    rel: "noopener noreferrer",
+                    data: { turbo: false } %>
             <% end %>
           </div>
         </div>
@@ -36,10 +42,3 @@
     </div>
   <% end %>
 </div>
-
-<%# 一覧を開いたら既読 → バッジを即時ゼロにする %>
-<% if @just_marked_all_read %>
-  <script nonce="<%= content_security_policy_nonce %>">
-    window.dispatchEvent(new Event("notifications:refresh-badge"));
-  </script>
-<% end %>
