@@ -118,7 +118,7 @@
   .modal-body{
     background: transparent;
     padding: 0;
-    max-height: min(72vh, calc(100dvh - 152px));
+    max-height: min(72vh, calc(100dvh - 152px)); /* ← ここが原因＆修正ポイント */
     overflow: auto;
     /* スクロールUI */
     scrollbar-width: thin;
