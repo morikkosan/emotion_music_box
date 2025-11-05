@@ -2,23 +2,31 @@
 <% fid = local_assigns[:frame_id] || (defined?(mobile_device?) && mobile_device? ? "notification-toggle-mobile" : "notification-toggle-desktop") %>
 
 <turbo-frame id="<%= fid %>">
-  <div
-    class="dropdown-item d-flex align-items-center gap-2 position-relative"
-    data-controller="notif-badge"
-    data-notif-badge-endpoint-value="<%= unread_count_notifications_path(format: :json) %>"
-    data-notif-badge-poll-interval-value="30000"
-    data-notif-badge-modal-url-value="<%= modal_notifications_path(format: :turbo_stream) %>"
-    data-action="click->notif-badge#openModal"><!-- ← ラッパーにclick -->
+  <div class="dropdown-item d-flex align-items-center gap-2 position-relative">
+    <!-- ★クリック専用トリガ（ボタン） -->
+    <button
+      id="notif-button"
+      type="button"
+      class="d-flex align-items-center gap-2 w-100 text-start bg-transparent border-0 p-0"
+      data-controller="notif-badge"
+      data-notif-badge-endpoint-value="<%= unread_count_notifications_path(format: :json) %>"
+      data-notif-badge-poll-interval-value="30000"
+      data-notif-badge-modal-url-value="<%= modal_notifications_path(format: :turbo_stream) %>"
+      data-notif-badge-modal-container-id-value="notifications-modal-container"
+      aria-haspopup="dialog"
+      aria-controls="notifications-modal"
+      aria-label="通知モーダルを開く">
 
-    <%= image_tag "bell_on.webp",
-          class: "dropdown-icon", alt: "",
-          loading: "lazy", decoding: "async",
-          width: 24, height: 24 %>
+      <%= image_tag "bell_on.webp",
+            class: "dropdown-icon", alt: "",
+            loading: "lazy", decoding: "async",
+            width: 24, height: 24 %>
 
-    <span class="notif-count-badge" data-notif-badge-target="badge" aria-live="polite" hidden>0</span>
-
-    <%= link_to "通知（一覧）",
-          modal_notifications_path(format: :turbo_stream),
-          class: "text-decoration-none text-body" %>
+      <span class="notif-count-badge" data-notif-badge-target="badge" aria-live="polite" hidden>0</span>
+      <span class="text-body text-decoration-none">通知（一覧）</span>
+    </button>
   </div>
 </turbo-frame>
+
+<!-- ★Turbo Stream の受け皿（どこか1箇所で用意）-->
+<div id="notifications-modal-container"></div>
