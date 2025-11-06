@@ -2,18 +2,25 @@
 require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
-  # --- 本番環境でもコード／ビューを自動リロードする設定 ---
-  # デプロイ本番の時は false / 開発では true
+  # --- 本番設定 ---
+  # 本番はコードをキャッシュし、オートリロードは無効
   config.cache_classes = true
   config.reload_classes_only_on_change = true
   config.file_watcher = ActiveSupport::EventedFileUpdateChecker
 
-  # アセット
-  config.assets.css_compressor = :sass               # CSSを圧縮
-  config.assets.compile = true                       # プリコンパイルしたファイルだけ使う（※運用に応じて調整）
-  config.assets.digest = true                        # キャッシュ防止のためファイル名にハッシュ
+  # ===== アセット =====
+  # cssbundling-rails(dart-sass)で事前ビルドするため、Sprockets 側のCSS圧縮は無効化
+  config.assets.css_compressor = nil
+
+  # 本番はランタイムコンパイルを避ける（プリコンパイル済みのみ配信）
+  config.assets.compile = false
+
+  # 指紋付き
+  config.assets.digest = true
   config.assets.debug = false
   config.assets.quiet = true
+
+  # builds をSprocketsの探索パスに追加（esbuild/sassの出力を拾う）
   config.assets.paths << Rails.root.join("app", "assets", "builds")
 
   # 指紋付きアセットを強キャッシュ（壊れません）
@@ -46,7 +53,6 @@ Rails.application.configure do
   # ルーティング/URL 既定
   config.action_mailer.default_url_options = { host: "moriappli-emotion.com", protocol: "https" }
   Rails.application.routes.default_url_options = { host: "moriappli-emotion.com", protocol: "https" }
-  # メール内で画像等の絶対URLが必要なら（任意）
   config.action_mailer.asset_host = "https://moriappli-emotion.com"
 
   # OmniAuth のフルホストも統一
@@ -57,7 +63,7 @@ Rails.application.configure do
   # config.lograge.formatter = Lograge::Formatters::Json.new
   # config.lograge.custom_options = lambda { |event| { time: Time.now } }
 
-  # デプロイ本番の時は false / 開発では true
+  # ローディング/イager load
   config.enable_reloading = false
   config.eager_load = true
 
@@ -67,25 +73,10 @@ Rails.application.configure do
   config.active_support.disallowed_deprecation = :raise
   config.active_support.disallowed_deprecation_warnings = []
 
-  # ====== ここから【メール送信（Resend 固定）】 ======
-
-  # 実際に送信する
+  # ====== メール（Resend） ======
   config.action_mailer.perform_deliveries = true
-
-  # 不達時に例外を出す（初期導入時は true 推奨）
   config.action_mailer.raise_delivery_errors = true
-
-  # キャッシュは不要
   config.action_mailer.perform_caching = false
-
-  # ★ Resend を配送方法に指定（SMTPは使いません）
   config.action_mailer.delivery_method = :resend
-
-  # ✅ From は ApplicationMailer に集約するので、ここでの default_options[:from] 指定は不要
-  # （二重管理を避けるためコメントアウト or 削除）
-  # config.action_mailer.default_options = {
-  #   from: ENV.fetch("RESEND_FROM", "onboarding@resend.dev")
-  # }
-
-  # ====== メール設定 ここまで ======
+  # Fromは ApplicationMailer で集約
 end

@@ -4,7 +4,7 @@ ARG RUBY_VERSION=3.2.3
 FROM ruby:${RUBY_VERSION}-bookworm AS base
 WORKDIR /rails
 
-# Install base packages + Chrome + Chromedriver
+# Base packages + Chrome + Chromedriver（現状維持）
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
     curl \
@@ -18,7 +18,6 @@ RUN apt-get update -qq && \
     wget \
     fonts-ipafont-gothic \
     fonts-ipafont-mincho \
-    # 以下「公式Google Chrome」を追加
     && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - \
     && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list' \
     && apt-get update -qq \
@@ -27,90 +26,119 @@ RUN apt-get update -qq && \
     && update-ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Set environment variables
+# 共通ENV（本番向けに最適化されているが開発でも動く）
 ENV RAILS_ENV="production" \
     NODE_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development test" \
-    SSL_CERT_FILE="/etc/ssl/certs/ca-certificates.crt"\
+    SSL_CERT_FILE="/etc/ssl/certs/ca-certificates.crt" \
     RAILS_SERVE_STATIC_FILES="true"
 
+# =========================
+# Build ステージ
+# =========================
 FROM base AS build
 
-# Install build tools & JS dependencies
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git libpq-dev node-gyp pkg-config python-is-python3 && \
+    apt-get install --no-install-recommends -y \
+      build-essential \
+      git \
+      libpq-dev \
+      node-gyp \
+      pkg-config \
+      python-is-python3 && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Node.js and Yarn
+# Node & Yarn（公式バイナリ）
 ARG NODE_VERSION=20.18.0
 ARG YARN_VERSION=1.22.22
-ENV PATH=/usr/local/node/bin:$PATH
-RUN curl -sL https://github.com/nodenv/node-build/archive/master.tar.gz | tar xz -C /tmp/ && \
-    /tmp/node-build-master/bin/node-build "${NODE_VERSION}" /usr/local/node && \
-    npm install -g yarn@$YARN_VERSION && \
-    rm -rf /tmp/node-build-master && \
-    yarn global add esbuild nodemon
+RUN set -eux; \
+  arch="$(dpkg --print-architecture)"; \
+  case "$arch" in \
+    amd64) node_arch="linux-x64" ;; \
+    arm64) node_arch="linux-arm64" ;; \
+    *) echo "Unsupported arch: $arch" >&2; exit 1 ;; \
+  esac; \
+  url="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-${node_arch}.tar.xz"; \
+  tmp="/tmp/node.tar.xz"; \
+  for i in 1 2 3; do \
+    curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors "$url" -o "$tmp" && break; \
+    echo "retry $i ..."; sleep 2; \
+  done; \
+  mkdir -p /usr/local/node; \
+  tar -xJf "$tmp" -C /usr/local/node --strip-components=1; \
+  rm -f "$tmp"; \
+  ln -sf /usr/local/node/bin/node /usr/local/bin/node; \
+  ln -sf /usr/local/node/bin/npm  /usr/local/bin/npm; \
+  ln -sf /usr/local/node/bin/npx  /usr/local/bin/npx; \
+  npm install -g "yarn@${YARN_VERSION}"; \
+  ln -sf /usr/local/node/bin/yarn    /usr/local/bin/yarn; \
+  ln -sf /usr/local/node/bin/yarnpkg /usr/local/bin/yarnpkg; \
+  /usr/local/node/bin/yarn global add esbuild nodemon
 
-ENV PATH="/rails/node_modules/.bin:$PATH"
+ENV PATH="/usr/local/node/bin:/rails/node_modules/.bin:${PATH}"
 
-# Install JS & Ruby dependencies
+# パッケージ
 COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile
+RUN yarn install --frozen-lockfile --production=false
 RUN chown -R 1000:1000 /rails/node_modules
+
+# Ruby gems
 COPY Gemfile Gemfile.lock ./
 RUN bundle config set --local without 'development test' && bundle install
 
-# Copy application code and precompile assets
+# アプリ全体
 COPY . .
-RUN rm -rf tmp/cache && SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
+# ビルド順序：JS/CSS → precompile
+RUN yarn run build:js && yarn run build:css
+RUN rm -rf tmp/cache && SECRET_KEY_BASE=dummy ./bin/rails assets:precompile
+
+# ★ 開発の即時反映のため node_modules は残す
+# （本番運用的には削除でもよいが、開発利便性優先で keep）
+# RUN rm -rf node_modules
+
+# =========================
+# Runtime ステージ
+# =========================
 FROM base
 
-# Install Node.js (for Yarn)
-ARG NODE_VERSION=20.18.0
-RUN curl -sL https://github.com/nodenv/node-build/archive/master.tar.gz | tar xz -C /tmp/ && \
-    /tmp/node-build-master/bin/node-build "${NODE_VERSION}" /usr/local/node && \
-    rm -rf /tmp/node-build-master
-
-ENV PATH="/usr/local/node/bin:$PATH"
-
-# Install Yarn
-RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
-    echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list && \
-    apt-get update -qq && apt-get install --no-install-recommends -y yarn && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN yarn global add esbuild
-
-# Copy built artifacts
+# build 成果物（アプリ & gems）
 COPY --from=build /usr/local/bundle /usr/local/bundle
 COPY --from=build /rails /rails
 
-# Set up SSL certificates
+# ★ ランタイムにも Node/Yarn をコピー（開発で yarn build を動かせるように）
+COPY --from=build /usr/local/node /usr/local/node
+RUN ln -sf /usr/local/node/bin/node    /usr/local/bin/node && \
+    ln -sf /usr/local/node/bin/npm     /usr/local/bin/npm && \
+    ln -sf /usr/local/node/bin/npx     /usr/local/bin/npx && \
+    ln -sf /usr/local/node/bin/yarn    /usr/local/bin/yarn && \
+    ln -sf /usr/local/node/bin/yarnpkg /usr/local/bin/yarnpkg
+ENV PATH="/usr/local/node/bin:${PATH}"
+
+# ★ node_modules もランタイムへ
+COPY --from=build /rails/node_modules /rails/node_modules
+
+# （ローカル開発用）自己署名証明書を使う場合は保持
 RUN mkdir -p /etc/ssl/certs /etc/ssl/private
 COPY docker/certs/moriappli-emotion.com.pem     /etc/ssl/certs/
 COPY docker/certs/moriappli-emotion.com-key.pem /etc/ssl/private/
-
-# ── 追加: SSL 証明書ディレクトリとファイル権限設定 ──
 RUN chmod 755 /etc/ssl/private \
-&& chmod 644 /etc/ssl/certs/moriappli-emotion.com.pem \
-&& chmod 600 /etc/ssl/private/moriappli-emotion.com-key.pem
+ && chmod 644 /etc/ssl/certs/moriappli-emotion.com.pem \
+ && chmod 600 /etc/ssl/private/moriappli-emotion.com-key.pem
 
-# ── 追加: mkcert rootCAをシステムのCAストアに追加 ──
-COPY docker/certs/rootCA.pem /usr/local/share/ca-certificates/rootCA.crt
-RUN update-ca-certificates
-
-# Verify
-RUN ls -l /etc/ssl/certs/ && ls -l /etc/ssl/private/
-
-# Setup non-root user
+# 権限
 RUN groupadd --system --gid 1000 rails && \
     useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash && \
-    chown -R rails:rails /usr/local/bundle db log storage tmp
+    chown -R rails:rails /usr/local/bundle db log storage tmp config
 
 USER 1000:1000
+
+# ★ ここがポイント：USE_SSL=1 なら HTTPS(443)、それ以外は HTTP($PORT)
+#   - ローカル docker-compose では USE_SSL=1 を渡す → 443 で自己署名HTTPS
+#   - Render では USE_SSL=0 を渡す → $PORT で HTTP（TLSはRender側で終端）
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
-EXPOSE 3002
-CMD ["bash", "-c", "bundle exec rails db:prepare && ./bin/rails server -b 'ssl://0.0.0.0:3002?key=/etc/ssl/private/moriappli-emotion.com-key.pem&cert=/etc/ssl/certs/moriappli-emotion.com.pem'"]
+EXPOSE 443
+EXPOSE 3000
+CMD ["bash", "-lc", "bundle exec rails db:prepare && if [ \"${USE_SSL:-1}\" = \"1\" ]; then ./bin/rails server -b 'ssl://0.0.0.0:443?key=/etc/ssl/private/moriappli-emotion.com-key.pem&cert=/etc/ssl/certs/moriappli-emotion.com.pem'; else ./bin/rails server -b 0.0.0.0 -p ${PORT:-3000}; fi"]

@@ -450,3 +450,12 @@ body.no-player #hidden-sc-player.sc-keepalive {
   pointer-events: auto !important;
   z-index: 2147483647 !important; /* 最前面へ */
 }
+
+
+
+
+
+/* ==== HOTFIX: notifications modal height ==== */
+#notifications-modal .modal-body {
+  max-height: min(72vh, calc(100dvh - 152px)) !important;
+}

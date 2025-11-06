@@ -27,13 +27,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: >
-      bash -c "
-      rm -f tmp/pids/server.pid;
-      bundle exec rails db:prepare;
-      mkdir -p /etc/ssl/private;
-      chmod 700 /etc/ssl/private;
-      ./bin/rails server -b 'ssl://0.0.0.0:443?key=/etc/ssl/private/moriappli-emotion.com-key.pem&cert=/etc/ssl/certs/moriappli-emotion.com.pem'"
+    # ★ もう command は書かない（Dockerfile の CMD が分岐してくれる）
     tty: true
     stdin_open: true
     volumes:
@@ -44,6 +38,7 @@ services:
       - ./docker/certs/moriappli-emotion.com-key.pem:/etc/ssl/private/moriappli-emotion.com-key.pem:ro
     environment:
       - TZ=Asia/Tokyo
+      - USE_SSL=1                      # ★ 開発はHTTPSで動かす
       - SESSION_SECRET=${SESSION_SECRET}
       - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
       - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
@@ -53,10 +48,11 @@ services:
       - APP_DATABASE_PASSWORD=password
       - SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
       - RAILS_ENV=${RAILS_ENV}
+      - DATABASE_URL=postgres://postgres:password@db:5432/app_development
     env_file:
       - .env.development
     ports:
-      - "443:443"
+      - "443:443"   # ★ ローカルは 443 を公開（自己署名HTTPS）
     depends_on:
       db:
         condition: service_healthy
