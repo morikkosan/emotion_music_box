@@ -3,7 +3,7 @@ body {
   font-family: 'Poppins', sans-serif;
   color: #585656;
   background-color: rgba(0, 0, 0, 0.5); /* 半透明の黒 */
-  background-image: url('/assets/daishizen.webp'); /* 背景画像 */
+  background-image: var(--bg-daishizen-url);
   background-size: cover;              /* ← 画面いっぱいに広げる */
   background-repeat: no-repeat;        /* 繰り返さない */
   background-position: center center;  /* 中央に配置 */
