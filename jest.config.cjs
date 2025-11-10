@@ -19,6 +19,8 @@ module.exports = {
     "^@rails/ujs$": "<rootDir>/spec/javascripts/stubs/railsUjsStub.js",
     "^bootstrap$": "<rootDir>/spec/javascripts/stubs/bootstrapStub.js",
     "^@hotwired/stimulus$": "<rootDir>/spec/javascripts/stubs/stimulusStub.js",
+    "^custom/render_logger$": "<rootDir>/spec/javascripts/stubs/emptyModule.js",
+
 
     "^controllers/(.*)$": "<rootDir>/app/javascript/controllers/$1",
     "^custom/(.*)$": "<rootDir>/app/javascript/custom/$1",
@@ -29,6 +31,7 @@ module.exports = {
     "!app/javascript/**/index.js",
     "!app/javascript/**/push_notifications.js",
     "!app/javascript/**/push_notifications.mjs",
+    "!app/javascript/custom/render_logger.js"
   ],
 
   // yarn test:coverage が --coverage を付けてくれるのでここは任意
