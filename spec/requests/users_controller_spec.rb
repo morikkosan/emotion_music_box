@@ -15,7 +15,6 @@ RSpec.describe "Users", type: :request do
 
       expect(response).to have_http_status(:found)
       expect(response).to redirect_to(root_path)
-      # NOTE: request spec 直後に flash を読むのは brittle なので検証しない
       expect(user.reload.push_enabled).to eq(true)
     end
 
@@ -26,7 +25,6 @@ RSpec.describe "Users", type: :request do
 
       expect(response).to have_http_status(:found)
       expect(response).to redirect_to(root_path)
-      # NOTE: 同上（flash検証はしない）
       expect(user.reload.push_enabled).to eq(false)
     end
   end
@@ -39,10 +37,10 @@ RSpec.describe "Users", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.media_type).to eq("text/vnd.turbo-stream.html")
 
-      # 2つのターゲット（desktop / mobile）に対する置換が含まれることを検証
+      # ★ 現行実装の2ターゲット（新＋後方互換）を検証
       expect(response.body).to include('turbo-stream action="replace"')
+      expect(response.body).to include('target="notification-push-toggle-desktop"')
       expect(response.body).to include('target="notification-toggle-desktop"')
-      expect(response.body).to include('target="notification-toggle-mobile"')
 
       expect(user.reload.push_enabled).to eq(true)
     end
@@ -56,8 +54,8 @@ RSpec.describe "Users", type: :request do
       expect(response.media_type).to eq("text/vnd.turbo-stream.html")
 
       expect(response.body).to include('turbo-stream action="replace"')
+      expect(response.body).to include('target="notification-push-toggle-desktop"')
       expect(response.body).to include('target="notification-toggle-desktop"')
-      expect(response.body).to include('target="notification-toggle-mobile"')
 
       expect(user.reload.push_enabled).to eq(false)
     end
