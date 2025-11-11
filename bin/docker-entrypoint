@@ -1,12 +1,17 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
+set -euo pipefail
 
 # Enable jemalloc for reduced memory usage and latency.
 if [ -z "${LD_PRELOAD+x}" ]; then
-    LD_PRELOAD=$(find /usr/lib -name libjemalloc.so.2 -print -quit)
-    export LD_PRELOAD
+  LD_PRELOAD=$(find /usr/lib -name libjemalloc.so.2 -print -quit || true)
+  export LD_PRELOAD
 fi
 
+# ★ 重要：前回起動の残骸でループしないよう必ず削除
+rm -f /rails/tmp/pids/server.pid || true
+
 # If running the rails server then create or migrate existing database
+# （あなたの既存ロジックを維持：引数が "./bin/rails server" の時だけ db:prepare 実行）
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
 fi

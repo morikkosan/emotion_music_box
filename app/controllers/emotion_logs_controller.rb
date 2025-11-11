@@ -98,73 +98,70 @@ class EmotionLogsController < ApplicationController
   # =========================
   # 作成
   # =========================
-  # app/controllers/emotion_logs_controller.rb
+  def create
+    attrs = emotion_log_params.to_h
+    attrs.delete("hp")
+    @emotion_log = current_user.emotion_logs.build(attrs)
 
-def create
-  attrs = emotion_log_params.to_h
-  attrs.delete("hp")
-  @emotion_log = current_user.emotion_logs.build(attrs)
+    hp_from_form   = params.dig(:emotion_log, :hp).presence || params[:hp].presence
+    hp_percentage  = hp_from_form.present? ? hp_from_form.to_i.clamp(0, 100) : calculate_hp_percentage(@emotion_log.emotion)
+    hp_delta       = calculate_hp(@emotion_log.emotion)
+    is_today       = @emotion_log.date&.to_date == Date.current
 
-  hp_from_form   = params.dig(:emotion_log, :hp).presence || params[:hp].presence
-  hp_percentage  = hp_from_form.present? ? hp_from_form.to_i.clamp(0, 100) : calculate_hp_percentage(@emotion_log.emotion)
-  hp_delta       = calculate_hp(@emotion_log.emotion)
-  is_today       = @emotion_log.date&.to_date == Date.current
+    if @emotion_log.save
+      Rails.logger.info("🔔 notify hp_delta=#{hp_delta} emotion=#{@emotion_log.emotion} hp_percentage=#{hp_percentage}")
 
-  if @emotion_log.save
-    Rails.logger.info("🔔 notify hp_delta=#{hp_delta} emotion=#{@emotion_log.emotion} hp_percentage=#{hp_percentage}")
+      # ★ show直行URLを作るために emotion_log を渡す
+      PushNotifier.send_emotion_log(
+        current_user,
+        emotion:     @emotion_log.emotion,
+        track_name:  @emotion_log.track_name,
+        artist_name: @emotion_log.description.presence || "アーティスト不明",
+        hp:          hp_delta,
+        emotion_log: @emotion_log   # ← 必須！
+      )
 
-    # ★ ここだけ変更：show直行URLを作るために emotion_log を渡す
-    PushNotifier.send_emotion_log(
-      current_user,
-      emotion:     @emotion_log.emotion,
-      track_name:  @emotion_log.track_name,
-      artist_name: @emotion_log.description.presence || "アーティスト不明",
-      hp:          hp_delta,
-      emotion_log: @emotion_log   # ← 必須！
-    )
-
-    respond_to do |format|
-      format.json do
-        render json: {
-          success:      true,
-          message:      "記録が保存されました",
-          redirect_url: emotion_logs_path,
-          hpPercentage: hp_percentage,
-          hpDelta:      hp_delta,
-          hp_today:     is_today
-        }
+      respond_to do |format|
+        format.json do
+          render json: {
+            success:      true,
+            message:      "記録が保存されました",
+            redirect_url: emotion_logs_path,
+            hpPercentage: hp_percentage,
+            hpDelta:      hp_delta,
+            hp_today:     is_today
+          }
+        end
+        format.turbo_stream do
+          flash.now[:notice] = "記録が保存されました"
+          render turbo_stream: [
+            turbo_stream.replace(
+              "flash-container",
+              partial: "shared/flash",
+              locals: { notice: flash.now[:notice], alert: flash.now[:alert] }
+            ),
+            turbo_stream.redirect_to(emotion_logs_path)
+          ]
+        end
+        format.html { redirect_to emotion_logs_path, notice: "記録が保存されました" }
       end
-      format.turbo_stream do
-        flash.now[:notice] = "記録が保存されました"
-        render turbo_stream: [
-          turbo_stream.replace(
-            "flash-container",
-            partial: "shared/flash",
-            locals: { notice: flash.now[:notice], alert: flash.now[:alert] }
-          ),
-          turbo_stream.redirect_to(emotion_logs_path)
-        ]
-      end
-      format.html { redirect_to emotion_logs_path, notice: "記録が保存されました" }
-    end
-  else
-    respond_to do |format|
-      format.json { render json: { success: false, errors: @emotion_log.errors.full_messages }, status: :unprocessable_entity }
-      format.turbo_stream do
-        render turbo_stream: turbo_stream.replace(
-          "record-modal-content",
-          partial: "emotion_logs/form",
-          locals: { emotion_log: @emotion_log }
-        ), status: :unprocessable_entity
-      end
-      format.html do
-        flash.now[:alert] = @emotion_log.errors.full_messages.join(", ")
-        render :new, status: :unprocessable_entity
+    else
+      respond_to do |format|
+        format.json { render json: { success: false, errors: @emotion_log.errors.full_messages }, status: :unprocessable_entity }
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(
+            "record-modal-content",
+            partial: "emotion_logs/form",
+            locals: { emotion_log: @emotion_log }
+          ), status: :unprocessable_entity
+        end
+        format.html do
+          flash.now[:alert] = @emotion_log.errors.full_messages.join(", ")
+          render :new, status: :unprocessable_entity
+        end
       end
     end
   end
-end
-
 
   # =========================
   # 編集/更新/削除
@@ -389,14 +386,55 @@ end
     head :forbidden unless @emotion_log.user_id == current_user&.id
   end
 
-  # ▼▼ 未ログインの show アクセスを SoundCloud 認可へ転送（ログイン後は index 固定）
+  # ▼▼ 未ログインの show アクセス制御（ボット例外＋可視化ヘッダ）
+  #    ① ログイン済: そのまま
+  #    ② ボット（または ?_as_bot=1 / true / 空でも key があればOK）: そのまま通す（OGP取得用）
+  #    ③ 上記以外: 認可フローへ 303
   def ensure_logged_in_for_show
-    return if user_signed_in?
+    as_bot = bot_crawler_request?
+
+    # 可視化：curl -I で見えるようにヘッダ出力
+    response.set_header("X-Emomu-BotCheck", as_bot ? "true" : "false")
+    response.set_header("X-Emomu-UA", request.user_agent.to_s[0, 160]) # 長過ぎ防止
+    response.set_header("X-Emomu-AsBotParam", params[:_as_bot].to_s)
+
+    Rails.logger.info("[OGP_BOT] ua=#{request.user_agent.inspect} as_bot=#{as_bot} _as_bot=#{params[:_as_bot].inspect}")
+
+    return if user_signed_in? || as_bot
 
     if turbo_frame_request? || request.format.turbo_stream?
       render turbo_stream: turbo_stream.redirect_to(user_soundcloud_omniauth_authorize_path), status: :see_other
     else
       redirect_to user_soundcloud_omniauth_authorize_path, status: :see_other
     end
+  end
+
+  # ★主要クローラ簡易判定
+  # - UA は downcase で包含判定
+  # - 手元検証用に ?_as_bot を “存在すれば真” とみなす（1/true/空 いずれでもOK）
+  # - params.key? 対応で取りこぼし防止（symbol/string 両方）
+  def bot_crawler_request?
+    # 1) クエリスイッチ（存在すれば真）
+    return true if params[:_as_bot].present?
+    return true if params.key?(:_as_bot) || params.key?("_as_bot")
+
+    # 2) UA で機械判定
+    ua = request.user_agent.to_s.downcase
+
+    # 代表的プレビューBot
+    return true if ua.include?("twitterbot")
+    return true if ua.include?("facebookexternalhit") || ua.include?("facebot")
+    return true if ua.include?("slackbot")
+    # "line" は汎用語なので誤検出を避けるために一部限定（スペース/ハイフン/ボット語尾も見る）
+    return true if ua.include?("line-poker") || ua.include?("linebot") || ua.include?(" line/") || ua.include?(" line ")
+    return true if ua.include?("linkedinbot")
+    return true if ua.include?("discordbot")
+    return true if ua.include?("telegrambot")
+
+    # OGP/構造化データ系
+    return true if ua.include?("google-structured-data")
+    return true if ua.include?("googlebot")
+
+    false
   end
 end
