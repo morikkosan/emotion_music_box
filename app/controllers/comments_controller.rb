@@ -19,21 +19,20 @@ class CommentsController < ApplicationController
         # ✅ コメントされた投稿の所有者が自分以外なら通知
         log_owner = @emotion_log.user
         if log_owner != current_user
-          # LINE通知（必要になったら復活）
-          # if log_owner.line_user_id.present?
-          #   LineBotController.new.send_comment_notification(
-          #     log_owner,
-          #     commenter_name: current_user.name,
-          #     comment_body: @comment.body
-          #   )
-          # end
-
-          # WebPush通知（購読/有効/VAPIDのチェックは PushNotifier 側で集約）
-          PushNotifier.send_comment_notification(
-            log_owner,
-            commenter_name: current_user.name,
-            comment_body:   @comment.body
-          )
+          # ==== ここが今回の修正ポイント ====
+          # push_enabled? が true のときだけ送る（false/nil は送らない）
+          if log_owner.respond_to?(:push_enabled?) && !!log_owner.push_enabled?
+            begin
+              PushNotifier.send_comment_notification(
+                log_owner,
+                commenter_name: current_user.name,
+                comment_body:   @comment.body
+              )
+            rescue => e
+              Rails.logger.warn("send_comment_notification failed: #{e.class}: #{e.message}")
+            end
+          end
+          # ===================================
         end
 
         format.turbo_stream
@@ -123,25 +122,22 @@ class CommentsController < ApplicationController
       comment.comment_reactions.create!(user: current_user, kind: kind)
       action = "added"
 
-      # ✅ コメント主が自分以外なら通知（購読チェックは PushNotifier に集約）
+      # ✅ コメント主が自分以外なら通知
       if comment.user != current_user
-        # LINE通知（必要なら復活）
-        # if comment.user.line_user_id.present?
-        #   LineBotController.new.send_reaction(
-        #     comment.user,
-        #     user_name: current_user.name,
-        #     bookmark: comment.emotion_log&.track_name || "あなたの投稿",
-        #     comment_reaction: kind.to_s
-        #   )
-        # end
-
-        # WebPush通知（内部で push_enabled? / subscription / VAPID を判定）
-        PushNotifier.send_reaction_notification(
-          comment.user,
-          reactor_name:  current_user.name,
-          comment_body:  comment.body,
-          reaction_kind: kind.to_s
-        )
+        # ==== 念のためこちらもガードを追加（将来のテスト観点に備える） ====
+        if comment.user.respond_to?(:push_enabled?) && !!comment.user.push_enabled?
+          begin
+            PushNotifier.send_reaction_notification(
+              comment.user,
+              reactor_name:  current_user.name,
+              comment_body:  comment.body,
+              reaction_kind: kind.to_s
+            )
+          rescue => e
+            Rails.logger.warn("send_reaction_notification failed: #{e.class}: #{e.message}")
+          end
+        end
+        # =====================================================================
       end
     end
 

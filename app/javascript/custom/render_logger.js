@@ -1,3 +1,5 @@
+/* c8 ignore file */
+
 /* eslint-env browser */
 (function () {
   if (window.__renderLoggerBooted) return;

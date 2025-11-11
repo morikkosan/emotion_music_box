@@ -1,11 +1,9 @@
+/** @type {import('jest').Config} */
 module.exports = {
   testEnvironment: "jsdom",
   roots: ["<rootDir>/spec/javascripts"],
 
-  // jsdom 起動前に読む（必要なら既存 polyfills をそのまま維持）
   setupFiles: ["<rootDir>/test/setup/polyfills.js"],
-
-  // 各テストの前後で動く共通セットアップ
   setupFilesAfterEnv: [
     "<rootDir>/spec/javascripts/setupTests.js",
     "<rootDir>/test/setup/jest.setup.js",
@@ -21,8 +19,9 @@ module.exports = {
     "^@rails/ujs$": "<rootDir>/spec/javascripts/stubs/railsUjsStub.js",
     "^bootstrap$": "<rootDir>/spec/javascripts/stubs/bootstrapStub.js",
     "^@hotwired/stimulus$": "<rootDir>/spec/javascripts/stubs/stimulusStub.js",
+    "^custom/render_logger$": "<rootDir>/spec/javascripts/stubs/emptyModule.js",
 
-    // エイリアス
+
     "^controllers/(.*)$": "<rootDir>/app/javascript/controllers/$1",
     "^custom/(.*)$": "<rootDir>/app/javascript/custom/$1",
   },
@@ -30,20 +29,19 @@ module.exports = {
   collectCoverageFrom: [
     "app/javascript/**/*.js",
     "!app/javascript/**/index.js",
-    // エントリ専用(副作用のみ)は除外
     "!app/javascript/**/push_notifications.js",
     "!app/javascript/**/push_notifications.mjs",
+    "!app/javascript/custom/render_logger.js"
   ],
+
+  // yarn test:coverage が --coverage を付けてくれるのでここは任意
+  coverageProvider: "v8",
+  coverageReporters: ["text", "lcov", "html"],
+  coverageDirectory: "coverage",
+
+  // ← ★ これ（extensionsToTreatAsEsm）は置かない。'.mjs' は常にESM扱いのため。
 
   testPathIgnorePatterns: ["/node_modules/", "/tmp/"],
   moduleDirectories: ["node_modules", "<rootDir>/app/javascript"],
   testMatch: ["**/spec/javascripts/**/*.test.[jt]s?(x)"],
-
-  // 行ズレが起きにくい v8 カバレッジ
-  coverageProvider: "v8",
-
-  // (任意) テストごとにモック初期化したい場合
-  // resetMocks: true,
-  // restoreMocks: true,
-  // clearMocks: true,
 };

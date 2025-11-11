@@ -30,7 +30,7 @@ describe("controllers/index.js registration", () => {
   });
 
   test("すべてのコントローラが期待どおりに1回ずつ register される", async () => {
-    // 期待している登録ID一覧（本体に合わせて selection-counter を追加）
+    // 期待している登録ID一覧（本体に合わせて selection-counter, notif-badge, notif-page を含める）
     const expected = [
       "modal",
       "search-music",
@@ -53,7 +53,9 @@ describe("controllers/index.js registration", () => {
       "mobile-footer",
       "flash-then-redirect",
       "tap-guard",
-      "selection-counter", // ← 追加
+      "selection-counter", // ← 既存追加
+      "notif-badge",       // ← 新規追加
+      "notif-page",        // ← 新規追加
     ];
 
     const Stim = require("@hotwired/stimulus");
