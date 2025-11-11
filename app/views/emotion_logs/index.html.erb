@@ -14,17 +14,17 @@
 
 <% provide :title, title %>
 
-
-<%# --- OGP / Twitter もこのページだけ短い形に統一 --- %>
+<%# --- OGP / Twitter をページ文脈 + 指名語に統一 --- %>
 <% content_for :head do %>
-  <meta property="og:title" content="EMOMU（エモム）">
-  <meta name="twitter:title" content="EMOMU（エモム）">
+  <meta property="og:title" content="<%= title %>｜EMOMU（エモム）">
+  <meta name="twitter:title" content="<%= title %>｜EMOMU（エモム）">
 <% end %>
 
-
+<h1 class="visually-hidden">Emotion Music Box（EMOMU／エモム）</h1>
 
 <div data-controller="view-switcher">
 <div id="comment-container" class="comment-container"></div>
+
 
   <div id="desktop-view">
     <!-- ❌ 追加していた「一番上のフッター」は削除（フッターはlayoutで一元管理） -->
@@ -293,8 +293,8 @@
 
       <div class="text-start mt-2 px-3">
         <%= link_to emotion_logs_path do %>
-          <%= image_tag "logo1.webp", alt: "Emotion List Logo", class: "img-fluid neon-icon mobile-logo" %>
-        <% end %>
+    <%= image_tag "logo1.webp", alt: "EMOMU（エモム）｜Emotion Music Box ロゴ", class: "img-fluid neon-icon mobile-logo" %>
+  <% end %>
       </div>
 
       <% unless user_signed_in? %>
