@@ -28,23 +28,32 @@
   <!-- favicon / icons -->
   <%= favicon_link_tag "favicon.png", type: "image/png" %>
 
-  <%# ===== OGP / Twitter Card（@meta があれば優先）===== %>
+ <%# ===== OGP / Twitter Card（@meta があれば優先）===== %>
 <%
   og_png   = (@meta && @meta[:image_png]).presence   || image_url("ogp.png")
   og_webp  = (@meta && @meta[:image_webp]).presence  || image_url("ogp.webp")
   og_title = (@meta && @meta[:title]).presence       || (content_for?(:title) ? yield(:title) : "Emotion Music Box（EMOMU／エモム）")
   og_desc  = (@meta && @meta[:description]).presence || "感情と音楽をシェアする新感覚アプリ"
 
-  # ====== ★ここを堅牢化：まず @meta[:url]、次に「/emotion_logs/:id のときは URL ヘルパで強制」、最後に canonical_url ======
-  og_url =
+  # まず raw（候補）を決める：@meta[:url] → 投稿詳細なら emotion_log_url → それ以外は canonical_url
+  og_url_raw =
     if defined?(@meta) && @meta.is_a?(Hash) && @meta[:url].present?
       @meta[:url]
     elsif (controller_name == 'emotion_logs' && action_name == 'show' && defined?(@emotion_log) && @emotion_log.present?)
-      # 代理/キャッシュ環境でも確実に投稿URLを採用
       emotion_log_url(@emotion_log)
     else
       canonical_url
     end
+
+  # ★保険：クエリとフラグメントは必ず剥がす
+  begin
+    uri = URI.parse(og_url_raw.to_s)
+    uri.query = nil
+    uri.fragment = nil
+    og_url = uri.to_s
+  rescue
+    og_url = og_url_raw.to_s
+  end
 %>
 
 <meta property="og:site_name" content="Emotion Music Box">
