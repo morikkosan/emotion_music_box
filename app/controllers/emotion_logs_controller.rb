@@ -52,36 +52,64 @@ class EmotionLogsController < ApplicationController
   # =========================
   # 詳細
   # =========================
-  def show
-    @emotion_log = EmotionLog.find_by(id: params[:id])
-    unless @emotion_log
-      respond_to do |format|
-        format.html { redirect_to emotion_logs_path(view: params[:view]), alert: "この投稿は削除されています。" }
-        format.turbo_stream do
-          render turbo_stream: turbo_stream.redirect_to(emotion_logs_path(view: params[:view])), status: :see_other
-        end
-      end
-      return
-    end
-
-    @comments = Comment.where(emotion_log_id: @emotion_log.id)
-                       .includes(:user, :comment_reactions)
-                       .order(created_at: :desc)
-                       .page(params[:page]).per(10)
-
-    @reaction_counts = CommentReaction.where(comment_id: @comments.map(&:id)).group(:comment_id, :kind).count
-    @user_reactions  = current_user&.comment_reactions&.where(comment_id: @comments.map(&:id))&.pluck(:comment_id, :kind)&.to_h || {}
-
-    if turbo_frame_request? && params[:view] == "mobile"
-      render partial: "emotion_logs/show_mobile_frame", formats: [:html]
-      return
-    end
-
+  # =========================
+# 詳細
+# =========================
+def show
+  @emotion_log = EmotionLog.find_by(id: params[:id])
+  unless @emotion_log
     respond_to do |format|
-      format.html
-      format.turbo_stream { render turbo_stream: turbo_stream.redirect_to(emotion_log_path(@emotion_log, format: :html)) }
+      format.html { redirect_to emotion_logs_path(view: params[:view]), alert: "この投稿は削除されています。" }
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.redirect_to(emotion_logs_path(view: params[:view])), status: :see_other
+      end
     end
+    return
   end
+
+  @comments = Comment.where(emotion_log_id: @emotion_log.id)
+                     .includes(:user, :comment_reactions)
+                     .order(created_at: :desc)
+                     .page(params[:page]).per(10)
+
+  @reaction_counts = CommentReaction.where(comment_id: @comments.map(&:id)).group(:comment_id, :kind).count
+  @user_reactions  = current_user&.comment_reactions&.where(comment_id: @comments.map(&:id))&.pluck(:comment_id, :kind)&.to_h || {}
+
+  # ===== ここで OGP/Twitter 用メタを作る =====
+  # 例: 「イライラ | JK - CODE80」
+  composed_title =
+    [@emotion_log.emotion.presence, @emotion_log.track_name.presence].compact.join(" | ").presence ||
+    "Emotion Music Box（エモム）"
+
+  @meta = {
+    title:        composed_title,
+    description:  "感情と音楽をシェアする新感覚アプリ",
+    url:          request.original_url,                 # 例: https://moriappli-emotion.com/emotion_logs/135
+    image_png:    view_context.asset_url("ogp.png"),
+    image_webp:   view_context.asset_url("ogp.webp"),
+    image_alt:    "Emotion Music Box OGP"
+  }
+  # ===========================================
+
+   # ★★★ デバッグ用ヘッダ（ここに配置：respond_to 前）★★★
+  response.set_header("X-Emomu-ReqURL", request.original_url.to_s)
+  response.set_header("X-Emomu-CanURL", view_context.canonical_url.to_s)
+  response.set_header("X-Emomu-OGMetaBy", "@meta?=#{@meta.present?}")  # true ならレイアウトで @meta 優先
+
+
+  if turbo_frame_request? && params[:view] == "mobile"
+    render partial: "emotion_logs/show_mobile_frame", formats: [:html]
+    return
+  end
+
+  respond_to do |format|
+    format.html
+    # 万一 /:id を Turbo で踏まれた場合は HTML に正規化
+    format.turbo_stream { render turbo_stream: turbo_stream.redirect_to(emotion_log_path(@emotion_log, format: :html)) }
+  end
+
+  
+end
 
   # =========================
   # 新規作成フォーム

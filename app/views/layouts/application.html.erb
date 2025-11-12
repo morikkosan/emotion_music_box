@@ -28,31 +28,51 @@
   <!-- favicon / icons -->
   <%= favicon_link_tag "favicon.png", type: "image/png" %>
 
+  <%# ===== OGP / Twitter Card（@meta があれば優先）===== %>
+<%
+  og_png   = (@meta && @meta[:image_png]).presence   || image_url("ogp.png")
+  og_webp  = (@meta && @meta[:image_webp]).presence  || image_url("ogp.webp")
+  og_title = (@meta && @meta[:title]).presence       || (content_for?(:title) ? yield(:title) : "Emotion Music Box（EMOMU／エモム）")
+  og_desc  = (@meta && @meta[:description]).presence || "感情と音楽をシェアする新感覚アプリ"
 
-  <%# ===== OGP / Twitter Card（PNGを第1候補、WebPを第2候補）===== %>
-  <% og_png  = image_url('ogp.png')  %>
-  <% og_webp = image_url('ogp.webp') %>
-  <meta property="og:site_name" content="Emotion Music Box">
+  # ====== ★ここを堅牢化：まず @meta[:url]、次に「/emotion_logs/:id のときは URL ヘルパで強制」、最後に canonical_url ======
+  og_url =
+    if defined?(@meta) && @meta.is_a?(Hash) && @meta[:url].present?
+      @meta[:url]
+    elsif (controller_name == 'emotion_logs' && action_name == 'show' && defined?(@emotion_log) && @emotion_log.present?)
+      # 代理/キャッシュ環境でも確実に投稿URLを採用
+      emotion_log_url(@emotion_log)
+    else
+      canonical_url
+    end
+%>
 
-  <meta property="og:description" content="感情と音楽をシェアする新感覚アプリ">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://moriappli-emotion.com">
+<meta property="og:site_name" content="Emotion Music Box">
 
-  <!-- ⭐ 第1候補：互換性最強のPNG -->
-  <meta property="og:image"        content="<%= og_png %>">
-  <meta property="og:image:width"  content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:type"   content="image/png">
+<meta property="og:title"       content="<%= og_title %>">
+<meta property="og:description" content="<%= og_desc  %>">
+<meta property="og:type"        content="website">
+<meta property="og:url"         content="<%= og_url   %>">
 
-  <!-- ✅ 第2候補：対応環境で高画質・軽量なWebP（複数指定OK） -->
-  <meta property="og:image"      content="<%= og_webp %>">
-  <meta property="og:image:type" content="image/webp">
+<!-- ⭐ 第1候補：互換性最強のPNG -->
+<meta property="og:image"        content="<%= og_png  %>">
+<meta property="og:image:width"  content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type"   content="image/png">
 
-  <!-- Twitter（X）はPNGを指すのが安定 -->
-  <meta name="twitter:card"        content="summary_large_image">
-  <meta name="twitter:description" content="感情と音楽をシェアする新感覚アプリ">
-  <meta name="twitter:image"       content="<%= og_png %>">
-  <meta name="twitter:url"         content="https://moriappli-emotion.com">
+<!-- ✅ 第2候補：WebP（対応環境で使われる／複数指定OK） -->
+<meta property="og:image"      content="<%= og_webp %>">
+<meta property="og:image:type" content="image/webp">
+
+<!-- Twitter（X） -->
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="<%= og_title %>">
+<meta name="twitter:description" content="<%= og_desc  %>">
+<meta name="twitter:image"       content="<%= og_png   %>">
+<meta name="twitter:url"         content="<%= og_url   %>">
+
+<!-- OGP-DEBUG -->
+<!-- source=<%= (defined?(@meta) && @meta.is_a?(Hash) && @meta[:url].present?) ? "meta" : ((controller_name=='emotion_logs' && action_name=='show' && defined?(@emotion_log) && @emotion_log.present?) ? "forced_resource" : "canonical") %> og_url=<%= og_url %> -->
 
   <!-- PWA 対応 -->
   <%= tag.link rel: "manifest", href: "/manifest.json" %>
@@ -279,7 +299,7 @@
        class="z-1080 position-fixed top-0 end-0 p-3">
     <div id="save-toast"
          class="toast align-items-center text-white bg-success border-0"
-         role="alert" aria-live="assertive" aria-atomic="true">
+         role="alert" aria-live="assertive">
       <div class="d-flex">
         <div class="toast-body">emomu を保存しました！</div>
         <button type="button" class="btn-close btn-close-white me-2 m-auto"
@@ -374,7 +394,6 @@
 
         <span id="duration" class="duration" aria-live="off">0:00</span>
       </div>
-
 
       <div class="bottom-player-extra-controls">
         <button id="shuffle-button" class="btn btn-link toggle-btn me-1 bottom-player-toggle-btn"
