@@ -77,18 +77,24 @@ def show
 
   # ===== ここで OGP/Twitter 用メタを作る =====
   # 例: 「イライラ | JK - CODE80」
-  composed_title =
-    [@emotion_log.emotion.presence, @emotion_log.track_name.presence].compact.join(" | ").presence ||
-    "Emotion Music Box（エモム）"
+  # app/controllers/emotion_logs_controller.rb
 
-  @meta = {
-    title:        composed_title,
-    description:  "感情と音楽をシェアする新感覚アプリ",
-    url:          request.original_url,                 # 例: https://moriappli-emotion.com/emotion_logs/135
-    image_png:    view_context.asset_url("ogp.png"),
-    image_webp:   view_context.asset_url("ogp.webp"),
-    image_alt:    "Emotion Music Box OGP"
-  }
+# ===== ここで OGP/Twitter 用メタを作る =====
+composed_title =
+  [@emotion_log.emotion.presence, @emotion_log.track_name.presence].compact.join(" | ").presence ||
+  "Emotion Music Box（エモム）"
+
+@meta = {
+  title:        composed_title,
+  description:  "感情と音楽をシェアする新感覚アプリ",
+  # ここを修正: original_url → emotion_log_url(@emotion_log)
+  url:          emotion_log_url(@emotion_log),        # 例: https://moriappli-emotion.com/emotion_logs/135
+  image_png:    view_context.asset_url("ogp.png"),
+  image_webp:   view_context.asset_url("ogp.webp"),
+  image_alt:    "Emotion Music Box OGP"
+}
+# ===========================================
+
   # ===========================================
 
    # ★★★ デバッグ用ヘッダ（ここに配置：respond_to 前）★★★
