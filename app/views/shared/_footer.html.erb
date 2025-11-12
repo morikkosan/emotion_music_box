@@ -3,7 +3,7 @@
     音楽は <a href="https://soundcloud.com" target="_blank" rel="noopener noreferrer">SOUND&nbsp;CLOUD</a> より提供されています。
   </div>
 
-  <!-- PC/タブレット用：これまで通り全文リンク -->
+  <!-- PC/モバイル共通で全文リンクを表示 -->
   <div class="footer-right footer-right--full">
     © 2025
     <%= link_to (user_signed_in? ? emotion_logs_path : user_soundcloud_omniauth_authorize_path),
@@ -16,22 +16,4 @@
     | <a href="/cookie"  class="text-light text-decoration-none" data-turbo="false">Cookieポリシー</a>
     | Created by moriz
   </div>
-
-  <!-- モバイル用：Legalボタンで開閉（details/summary） -->
-  <details class="footer-right legal-menu" role="list">
-    <summary aria-label="Legal menu">LEGAL ▾</summary>
-    <div class="legal-menu__panel" role="menu" aria-label="Legal links">
-      <div class="legal-menu__item muted">© 2025
-        <%= link_to (user_signed_in? ? emotion_logs_path : user_soundcloud_omniauth_authorize_path),
-                    class: "text-light text-decoration-none",
-                    data: { turbo: false } do %>
-          Emotion Music Box
-        <% end %>
-      </div>
-      <a class="legal-menu__item" href="/terms"   data-turbo="false" role="menuitem">利用規約</a>
-      <a class="legal-menu__item" href="/privacy" data-turbo="false" role="menuitem">プライバシーポリシー</a>
-      <a class="legal-menu__item" href="/cookie"  data-turbo="false" role="menuitem">Cookieポリシー</a>
-      <div class="legal-menu__item muted">Created by moriz</div>
-    </div>
-  </details>
 </footer>
