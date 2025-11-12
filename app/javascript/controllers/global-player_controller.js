@@ -1,4 +1,4 @@
-/* eslint-env browser */ 
+/* eslint-env browser */
 /* global SC, Swal */
 
 import { Controller } from "@hotwired/stimulus";
@@ -558,6 +558,40 @@ export default class extends Controller {
   }
 
   // -------- ライフサイクル --------
+
+  // ★★★ 追加その1：シングルトン保険（旧インスタンスの掃除）★★★
+  _registerSingletonCleanup() {
+    try {
+      if (typeof window.__gpCleanupPrev === "function") {
+        // 前ページ由来のプレーヤーが残っていたら必ず停止
+        try { window.__gpCleanupPrev(); } catch(_) {}
+      }
+      // いまのインスタンスの cleanup を“次回のため”に登録
+      window.__gpCleanupPrev = () => {
+        try { this.cleanup?.(); } catch(_) {}
+        try { this.stopOnlyPlayer?.(); } catch(_) {}
+      };
+    } catch(_) {}
+  }
+
+  // ★★★ 追加その2：ナビゲーション直前に止める全局フック（1回だけ登録）★★★
+  _installNavGuardsOnce() {
+    if (window.__gpNavGuardsInstalled) return;
+    window.__gpNavGuardsInstalled = true;
+
+    const navCleanup = () => {
+      try { this.savePlayerState?.(); } catch(_) {}
+      try { this.stopOnlyPlayer?.(); } catch(_) {}
+    };
+
+    // Turboのページ遷移（ロゴクリックなど通常リンクもここを通る）
+    document.addEventListener("turbo:before-visit", navCleanup, { passive: true });
+
+    // フルリロードやブラウザ戻る等（Safari対策で両方）
+    window.addEventListener("beforeunload", navCleanup, { passive: true });
+    window.addEventListener("pagehide", navCleanup, { passive: true });
+  }
+
   cleanup = () => {
     clearInterval(this.progressInterval);
     try {
@@ -592,7 +626,14 @@ export default class extends Controller {
 
   // ★ 追加：ログイン時のみプレーヤーを表示
   _showBottomPlayerIfLoggedIn() {
-    if (this._isLoggedIn()) this.bottomPlayer?.classList.remove("d-none");
+    if (!this._isLoggedIn()) return;
+    const bp = this.bottomPlayer || document.getElementById("bottom-player");
+    if (!bp) return;
+    try {
+      bp.classList.remove("d-none");
+      bp.removeAttribute("inert");
+      bp.setAttribute("aria-hidden", "false");
+    } catch (_) {}
   }
 
   // ★ プレイヤーだけ安全に止める（UIイベントは残す）
@@ -618,6 +659,18 @@ export default class extends Controller {
   }
 
   connect() {
+    // ★ 追記：このページはプレイヤー禁止なら、何も初期化しないで即終了
+    if (this._chromeOff()) {
+      this._disableCompletely();
+      return;
+    }
+
+    // ★ 追加：シングルトン保険（旧インスタンス掃除→自分を登録）
+    this._registerSingletonCleanup();
+
+    // ★ 追加：ナビゲーション前フックを一度だけ入れる
+    this._installNavGuardsOnce();
+
     // デバッグ初期化＆簡易スイッチ
     this._debugInit();
     if (location.hash.includes("gpclear")) { localStorage.removeItem("playerState"); this._debug("playerState cleared"); }
@@ -757,6 +810,13 @@ export default class extends Controller {
 
     if (window.SC?.Widget) this.restorePlayerState();
     else window.addEventListener("load", () => this.restorePlayerState?.());
+  }
+
+  // ★★★ 追加その3：Stimulus ライフサイクルでの後片付け保証 ★★★
+  disconnect() {
+    // ページキャッシュ入れやフルリロード時に取り残しを防ぐ
+    try { this.savePlayerState?.(); } catch(_) {}
+    try { this.cleanup?.(); } catch(_) {}
   }
 
   // ---------- A11y ----------
@@ -1520,6 +1580,9 @@ export default class extends Controller {
   _onAudioDur   = () => {};
 
   _setupIOSVolumeUI() {
+
+    if (!this._isLoggedIn()) return;
+
     try { document.body.classList.add("is-ios"); } catch(_) {}
 
     if (this.volumeBar) {
@@ -1555,4 +1618,70 @@ export default class extends Controller {
     try { this.volumeBar.removeEventListener("input", this._onVolumeInput); } catch(_) {}
     this.volumeBar.addEventListener("input", this._onVolumeInput);
   }
+
+  // ======== ここから：プレイヤーを完全停止・非表示にするための追加ヘルパ ========
+
+  // 1) この配列に「プレイヤーを出したくないパス」を正規表現で列挙
+  //   例: /terms, /privacy, /cookie, /legal は全ブロック
+  static DISABLE_PATHS = [
+    /^\/terms(?:\/)?$/i,
+    /^\/privacy(?:\/)?$/i,
+    /^\/cookie(?:\/)?$/i,
+    /^\/legal(?:\/.*)?$/i,
+  ];
+
+  // 2) パス一致でオフ
+  _chromeOffByPath() {
+    try {
+      const p = location.pathname || "/";
+      return (this.constructor.DISABLE_PATHS || []).some((re) => re.test(p));
+    } catch (_) { return false; }
+  }
+
+  // 3) body のクラスでオフ（任意：レイアウトが class を付ける場合）
+  _chromeOffByBodyClass() {
+    try { return document.body?.classList?.contains("page--legal-chrome-off"); } catch(_) { return false; }
+  }
+
+  // 4) 任意：<body data-chrome-off="true"> でもオフ（インライン script ではない属性）
+  _chromeOffByDataAttr() {
+    try { return String(document.body?.dataset?.chromeOff || "").toLowerCase() === "true"; } catch(_) { return false; }
+  }
+
+  // 総合判定
+  _chromeOff() {
+    return this._chromeOffByPath() || this._chromeOffByBodyClass() || this._chromeOffByDataAttr();
+  }
+
+  // プレイヤーを完全に止め、DOMも非表示化（イベント未登録段階で呼ばれても安全）
+  _disableCompletely() {
+    try { this.stopOnlyPlayer?.(); } catch(_) {}
+
+    try {
+      // 下部プレイヤーを確実に隠す＋操作不能化
+      const bp = document.getElementById("bottom-player");
+      if (bp) {
+        bp.classList.add("d-none");
+        bp.setAttribute("aria-hidden", "true");
+        bp.setAttribute("inert", "");
+      }
+    } catch(_) {}
+
+    try {
+      // 隠しSC iframe を破棄
+      const ifr = document.getElementById("hidden-sc-player");
+      if (ifr) {
+        ifr.src = "about:blank";
+        ifr.removeAttribute("src");
+        ifr.remove();
+      }
+      this.iframeElement = null;
+    } catch(_) {}
+
+    try {
+      // ★ 追加：iOS音量ヒントが残っていたら消す
+      document.getElementById("ios-volume-hint")?.remove();
+    } catch(_) {}
+  }
+
 }
