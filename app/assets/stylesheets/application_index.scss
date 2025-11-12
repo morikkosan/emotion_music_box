@@ -712,14 +712,55 @@ button[type="submit"].mobile-super-search-btn {
 }
 
 /* 上部フッターを固定 */
+/* === ヘッダー（.footer-flex）だけの最小調整 === */
+
 .footer-flex {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 60px; /* ← 実際に十分収まる高さに */
+  height: 60px;   /* ここで確実に 60px に収める */
   z-index: 1200;
 }
+
+/* Bootstrpの py-2 が付いていても縦が増えないように打消し */
+.footer-flex.py-2 {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* モバイルだけ、縦の余白を0に寄せて高さ60pxに確実に収める */
+@media (max-width: 576px) {
+  .footer-flex {                /* バー本体は上下パディング0に */
+    padding: 0 12px;
+    line-height: 1.2;           /* 行高だけ軽く詰める（可読性は維持） */
+  }
+  .footer-left,
+  .footer-right {                /* 左右ブロックも縦0に */
+    padding: 0 .5rem;
+  }
+
+  /* PCで見せる全文リンクを折返し許可（切れ対策・横スクロール防止） */
+  .footer-right--full {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+}
+
+/* LEGALメニューのパネルはバーの直下に固定（既存ルールの確認用・変更なし） */
+.legal-menu__panel { top: 60px; }  /* .footer-flexのheightと一致 */
+
+.footer-left,
+.footer-right { min-width: 0; }
+
+
+@supports (padding-top: env(safe-area-inset-top)) {
+  .footer-flex {
+    padding-top: env(safe-area-inset-top, 0); /* 見た目が潰れない程度の保険 */
+  }
+}
+
+
 
 /* 下部フッターを固定 */
 .mobile-footer {
