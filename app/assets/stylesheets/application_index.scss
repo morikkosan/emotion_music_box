@@ -846,3 +846,35 @@ body.player-visible{
     padding-top: 0 !important;
   }
 }
+
+
+
+
+/* =========================================================
+   ▼ Legal系ページだけヘッダー＆グローバルプレイヤーを消す
+   ========================================================= */
+.page--legal-chrome-off {
+  /* ヘッダー／プレイヤーぶんの余白をゼロ化（既存変数を上書き） */
+  --header-h: 0px;
+  --header-nudge: 0px;
+
+  /* 下余白も最小化（セーフエリアのみ残す） */
+  --mobile-bottom-gap: env(safe-area-inset-bottom, 0px);
+}
+
+/* ヘッダー（上部フッター）とグローバルプレイヤーを非表示 */
+.page--legal-chrome-off .footer-flex,
+.page--legal-chrome-off #bottom-player {
+  display: none !important;
+}
+
+/* スクロール領域の余白をリセット */
+.page--legal-chrome-off #mobile-view {
+  padding-top: 0 !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+}
+
+/* デスクトップ側の保険（スクロール下余白を標準に戻す） */
+.page--legal-chrome-off #desktop-view .scroll-content {
+  padding-bottom: 24px !important;
+}
