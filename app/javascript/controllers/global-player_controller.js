@@ -921,11 +921,35 @@ this.__arrivedByTurbo = _arrivedByTurbo;
     });
   }
 
+
+  // ★ 新規追加：APIモード用の startProgressTracking を先にセットする
+_prepareApiProgressTracking() {
+  this.startProgressTracking = () => {
+    clearInterval(this.progressInterval);
+    this.progressInterval = setInterval(() => {
+      if (!this.audio || this.isSeeking) return;
+      const pos = Math.floor((this.audio.currentTime||0)*1000);
+      const dur = Math.floor((this.audio.duration||0)*1000);
+      if (dur > 0) {
+        const percent = Math.round((pos/dur)*100);
+        if (this.seekBar) this.seekBar.value = String(percent);
+        if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(pos);
+        if (this.durationEl) this.durationEl.textContent = this.formatTime(dur);
+        this.updateSeekAria(percent, pos, dur);
+      }
+      this.savePlayerState();
+    }, 1000);
+  };
+}
+
+
   async _resumeAudioFromState(state) {
     const url = this._extractOriginalPlayUrl(state.trackUrl) || state.trackUrl;
     if (!url) return;
     this._showBottomPlayerIfLoggedIn();
     this.resetPlayerUI();
+    // ★ Turbo遷移初回だけ startProgressTracking が古いままになるため、先にAPI版へ差し替える
+    this._prepareApiProgressTracking();
     await this._playViaApi(url, { resumeMs: state.position || 0, autoStart: state.isPlaying }).catch(()=>{
       window.__forceWidgetOnly = true;
       this._fallbackToWidgetFromAudio(url);
