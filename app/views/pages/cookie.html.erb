@@ -12,29 +12,39 @@
   <h2>2. 使用している主なCookie</h2>
   <table>
     <thead>
-      <tr><th>名称</th><th>用途</th><th>種別</th><th>保持期間</th></tr>
+      <tr>
+        <th>名称</th>
+        <th>用途</th>
+        <th>種別</th>
+      </tr>
     </thead>
     <tbody>
       <tr>
         <td>_myapp_session</td>
         <td>ログイン状態・セッション維持（CSRF対策含む）</td>
         <td>必須（セッションCookie）</td>
-        <td>ブラウザ終了まで</td>
       </tr>
       <tr>
         <td>（任意）remember_user_token</td>
         <td>「ログイン状態を保持する」を有効にした場合の永続ログイン</td>
         <td>機能Cookie</td>
-        <td>設定時から【xx日】（使用していない場合は「未使用」）</td>
       </tr>
       <tr>
         <td>（第三者）SoundCloud関連Cookie</td>
         <td>埋め込みプレーヤーの動作・不正防止等（SoundCloud社が設定）</td>
         <td>第三者Cookie</td>
-        <td>SoundCloud社のポリシーに従います</td>
       </tr>
     </tbody>
   </table>
+
+  <!-- ★ 保持期間だけ別ブロックに分離 -->
+  <h3>各Cookieの保持期間</h3>
+  <ul>
+    <li>_myapp_session：ブラウザ終了まで（セッションCookie）</li>
+    <li>remember_user_token：設定時から【xx日】（使用していない場合は「未使用」）</li>
+    <li>SoundCloud関連Cookie：SoundCloud社のポリシーに従います</li>
+  </ul>
+
   <p class="note">※ セッションCookieは <code>SameSite=None</code> / <code>Secure</code> 等の設定が環境により付与されます（当社設定・ブラウザ仕様に依存）。</p>
 
   <h2>3. 類似技術</h2>
@@ -50,6 +60,6 @@
   <p>ユーザーは、ブラウザの設定によりCookieの受け入れ可否や削除を行うことができます。設定方法は各ブラウザのヘルプをご参照ください。</p>
 
   <hr>
-  <p>【最終更新日】2025年8月19日</p>
-  <p class="note">※本ページの文面は仮文（テンプレート）です。公開前に最終確認・更新を行ってください。</p>
+  <p>【最終更新日】2025年11月16日</p>
+
 </div>
