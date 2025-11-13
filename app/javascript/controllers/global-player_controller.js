@@ -559,7 +559,8 @@ export default class extends Controller {
 
   // -------- ライフサイクル --------
     cleanup = () => {
-    // ページ切り替え前に「ページ側のイベント」だけ外す
+    // ページ切り替え前に「ページ側のイベント」だ
+    // け外す
     clearInterval(this.progressInterval);
     this.progressInterval = null;
 
