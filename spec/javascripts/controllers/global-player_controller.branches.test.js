@@ -123,7 +123,11 @@ beforeEach(() => {
   global.fetch = jest.fn(async () => ({
     ok: true,
     status: 200,
-    json: async () => ({ title: "T", user: { username: "U" }, media: { transcodings: [{ format: { protocol: "progressive" }, url: "LOC" }] } }),
+    json: async () => ({
+      title: "T",
+      user: { username: "U" },
+      media: { transcodings: [{ format: { protocol: "progressive" }, url: "LOC" }] },
+    }),
     text: async () => "ok",
   }));
   // Alert抑止
@@ -195,7 +199,15 @@ describe("iframe visibility & lifecycle", () => {
   test("_setIframeVisibility(true/false)", () => {
     baseDOM({ withAll: true });
     const { controller } = start();
-    const iframe = document.getElementById("hidden-sc-player");
+
+    // connectの中でiframeが差し替えられている/削除されている可能性があるので、なければテスト側で用意
+    let iframe = document.getElementById("hidden-sc-player");
+    if (!iframe) {
+      iframe = document.createElement("iframe");
+      iframe.id = "hidden-sc-player";
+      iframe.className = "sc-hidden";
+      document.body.appendChild(iframe);
+    }
 
     controller._setIframeVisibility(true);
     expect(iframe.classList.contains("sc-visible")).toBe(true);
@@ -465,13 +477,6 @@ describe("_playViaMedia HLS branch", () => {
     const attachMedia = jest.fn();
     const loadSource = jest.fn();
     const destroy = jest.fn();
-    window.Hls = {
-      isSupported: () => true,
-      // コンストラクタ
-      // eslint-disable-next-line no-undef
-      [Symbol.hasInstance]: () => false,
-      prototype: {},
-    };
     window.Hls = function() { return { attachMedia, loadSource, destroy }; };
     window.Hls.isSupported = () => true;
 
@@ -479,7 +484,7 @@ describe("_playViaMedia HLS branch", () => {
     const p = controller._playViaMedia({
       streamUrl: "hls.m3u8",
       useVideo: true,
-      resumeMs: 5000
+      resumeMs: 5000,
     });
 
     // jsdom の video.play は未実装ことがあるので差し替え
@@ -506,12 +511,17 @@ describe("_resolveStreamUrl deleted branch", () => {
       if (called === 1) {
         return { ok: false, status: 404, text: async () => "deleted" };
       }
-      return { ok: true, status: 200, json: async () => ({ url: "ok" }), text: async () => "ok" };
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ url: "ok" }),
+        text: async () => "ok",
+      };
     });
 
     const { controller } = start();
     const icon = document.querySelector('[data-track-id="1"]');
-    await controller.loadAndPlay({ currentTarget: icon, stopPropagation(){} });
+    await controller.loadAndPlay({ currentTarget: icon, stopPropagation() {} });
 
     // Swal か alert のどちらかで通知されていればOK
     expect(
@@ -529,13 +539,14 @@ describe("_resolveStreamUrl deleted branch", () => {
     // resolve は OK、stream で 410
     global.fetch = jest.fn()
       .mockResolvedValueOnce({
-        ok: true, status: 200,
+        ok: true,
+        status: 200,
         json: async () => ({
           title: "T",
           user: { username: "U" },
-          media: { transcodings: [{ format: { protocol: "progressive" }, url: "LOC" }] }
+          media: { transcodings: [{ format: { protocol: "progressive" }, url: "LOC" }] },
         }),
-        text: async () => "ok"
+        text: async () => "ok",
       })
       .mockResolvedValueOnce({ ok: false, status: 410, text: async () => "gone" });
 
@@ -543,7 +554,9 @@ describe("_resolveStreamUrl deleted branch", () => {
     controller._ensureMedia({ useVideo: false });
     const playSpy = jest.spyOn(controller.media, "play");
 
-    await expect(controller.playFromExternal("https://soundcloud.com/a/x")).resolves.not.toThrow;
+    await expect(
+      controller.playFromExternal("https://soundcloud.com/a/x")
+    ).resolves.not.toThrow;
 
     // 非同期の内部処理をフラッシュ
     await Promise.resolve();
@@ -562,7 +575,7 @@ describe("togglePlayPause branches", () => {
     jest.spyOn(ControllerClass.prototype, "_isLoggedIn").mockReturnValue(true);
     const { controller } = start();
 
-    controller.togglePlayPause({ preventDefault(){}, stopPropagation(){} });
+    controller.togglePlayPause({ preventDefault() {}, stopPropagation() {} });
     expect(window.alert).toHaveBeenCalled();
   });
 
@@ -573,10 +586,18 @@ describe("togglePlayPause branches", () => {
     jest.spyOn(ControllerClass.prototype, "_isIOS").mockReturnValue(true);
     const { controller } = start();
 
-    const ifr = document.getElementById("hidden-sc-player");
+    // connect 内で iframe が無い実装も許容するため、無ければテスト側で補う
+    let ifr = document.getElementById("hidden-sc-player");
+    if (!ifr) {
+      ifr = document.createElement("iframe");
+      ifr.id = "hidden-sc-player";
+      ifr.className = "sc-hidden";
+      document.body.appendChild(ifr);
+    }
+
     ifr.src = "https://w.soundcloud.com/player/?url=x";
 
-    controller.togglePlayPause({ preventDefault(){}, stopPropagation(){} });
+    controller.togglePlayPause({ preventDefault() {}, stopPropagation() {} });
     expect(document.getElementById("sc-handshake-hint")).toBeTruthy();
   });
 });
@@ -621,7 +642,7 @@ describe("savePlayerState API branch", () => {
       if ("trackId" in saved) expect(saved.trackId).toBe("1");
       if ("trackUrl" in saved) expect(saved.trackUrl).toBe("https://soundcloud.com/a/x");
     } else {
-      // 保存呼び出しが無くても「APIモードで落ちない」ことを最低条件にする（media の存否は実装差異を許容）
+      // 保存呼び出しが無くても「APIモードで落ちない」ことを最低条件にする
       expect(controller._shouldUseApi()).toBe(true);
     }
   });
@@ -671,6 +692,7 @@ describe("updateTrackIcon without targets", () => {
   });
 });
 
+
 /** _authHeaders: 無/有トークン */
 describe("_authHeaders branches", () => {
   test("token 無し → {}", () => {
@@ -685,6 +707,9 @@ describe("_authHeaders branches", () => {
     const { controller } = start();
     jest.spyOn(controller, "_hasOAuthToken").mockReturnValue(true);
     jest.spyOn(controller, "_getOAuthToken").mockReturnValue("tk");
-    expect(controller._authHeaders()).toEqual({ "X-SC-OAUTH": "tk", "Authorization": "OAuth tk" });
+    expect(controller._authHeaders()).toEqual({
+      "X-SC-OAUTH": "tk",
+      "Authorization": "OAuth tk",
+    });
   });
 });

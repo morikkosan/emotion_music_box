@@ -16,7 +16,9 @@ function clearLoggedInMeta() {
   // 未ログイン状態
   document.body.classList.remove("logged-in");
   // current-user-id メタを除去
-  const meta = Array.from(document.head.querySelectorAll('meta[name="current-user-id"]'));
+  const meta = Array.from(
+    document.head.querySelectorAll('meta[name="current-user-id"]')
+  );
   meta.forEach((m) => m.remove());
 }
 function setOAuthTokenMeta(tok = "tok123") {
@@ -65,13 +67,17 @@ function buildDOMMinimal({ loggedIn = false } = {}) {
       <iframe id="hidden-sc-player" class="sc-hidden"></iframe>
     </div>
   `;
-  if (loggedIn) setLoggedInMeta(); else clearLoggedInMeta();
+  if (loggedIn) setLoggedInMeta();
+  else clearLoggedInMeta();
 }
 function startStimulus() {
   const app = Application.start();
   app.register("global-player", ControllerClass);
   const root = document.getElementById("root");
-  const controller = app.getControllerForElementAndIdentifier(root, "global-player");
+  const controller = app.getControllerForElementAndIdentifier(
+    root,
+    "global-player"
+  );
   return { app, controller, root };
 }
 
@@ -84,33 +90,56 @@ function installSCWidgetMock() {
   const handlers = new Map();
 
   const api = {
-    Events: Object.freeze({ READY: "ready", PLAY: "play", PAUSE: "pause", FINISH: "finish" }),
+    Events: Object.freeze({
+      READY: "ready",
+      PLAY: "play",
+      PAUSE: "pause",
+      FINISH: "finish",
+    }),
   };
   const widget = {
     _handlers: handlers,
     bind: jest.fn((ev, cb) => handlers.set(ev, cb)),
     unbind: jest.fn((ev) => handlers.delete(ev)),
-    _trigger(ev) { handlers.get(ev)?.(); },
+    _trigger(ev) {
+      handlers.get(ev)?.();
+    },
 
-    play: jest.fn(() => { paused = false; handlers.get(api.Events.PLAY)?.(); }),
-    pause: jest.fn(() => { paused = true; handlers.get(api.Events.PAUSE)?.(); }),
+    play: jest.fn(() => {
+      paused = false;
+      handlers.get(api.Events.PLAY)?.();
+    }),
+    pause: jest.fn(() => {
+      paused = true;
+      handlers.get(api.Events.PAUSE)?.();
+    }),
     isPaused: jest.fn((cb) => cb(paused)),
 
     getDuration: jest.fn((cb) => cb(duration)),
     getPosition: jest.fn((cb) => cb(position)),
-    seekTo: jest.fn((ms) => { position = ms; }),
+    seekTo: jest.fn((ms) => {
+      position = ms;
+    }),
 
     getCurrentSound: jest.fn((cb) => cb(currentSound)),
     setVolume: jest.fn(),
 
-    __setDuration(ms){ duration = ms; },
-    __setPosition(ms){ position = ms; },
-    __setCurrentSound(obj){ currentSound = obj; }
+    __setDuration(ms) {
+      duration = ms;
+    },
+    __setPosition(ms) {
+      position = ms;
+    },
+    __setCurrentSound(obj) {
+      currentSound = obj;
+    },
   };
 
   // SC.Widget は iframe を受けるが、テストでは無視して単一インスタンス返す
   global.SC = {
-    Widget: Object.assign(function WidgetFactory(){ return widget; }, { Events: api.Events }),
+    Widget: Object.assign(function WidgetFactory() {
+      return widget;
+    }, { Events: api.Events }),
   };
   return widget;
 }
@@ -118,12 +147,19 @@ function installSCWidgetMock() {
 /* ========== Canvas/RAF モック ========== */
 function installCanvasMock() {
   jest.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
-    clearRect: jest.fn(), save: jest.fn(), restore: jest.fn(),
-    beginPath: jest.fn(), lineTo: jest.fn(), stroke: jest.fn(),
-    lineWidth: 0, strokeStyle: "",
+    clearRect: jest.fn(),
+    save: jest.fn(),
+    restore: jest.fn(),
+    beginPath: jest.fn(),
+    lineTo: jest.fn(),
+    stroke: jest.fn(),
+    lineWidth: 0,
+    strokeStyle: "",
   });
-  if (!global.requestAnimationFrame) global.requestAnimationFrame = (cb) => setTimeout(cb, 0);
-  if (!global.cancelAnimationFrame) global.cancelAnimationFrame = (id) => clearTimeout(id);
+  if (!global.requestAnimationFrame)
+    global.requestAnimationFrame = (cb) => setTimeout(cb, 0);
+  if (!global.cancelAnimationFrame)
+    global.cancelAnimationFrame = (id) => clearTimeout(id);
 }
 
 /* ========== SweetAlert2 モック（window と global 両方に） ========== */
@@ -158,7 +194,9 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 afterAll(() => {
-  try { __consoleLogSpy?.mockRestore(); } finally {
+  try {
+    __consoleLogSpy?.mockRestore();
+  } finally {
     // eslint-disable-next-line no-global-assign
     console.log = __originalConsoleLog;
   }
@@ -179,20 +217,30 @@ describe("API直再生（progressive）と保存/復元", () => {
     // stream URL 解決成功
     const spyResolve = jest
       .spyOn(ControllerClass.prototype, "_resolveStreamUrl")
-      .mockResolvedValue({ url: "https://example.test/stream.mp3", isHls: false });
+      .mockResolvedValue({
+        url: "https://example.test/stream.mp3",
+        isHls: false,
+      });
 
     // _playViaMedia を UI 反映まで即時化
     const spyPlayViaMedia = jest
       .spyOn(ControllerClass.prototype, "_playViaMedia")
       .mockImplementation(async function ({ resumeMs }) {
-        const el = this._ensureMedia?.({ useVideo: false }) || document.createElement("audio");
+        const el =
+          this._ensureMedia?.({ useVideo: false }) ||
+          document.createElement("audio");
 
         // paused/currentTime/duration を模倣
-        Object.defineProperty(el, "paused", { value: false, configurable: true });
+        Object.defineProperty(el, "paused", {
+          value: false,
+          configurable: true,
+        });
         let _ct = resumeMs / 1000;
         Object.defineProperty(el, "currentTime", {
           get: () => _ct,
-          set: (v) => { _ct = v; },
+          set: (v) => {
+            _ct = v;
+          },
           configurable: true,
         });
         Object.defineProperty(el, "duration", {
@@ -240,9 +288,12 @@ describe("API直再生（progressive）と保存/復元", () => {
 
     const ct = document.getElementById("current-time").textContent.trim();
     // JSDOMや実装差で "0:12" にならない環境があるため、広めに許容
-    const ok = ct === "0:12" || ct === "0:13" || ct === "0:11" || ct === "0:00";
+    const ok =
+      ct === "0:12" || ct === "0:13" || ct === "0:11" || ct === "0:00";
     expect(ok).toBe(true);
-    expect(document.getElementById("bottom-player").classList.contains("d-none")).toBe(false);
+    expect(
+      document.getElementById("bottom-player").classList.contains("d-none")
+    ).toBe(false);
 
     // 後片付け
     spyResolve.mockRestore();
@@ -264,11 +315,16 @@ describe("未ログインガード / ログイン導線", () => {
     const { controller } = startStimulus();
 
     // 直接ガードを叩く（イベントオブジェクトは最低限のメソッドだけ）
-    const ev = { preventDefault(){}, stopPropagation(){} };
+    const ev = {
+      preventDefault() {},
+      stopPropagation() {},
+    };
     controller._requireLogin(ev);
 
     expect(window.Swal.fire).toHaveBeenCalledTimes(1);
-    expect(document.getElementById("bottom-player").classList.contains("d-none")).toBe(true);
+    expect(
+      document.getElementById("bottom-player").classList.contains("d-none")
+    ).toBe(true);
   });
 });
 
@@ -279,57 +335,75 @@ describe("未ログインガード / ログイン導線", () => {
  *    - 実装差：this.widget ではなく this._widget に持つ場合も許容
  * ======================================================================================= */
 describe("フォールバック経路", () => {
-  test("APIメディアplay失敗 → _fallbackToWidgetFromAudio でwidget再生へ", async () => {
-    jest.useFakeTimers();
+  test(
+    "APIメディアplay失敗 → _fallbackToWidgetFromAudio でwidget再生へ",
+    async () => {
+      jest.useFakeTimers();
 
-    // APIモード
-    setLoggedInMeta();
-    setOAuthTokenMeta("tokXYZ");
-    buildDOMMinimal({ loggedIn: true });
+      // APIモード
+      setLoggedInMeta();
+      setOAuthTokenMeta("tokXYZ");
+      buildDOMMinimal({ loggedIn: true });
 
-    const { controller } = startStimulus();
+      const { controller } = startStimulus();
 
-    // resolve は成功
-    jest.spyOn(ControllerClass.prototype, "_resolveStreamUrl")
-      .mockResolvedValue({ url: "https://example.test/stream.mp3", isHls: false });
+      // resolve は成功
+      jest
+        .spyOn(ControllerClass.prototype, "_resolveStreamUrl")
+        .mockResolvedValue({
+          url: "https://example.test/stream.mp3",
+          isHls: false,
+        });
 
-    // メディア再生は失敗 → フォールバック誘導
-    jest.spyOn(ControllerClass.prototype, "_playViaMedia")
-      .mockImplementation(async () => { throw new Error("play failed"); });
+      // メディア再生は失敗 → フォールバック誘導
+      jest
+        .spyOn(ControllerClass.prototype, "_playViaMedia")
+        .mockImplementation(async () => {
+          throw new Error("play failed");
+        });
 
-    // 実行（API → 失敗 → フォールバックへ）
-    controller.playFromExternal("https://soundcloud.com/a/x");
+      // 実行（API → 失敗 → フォールバックへ）
+      controller.playFromExternal("https://soundcloud.com/a/x");
 
-    // iframe onload を明示呼び出し
-    const iframe = document.getElementById("hidden-sc-player");
-    expect(iframe).toBeTruthy();
-    if (iframe && typeof iframe.onload === "function") {
-      iframe.onload();
-    }
+      // iframe を取得（なければテスト側で生成して補う）
+      let iframe = document.getElementById("hidden-sc-player");
+      if (!iframe) {
+        iframe = document.createElement("iframe");
+        iframe.id = "hidden-sc-player";
+        iframe.className = "sc-hidden";
+        document.body.appendChild(iframe);
+      }
 
-    // 内部の短いディレイを跨ぐ
-    jest.advanceTimersByTime(200);
+      // iframe onload を明示呼び出し（存在すれば）
+      if (typeof iframe.onload === "function") {
+        iframe.onload();
+      }
 
-    // widget 参照（実装により this._widget の可能性も許容）
-    let widgetRef = controller.widget || controller._widget || null;
+      // 内部の短いディレイを跨ぐ
+      jest.advanceTimersByTime(200);
 
-    // もし未確立なら、SC.Widget() を当て込んで READY を疑似発火（実装差対策）
-    if (!widgetRef) {
-      // eslint-disable-next-line no-undef
-      widgetRef = global.SC.Widget();
-      controller.widget = widgetRef;
-    }
+      // widget 参照（実装により this._widget の可能性も許容）
+      let widgetRef = controller.widget || controller._widget || null;
 
-    expect(widgetRef).toBeTruthy();
+      // もし未確立なら、SC.Widget() を当て込んで READY を疑似発火（実装差対策）
+      if (!widgetRef) {
+        // eslint-disable-next-line no-undef
+        widgetRef = global.SC.Widget();
+        controller.widget = widgetRef;
+      }
 
-    // READY を人工的にトリガして以降のUI反映を進める
-    widgetRef._trigger(global.SC.Widget.Events.READY);
+      expect(widgetRef).toBeTruthy();
 
-    // 1tick 進める
-    jest.advanceTimersByTime(1000);
+      // READY を人工的にトリガして以降のUI反映を進める
+      widgetRef._trigger(global.SC.Widget.Events.READY);
 
-    // シークバー等のUI要素が存在することを確認（READYまで通った指標）
-    const seek = document.getElementById("seek-bar");
-    expect(seek).toBeTruthy();
-  }, 15000);
+      // 1tick 進める
+      jest.advanceTimersByTime(1000);
+
+      // シークバー等のUI要素が存在することを確認（READYまで通った指標）
+      const seek = document.getElementById("seek-bar");
+      expect(seek).toBeTruthy();
+    },
+    15000
+  );
 });
