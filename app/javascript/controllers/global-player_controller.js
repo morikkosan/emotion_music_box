@@ -625,28 +625,20 @@ export default class extends Controller {
   }
 
   connect() {
-    // ========== ① 追加: 次ページ到着の“種別”フック & 判定（網羅版） ==========
+    // ========== ① 追加: 次ページ到着の“種別”フック & 判定 ==========
     try {
-      const markNav = (kind) => {
-        try { sessionStorage.setItem("__gp_last_nav_kind", kind); } catch(_) {}
-      };
-
       if (!sessionStorage.getItem("__gp_nav_hooks_set")) {
-        // Turbo の全画面遷移
-        window.addEventListener("turbo:before-visit", () => markNav("turbo"));
-        // Turbo が現在のDOMを差し替える直前（全画面・プレビュー・同一ページ差し替え等）
-        document.addEventListener("turbo:before-render", () => markNav("turbo"));
-        // Turbo Frame の遷移（フレーム内だけの差し替え）
-        document.addEventListener("turbo:before-frame-render", () => markNav("turbo"));
-        // Turbo フォーム送信開始（遷移につながるケース）
-        document.addEventListener("turbo:submit-start", () => markNav("turbo"));
-        // 戻る/進む（履歴遷移）
-        window.addEventListener("popstate", () => markNav("turbo"));
+        // Turbo 管轄の遷移（visit/リンク）
+        window.addEventListener("turbo:before-visit", () => {
+          try { sessionStorage.setItem("__gp_last_nav_kind", "turbo"); } catch(_) {}
+        });
 
-        // ハード遷移：beforeunload は Turbo では基本走らない＝走ったらハードとみなす
-        window.addEventListener("beforeunload", () => markNav("hard"));
+        // ハード遷移（beforeunloadはTurboでは基本走らない）
+        window.addEventListener("beforeunload", () => {
+          try { sessionStorage.setItem("__gp_last_nav_kind", "hard"); } catch(_) {}
+        });
 
-        // 外部・別タブ・download・data-turbo="false" など“Turbo 管轄外”クリックはハード扱い
+        // data-turbo="false" / target付き / 別オリジン / download属性 などの保険
         window.addEventListener("click", (ev) => {
           const a = ev.target?.closest?.("a[href]");
           if (!a) return;
@@ -654,21 +646,40 @@ export default class extends Controller {
           const turboOff     = a.getAttribute("data-turbo") === "false";
           const downloadAttr = a.hasAttribute("download");
           const newOrigin    = a.origin && a.origin !== location.origin;
-          if (isExternalWin || turboOff || downloadAttr || newOrigin) markNav("hard");
+          if (isExternalWin || turboOff || downloadAttr || newOrigin) {
+            try { sessionStorage.setItem("__gp_last_nav_kind", "hard"); } catch(_) {}
+          }
         }, true);
 
         sessionStorage.setItem("__gp_nav_hooks_set", "1");
       }
     } catch (_) {}
 
-    let _arrivedByTurbo = true; // ← 既定を “turbo” 到着扱い（取りこぼし対策）
-    try {
-      const k = sessionStorage.getItem("__gp_last_nav_kind");
-      // “明示的に hard と書かれている時だけ”ハード扱い
-      _arrivedByTurbo = (k !== "hard");
-      sessionStorage.removeItem("__gp_last_nav_kind"); // 一度使ったら消す
-    } catch (_) {}
-    this.__arrivedByTurbo = _arrivedByTurbo;
+    let _arrivedByTurbo = false;
+try {
+  const k = sessionStorage.getItem("__gp_last_nav_kind");
+  if (k === "turbo") {
+    _arrivedByTurbo = true;
+  } else if (k === "hard") {
+    _arrivedByTurbo = false;
+  } else {
+    // ★ フォールバック:
+    //   nav_kind が取れなくても、同一オリジンの referrer から来ていれば
+    //   Turbo 経由の遷移とみなして扱う
+    const ref = document.referrer;
+    if (ref) {
+      try {
+        const refUrl = new URL(ref);
+        if (refUrl.origin === window.location.origin) {
+          _arrivedByTurbo = true;
+        }
+      } catch (_) {}
+    }
+  }
+  sessionStorage.removeItem("__gp_last_nav_kind"); // 一度使ったら消す
+} catch (_) {}
+this.__arrivedByTurbo = _arrivedByTurbo;
+
 
     // ========== ② 追加: フルリロード到着なら“初期化のみ”（自動復元しない） ==========
     if (!this.__arrivedByTurbo) {
@@ -835,17 +846,10 @@ export default class extends Controller {
       try { this._setIframeVisibility(false); } catch(_) {}
     }
 
-    // ========== ③ 変更: 自動復元は Turbo 到着時のみ（フォールバック強化） ==========
+    // ========== ③ 変更: 自動復元は Turbo 到着時のみ ==========
     if (this.__arrivedByTurbo) {
-      const doRestore = () => this.restorePlayerState?.();
-
-      if (window.SC?.Widget) {
-        doRestore();
-      } else {
-        // Turbo では window.load は基本走らないので、両方フック
-        document.addEventListener("turbo:load", doRestore, { once: true });
-        window.addEventListener("load", doRestore, { once: true }); // 保険（フルリロード時）
-      }
+      if (window.SC?.Widget) this.restorePlayerState();
+      else window.addEventListener("load", () => this.restorePlayerState?.());
     }
   }
 
