@@ -1,4 +1,4 @@
-/* eslint-env browser */
+/* eslint-env browser */ 
 /* global SC, Swal */
 
 import { Controller } from "@hotwired/stimulus";
@@ -558,40 +558,6 @@ export default class extends Controller {
   }
 
   // -------- ライフサイクル --------
-
-  // ★★★ 追加その1：シングルトン保険（旧インスタンスの掃除）★★★
-  _registerSingletonCleanup() {
-    try {
-      if (typeof window.__gpCleanupPrev === "function") {
-        // 前ページ由来のプレーヤーが残っていたら必ず停止
-        try { window.__gpCleanupPrev(); } catch(_) {}
-      }
-      // いまのインスタンスの cleanup を“次回のため”に登録
-      window.__gpCleanupPrev = () => {
-        try { this.cleanup?.(); } catch(_) {}
-        try { this.stopOnlyPlayer?.(); } catch(_) {}
-      };
-    } catch(_) {}
-  }
-
-  // ★★★ 追加その2：ナビゲーション直前に止める全局フック（1回だけ登録）★★★
-  _installNavGuardsOnce() {
-    if (window.__gpNavGuardsInstalled) return;
-    window.__gpNavGuardsInstalled = true;
-
-    const navCleanup = () => {
-      try { this.savePlayerState?.(); } catch(_) {}
-      try { this.stopOnlyPlayer?.(); } catch(_) {}
-    };
-
-    // Turboのページ遷移（ロゴクリックなど通常リンクもここを通る）
-    document.addEventListener("turbo:before-visit", navCleanup, { passive: true });
-
-    // フルリロードやブラウザ戻る等（Safari対策で両方）
-    window.addEventListener("beforeunload", navCleanup, { passive: true });
-    window.addEventListener("pagehide", navCleanup, { passive: true });
-  }
-
   cleanup = () => {
     clearInterval(this.progressInterval);
     try {
@@ -659,17 +625,71 @@ export default class extends Controller {
   }
 
   connect() {
+    // ========== ① 追加: 次ページ到着の“種別”フック & 判定 ==========
+    try {
+      if (!sessionStorage.getItem("__gp_nav_hooks_set")) {
+        // Turbo 管轄の遷移（visit/リンク）
+        window.addEventListener("turbo:before-visit", () => {
+          try { sessionStorage.setItem("__gp_last_nav_kind", "turbo"); } catch(_) {}
+        });
+
+        // ハード遷移（beforeunloadはTurboでは基本走らない）
+        window.addEventListener("beforeunload", () => {
+          try { sessionStorage.setItem("__gp_last_nav_kind", "hard"); } catch(_) {}
+        });
+
+        // data-turbo="false" / target付き / 別オリジン / download属性 などの保険
+        window.addEventListener("click", (ev) => {
+          const a = ev.target?.closest?.("a[href]");
+          if (!a) return;
+          const isExternalWin = /_blank|_top|_parent/i.test(a.target || "");
+          const turboOff     = a.getAttribute("data-turbo") === "false";
+          const downloadAttr = a.hasAttribute("download");
+          const newOrigin    = a.origin && a.origin !== location.origin;
+          if (isExternalWin || turboOff || downloadAttr || newOrigin) {
+            try { sessionStorage.setItem("__gp_last_nav_kind", "hard"); } catch(_) {}
+          }
+        }, true);
+
+        sessionStorage.setItem("__gp_nav_hooks_set", "1");
+      }
+    } catch (_) {}
+
+    let _arrivedByTurbo = false;
+    try {
+      const k = sessionStorage.getItem("__gp_last_nav_kind");
+      _arrivedByTurbo = (k === "turbo");
+      sessionStorage.removeItem("__gp_last_nav_kind"); // 一度使ったら消す
+    } catch (_) {}
+    this.__arrivedByTurbo = _arrivedByTurbo;
+
+    // ========== ② 追加: フルリロード到着なら“初期化のみ”（自動復元しない） ==========
+    if (!this.__arrivedByTurbo) {
+      try {
+        this.stopOnlyPlayer?.();
+        this._disposeAudio?.();
+
+        const ifr = document.getElementById("hidden-sc-player");
+        if (ifr) this._safeNukeIframe(ifr);
+        this.iframeElement = null;
+
+        const bp = document.getElementById("bottom-player");
+        if (bp) {
+          bp.classList.add("d-none");
+          bp.setAttribute("aria-hidden","true");
+          bp.setAttribute("inert","");
+        }
+
+        // 必要なら前ページの状態を完全に捨てる
+        // localStorage.removeItem("playerState");
+      } catch(_) {}
+    }
+
     // ★ 追記：このページはプレイヤー禁止なら、何も初期化しないで即終了
     if (this._chromeOff()) {
       this._disableCompletely();
       return;
     }
-
-    // ★ 追加：シングルトン保険（旧インスタンス掃除→自分を登録）
-    this._registerSingletonCleanup();
-
-    // ★ 追加：ナビゲーション前フックを一度だけ入れる
-    this._installNavGuardsOnce();
 
     // デバッグ初期化＆簡易スイッチ
     this._debugInit();
@@ -808,18 +828,15 @@ export default class extends Controller {
       try { this._setIframeVisibility(false); } catch(_) {}
     }
 
-    if (window.SC?.Widget) this.restorePlayerState();
-    else window.addEventListener("load", () => this.restorePlayerState?.());
-  }
-
-  // ★★★ 追加その3：Stimulus ライフサイクルでの後片付け保証 ★★★
-  disconnect() {
-    // ページキャッシュ入れやフルリロード時に取り残しを防ぐ
-    try { this.savePlayerState?.(); } catch(_) {}
-    try { this.cleanup?.(); } catch(_) {}
+    // ========== ③ 変更: 自動復元は Turbo 到着時のみ ==========
+    if (this.__arrivedByTurbo) {
+      if (window.SC?.Widget) this.restorePlayerState();
+      else window.addEventListener("load", () => this.restorePlayerState?.());
+    }
   }
 
   // ---------- A11y ----------
+
   setPlayPauseAria(isPlaying) {
     if (!this.playPauseButton) return;
     this.playPauseButton.setAttribute("aria-label", isPlaying ? "一時停止" : "再生");
