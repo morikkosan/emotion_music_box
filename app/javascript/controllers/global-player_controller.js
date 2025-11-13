@@ -19,6 +19,8 @@ import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
   static targets = ["trackImage", "playIcon"];
+  abortController = null;
+
 
   // ===== 基本ユーティリティ =====
   _getOAuthToken() {
@@ -487,13 +489,18 @@ export default class extends Controller {
   async _resolveStreamUrl(trackUrl) {
     const cleanUrl = this._normalizeTrackUrl(trackUrl);
     try {
+      this.abortController?.abort();
+      this.abortController = new AbortController();
+
+
       this._log("resolve (proxy only) →", cleanUrl);
       this._debug("resolve start", { via:"proxy", hasToken: this._hasOAuthToken() });
 
       const r1 = await fetch(`/sc/resolve?url=${encodeURIComponent(cleanUrl)}`, {
         cache: "no-store",
         credentials: "same-origin",
-        headers: this._authHeaders()
+        headers: this._authHeaders(),
+        signal: this.abortController.signal
       });
       if (!r1.ok) {
         const txt = await r1.text().catch(()=> "");
@@ -532,7 +539,8 @@ export default class extends Controller {
       const r2 = await fetch(streamLocatorViaProxy, {
         cache: "no-store",
         credentials: "same-origin",
-        headers: this._authHeaders()
+        headers: this._authHeaders(),
+        signal: this.abortController.signal
       });
       if (!r2.ok) {
         const txt = await r2.text().catch(()=> "");
@@ -561,6 +569,7 @@ export default class extends Controller {
     cleanup = () => {
     // ページ切り替え前に「ページ側のイベント」だ
     // け外す
+    this.abortController?.abort();  // ← ★ loading中でも即中断！
     
     clearInterval(this.progressInterval);
     this.progressInterval = null;
