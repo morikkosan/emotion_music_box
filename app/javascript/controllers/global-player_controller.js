@@ -630,7 +630,14 @@ export default class extends Controller {
     mobile && (mobile.textContent = text);
   }
 
+  _isNavigatingAway = false;
+
+
   connect() {
+
+    this._isNavigatingAway = false;
+  window.addEventListener("beforeunload", this.cleanup);
+    
     // ========== ① 追加: 次ページ到着の“種別”フック & 判定 ==========
     try {
       if (!sessionStorage.getItem("__gp_nav_hooks_set")) {
@@ -860,6 +867,15 @@ this.__arrivedByTurbo = _arrivedByTurbo;
   }
 
   // ---------- A11y ----------
+
+
+
+disconnect() {
+  window.removeEventListener("beforeunload", this.cleanup);  // ★追加
+  this.cleanup(); // ← これはもともと入っている（そのまま）
+}
+
+
 
   setPlayPauseAria(isPlaying) {
     if (!this.playPauseButton) return;
@@ -1735,7 +1751,7 @@ _onAudioDur = () => {
     try { return document.body?.classList?.contains("page--legal-chrome-off"); } catch(_) { return false; }
   }
 
-  // 4) 任意：<body data-chrome-off="true"> でもオフ（インライン script ではない属性）
+  // 4) <body data-chrome-off="true"> でもオフ（インライン script ではない属性）
   _chromeOffByDataAttr() {
     try { return String(document.body?.dataset?.chromeOff || "").toLowerCase() === "true"; } catch(_) { return false; }
   }
