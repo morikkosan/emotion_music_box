@@ -847,10 +847,15 @@ this.__arrivedByTurbo = _arrivedByTurbo;
     }
 
     // ========== ③ 変更: 自動復元は Turbo 到着時のみ ==========
-    if (this.__arrivedByTurbo) {
-      if (window.SC?.Widget) this.restorePlayerState();
-      else window.addEventListener("load", () => this.restorePlayerState?.());
+        // ========== ③: 到着方法に関係なく「必要なら」復元 ==========
+    // - Turbo 遷移 / フルリロードを問わず、playerState があれば復元
+    // - 未ログイン時や chromeOff ページでは restorePlayerState 側で何もせず終了
+    if (window.SC?.Widget) {
+      this.restorePlayerState();
+    } else {
+      window.addEventListener("load", () => this.restorePlayerState?.());
     }
+
   }
 
   // ---------- A11y ----------
