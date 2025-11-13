@@ -558,8 +558,9 @@ export default class extends Controller {
   }
 
   // -------- ライフサイクル --------
-  cleanup = () => {
-    // ページ切り替え前に「ページ側のイベント」だけ外す
+    cleanup = () => {
+    // ページ切り替え前に「ページ側のイベント」だ
+    // け外す
     
     clearInterval(this.progressInterval);
     this.progressInterval = null;
@@ -652,29 +653,29 @@ export default class extends Controller {
     } catch (_) {}
 
     let _arrivedByTurbo = false;
-    try {
-      const k = sessionStorage.getItem("__gp_last_nav_kind");
-      if (k === "turbo") {
-        _arrivedByTurbo = true;
-      } else if (k === "hard") {
-        _arrivedByTurbo = false;
-      } else {
-        // ★ フォールバック:
-        //   nav_kind が取れなくても、同一オリジンの referrer から来ていれば
-        //   Turbo 経由の遷移とみなして扱う
-        const ref = document.referrer;
-        if (ref) {
-          try {
-            const refUrl = new URL(ref);
-            if (refUrl.origin === window.location.origin) {
-              _arrivedByTurbo = true;
-            }
-          } catch (_) {}
+try {
+  const k = sessionStorage.getItem("__gp_last_nav_kind");
+  if (k === "turbo") {
+    _arrivedByTurbo = true;
+  } else if (k === "hard") {
+    _arrivedByTurbo = false;
+  } else {
+    // ★ フォールバック:
+    //   nav_kind が取れなくても、同一オリジンの referrer から来ていれば
+    //   Turbo 経由の遷移とみなして扱う
+    const ref = document.referrer;
+    if (ref) {
+      try {
+        const refUrl = new URL(ref);
+        if (refUrl.origin === window.location.origin) {
+          _arrivedByTurbo = true;
         }
-      }
-      sessionStorage.removeItem("__gp_last_nav_kind"); // 一度使ったら消す
-    } catch (_) {}
-    this.__arrivedByTurbo = _arrivedByTurbo;
+      } catch (_) {}
+    }
+  }
+  sessionStorage.removeItem("__gp_last_nav_kind"); // 一度使ったら消す
+} catch (_) {}
+this.__arrivedByTurbo = _arrivedByTurbo;
 
 
     // ========== ② 追加: フルリロード到着なら“初期化のみ”（自動復元しない） ==========
@@ -844,16 +845,13 @@ export default class extends Controller {
 
     // ========== ③ 変更: 自動復元は Turbo 到着時のみ ==========
     if (this.__arrivedByTurbo) {
-      if (window.SC?.Widget) this.restorePlayerState();
-      else window.addEventListener("load", () => this.restorePlayerState?.());
-    }
+  // ★API再生では DOM が安定するまで restore を遅延させる
+  setTimeout(() => {
+    if (window.SC?.Widget) this.restorePlayerState();
+    else window.addEventListener("load", () => this.restorePlayerState?.());
+  }, 150);
+}
 
-    // ★ 追加: 初回 Turbo 遷移直後に「音だけ鳴っていてタイマーが死んでいる」ケースを救済
-    setTimeout(() => {
-      try {
-        this._healApiProgressTracking();
-      } catch (_) {}
-    }, 800);
   }
 
   // ---------- A11y ----------
@@ -929,51 +927,25 @@ export default class extends Controller {
 
 
   // ★ 新規追加：APIモード用の startProgressTracking を先にセットする
-  _prepareApiProgressTracking() {
-    this.startProgressTracking = () => {
-      clearInterval(this.progressInterval);
-      this.progressInterval = setInterval(() => {
-        if (!this.audio || this.isSeeking) return;
-        const pos = Math.floor((this.audio.currentTime||0)*1000);
-        const dur = Math.floor((this.audio.duration||0)*1000);
-        if (dur > 0) {
-          const percent = Math.round((pos/dur)*100);
-          if (this.seekBar) this.seekBar.value = String(percent);
-          if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(pos);
-          if (this.durationEl) this.durationEl.textContent = this.formatTime(dur);
-          this.updateSeekAria(percent, pos, dur);
-        }
-        this.savePlayerState();
-      }, 1000);
-    };
-  }
-
-  // ★ 追加: 「音は鳴っているのにタイマーだけ止まっている」状態を検知して復活させる
-  _healApiProgressTracking() {
-    // API モード以外は一切触らない
-    if (!this._shouldUseApi()) return;
-
-    // audio インスタンスを確保（this.audio が空なら DOM から拾い直し）
-    let a = this.audio;
-    try {
-      if (!a) {
-        a = document.querySelector("audio.media-hidden") || document.querySelector("audio");
+_prepareApiProgressTracking() {
+  this.startProgressTracking = () => {
+    clearInterval(this.progressInterval);
+    this.progressInterval = setInterval(() => {
+      if (!this.audio || this.isSeeking) return;
+      const pos = Math.floor((this.audio.currentTime||0)*1000);
+      const dur = Math.floor((this.audio.duration||0)*1000);
+      if (dur > 0) {
+        const percent = Math.round((pos/dur)*100);
+        if (this.seekBar) this.seekBar.value = String(percent);
+        if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(pos);
+        if (this.durationEl) this.durationEl.textContent = this.formatTime(dur);
+        this.updateSeekAria(percent, pos, dur);
       }
-    } catch (_) {}
-    if (!a) return;
+      this.savePlayerState();
+    }, 1000);
+  };
+}
 
-    this.audio = a;
-
-    // 再生していなければ何もしない
-    if (a.paused) return;
-
-    // すでに interval が動いていれば何もしない
-    if (this.progressInterval) return;
-
-    // ここまで来たら「音だけ鳴っていてタイマーが死んでいる」ので、API版を差し込み＆起動
-    this._prepareApiProgressTracking();
-    this.startProgressTracking();
-  }
 
   async _resumeAudioFromState(state) {
     const url = this._extractOriginalPlayUrl(state.trackUrl) || state.trackUrl;
