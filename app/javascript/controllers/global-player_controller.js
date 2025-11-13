@@ -845,13 +845,9 @@ this.__arrivedByTurbo = _arrivedByTurbo;
 
     // ========== ③ 変更: 自動復元は Turbo 到着時のみ ==========
     if (this.__arrivedByTurbo) {
-  // ★API再生では DOM が安定するまで restore を遅延させる
-  setTimeout(() => {
-    if (window.SC?.Widget) this.restorePlayerState();
-    else window.addEventListener("load", () => this.restorePlayerState?.());
-  }, 150);
-}
-
+      if (window.SC?.Widget) this.restorePlayerState();
+      else window.addEventListener("load", () => this.restorePlayerState?.());
+    }
   }
 
   // ---------- A11y ----------
@@ -1636,8 +1632,35 @@ _prepareApiProgressTracking() {
     this.setPlayPauseAria(false);
   };
   _onAudioEnded = () => { this.onFinish(); };
-  _onAudioTime  = () => {};
-  _onAudioDur   = () => {};
+
+
+ _onAudioTime = () => {
+  try {
+    if (!this.audio || this.isSeeking) return;
+
+    const pos = Math.floor((this.audio.currentTime || 0) * 1000);
+    const dur = Math.floor((this.audio.duration || 0) * 1000);
+    if (dur > 0) {
+      const percent = Math.round((pos / dur) * 100);
+      if (this.seekBar) this.seekBar.value = String(percent);
+      if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(pos);
+      if (this.durationEl) this.durationEl.textContent = this.formatTime(dur);
+      this.updateSeekAria(percent, pos, dur);
+    }
+  } catch (_) {}
+};
+
+_onAudioDur = () => {
+  // duration が更新されたら UI を即更新するだけ（プレイヤー制御はしない）
+  try {
+    if (!this.audio) return;
+    const dur = Math.floor((this.audio.duration || 0) * 1000);
+    if (dur > 0 && this.durationEl) {
+      this.durationEl.textContent = this.formatTime(dur);
+    }
+  } catch (_) {}
+};
+
 
   _setupIOSVolumeUI() {
 
