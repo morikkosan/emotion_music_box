@@ -1,10 +1,16 @@
-# app/controllers/sound_cloud_controller.rb
+# app/controllers/sound_cloud_controller.rb 
 class SoundCloudController < ApplicationController
   require "httparty"
+  include ApiRateLimitable
+
   # 認証不要にする場合は before_action を外すかコメントアウトしてください。
   # before_action :authenticate_user!, only: [:resolve, :search]
 
-  # GET /sc_resolve?url=…SoundCloudのページURLを、APIで扱いやすい曲データに**変換（resolve）する
+  # 🔹検索APIにだけレート制限をかける
+  before_action :enforce_search_limit!, only: [:search]
+
+  # GET /sc_resolve?url=…
+  # SoundCloudのページURLを、APIで扱いやすい曲データに**変換（resolve）する
   def resolve
     url   = params.require(:url)
     token = fetch_app_token

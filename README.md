@@ -185,44 +185,7 @@ EMOMU は **Web Push（VAPID）** に対応しており、
 # Emotion Music Box は、感情と音楽をつなげて「今の自分」に寄り添う音楽体験を届けます。
 
 
-**対応環境**
-- **iPhone / iPad（iOS / iPadOS 16.4+）**  
-  - 必須：**ホーム画面に追加（PWAインストール）→ そのアイコンから起動**
-  - Safari の通常タブのままでは通知は届きません  
-  参考：Apple Developer（Web Push）: https://developer.apple.com/documentation/usernotifications/sending_web_push_notifications_in_web_apps  
-  参考：OneSignal Docs: https://documentation.onesignal.com/
-- **Android（Chrome / Edge など）**  
-  - **インストール不要**。サイト内の「通知を有効にする」からブラウザの通知を許可すればOK（ホーム画面追加も任意）  
-  参考：web.dev — https://web.dev/learn/push/
-- **PC（Chrome / Edge / Safari 等）**  
-  - **インストール不要**。初回アクセス時または設定から通知を許可してください  
-  参考：MDN — Notifications API: https://developer.mozilla.org/docs/Web/API/Notifications_API
-
-**使い方（最短手順）**
-- **iOS**：サイトを開く → 共有メニュー → **「ホーム画面に追加」** → ホーム画面のアイコンから起動 → アプリ内の**「通知を有効にする」**をタップして許可  
-  参考：Apple Developer（Web Push）: https://developer.apple.com/documentation/usernotifications/sending_web_push_notifications_in_web_apps  
-  参考：OneSignal Docs: https://documentation.onesignal.com/
-- **Android / PC**：サイトを開く → **「通知を有効にする」**をクリック → ブラウザのダイアログで **許可**  
-  参考：web.dev — https://web.dev/learn/push/
-
----
-
-
 - モバイルでもフッターメニューが常時固定で操作しやすい設計。
-
----
-
-## テスト構成（Jest 概要）
-- `spec/javascripts/globals/application.entry.test.js`  
-  …エントリの基本（UJSログ、push二重防止、ローダー、モーダル保険など）
-- `spec/javascripts/globals/application.entry.extra.test.js`  
-  …アバター（Crop確定／Cloudinary 分岐、recommend など周辺UI）
-- `spec/javascripts/globals/application.entry.toppers.test.js`  
-  …取りこぼし潰し（turbo:before-cache、2つの MutationObserver 等）
-- `spec/javascripts/globals/application.entry.tinygap.test.js`  
-  …微細な枝や条件の最終カバー
-
----
 
 ## 使用技術（Tech Stack）
 
@@ -396,5 +359,6 @@ Turbo による高速遷移、独自プレーヤーによる途切れない音�
 ## リリース時点の挙動メモ
 
 - iOS の Web Push は技術的制約のため未対応
-- SoundCloud 側の API 制限により、一定時間あたりのリクエスト数に上限あり
-- 〜〜〜（必要なメモを箇条書き）
+- SoundCloud API のレート制限について
+本アプリでは、SoundCloud API を通じて楽曲ストリーミングおよびメタデータ取得を行っています。SoundCloud 側の仕様により、再生可能ストリームアクセスは「1アプリケーションあたり24時間で15,000回、別途検索は（1時間で 30,000 リクエスト）」の上限が設定されています。
+そのため、当アプリではキャッシュ戦略やアクセス回数の監視を行い、制限に到達した場合のユーザー影響を最小化する設計としています。
