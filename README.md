@@ -20,6 +20,7 @@
 - [リリース時点の挙動メモ](#リリース時点の挙動メモ)
 - [テスト構成（Jest 概要）](#テスト構成jest-概要)
 - [使用技術（Tech Stack）](#使用技術tech-stack)
+- [💡技術選定理由（EMOTION MUSIC BOX (EMOMU)）](#技術選定理由)
 - [画面遷移図（Figma）](#画面遷移図figma)
 
 
@@ -66,7 +67,7 @@
 - 新規登録者は公式 SoundCloud の登録ページに遷移します（簡単登録）
 - 登録後タブを閉じてログインを行ってください
 - 初期は SoundCloud ユーザーネームですが、
-- お好みでプロフィール編集でプロフィール画像、名前、性別、名前が作成できます
+- お好みでプロフィール編集でプロフィール画像、名前、性別、年齢（任意）が作成できます
 - セッション管理（Cookieストア）
 
 ※本アプリはSoundCloudのAPIを利用していますが、SoundCloudにより承認・提携・支援されたものではありません。
@@ -149,15 +150,36 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 - 主要操作をフッターメニュー画面下部に集約して片手操作が容易に
 - デスクトップ版では、ブラウザのサイズを自由に変更してもレイアウトが瞬時に切り替わるため、常に最適なUIで快適に操作できます。
 
-### 9) 通知
-- 通知（Web Push / VAPID）
+### 9) 通知（Web Push / VAPID 対応）
 
-本アプリは **Web Push（VAPID）** に対応しており、コメント／いいね等の通知を受け取れます。  
-ブラウザ標準の **Push API / Notifications API** と **VAPID** を使うため、APNs や Firebase SDK は不要です。  
-参考：  
-- MDN — Push API: https://developer.mozilla.org/docs/Web/API/Push_API  
-- MDN — Notifications API: https://developer.mozilla.org/docs/Web/API/Notifications_API  
-- web.dev（Web Push 概要）: https://web.dev/learn/push/
+EMOMU は **Web Push（VAPID）** に対応しており、  
+**コメント・ブックマーク（いいね）・リアクションなどの通知をリアルタイムに受け取れます。**
+
+外部サービス（Firebase / APNs 等）を使わず、  
+**ブラウザ標準の Push API / Notifications API のみで完結する軽量設計**です。
+
+※現状、この通知機能は **デスクトップ環境限定** で利用できます。  
+（iOS Safari・Android Chrome の仕様により、Web Push の安定運用が難しいため）
+
+#### 📲 対応環境（スマホ / デスクトップ共通）
+- 通知は **ユーザーメニュー内に蓄積**され、  
+  既読状態・未読バッジ・詳細モーダルなどの UI アクションが利用できます。
+- スマホ版・デスクトップ版どちらでも、**同じ通知 UI/UX** で直感的に操作できます。
+
+#### 🔧 技術ポイント
+- VAPID による署名つき Web Push（Rails 側で完結）
+- Service Worker 経由でバックグラウンド受信
+- Turbo と連携した通知リストのリアルタイム更新
+- モーダル表示での詳細確認
+
+#### 📚 参考資料
+- Push API（MDN）  
+  https://developer.mozilla.org/docs/Web/API/Push_API
+- Notifications API（MDN）  
+  https://developer.mozilla.org/docs/Web/API/Notifications_API
+- Web Push 概要（web.dev）  
+  https://web.dev/learn/push/
+
 
 
 # Emotion Music Box は、感情と音楽をつなげて「今の自分」に寄り添う音楽体験を届けます。
@@ -204,40 +226,162 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 
 ## 使用技術（Tech Stack）
 
-### ランタイム / 基盤
-- **Ruby 3.2.3**
-- **Rails 7.2.2.1**（Hotwire: Turbo / Stimulus）
-- Docker / Docker Compose（v2）
+| カテゴリ | 技術 |
+|---------|------|
+| **ランタイム / 基盤** | Ruby 3.2.3 / Rails 7.2.2.1（Hotwire: Turbo / Stimulus） / Docker / Docker Compose |
+| **インフラ・ミドルウェア** | **Render（本番ホスティング）** / **Neon（PostgreSQL 本番 DB）** / PostgreSQL（ローカル） / Redis（セッションストア） / Puma（Render 上で稼働）※ローカルは自己署名HTTPS |
+| **フロントエンド（Rails 内）** | Hotwire（Turbo / Stimulus） / Bootstrap 5.3 / jsbundling-rails（esbuild） / cssbundling-rails（sass + postcss） / Sprockets（一部） |
+| **PWA / Web API** | Service Worker（Web Push / VAPID） / manifest.json / Audio API / Fetch API / IntersectionObserver / MutationObserver |
+| **認証・認可** | Devise / OmniAuth（SoundCloud OAuth2 / Generic OAuth2） |
+| **ストレージ / 画像** | Active Storage + Cloudinary（CDN配信） / image_processing / **Cropper.js（プロフィール画像編集）** |
+| **画面 / UX・ページング・集計** | Kaminari（bootstrap5-kaminari-views） / Groupdate / **Chart.js** |
+| **通信 / ユーティリティ** | HTTParty / Faraday（外部 API クライアント） |
+| **監視・ログ** | Sentry（sentry-rails / sentry-ruby） / Lograge |
+| **テスト** | RSpec / Jest（@testing-library/dom / @testing-library/jest-dom / @testing-library/user-event） / SimpleCov |
 
-### インフラ・ミドルウェア
-- **PostgreSQL**
-- **Redis**（セッションストア）
-- **HTTPS**（Puma + PEM）
 
-### フロントエンド（Rails 内）
-- Hotwire（Turbo / Stimulus）
-- Bootstrap 5.3
-- jsbundling-rails / cssbundling-rails
-- Sprockets（一部アセット）
 
-### 認証・認可
-- Devise
-- OmniAuth（SoundCloud OAuth2 / Generic OAuth2）
 
-### ストレージ / 画像
-- Active Storage + Cloudinary
-- image_processing
 
-### 画面/UX・ページング・集計
-- Kaminari（bootstrap5-kaminari-views）
-- Groupdate
+## 💡技術選定理由（EMOTION MUSIC BOX (EMOMU)）
+📘 EMOTION MUSIC BOX（EMOMU）の技術選定理由
 
-### 通信 / ユーティリティ
-- HTTParty / Faraday
 
-### 監視・ログ
-- Sentry（sentry-rails / sentry-ruby）
-- Lograge
+【フロントエンド】
+
+音楽・感情ログを扱うアプリケーションでは、レスポンスの速さと快適な操作感が最も重要だと考えました。
+特に EMOMU は「音楽再生中にページ遷移しても途切れない操作体験」が必須であり、Web アプリでありながら ネイティブアプリに近い動作速度 を実現する必要がありました。
+
+そのため、フロントエンドには Rails × Hotwire（Turbo / Stimulus） を採用しました。
+
+Turbo により、ページ全体ではなく必要な部分のみを高速に差し替え、SPA のような軽量遷移を実現。音楽再生中でもプレーヤーが途切れません。
+
+Stimulus は「必要な場所だけロジックを当てる」仕組みのため、音楽検索・プレーヤー操作・モーダル遷移など複雑な UI でもコードが肥大化せず保守しやすい構成を維持できます。
+
+Hotwire は追加ライブラリが不要なため、コストゼロで SPA 並みの体験が可能となり、運用コスト・学習コストの両面で効率的でした。
+
+これにより、高速・軽量・低コストのフロントエンドを構築し、特にモバイルでの快適な UI/UX を実現できました。
+
+【バックエンド】
+
+バックエンドには Ruby on Rails 7 を採用しました。
+
+理由は以下の通りです。
+
+- Rails の「設定より規約」により、認証・CRUD・バリデーション・ER 設計を高速に構築できる
+- EMOMU のように投稿・プレイリスト・コメント・通知など機能数が多くても、統一されたコード構造で保守性が高い
+- Hotwire との親和性が高く、フロントエンドと自然に連携できる
+- 標準機能が充実しており、追加サービスに依存しない構成が組めるため 無料〜極低コストで運用可能
+
+Rails は「作りたい機能を素早く形にする」ことに強く、EMOMU の開発スピードや拡張性と非常に相性が良い選択でした。
+
+【データベース】
+
+データベースには PostgreSQL（Neon/Postgres） を採用しました。
+
+EMOMU では以下のように多くのリレーションを扱います。
+
+- 投稿（曲情報・感情・コメント）
+- ブックマーク（いいね）
+- プレイリスト（多対多）
+- 通知ログ
+- SoundCloud OAuth 情報
+
+PostgreSQL はリレーション・JSON・日付集計に強く、Rails とも相性が非常によいため最適でした。
+
+また Neon のサーバーレス構成により、無料枠でも十分な性能を維持でき、運用コストをほぼゼロに抑えられる点も選定理由の一つです。
+
+【認証】
+
+認証には OmniAuth（SoundCloud OAuth2） を採用しました。
+
+理由は以下の通りです。
+
+- 音楽アプリとして SoundCloud アカウントでログインできる自然な体験を提供できる
+- メールアドレスやパスワード入力が不要で、ワンタップ登録が可能
+- 曲検索・再生を行う SoundCloud API と OAuth の連携がスムーズに行える
+- 外部 ID 認証によりサーバー側セッションの負荷を軽減でき、コスト削減と UX 向上を両立できる
+
+【ストレージ（画像）】
+
+画像ストレージには Cloudinary を採用しました。
+
+- プロフィール画像などを自動でリサイズ・最適化
+- CDN 配信により高速表示
+- 無料枠の範囲で十分運用できる
+
+特に PWA を採用したモバイルファースト設計では、軽量で高速な画像配信は不可欠であり、Cloudinary は最適でした。
+
+【UI / デザイン】
+
+UI には Bootstrap 5 + Sass を採用し、必要な部分をカスタム CSS で補っています。
+
+理由は以下の通りです。
+
+- モバイル UI を短時間で整えられる
+- フッター固定プレーヤーなど特殊な UI に対応しやすい
+- 初めて使うユーザーでも直感的に操作できるデザインが作りやすい
+- Tailwind のような追加学習コストが不要で、効率よく実装できる
+- PC／モバイル間で大きくレイアウトを切り替える必要があり、Bootstrap のブレークポイントが非常に有効
+
+さらに EMOMU では、通常の SoundCloud ウィジェットを iframe でそのまま表示せず、UI/UX の最適化を目的に “オリジナル音楽プレーヤー” を独自実装しました。
+
+実装したプレーヤー機能は以下の通りです。
+
+- 自動再生（iOS の制約対応含む）
+- 再生・一時停止
+- 次の曲・前の曲
+- シークバーによる再生位置の制御
+- 曲情報の動的表示
+- プレイリストとの連携（連続再生）
+- モバイル専用レイアウト（片手操作に最適化）
+
+これにより、音楽再生を途切れさせず、Turbo 遷移でもスムーズに動く Web 音楽アプリ体験を実現できました。
+
+UI/UX を最優先しつつ、追加費用なしでリッチな音楽体験を提供できる点は大きな特徴です。
+
+【通知（Web Push / VAPID）】
+
+通知は Firebase など外部サービスを使用せず、Web Push（VAPID） を採用しました。
+（現状は主にデスクトップ向けの提供です。）
+
+- Rails だけで通知処理が完結
+- サービスワーカーで動作し、追加コスト不要
+- 外部依存がないため、コスト最小・自由度最大 の構成が可能
+
+【環境構築】
+
+開発環境には Docker / docker-compose を採用しました。
+
+理由は以下の通りです。
+
+- 環境差分が出ないため、レビューや共同作業がしやすい
+- Ruby、Node、PostgreSQL を完全に隔離して扱える
+- 機能追加やアップデート時も環境が壊れにくい
+- 「環境トラブルで時間を奪われたくない」という方針に合っている
+
+【CI/CD】
+
+デプロイには Render（GitHub 連携による自動デプロイ） を採用しました。
+
+- GitHub に push するだけで本番反映
+- SSL を自動付与
+- Docker と Rails の相性が良い
+- Heroku 無料枠終了後でも、実質ほぼ無料で継続可能
+- Render のシェル利用に必要な小額の課金（約500円）だけで本格的な CI/CD が構築可能
+
+設定が非常に簡単で、開発リズムを崩さず運用できる点が大きな魅力でした。
+
+【技術選定の総括】
+
+EMOMU の技術選定は次の 2 点を最優先にしています。
+
+1. 運用コストを極限まで抑える
+Render、Neon、Cloudinary、Hotwire、Web Push を組み合わせ、ほぼ無料で本格運用可能。
+
+2. スマホで快適な UI/UX を実現する
+Turbo による高速遷移、独自プレーヤーによる途切れない音楽体験、モバイル最適化された UI により、音楽 × 感情ログという EMOMU の体験価値を最大化。
+
 
 
 ## 画面遷移図（Figma）
@@ -246,3 +390,11 @@ Screenshots of SoundCloud login UI are used for instructional purposes. © Sound
 
 - Figma: emotion_music3  
   https://www.figma.com/design/FglcI4oHKG1LdAOzUg4103/emotion_music3?node-id=0-1&m=dev&t=PpWZOzjESTKnPbQv-1
+
+
+
+## リリース時点の挙動メモ
+
+- iOS の Web Push は技術的制約のため未対応
+- SoundCloud 側の API 制限により、一定時間あたりのリクエスト数に上限あり
+- 〜〜〜（必要なメモを箇条書き）
