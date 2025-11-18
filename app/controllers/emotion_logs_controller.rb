@@ -309,10 +309,11 @@ end
 
     @bookmark_page = "♡お気に入りリスト♡"
 
-    if @emotion_logs.blank?
-      redirect_to emotion_logs_path(view: params[:view]), alert: "まだお気に入り投稿がありません。"
-      return
-    end
+     if @emotion_logs.blank?
+    # ここで /emotion_logs に飛ばさず、そのまま「お気に入りリスト」画面を出す
+    flash.now[:alert] = "まだお気に入り投稿がありません。"
+    # return はしない → 下の render choose_view まで流す
+  end
 
     if turbo_frame_request? && request.headers["Turbo-Frame"] == "logs_list_mobile"
       render partial: "emotion_logs/logs_list_mobile_frame"
