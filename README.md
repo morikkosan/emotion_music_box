@@ -5,8 +5,6 @@
 ![screenflow-overview](docs/diagrams/overview_thumb_v3.png)
 
 
-### ER図
-![ER図](https://i.gyazo.com/61026d2bc54eaf1947f83289763d18b1.png)
 
 ---
 
@@ -21,6 +19,7 @@
 - [テスト構成（Jest 概要）](#テスト構成jest-概要)
 - [使用技術（Tech Stack）](#使用技術tech-stack)
 - [💡技術選定理由（EMOTION MUSIC BOX (EMOMU)）](#技術選定理由)
+- [ER図](#er図)
 - [画面遷移図（Figma）](#画面遷移図figma)
 
 
@@ -345,6 +344,12 @@ Render、Neon、Cloudinary、Hotwire、Web Push を組み合わせ、ほぼ無�
 2. スマホで快適な UI/UX を実現する
 Turbo による高速遷移、独自プレーヤーによる途切れない音楽体験、モバイル最適化された UI により、音楽 × 感情ログという EMOMU の体験価値を最大化。
 
+
+
+### ER図
+![ER図](docs/diagrams/emotion_music_er.png)
+
+📥 [ER図をダウンロードする（PNG）](docs/diagrams/emotion_music_er.png)
 
 
 ## 画面遷移図（Figma）
