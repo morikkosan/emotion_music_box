@@ -14,7 +14,7 @@ Rails.application.config.assets.paths << Rails.root.join("node_modules")
 
 # WebP をSprocketsに認識させる
 Rails.application.config.assets.configure do |env|
-  env.register_mime_type 'image/webp', extensions: ['.webp'], charset: :binary
+  env.register_mime_type "image/webp", extensions: [ ".webp" ], charset: :binary
 end
 
 # 画像類を確実にプリコンパイル対象へ

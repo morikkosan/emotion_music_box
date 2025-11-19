@@ -1,11 +1,12 @@
 # frozen_string_literal: true
+
 require "rails_helper"
 
 RSpec.describe ApplicationController, type: :controller do
   # ApplicationController を継承した匿名コントローラ
   controller do
     # 認証の動作確認用 before_action
-    before_action :require_auth, only: [:protected_json, :protected_html]
+    before_action :require_auth, only: [ :protected_json, :protected_html ]
 
     def index
       # refresh_soundcloud_token_if_needed / set_locale が before_action で走る

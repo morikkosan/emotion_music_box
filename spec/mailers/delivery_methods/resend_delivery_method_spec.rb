@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require "rails_helper"
 require "mail"
 
@@ -21,14 +22,14 @@ RSpec.describe DeliveryMethods::ResendDeliveryMethod do
           to       "to1@example.com"
           subject  "Hello Plain"
           content_type "text/plain"
-          body     "plain body"
+          body "plain body"
         end
 
         delivery.deliver!(mail)
 
         expect(Resend::Emails).to have_received(:send) do |payload|
           expect(payload[:from]).to eq("noreply@example.com")
-          expect(payload[:to]).to eq(["to1@example.com"]) # array_or_nil
+          expect(payload[:to]).to eq([ "to1@example.com" ]) # array_or_nil
           expect(payload[:cc]).to be_nil                   # compact で消えている
           expect(payload[:bcc]).to be_nil
           expect(payload[:reply_to]).to be_nil
@@ -60,7 +61,7 @@ RSpec.describe DeliveryMethods::ResendDeliveryMethod do
 
         expect(Resend::Emails).to have_received(:send) do |payload|
           expect(payload[:from]).to eq("from@example.com")
-          expect(payload[:to]).to eq(["to2@example.com"])
+          expect(payload[:to]).to eq([ "to2@example.com" ])
           expect(payload[:text]).to eq("TEXT PART")
           expect(payload[:html]).to eq("<p>HTML PART</p>")
         end
@@ -71,22 +72,22 @@ RSpec.describe DeliveryMethods::ResendDeliveryMethod do
       it "to は配列のまま、bcc は文字列→配列化、reply_to は先頭のみ" do
         mail = Mail.new do
           from      "from2@example.com"
-          to        ["a@example.com", "b@example.com"]
-          cc        ["cc1@example.com"]
+          to        [ "a@example.com", "b@example.com" ]
+          cc        [ "cc1@example.com" ]
           bcc       "blind@example.com"
-          reply_to  ["reply1@example.com", "reply2@example.com"]
+          reply_to  [ "reply1@example.com", "reply2@example.com" ]
           subject   "Array Case"
           content_type "text/plain"
-          body      "hi"
+          body "hi"
         end
 
         delivery.deliver!(mail)
 
         expect(Resend::Emails).to have_received(:send) do |payload|
           expect(payload[:from]).to eq("from2@example.com")
-          expect(payload[:to]).to eq(["a@example.com", "b@example.com"])
-          expect(payload[:cc]).to eq(["cc1@example.com"])
-          expect(payload[:bcc]).to eq(["blind@example.com"]) # 文字列→配列化
+          expect(payload[:to]).to eq([ "a@example.com", "b@example.com" ])
+          expect(payload[:cc]).to eq([ "cc1@example.com" ])
+          expect(payload[:bcc]).to eq([ "blind@example.com" ]) # 文字列→配列化
           expect(payload[:reply_to]).to eq("reply1@example.com") # 先頭だけ
           expect(payload[:subject]).to eq("Array Case")
           expect(payload[:text]).to eq("hi")
@@ -103,7 +104,7 @@ RSpec.describe DeliveryMethods::ResendDeliveryMethod do
           to        "only_to@example.com"
           subject   "Compact"
           content_type "text/plain"
-          body      "text-only"
+          body "text-only"
         end
 
         delivery.deliver!(mail)

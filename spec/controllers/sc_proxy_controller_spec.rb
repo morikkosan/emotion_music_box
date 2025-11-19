@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require "rails_helper"
 
 RSpec.describe ScProxyController, type: :controller do
@@ -194,7 +195,7 @@ RSpec.describe ScProxyController, type: :controller do
     end
   end
 
-  # --- ここから置き換え（匿名アクションを使わない版）---
+# --- ここから置き換え（匿名アクションを使わない版）---
 
 describe "extract_oauth_token の各経路（実アクション経由）" do
   let(:locator) { "https://api.soundcloud.com/tracks/123/stream" }
@@ -266,7 +267,5 @@ describe "レスポンスヘッダ（no-store / Vary の付与最小確認）" d
   end
 end
 
-# --- 置き換えここまで ---
-
-  
+  # --- 置き換えここまで ---
 end

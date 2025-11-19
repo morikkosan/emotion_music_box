@@ -1,7 +1,7 @@
 # app/controllers/notifications_controller.rb
 class NotificationsController < ApplicationController
   before_action :authenticate_user!
-  before_action :ensure_test_endpoints_allowed!, only: [:test, :debug_emotion]
+  before_action :ensure_test_endpoints_allowed!, only: [ :test, :debug_emotion ]
   before_action :set_notification, only: :read
 
   # =========================
