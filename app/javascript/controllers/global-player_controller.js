@@ -426,7 +426,7 @@ export default class extends Controller {
     try {
       await el.play();
       this._reallyUnmute(el);
-    } catch (e1) {
+    } catch (_e1) {
       try {
         await new Promise(r => setTimeout(r, 150));
         await el.play();
@@ -1264,7 +1264,7 @@ _prepareApiProgressTracking() {
     this.savePlayerState();
   }
 
-  _fallbackToWidgetFromAudio(trackUrl, el = null) {
+  _fallbackToWidgetFromAudio(trackUrl, _el = null) {
     this._disposeAudio();
     const url = trackUrl || this._lastResolvedTrackUrl; if (!url) return;
 
