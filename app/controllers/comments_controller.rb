@@ -1,8 +1,8 @@
 # app/controllers/comments_controller.rb
 class CommentsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_emotion_log, only: [:create]
-  before_action :set_comment,     only: [:edit, :update, :destroy, :toggle_reaction]
+  before_action :set_emotion_log, only: [ :create ]
+  before_action :set_comment,     only: [ :edit, :update, :destroy, :toggle_reaction ]
 
   # POST /emotion_logs/:emotion_log_id/comments
   def create

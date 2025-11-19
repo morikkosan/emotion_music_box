@@ -4,6 +4,7 @@ require 'rails_helper'
 RSpec.describe User, type: :model do
   # データの重複対策: テスト前に関連テーブル全削除
   before(:each) do
+    Notification.delete_all
     Bookmark.delete_all        # Userに依存 →先に消す
     CommentReaction.delete_all
     Comment.delete_all

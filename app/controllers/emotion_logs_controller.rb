@@ -49,10 +49,10 @@ class EmotionLogsController < ApplicationController
     render choose_view
   end
 
-  # =========================
-  # 詳細
-  # =========================
-  # =========================
+# =========================
+# 詳細
+# =========================
+# =========================
 # 詳細
 # =========================
 def show
@@ -75,13 +75,13 @@ def show
   @reaction_counts = CommentReaction.where(comment_id: @comments.map(&:id)).group(:comment_id, :kind).count
   @user_reactions  = current_user&.comment_reactions&.where(comment_id: @comments.map(&:id))&.pluck(:comment_id, :kind)&.to_h || {}
 
-  # ===== ここで OGP/Twitter 用メタを作る =====
-  # 例: 「イライラ | JK - CODE80」
-  # app/controllers/emotion_logs_controller.rb
+# ===== ここで OGP/Twitter 用メタを作る =====
+# 例: 「イライラ | JK - CODE80」
+# app/controllers/emotion_logs_controller.rb
 
 # ===== ここで OGP/Twitter 用メタを作る =====
 composed_title =
-  [@emotion_log.emotion.presence, @emotion_log.track_name.presence].compact.join(" | ").presence ||
+  [ @emotion_log.emotion.presence, @emotion_log.track_name.presence ].compact.join(" | ").presence ||
   "Emotion Music Box（エモム）"
 
 @meta = {
@@ -93,18 +93,18 @@ composed_title =
   image_webp:   view_context.asset_url("ogp.webp"),
   image_alt:    "Emotion Music Box OGP"
 }
-# ===========================================
+  # ===========================================
 
   # ===========================================
 
-   # ★★★ デバッグ用ヘッダ（ここに配置：respond_to 前）★★★
+  # ★★★ デバッグ用ヘッダ（ここに配置：respond_to 前）★★★
   response.set_header("X-Emomu-ReqURL", request.original_url.to_s)
   response.set_header("X-Emomu-CanURL", view_context.canonical_url.to_s)
   response.set_header("X-Emomu-OGMetaBy", "@meta?=#{@meta.present?}")  # true ならレイアウトで @meta 優先
 
 
   if turbo_frame_request? && params[:view] == "mobile"
-    render partial: "emotion_logs/show_mobile_frame", formats: [:html]
+    render partial: "emotion_logs/show_mobile_frame", formats: [ :html ]
     return
   end
 
@@ -113,8 +113,6 @@ composed_title =
     # 万一 /:id を Turbo で踏まれた場合は HTML に正規化
     format.turbo_stream { render turbo_stream: turbo_stream.redirect_to(emotion_log_path(@emotion_log, format: :html)) }
   end
-
-  
 end
 
   # =========================
@@ -312,8 +310,8 @@ end
      if @emotion_logs.blank?
     # ここで /emotion_logs に飛ばさず、そのまま「お気に入りリスト」画面を出す
     flash.now[:alert] = "まだお気に入り投稿がありません。"
-    # return はしない → 下の render choose_view まで流す
-  end
+       # return はしない → 下の render choose_view まで流す
+     end
 
     if turbo_frame_request? && request.headers["Turbo-Frame"] == "logs_list_mobile"
       render partial: "emotion_logs/logs_list_mobile_frame"
@@ -329,10 +327,10 @@ end
     last_emotion = current_user.emotion_logs.order(created_at: :desc).limit(1).pluck(:emotion).first
     emotion = if last_emotion.present?
                 last_emotion
-              else
+    else
                 hp_val  = params[:hp].to_i.clamp(0, 100)
                 calculate_hp_emotion(hp_val).presence || "いつも通り"
-              end
+    end
 
     logs = EmotionLog.includes(:user, :bookmarks, :tags).where(emotion: emotion)
     logs = logs.joins(:tags).where(tags: { name: params[:genre] }) if params[:genre].present?
@@ -349,7 +347,7 @@ end
 
   def playlist_sidebar_modal
     @playlists = current_user.playlists.includes(:playlist_items, :emotion_logs)
-    render partial: "emotion_logs/playlist_sidebar", locals: { playlists: @playlists }, formats: [:html]
+    render partial: "emotion_logs/playlist_sidebar", locals: { playlists: @playlists }, formats: [ :html ]
   end
 
   private
@@ -385,7 +383,7 @@ end
 
   def render_mobile_frame_if_needed
     if turbo_frame_request? && params[:view] == "mobile"
-      render partial: "emotion_logs/logs_list_mobile_frame", formats: [:html]
+      render partial: "emotion_logs/logs_list_mobile_frame", formats: [ :html ]
       return true
     end
     false

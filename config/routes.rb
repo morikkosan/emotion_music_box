@@ -70,7 +70,7 @@ Rails.application.routes.draw do
   # /notifications/read_all            -> notifications#read_all     （一括既読）
   # /notifications/modal               -> notifications#modal        （★ モーダル外枠を差し込む Turbo Stream）
   # /notifications/modal_page?page=2   -> notifications#modal_page   （★ モーダル内10件ページをフレーム読み込み）
-  resources :notifications, only: [:index] do
+  resources :notifications, only: [ :index ] do
     collection do
       get  :unread_count
       post :read_all

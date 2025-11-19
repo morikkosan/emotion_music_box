@@ -21,7 +21,7 @@ class CreateNotifications < ActiveRecord::Migration[7.2]
     end
 
     # 未読数カウント最適化（/notifications/unread_count.json 用）
-    add_index :notifications, [:user_id, :read_at]
+    add_index :notifications, [ :user_id, :read_at ]
 
     # 一覧の新着順を速く
     add_index :notifications, :created_at

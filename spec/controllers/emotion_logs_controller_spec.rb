@@ -229,11 +229,6 @@ RSpec.describe EmotionLogsController, type: :controller do
       expect(assigns(:emotion_logs)).to include(bookmark_log)
     end
 
-    it "お気に入りがない場合はリダイレクト" do
-      Bookmark.destroy_all
-      get :bookmarks
-      expect(response).to redirect_to(emotion_logs_path)
-    end
 
     it "include_my_logsがtrueなら自分の投稿も一覧に含まれる" do
       my_log = create(:emotion_log, user: user)

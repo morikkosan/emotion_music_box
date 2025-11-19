@@ -45,10 +45,10 @@ class BookmarksController < ApplicationController
     @toggled = if bookmark
                  bookmark.destroy
                  false
-               else
+    else
                  current_user.bookmarks.create!(emotion_log: @emotion_log)
                  true
-               end
+    end
 
     # 「付与時のみ」通知。自分以外の投稿なら送る（細かい条件は PushNotifier 側で判定）
     if @toggled && @emotion_log.user != current_user
@@ -70,7 +70,7 @@ class BookmarksController < ApplicationController
   # :nocov:
   rescue ActiveRecord::RecordNotUnique
     retry
-  # :nocov:
+    # :nocov:
   end
 
   private
