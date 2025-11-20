@@ -22,15 +22,19 @@
   box-shadow: none !important;
 }
 
-/* モバイルフォームモーダル幅（<=996px）のときだけ、record-modal を上に持ち上げる */
+/* モバイルフォームモーダル幅（<=996px）のときだけ、record-modal の位置を調整 */
 @media (max-width: 996px) {
   /* 5cm ≒ 190px（CSSは96dpi換算） */
   #record-modal.modal {
     --mobile-modal-offset: 190px;
   }
 
-  /* 下側に余白を作って、見かけ上モーダルを上げる */
+  /* 上と下の両方に余白を作って、ヘッダーともフッターとも被らないようにする */
   #record-modal .modal-dialog {
+    /* ★ここを追加：上だけ少し下げる（数字は好みで調整OK） */
+    margin-top: 64px;
+
+    /* これは元からある「下に余白」＝プレイヤーやフッターと被らないため */
     margin-bottom: calc(var(--mobile-modal-offset) + env(safe-area-inset-bottom, 0px));
   }
 
@@ -40,6 +44,7 @@
     z-index: 1040; /* Bootstrap: backdrop=1050, modal=1055 なのでこれで奥に行く */
   }
 }
+
 
 /* モーダルが開いている間は“記録ボタン”も背面へ（重なり事故防止） */
 body.modal-open #record-button-mobile.record-mobile-button {

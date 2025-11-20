@@ -46,8 +46,39 @@ document.addEventListener("turbo:load", () => {
   }
 
   let startX = 0, startY = 0, isDragging = false, dragStartX = 0, dragStartY = 0;
+
   function updateTransform() {
     cropImage.style.transform = `translate(${startX}px, ${startY}px)`;
+  }
+
+  // 画像の初期サイズを「トリミング枠にちょうど良く」合わせる
+  function fitImageToCropContainer() {
+    try {
+      const vW = safeClientW(cropContainer, 80); // トリミング枠の幅
+      const vH = safeClientH(cropContainer, 80); // トリミング枠の高さ
+      const nW = safeNaturalW(cropImage, vW);    // 画像本来の幅
+      const nH = safeNaturalH(cropImage, vH);    // 画像本来の高さ
+
+      if (!vW || !vH || !nW || !nH) return;
+
+      // 枠を完全に覆うようにスケール（大きい画像は縮小、小さい画像は拡大）
+      const scale = Math.max(vW / nW, vH / nH);
+
+      const displayW = nW * scale;
+      const displayH = nH * scale;
+
+      // 表示サイズとして width/height をセット
+      cropImage.style.width = `${displayW}px`;
+      cropImage.style.height = `${displayH}px`;
+
+      // 画像を枠の中心にくるように初期位置を調整
+      startX = (vW - displayW) / 2;
+      startY = (vH - displayH) / 2;
+
+      updateTransform();
+    } catch (e) {
+      console.error("fitImageToCropContainer failed:", e);
+    }
   }
 
   Object.assign(cropImage.style, {
@@ -58,6 +89,8 @@ document.addEventListener("turbo:load", () => {
     webkitUserSelect: "none",
     maxWidth: "none",
     maxHeight: "none",
+    width: "auto",
+    height: "auto",
   });
   cropImage.draggable = false;
   cropContainer.style.cursor = "grab";
@@ -80,9 +113,15 @@ document.addEventListener("turbo:load", () => {
       const reader = new FileReader();
       reader.onload = () => {
         const dataURL = reader.result;
+
+        // 画像が読み込まれたタイミングで、自動的に「ちょうど良いサイズ」にフィットさせる
+        cropImage.onload = () => {
+          // 画像の naturalWidth / naturalHeight が確定したあとに実行
+          fitImageToCropContainer();
+        };
+
         cropImage.src = dataURL; // モーダル内の画像だけ差し替え
-        startX = 0; startY = 0;
-        updateTransform();
+
         /* istanbul ignore next */ /* c8 ignore next */
         modal && typeof modal.show === "function" && modal.show();
       };
