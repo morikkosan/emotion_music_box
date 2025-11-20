@@ -1731,12 +1731,23 @@ _onAudioDur = () => {
 
   // 1) この配列に「プレイヤーを出したくないパス」を正規表現で列挙
   //   例: /terms, /privacy, /cookie, /legal は全ブロック
+    // 1) この配列に「プレイヤーを出したくないパス」を正規表現で列挙
+  //   例: /terms, /privacy, /cookie, /legal, /edit, /contact/new などは全ブロック
   static DISABLE_PATHS = [
+    // 既存: 規約・ポリシー系
     /^\/terms(?:\/)?$/i,
     /^\/privacy(?:\/)?$/i,
     /^\/cookie(?:\/)?$/i,
     /^\/legal(?:\/.*)?$/i,
+
+    // 追加: プロフィール編集（Devise + path: "" の場合）
+    /^\/edit(?:\/)?$/i,
+
+    // 追加: お問い合わせ（単数 resource :contact）
+    /^\/contact\/new(?:\/)?$/i,  // フォームページ
+    /^\/contact(?:\/)?$/i,       // 送信後に /contact へリダイレクトする場合の保険
   ];
+
 
   // 2) パス一致でオフ
   _chromeOffByPath() {
