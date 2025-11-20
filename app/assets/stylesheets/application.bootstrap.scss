@@ -457,5 +457,5 @@ body.no-player #hidden-sc-player.sc-keepalive {
 
 /* ==== HOTFIX: notifications modal height ==== */
 #notifications-modal .modal-body {
-  max-height: min(72vh, calc(100dvh - 152px)) !important;
+max-height: unquote("min(72vh, 100dvh - 152px)") !important;
 }
