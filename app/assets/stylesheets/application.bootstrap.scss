@@ -457,5 +457,14 @@ body.no-player #hidden-sc-player.sc-keepalive {
 
 /* ==== HOTFIX: notifications modal height ==== */
 #notifications-modal .modal-body {
-max-height: unquote("min(72vh, 100dvh - 152px)") !important;
+  /* 共通は 72vh に統一 */
+  max-height: 72vh !important;
 }
+
+@media (max-width:576px){
+  #notifications-modal .modal-body {
+    /* スマホでは 100dvh からヘッダーぶん引いた高さ */
+    max-height: calc(100dvh - 138px) !important;
+  }
+}
+

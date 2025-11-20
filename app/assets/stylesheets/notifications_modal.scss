@@ -115,25 +115,35 @@
   }
 
   /* ---- 本文（宣言→ネストの順：mixed-decls回避） ---- */
-    .modal-body{
-    background: transparent;
-    padding: 0;
+   .modal-body{
+  background: transparent;
+  padding: 0;
 
-    // Sass に min(...) の中身を計算させないように unquote で
-    // 「そのままの文字列」としてブラウザに渡す
-    max-height: unquote("min(72vh, 100dvh - 152px)");
+  /* 共通: デスクトップなどでは 72vh に固定 */
+  max-height: 72vh;
 
-    overflow: auto;
-    /* スクロールUI */
-    scrollbar-width: thin;
-    scrollbar-color: rgba(120,128,160,.32) transparent;
-    &::-webkit-scrollbar{ width:10px; height:10px; }
-    &::-webkit-scrollbar-thumb{
-      background: rgba(120,128,160,.32);
-      border-radius:10px; border:2px solid transparent; background-clip:padding-box;
-    }
-    @media (max-width:576px){ max-height: calc(100dvh - 138px); }
+  overflow: auto;
+  /* スクロールUI */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120,128,160,.32) transparent;
+  &::-webkit-scrollbar{
+    width:10px;
+    height:10px;
   }
+  &::-webkit-scrollbar-thumb{
+    background: rgba(120,128,160,.32);
+    border-radius:10px;
+    border:2px solid transparent;
+    background-clip:padding-box;
+  }
+
+  /* スマホ幅だけはヘッダーぶん引いた高さを使う */
+  @media (max-width:576px){
+    max-height: calc(100dvh - 138px);
+  }
+}
+
+
 
 
   /* ---- 通知アイテム：カード感＋オーロラの“縁光” ---- */
