@@ -115,10 +115,14 @@
   }
 
   /* ---- 本文（宣言→ネストの順：mixed-decls回避） ---- */
-  .modal-body{
+    .modal-body{
     background: transparent;
     padding: 0;
-    max-height: min(72vh, calc(100dvh - 152px)); /* ← ここが原因＆修正ポイント */
+
+    // Sass に min(...) の中身を計算させないように unquote で
+    // 「そのままの文字列」としてブラウザに渡す
+    max-height: unquote("min(72vh, 100dvh - 152px)");
+
     overflow: auto;
     /* スクロールUI */
     scrollbar-width: thin;
@@ -130,6 +134,7 @@
     }
     @media (max-width:576px){ max-height: calc(100dvh - 138px); }
   }
+
 
   /* ---- 通知アイテム：カード感＋オーロラの“縁光” ---- */
   .list-group .list-group-item{
