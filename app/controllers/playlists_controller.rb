@@ -24,15 +24,28 @@ class PlaylistsController < ApplicationController
 
   def create
     selected_ids = collect_selected_ids
+    @playlist    = current_user.playlists.new(playlist_params)
 
-    @playlist = current_user.playlists.new(playlist_params)
+    max_items = PlaylistItem::MAX_ITEMS_PER_PLAYLIST
+
+    # ✅ 0件（何もチェックしていない）ならこの時点でエラー返して終了
+    if selected_ids.blank?
+      flash.now[:alert] = "チェックマークが1つも選択されていません"
+      respond_with_failure
+      return
+    end
+
+    # ✅ 31件以上まとめて選ぼうとしたらここでストップ
+    if selected_ids.size > max_items
+      flash.now[:alert] = "プレイリストには最大#{max_items}曲まで追加できます（現在#{selected_ids.size}件選択しています）"
+      respond_with_failure
+      return
+    end
 
     begin
       Playlist.transaction do
-      if selected_ids.blank?
-        raise ActiveRecord::RecordInvalid.new(@playlist), "チェックマークが1つも選択されていません"
-      end
         @playlist.save!
+
         # 存在するIDだけに絞った後、重複を避けて安全に作成
         selected_ids.each do |log_id|
           @playlist.playlist_items.find_or_create_by!(emotion_log_id: log_id)
@@ -43,7 +56,7 @@ class PlaylistsController < ApplicationController
       respond_with_success
     rescue ActiveRecord::RecordInvalid => e
       # 失敗理由をそのまま表示（既存の分岐を尊重）
-      flash.now[:alert] ||= e.record.errors.full_messages.join("、").presence || "チェックマークが1つも選択されていません"
+      flash.now[:alert] ||= e.record.errors.full_messages.join("、").presence || "プレイリストの作成に失敗しました"
       respond_with_failure
     end
   end
@@ -98,7 +111,7 @@ class PlaylistsController < ApplicationController
     redirect_to playlists_path, alert: "指定のプレイリストが見つかりません。"
   end
 
-  # ▼ここを“存在するIDだけ”に正規化（ここだけ修正）
+  # ▼ここを“存在するIDだけ”に正規化
   def collect_selected_ids
     csv_ids   = params[:selected_log_ids].to_s.split(",")
     array_ids = Array(params[:selected_logs])

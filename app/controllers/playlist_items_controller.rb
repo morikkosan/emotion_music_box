@@ -5,6 +5,14 @@ class PlaylistItemsController < ApplicationController
   before_action :set_playlist_item, only: [ :destroy ]
 
   def create
+    max_items = PlaylistItem::MAX_ITEMS_PER_PLAYLIST
+
+    # ✅ すでに30曲入っていたら追加させない
+    if @playlist.playlist_items.count >= max_items
+      render_update_streams(alert: "このプレイリストには#{max_items}曲までしか追加できません")
+      return
+    end
+
     @item = @playlist.playlist_items.build(emotion_log_id: params[:emotion_log_id])
 
     if @item.save
