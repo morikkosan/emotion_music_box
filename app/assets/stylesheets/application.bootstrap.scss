@@ -468,3 +468,29 @@ body.no-player #hidden-sc-player.sc-keepalive {
   }
 }
 
+
+/* ==== PC版：感情記録モーダルの中身だけスクロールさせる ==== */
+@media (min-width: 768px) {
+  .modal-emotion-body {
+    /* 画面の高さから、モーダルの上下余白＋ヘッダー分を引いた高さ */
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+}
+
+
+
+/* ==== PC版：#modal-container のネオン枠の中を黒く塗りつぶす ==== */
+/* ==== PC版：#modal-container の枠の“内側”を少し透けた黒で塗る ==== */
+@media (min-width: 996px) {
+  #modal-container,
+  #modal-container.modal,
+  #modal-container .modal-dialog,
+  #modal-container .modal-dialog .modal-content,
+  #modal-container .modal-dialog .modal-content .modal-body,
+  #modal-container .modal-dialog .modal-content .modal-emotion-body {
+    background-color: rgba(0, 0, 0, 0.85) !important;  /* 85% の濃さの黒 */
+    background-image: none !important;
+  }
+}
+
