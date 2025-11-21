@@ -146,27 +146,23 @@ end
   end
 
   # Push ON/OFF 後に、デスクトップの Push トグル枠だけ更新
+  
   def render_toggle
     respond_to do |format|
       format.turbo_stream do
-        render turbo_stream: [
-          # 新：デスクトップ専用 Push トグル枠
-          turbo_stream.replace(
-            "notification-push-toggle-desktop",
-            partial: "shared/notification_push_toggle",
-            locals: { frame_id: "notification-push-toggle-desktop" }
-          ),
-          # 互換：旧IDが残っている環境向け（存在しなくてもOK）
-          turbo_stream.replace(
-            "notification-toggle-desktop",
-            partial: "shared/notification_push_toggle",
-            locals: { frame_id: "notification-toggle-desktop" }
-          )
-        ]
+        render turbo_stream: turbo_stream.update(
+          "notification-push-toggle-desktop",
+          partial: "shared/notification_push_toggle"
+        )
       end
-      format.html { redirect_back fallback_location: root_path }
+
+      format.html do
+        redirect_back fallback_location: root_path
+      end
     end
   end
+
+
 
   def send_webpush(user, title:, body:, path:)
     sub = user.push_subscription
