@@ -116,13 +116,28 @@
   line-height: 1.6;
 }
 
-.login-note {
-  font-size: 0.75rem;          /* 小さめ */
-  line-height: 1.5;
-  color: rgba(255, 255, 255, 0.75);  /* 少し薄い白 */
-  text-shadow: none;           /* 背景に埋もれないよう影なし */
-  margin-bottom: 0.5rem;
+/* ▼ ログイン注記（Safariプライベートモード注意書き）を
+      必ず白文字＋黒帯で表示するための最終オーバーライド */
+.login-note,
+.neon-btn-footer + .login-note {
+  display: inline-block;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.6rem;
+
+  /* ここを強制的に上書きする */
+  color: #ffffff !important;
+  background: rgba(0, 0, 0, 0.80) !important;
+  text-shadow: none !important;
+  font-size: 0.85rem;
+  line-height: 1.6;
+
+  /* ネオン背景に埋もれないように前に出す */
+  position: relative;
+  z-index: 5;
 }
+
 
 
 /* フォームタグ候補初期は非表示 */

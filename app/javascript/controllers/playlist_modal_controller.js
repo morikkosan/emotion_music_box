@@ -1,4 +1,4 @@
-ia// app/javascript/controllers/playlist_modal_controller.js
+// app/javascript/controllers/playlist_modal_controller.js
 import { Controller } from "@hotwired/stimulus"
 import * as bootstrap from "bootstrap"
 // ★ 追加：共通クリーンアップのインポート
