@@ -2,7 +2,6 @@
 
 <turbo-stream action="replace" target="modal-container">
   <template>
-    <!-- ★ ここで「#modal-container」ごと描きなおすのがポイント ★ -->
     <div id="modal-container">
       <div class="modal fade"
            id="emotion-log-edit-modal"
@@ -10,7 +9,8 @@
            aria-labelledby="emotionLogModalLabel"
            aria-hidden="true"
            data-controller="modal">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <!-- ★ ここに modal-dialog-scrollable を追加 -->
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title" id="emotionLogModalLabel">

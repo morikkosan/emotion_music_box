@@ -494,3 +494,18 @@ body.no-player #hidden-sc-player.sc-keepalive {
   }
 }
 
+
+/* 📱 編集モーダル専用のスマホ調整 */
+@media (max-width: 768px) {
+  /* ダイアログ自体の横幅＆余白を調整 */
+  #emotion-log-edit-modal .modal-dialog {
+    max-width: 100%;
+    margin: 0.5rem; /* 画面左右・上下に少し余白 */
+  }
+
+  /* モーダル全体の最大高さを画面の 90% にして、中身をスクロール可能にする */
+  #emotion-log-edit-modal .modal-content {
+    max-height: 90vh;   /* 画面の90%の高さまで */
+    overflow-y: auto;   /* はみ出したら縦スクロール */
+  }
+}
