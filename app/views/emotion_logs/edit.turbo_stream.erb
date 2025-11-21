@@ -1,5 +1,35 @@
+<!-- app/views/emotion_logs/edit.turbo_stream.erb -->
+
 <turbo-stream action="replace" target="modal-container">
   <template>
-    <%= render partial: 'emotion_logs/form_edit', formats: [:html], locals: { emotion_log: @emotion_log } %>
+    <!-- ★ ここで「#modal-container」ごと描きなおすのがポイント ★ -->
+    <div id="modal-container">
+      <div class="modal fade"
+           id="emotion-log-edit-modal"
+           tabindex="-1"
+           aria-labelledby="emotionLogModalLabel"
+           aria-hidden="true"
+           data-controller="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="emotionLogModalLabel">
+                <i class="bi bi-heart-pulse" aria-hidden="true"></i> RECORD EMOTIONS変更
+              </h5>
+              <button type="button"
+                      class="btn-close"
+                      data-bs-dismiss="modal"
+                      aria-label="閉じる"></button>
+            </div>
+
+            <div class="modal-body">
+              <%= render partial: "emotion_logs/form_edit",
+                         formats: [:html],
+                         locals: { emotion_log: @emotion_log } %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </template>
 </turbo-stream>
