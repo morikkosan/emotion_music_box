@@ -146,7 +146,7 @@ end
   end
 
   # Push ON/OFF 後に、デスクトップの Push トグル枠だけ更新
-  
+
   def render_toggle
     respond_to do |format|
       format.turbo_stream do
