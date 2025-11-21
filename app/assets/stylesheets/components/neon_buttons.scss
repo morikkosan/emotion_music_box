@@ -116,6 +116,14 @@
   line-height: 1.6;
 }
 
+.login-note {
+  font-size: 0.75rem;          /* 小さめ */
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.75);  /* 少し薄い白 */
+  text-shadow: none;           /* 背景に埋もれないよう影なし */
+  margin-bottom: 0.5rem;
+}
+
 
 /* フォームタグ候補初期は非表示 */
 .dropdown-menu {
