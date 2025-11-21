@@ -4,7 +4,7 @@
     aria-labelledby="emotionLogModalLabel"
     aria-hidden="true"
     data-controller="modal">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="emotionLogModalLabel">
@@ -14,7 +14,7 @@
       </div>
       <div class="modal-body">
         <!-- ここからフォーム -->
-        <div class="container max-w-600" data-controller="search-music">
+        <div class="container max-w-600 mt-3" data-controller="search-music">
           <div class="row justify-content-center">
             <div class="col-md-12">
               <%= form_with model: @emotion_log,
@@ -79,6 +79,7 @@
                                   data: { "submit-handler-target": "submit" } %>
                 </div>
               <% end %>
+
               <%= link_to '一覧に戻る',
                           emotion_logs_path,
                           class: 'btn btn-secondary mt-3',
