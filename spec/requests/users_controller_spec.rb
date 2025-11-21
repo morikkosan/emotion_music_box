@@ -37,10 +37,9 @@ RSpec.describe "Users", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.media_type).to eq("text/vnd.turbo-stream.html")
 
-      # ★ 現行実装の2ターゲット（新＋後方互換）を検証
-      expect(response.body).to include('turbo-stream action="replace"')
+      # ★ 現行実装: <turbo-stream action="update" target="notification-push-toggle-desktop">
+      expect(response.body).to include('turbo-stream action="update"')
       expect(response.body).to include('target="notification-push-toggle-desktop"')
-      expect(response.body).to include('target="notification-toggle-desktop"')
 
       expect(user.reload.push_enabled).to eq(true)
     end
@@ -53,9 +52,8 @@ RSpec.describe "Users", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.media_type).to eq("text/vnd.turbo-stream.html")
 
-      expect(response.body).to include('turbo-stream action="replace"')
+      expect(response.body).to include('turbo-stream action="update"')
       expect(response.body).to include('target="notification-push-toggle-desktop"')
-      expect(response.body).to include('target="notification-toggle-desktop"')
 
       expect(user.reload.push_enabled).to eq(false)
     end

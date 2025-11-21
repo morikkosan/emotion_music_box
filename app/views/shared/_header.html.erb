@@ -34,8 +34,10 @@
         
 <%= render "shared/notification_toggle",      frame_id: "notification-toggle-desktop" %>
 
-  <%= render "shared/notification_push_toggle", frame_id: "notification-push-toggle-desktop" %>
-
+   <%# 🔔 push 通知オン/オフトグルだけを Turbo Frame で囲む %>
+        <turbo-frame id="notification-push-toggle-desktop">
+          <%= render "shared/notification_push_toggle" %>
+        </turbo-frame>
 
 
 

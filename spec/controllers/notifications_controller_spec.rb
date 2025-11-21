@@ -86,24 +86,22 @@ RSpec.describe NotificationsController, type: :controller do
   # =========================
   describe "PATCH toggle push (render_toggle)" do
     context "Turbo Stream" do
-      it "enable: push_enabled を true にし、デスクトップ2ターゲットを置換" do
+      it "enable: push_enabled を true にし、デスクトップ push トグルを更新" do
         patch :enable, format: :turbo_stream
         expect(response).to have_http_status(:ok)
         expect(response.media_type).to eq("text/vnd.turbo-stream.html")
-        expect(response.body).to include('turbo-stream action="replace"')
+        expect(response.body).to include('turbo-stream action="update"')
         expect(response.body).to include('target="notification-push-toggle-desktop"')
-        expect(response.body).to include('target="notification-toggle-desktop"')
         expect(user.reload.push_enabled).to be true
       end
 
-      it "disable: push_enabled を false にし、デスクトップ2ターゲットを置換" do
+      it "disable: push_enabled を false にし、デスクトップ push トグルを更新" do
         user.update!(push_enabled: true)
         patch :disable, format: :turbo_stream
         expect(response).to have_http_status(:ok)
         expect(response.media_type).to eq("text/vnd.turbo-stream.html")
-        expect(response.body).to include('turbo-stream action="replace"')
+        expect(response.body).to include('turbo-stream action="update"')
         expect(response.body).to include('target="notification-push-toggle-desktop"')
-        expect(response.body).to include('target="notification-toggle-desktop"')
         expect(user.reload.push_enabled).to be false
       end
     end
