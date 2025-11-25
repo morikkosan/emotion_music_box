@@ -5,8 +5,11 @@ class PlaylistsController < ApplicationController
   before_action :disable_turbo_cache, only: [ :show ]
 
   def index
-    @playlists = current_user.playlists.includes(playlist_items: :emotion_log)
-  end
+  @playlists = current_user.playlists
+                              .includes(playlist_items: :emotion_log)
+                              .order(created_at: :desc)
+end
+
 
   def new
     @playlist = Playlist.new
@@ -134,34 +137,36 @@ class PlaylistsController < ApplicationController
   end
 
     def respond_with_success
-    respond_to do |format|
-      format.turbo_stream do
-        render turbo_stream: [
-          # ✅ モバイルのモーダル中身
-          #   → ラッパー(id="playlist-modal-content-mobile")はそのまま、中身だけ入れ替える
-          turbo_stream.update(
-            "playlist-modal-content-mobile",
-            partial: "emotion_logs/playlist_sidebar",
-            locals: { playlists: current_user.playlists.includes(playlist_items: :emotion_log) }
-          ),
+  # ★ 並び順を一箇所にまとめる
+  playlists = current_user.playlists
+                          .includes(playlist_items: :emotion_log)
+                          .order(created_at: :desc)
 
-          # ✅ デスクトップのサイドバー
-          #   → 同じくラッパー(id="playlist-sidebar")は残して中身だけ入れ替える
-          turbo_stream.update(
-            "playlist-sidebar",
-            partial: "emotion_logs/playlist_sidebar",
-            locals: { playlists: current_user.playlists.includes(playlist_items: :emotion_log) }
-          ),
+  respond_to do |format|
+    format.turbo_stream do
+      render turbo_stream: [
+        turbo_stream.update(
+          "playlist-modal-content-mobile",
+          partial: "emotion_logs/playlist_sidebar",
+          locals: { playlists: playlists }
+        ),
 
-          render_flash_stream
-        ]
-      end
+        turbo_stream.update(
+          "playlist-sidebar",
+          partial: "emotion_logs/playlist_sidebar",
+          locals: { playlists: playlists }
+        ),
 
-      format.html do
-        redirect_to playlists_path, notice: "プレイリストを作成しました！"
-      end
+        render_flash_stream
+      ]
+    end
+
+    format.html do
+      redirect_to playlists_path, notice: "プレイリストを作成しました！"
     end
   end
+end
+
 
 
   def respond_with_failure
