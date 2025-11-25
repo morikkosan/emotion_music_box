@@ -133,26 +133,36 @@ class PlaylistsController < ApplicationController
     )
   end
 
-  def respond_with_success
+    def respond_with_success
     respond_to do |format|
       format.turbo_stream do
         render turbo_stream: [
-          turbo_stream.replace(
+          # ✅ モバイルのモーダル中身
+          #   → ラッパー(id="playlist-modal-content-mobile")はそのまま、中身だけ入れ替える
+          turbo_stream.update(
             "playlist-modal-content-mobile",
             partial: "emotion_logs/playlist_sidebar",
             locals: { playlists: current_user.playlists.includes(playlist_items: :emotion_log) }
           ),
-          turbo_stream.replace(
+
+          # ✅ デスクトップのサイドバー
+          #   → 同じくラッパー(id="playlist-sidebar")は残して中身だけ入れ替える
+          turbo_stream.update(
             "playlist-sidebar",
             partial: "emotion_logs/playlist_sidebar",
             locals: { playlists: current_user.playlists.includes(playlist_items: :emotion_log) }
           ),
+
           render_flash_stream
         ]
       end
-      format.html { redirect_to playlists_path, notice: "プレイリストを作成しました！" }
+
+      format.html do
+        redirect_to playlists_path, notice: "プレイリストを作成しました！"
+      end
     end
   end
+
 
   def respond_with_failure
     respond_to do |format|
