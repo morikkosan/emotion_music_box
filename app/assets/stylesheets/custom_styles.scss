@@ -781,6 +781,9 @@ h1 i.bi bi-heart-pulse {
 }
 
 /* レスポンシブ */
+/* レスポンシブ：サイドバー（#super-search-panel）だけ考える */
+
+/* PC 基本 */
 #super-search-panel {
   position: fixed;
   top: 150px;
@@ -791,26 +794,43 @@ h1 i.bi bi-heart-pulse {
   border-radius: 0 12px 12px 0;
   box-shadow: 2px 0 8px #0004;
   padding: 16px 10px 16px 20px;
-  bottom: unset;
+
+  /* ここからスクロール制御＆下余白 */
+  max-height: calc(100vh - 200px);  /* 画面高さからヘッダー・プレーヤーなどを引いた高さ */
+  overflow-y: auto;                  /* サイドバーの中身だけ縦スクロール */
+  padding-bottom: 120px;             /* 一番下の要素が真ん中まで上がって来られる余白 */
 }
 
-@media (max-width: 1695px) { #super-search-panel { top: 250px; } }
-@media (max-width: 996px) {
+/* 画面幅が狭めのPC・タブレットくらい */
+@media (max-width: 1695px) {
   #super-search-panel {
-    top: 150px !important;  /* ←好きな高さに調整 */
-    left: 0;
-    width: 50vw;           /* 必要なら幅もスマホ用に調整 */
-    border-radius: 0 0 12px 12px; /* 好きな見た目でOK */
-    box-shadow: 0 2px 8px #0004;
-    /* その他スマホ時だけ変更したいものがあればここに追記 */
+    top: 250px;                      /* 位置だけ少し下げる */
+    max-height: calc(100vh - 260px); /* 上を下げた分、見える高さも調整 */
   }
 }
 
+/* スマホ用 */
+@media (max-width: 996px) {
+  #super-search-panel {
+    top: 150px !important;
+    left: 0;
+    width: 50vw;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 2px 8px #0004;
 
+    /* スマホでもサイドバー内だけスクロール＋余白 */
+    max-height: calc(100vh - 220px);
+    overflow-y: auto;
+    padding-bottom: 120px;
+  }
+}
+
+/* プレイリスト用：中身のHTMLは弄らない */
 #playlist-sidebar {
   all: unset;
   display: contents;
 }
+
 
 
 
