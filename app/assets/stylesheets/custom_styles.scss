@@ -790,7 +790,7 @@ h1 i.bi bi-heart-pulse {
   left: 0;
   width: 240px;
   z-index: 10;
-  background: #23253c;
+  background-color: transparent; // ← 元の #23253c を上書き
   border-radius: 0 12px 12px 0;
   box-shadow: 2px 0 8px #0004;
   padding: 16px 10px 16px 20px;
