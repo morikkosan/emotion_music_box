@@ -52,7 +52,11 @@ export default class extends Controller {
 
   filterSuggestions() {
     const query = this.inputTarget.value.trim()
-    if (!query) return this.clearSuggestions()
+
+    // 🔴 ここを変更：2文字未満ならサジェストしない
+    if (!query || query.length < 2) {
+      return this.clearSuggestions()
+    }
 
     fetch(`/tags/search?q=${encodeURIComponent(query)}`)
       .then(r => r.json())
