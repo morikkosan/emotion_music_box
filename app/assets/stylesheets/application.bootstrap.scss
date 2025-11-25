@@ -495,6 +495,7 @@ body.no-player #hidden-sc-player.sc-keepalive {
 }
 
 
+
 /* 共通：編集モーダルの .modal-body を“スクロール領域”にする */
 #emotion-log-edit-modal .modal-body {
   max-height: 72vh;
@@ -524,7 +525,7 @@ body.no-player #hidden-sc-player.sc-keepalive {
     -webkit-overflow-scrolling: touch;
 
     /* プレーヤーに被らないように下の余白をかなり大きめに取る */
-    padding-bottom: 4rem;  /* ← 1.75rem から増やす：ここが「下の余白」 */
+    padding-bottom: 6rem;  /* ← 1.75rem から増やす：ここが「下の余白」 */
   }
 
   /* タイトルの余白を少しだけ詰めて、窮屈感を減らす */
