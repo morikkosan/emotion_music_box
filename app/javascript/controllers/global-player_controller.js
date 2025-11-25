@@ -21,6 +21,14 @@ export default class extends Controller {
   static targets = ["trackImage", "playIcon"];
   abortController = null;
 
+    // ★追加：検索モーダルからの再生イベント用ハンドラ（this にバインドされた関数）
+  _onPlayFromSearch = (e) => {
+    const url = e?.detail?.playUrl;
+    if (!url) return;
+    if (this._requireLogin()) return;
+    this.playFromExternal(url);
+  };
+
 
   // ===== 基本ユーティリティ =====
   _getOAuthToken() {
@@ -797,10 +805,8 @@ this.__arrivedByTurbo = _arrivedByTurbo;
     this._container()?.addEventListener("click", this._onIconClickDelegated);
 
     // 外部検索から再生
-    window.addEventListener("play-from-search", (e) => {
-      if (this._requireLogin()) return;
-      this.playFromExternal(e.detail.playUrl);
-    });
+window.addEventListener("play-from-search", this._onPlayFromSearch);
+
 
     // レイアウト
     this.switchPlayerTopRow();
@@ -872,6 +878,8 @@ this.__arrivedByTurbo = _arrivedByTurbo;
 
 disconnect() {
   window.removeEventListener("beforeunload", this.cleanup);  // ★追加
+  window.removeEventListener("play-from-search", this._onPlayFromSearch);
+
   this.cleanup(); // ← これはもともと入っている（そのまま）
 }
 
@@ -1072,6 +1080,11 @@ _prepareApiProgressTracking() {
   // ---------- 外部 URL 再生 ----------
   async playFromExternal(playUrl) {
     if (this._requireLogin()) return;
+
+    this._disposeAudio();
+
+
+    
     this._showBottomPlayerIfLoggedIn(); this.bottomPlayer?.offsetHeight;
     if (this.widget) { this.unbindWidgetEvents(); clearInterval(this.progressInterval); this.widget = null; }
 

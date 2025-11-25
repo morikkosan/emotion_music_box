@@ -129,10 +129,12 @@
         <br><br><br>
         <div class="main-content">
           <% if @bookmark_page.present? || @mypage_title.present? %>
-            <div id="playlist-sidebar">
-              <%= render 'emotion_logs/playlist_sidebar',
-                playlists: current_user.playlists.includes(:playlist_items, :emotion_logs) %>
-            </div>
+    <div id="playlist-sidebar">
+      <%= render 'emotion_logs/playlist_sidebar',
+        playlists: current_user.playlists
+                               .includes(:playlist_items, :emotion_log)
+                               .order(created_at: :desc) %>
+    </div>
           <% else %>
             <%= render 'super_search' %>
           <% end %>
@@ -502,14 +504,18 @@
 
 
       <!-- モバイル用モーダル -->
-      <div id="playlist-modal-mobile" class="modal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content" id="playlist-modal-content-mobile">
-            <%= render 'emotion_logs/playlist_sidebar',
-                  playlists: current_user.playlists.includes(:playlist_items, :emotion_logs) %>
-          </div>
-        </div>
-      </div>
+    <div id="playlist-modal-mobile" class="modal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" id="playlist-modal-content-mobile">
+      <%= render 'emotion_logs/playlist_sidebar',
+            playlists: current_user.playlists
+                                   .includes(:playlist_items, :emotion_log)
+                                   .order(created_at: :desc) %>
+    </div>
+  </div>
+</div>
+
+
     <% end %>
   </div>
 </div>
