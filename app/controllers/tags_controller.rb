@@ -1,13 +1,19 @@
-# app/controllers/tags_controller.rb
 class TagsController < ApplicationController
   def index
     if params[:q].present?
-      tags = Tag.where("name ILIKE ?", "#{params[:q]}%").limit(10)
+      q = params[:q].to_s.strip
+
+      tags = Tag.where("name ILIKE ?", "#{q}%").limit(10)
+
+      # ★ ここで「小文字にそろえて」「重複を消す」
+      names = tags.pluck(:name)
+                  .map { |n| n.downcase } # → ["rock", "rock"]
+                  .uniq                    # → ["rock"]
     else
-      tags = Tag.none
+      names = []
     end
 
-    render json: tags.pluck(:name)
+    render json: names
   end
 
   def search
