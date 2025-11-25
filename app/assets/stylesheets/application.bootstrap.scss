@@ -496,34 +496,43 @@ body.no-player #hidden-sc-player.sc-keepalive {
 
 
 /* 📱 編集モーダル専用：スマホでも中身をスクロールさせる */
+/* 📱 編集モーダル専用：スクロール＆余白調整 */
 
 /* 共通：編集モーダルの .modal-body を“スクロール領域”にする */
 #emotion-log-edit-modal .modal-body {
-  max-height: 72vh;      /* とりあえずPC/タブレットでも7割ぐらいの高さ */
+  max-height: 72vh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* スマホ・タブレット幅（768px 以下）のときの調整 */
+/* スマホ・タブレット幅（768px 以下）のとき */
 @media (max-width: 768px) {
-  /* ダイアログ自体の横幅＆余白を調整 */
+  /* モーダル全体を「少し小さめ」にして上下の余白を増やす */
   #emotion-log-edit-modal .modal-dialog {
     max-width: 100%;
-    margin: 0.5rem; /* 画面左右・上下に少し余白 */
+    margin: 1.5rem 0.75rem; /* ← 上下 1.5rem / 左右 0.75rem に余白拡大 */
   }
 
-  /* モーダル全体は画面いっぱい近くまで使う */
+  /* モーダル全体の高さ上限を“画面の 80%”にする */
   #emotion-log-edit-modal .modal-content {
-    max-height: 100dvh; /* 画面の高さまで（iOS/Android対応のdvh） */
+    max-height: 80dvh;  /* ← ここが「ギチギチ度」を決めるメインの数字 */
   }
 
-  /* 実際に“指でスクロール”させるのは .modal-body */
+  /* 実際にスクロールするのは .modal-body 部分 */
   #emotion-log-edit-modal .modal-body {
-    max-height: calc(100dvh - 160px);
-    /* ↑ ヘッダー＋フッターボタンの高さぶんをざっくり引いた値
-       160px が窮屈なら 180px / 200px とかに調整してOK */
+    max-height: calc(80dvh - 120px);
+    /* ↑ ヘッダー＋ボタン分の高さをざっくり 120px として引いている。
+       もしまだ窮屈なら 140px, 160px と増やしてOK */
+
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch; /* iOSでぬるっとスクロール */
-    padding-bottom: 1.5rem;            /* 下にちょっと余白を足して窮屈感を減らす */
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 1.75rem; /* 下に少し余白を増やす */
+  }
+
+  /* タイトルの余白を少しだけ詰めて、窮屈感を減らす */
+  #emotion-log-edit-modal .modal-body h1.text-center.mt-4 {
+    margin-top: 0.75rem;  /* もともと mt-4 ≒ 1.5rem ぐらい → 半分くらいに */
+    margin-bottom: 1rem;
   }
 }
 
