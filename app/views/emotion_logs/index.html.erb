@@ -132,7 +132,7 @@
     <div id="playlist-sidebar">
       <%= render 'emotion_logs/playlist_sidebar',
         playlists: current_user.playlists
-                               .includes(:playlist_items, :emotion_log)
+                               .includes(playlist_items: :emotion_log)
                                .order(created_at: :desc) %>
     </div>
           <% else %>
@@ -509,7 +509,7 @@
     <div class="modal-content" id="playlist-modal-content-mobile">
       <%= render 'emotion_logs/playlist_sidebar',
             playlists: current_user.playlists
-                                   .includes(:playlist_items, :emotion_log)
+                                   .includes(playlist_items: :emotion_log)
                                    .order(created_at: :desc) %>
     </div>
   </div>
