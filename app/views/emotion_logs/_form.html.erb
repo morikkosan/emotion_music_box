@@ -38,24 +38,37 @@
           <%= form.hidden_field :music_url %>
         </div>
 
-        <div class="mb-4" data-controller="tag-input">
-          <%= label_tag :tag_names, 'ジャンル（最大3つまでです。入力してEnterキーで追加できます）' %>
+        <!-- 🔥 タグ入力 + 候補サジェスト -->
+        <div class="mb-4 mobile-form-autocomplete"
+             data-controller="tag-input tag-autocomplete">
+          <%= label_tag :tag_names,
+                'ジャンル（最大3つまでです。入力してEnterキーで追加できます）',
+                class: "mobile-form-label" %>
+
           <input
             type="text"
-            class="form-control"
-            data-tag-input-target="input"
-            data-action="keydown->tag-input#keydown input->tag-input#filterSuggestions"
+            class="form-control mobile-form-control"
             placeholder="例：Pop, Rock, アニメ　なんでもよし"
-            autocomplete="off" />
+            autocomplete="off"
+            data-tag-input-target="input"
+            data-tag-autocomplete-target="input"
+            data-action="keydown->tag-input#keydown" />
+
+          <!-- ここに選択済みタグのバッジが並ぶ（tag-input が担当） -->
           <div class="mt-2" data-tag-input-target="tags"></div>
-          <div
-            class="dropdown-menu scroll-y-150"
-            data-tag-input-target="suggestions">
-          </div>
+
+          <!-- 🔽 サジェスト用（検索モーダルと同じスタイルを流用） -->
+          <ul
+            class="list-group mobile-tag-suggestions scroll-y-150"
+            data-tag-input-target="suggestions"
+            data-tag-autocomplete-target="suggestions">
+          </ul>
+
           <%= hidden_field_tag "emotion_log[tag_names]", "",
                 id: "hidden-tags",
                 data: { "tag-input-target": "hidden" } %>
         </div>
+        <!-- 🔥 ここまで -->
 
         <div class="mb-4">
           <%= form.label :description, '一言 吐いてみて' %>
