@@ -19,7 +19,6 @@ class CommentsController < ApplicationController
         # ✅ コメントされた投稿の所有者が自分以外なら通知
         log_owner = @emotion_log.user
         if log_owner != current_user
-          # ==== ここが今回の修正ポイント ====
           # push_enabled? が true のときだけ送る（false/nil は送らない）
           if log_owner.respond_to?(:push_enabled?) && !!log_owner.push_enabled?
             begin
@@ -32,7 +31,6 @@ class CommentsController < ApplicationController
               Rails.logger.warn("send_comment_notification failed: #{e.class}: #{e.message}")
             end
           end
-          # ===================================
         end
 
         format.turbo_stream
@@ -64,10 +62,19 @@ class CommentsController < ApplicationController
           partial: "comments/comment",
           locals: { comment: @comment }
         ),
+        # ⭐ SweetAlert 用の flash-container を append
         turbo_stream.append(
           "flash",
-          "<div class=\"cyber-popup text-center\" role=\"alert\">コメントを更新しました</div>".html_safe
+          view_context.tag.div(
+            "",
+            id: "flash-container",
+            data: {
+              flash_notice: "コメントを更新しました",
+              flash_alert:  ""
+            }
+          )
         ),
+        # もし comment-update の Stimulus をまだ使ってるなら残してOK / 不要なら削除
         turbo_stream.append(
           "flash",
           "<div data-controller=\"comment-update\"></div>".html_safe
@@ -95,9 +102,17 @@ class CommentsController < ApplicationController
             partial: "emotion_logs/comment_count",
             locals: { emotion_log: emotion_log }
           ),
+          # ⭐ ここも SweetAlert 用の flash-container を append
           turbo_stream.append(
             "flash",
-            "<div class=\"cyber-popup text-center\" role=\"alert\">コメントを削除しました</div>".html_safe
+            view_context.tag.div(
+              "",
+              id: "flash-container",
+              data: {
+                flash_notice: "コメントを削除しました",
+                flash_alert:  ""
+              }
+            )
           ),
           turbo_stream.append(
             "flash",
@@ -124,7 +139,6 @@ class CommentsController < ApplicationController
 
       # ✅ コメント主が自分以外なら通知
       if comment.user != current_user
-        # ==== 念のためこちらもガードを追加（将来のテスト観点に備える） ====
         if comment.user.respond_to?(:push_enabled?) && !!comment.user.push_enabled?
           begin
             PushNotifier.send_reaction_notification(
@@ -137,15 +151,14 @@ class CommentsController < ApplicationController
             Rails.logger.warn("send_reaction_notification failed: #{e.class}: #{e.message}")
           end
         end
-        # =====================================================================
       end
     end
 
     current_kind = comment.comment_reactions.find_by(user: current_user)&.kind
 
     render json: {
-      status:               "ok",
-      action:               action,
+      status:                "ok",
+      action:                action,
       current_reaction_kind: current_kind
     }
   end
