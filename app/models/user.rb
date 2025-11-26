@@ -32,13 +32,16 @@ class User < ApplicationRecord
   attr_accessor :cropped_avatar_data
   attr_accessor :remove_avatar
 
-  # プロフィール画像URLを返す（AS添付→URL→デフォルト の順でフォールバック）
+  # ✅ プロフィール画像URLを返す（URL → AS添付 → デフォルト の順でフォールバック）
   def profile_avatar_url
-    if respond_to?(:avatar) && avatar.respond_to?(:attached?) && avatar.attached?
-      Rails.application.routes.url_helpers.rails_blob_path(avatar, only_path: true)
-    elsif avatar_url.present?
+    if avatar_url.present?
+      # 本番ではここに Cloudinary 等のURLが入る想定
       avatar_url
+    elsif respond_to?(:avatar) && avatar.respond_to?(:attached?) && avatar.attached?
+      # 開発環境などで ActiveStorage を使う場合のフォールバック
+      Rails.application.routes.url_helpers.rails_blob_path(avatar, only_path: true)
     else
+      # どちらも無ければデフォルト画像
       ActionController::Base.helpers.asset_path("default_stick_figure.webp")
     end
   end

@@ -1,0 +1,16 @@
+<!-- app/views/playlists/index.html.erb --テストでしか使ってない>
+
+<div class="container my-4">
+  <h1 class="mb-4">🎧 プレイリスト一覧</h1>
+
+  <% if @playlists.present? %>
+    <%= render "emotion_logs/playlist_sidebar",
+               playlists: @playlists %>
+  <% else %>
+    <p>まだプレイリストがありません。</p>
+  <% end %>
+
+  <%= link_to "エモログ一覧に戻る",
+              bookmarks_emotion_logs_path(view: "mobile"),
+              class: "btn btn-secondary mt-3" %>
+</div>
