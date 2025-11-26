@@ -57,7 +57,7 @@ RSpec.describe EmotionLogsController, type: :controller do
       my_log = create(:emotion_log, user: user)
       get :my_emotion_logs
       expect(assigns(:emotion_logs)).to include(my_log)
-      expect(assigns(:mypage_title)).to eq("👮マイページ👮")
+      expect(assigns(:mypage_title)).to eq("🤖マイページ🤖")
     end
 
     it "mobileビューを描画できる" do
