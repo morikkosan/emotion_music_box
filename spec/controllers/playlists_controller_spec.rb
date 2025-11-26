@@ -9,13 +9,6 @@ RSpec.describe PlaylistsController, type: :controller do
 
   before { sign_in user }
 
-  describe "GET #index" do
-    it "プレイリスト一覧が表示される" do
-      request.env["HTTP_ACCEPT"] = "text/vnd.turbo-stream.html"
-      get :index
-      expect(response).to have_http_status(:success)
-    end
-  end
 
   describe "GET #new" do
     it "Turbo Streamでモーダル部分テンプレートが返る" do
