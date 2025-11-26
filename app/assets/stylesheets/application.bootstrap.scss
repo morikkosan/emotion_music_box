@@ -53,15 +53,25 @@ body.playlist-show-page .bottom-player {
   z-index: 2000 !important;
 }
 
-@media (max-width: 996px) {
-  html body .bottom-player {
-    position: fixed !important;
-    bottom: 80px !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 2000 !important;
+/* ===== モバイル：プレイリスト“一覧”モーダル内は必ずタップ可 ===== */
+/* bottom-player(z-index:20000) より前面に出す + 中身はタップ可能にする */
+#playlist-modal-mobile {
+  /* ★ ここがポイント：このモーダルを一番前に出す */
+  z-index: 25000 !important;
+
+  #super-search-panel {
+    pointer-events: auto !important;
+  }
+
+  #playlist-sidebar-home,
+  .filter-box,
+  a,
+  button,
+  .playlist-link {
+    pointer-events: auto !important;
   }
 }
+
 
 /* ===== モバイル：プレイリスト“一覧”モーダル内は必ずタップ可 ===== */
 #playlist-modal-mobile {
