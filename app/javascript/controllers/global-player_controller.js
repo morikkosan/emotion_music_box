@@ -29,6 +29,50 @@ export default class extends Controller {
     this.playFromExternal(url);
   };
 
+    // ★ 追加: フォーム投稿完了時にプレイヤーを完全リセットするハンドラ
+  _onRecordSubmitted = () => {
+    try {
+      // まずプレイヤー本体（API / widget / audio）を止める
+      this.stopOnlyPlayer?.();
+
+      // 進捗タイマーも完全停止
+      if (this.progressInterval) {
+        clearInterval(this.progressInterval);
+        this.progressInterval = null;
+      }
+
+      // 自動復元用の保存状態を捨てる
+      try {
+        localStorage.removeItem("playerState");
+      } catch (_) {}
+
+      // ボトムプレイヤー自体も一旦隠す（邪魔なら）
+      if (this.bottomPlayer) {
+        this.bottomPlayer.classList.add("d-none");
+        this.bottomPlayer.setAttribute("aria-hidden", "true");
+        this.bottomPlayer.setAttribute("inert", "");
+      }
+
+      // iOS用ヒントやハンドシェイクメッセージも念のため消す
+      this._hideHandshakeHint?.();
+      this._removeIOSVolumeHint?.();
+
+      // widget用 iframe も念のため削除 （stopOnlyPlayer でもやっているが保険）
+      try {
+        const ifr = document.getElementById("hidden-sc-player");
+        if (ifr) {
+          ifr.src = "about:blank";
+          ifr.removeAttribute("src");
+          ifr.remove();
+        }
+        this.iframeElement = null;
+      } catch (_) {}
+    } catch (_) {
+      // ここでの例外は完全に無視（ユーザー操作を邪魔しない）
+    }
+  };
+
+
 
   // ===== 基本ユーティリティ =====
   _getOAuthToken() {
@@ -806,6 +850,9 @@ this.__arrivedByTurbo = _arrivedByTurbo;
 
     // 外部検索から再生
 window.addEventListener("play-from-search", this._onPlayFromSearch);
+    // ★ 追加: フォーム投稿完了 → プレイヤー停止・状態リセット
+    window.addEventListener("emomu:record-submitted", this._onRecordSubmitted);
+
 
 
     // レイアウト
@@ -876,12 +923,20 @@ window.addEventListener("play-from-search", this._onPlayFromSearch);
 
 
 
-disconnect() {
-  window.removeEventListener("beforeunload", this.cleanup);  // ★追加
-  window.removeEventListener("play-from-search", this._onPlayFromSearch);
+  disconnect() {
+    // ページ離脱時の cleanup フック解除
+    window.removeEventListener("beforeunload", this.cleanup);
 
-  this.cleanup(); // ← これはもともと入っている（そのまま）
-}
+    // 検索モーダル → 再生 のイベント
+    window.removeEventListener("play-from-search", this._onPlayFromSearch);
+
+    // ★ 追加: 投稿完了 → プレイヤー停止 のイベント
+    window.removeEventListener("emomu:record-submitted", this._onRecordSubmitted);
+
+    // 既存の後始末処理
+    this.cleanup();
+  }
+
 
 
 
