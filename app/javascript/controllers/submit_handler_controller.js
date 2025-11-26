@@ -103,6 +103,18 @@ export default class extends Controller {
             }
           }
 
+          // ★★★ ここを追加：プレイヤー完全停止イベントを飛ばす（フラグ付きフォームだけ）★★★
+          try {
+            const flag = (form.dataset.stopPlayerOnSubmit || "").toLowerCase();
+            if (flag === "true") {
+              window.dispatchEvent(new CustomEvent("emomu:record-submitted"));
+              console.log("🎧 emomu:record-submitted dispatched (from submit-handler)");
+            }
+          } catch (e) {
+            console.warn("failed to dispatch emomu:record-submitted", e);
+          }
+          // ★★★ 追加ここまで ★★★
+
           // ★ サーバ値での上書きはしない（フォームHPがある場合はその値で固定）
           const hp = this.getHPFromForm(form);
           if (hp !== null) {
