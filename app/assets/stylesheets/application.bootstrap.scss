@@ -536,3 +536,9 @@ body.no-player #hidden-sc-player.sc-keepalive {
 }
 
 
+// 上書き修正：モバイルスーパーサーチパネルの z-index を最前面に
+@media (max-width: 996px) {
+  html body #super-search-panel {
+    z-index: 25000 !important;
+  }
+}
