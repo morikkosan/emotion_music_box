@@ -576,8 +576,15 @@ body.no-player #hidden-sc-player.sc-keepalive {
 }
 
 
-/* ==== フラッシュ（SweetAlert2）を必ず最前面に出す ==== */
-/*  bottom-player(20000) / playlist-modal-mobile(25000) より上にする */
-.swal2-container {
-  z-index: 30000 !important;
+/* SweetAlert を最前面にする基礎 */
+#swal-fake-modal {
+  position: fixed !important;
+  z-index: 40000 !important;
+  inset: 0 !important;
+}
+
+#swal-fake-modal .modal,
+#swal-fake-modal .modal-dialog,
+#swal-fake-modal .modal-content {
+  z-index: 40001 !important;
 }
