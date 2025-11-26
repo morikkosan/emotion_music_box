@@ -38,10 +38,20 @@
   .mobile-only  { display: block !important; }
 }
 
+/* ▼ bottom-player 自体の基本 z-index をここで固定しておく */
+#bottom-player {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20000 !important;   /* 通常モーダルより常に前面 */
+}
+
 /* モーダル時もフッタープレーヤーは前面維持 */
 /* ★ super-search-open 中だけは別制御にしたかった元の形に戻す */
 body.modal-open:not(.super-search-open) #bottom-player {
-  z-index: 20000 !important;
+  position: fixed !important;      /* 念のため固定を強制 */
+  pointer-events: auto !important; /* タップ無効化されていても強制ON */
 }
 
 /* showページのプレーヤー高さ（従来どおり） */
@@ -148,7 +158,7 @@ html.preload body { visibility: visible !important; }
 
 /* ==== ここより下は、あなたの既存スタイル（ページ固有など） ==== */
 
-/* ドロップダウン等（あなたの既存CSSがあればそのまま） */
+/* ドロップダウン等（既存） */
 .user-dropdown:hover .dropdown-menu { display: block; }
 
 /* ページネーションの装飾（既存） */
@@ -381,7 +391,7 @@ body.playlists #mobile-view {
   border: 1px solid rgba(255,255,255,.28);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.12),
-    0 2px 6px rgba(0,0,0,.20);
+    0 2px 6pxrgba(0,0,0,.20);
   backdrop-filter: saturate(120%) blur(2px);
   isolation: isolate;             /* 背景のブレンド影響を遮断（念のため） */
 }
@@ -413,9 +423,6 @@ body.playlists #mobile-view {
 .mobile-guest-scroll .neon-btn-panel {
   padding: 8px 12px;
 }
-
-/* （任意）固定フッターがある画面と干渉しないように…未ログインはフッターが無いのでOK */
-
 
 /* === SoundCloud iframe を“見えないけど描画は続ける”状態に保つ === */
 #hidden-sc-player.sc-keepalive {
@@ -455,8 +462,6 @@ body.no-player #hidden-sc-player.sc-keepalive {
   z-index: 2147483647 !important; /* 最前面へ */
 }
 
-
-
 /* ==== HOTFIX: notifications modal height ==== */
 #notifications-modal .modal-body {
   /* 共通は 72vh に統一 */
@@ -470,7 +475,6 @@ body.no-player #hidden-sc-player.sc-keepalive {
   }
 }
 
-
 /* ==== PC版：感情記録モーダルの中身だけスクロールさせる ==== */
 @media (min-width: 768px) {
   .modal-emotion-body {
@@ -479,8 +483,6 @@ body.no-player #hidden-sc-player.sc-keepalive {
     overflow-y: auto;
   }
 }
-
-
 
 /* ==== PC版：#modal-container のネオン枠の中を黒く塗りつぶす ==== */
 /* ==== PC版：#modal-container の枠の“内側”を少し透けた黒で塗る ==== */
@@ -495,8 +497,6 @@ body.no-player #hidden-sc-player.sc-keepalive {
     background-image: none !important;
   }
 }
-
-
 
 /* 共通：編集モーダルの .modal-body を“スクロール領域”にする */
 #emotion-log-edit-modal .modal-body {
@@ -537,7 +537,6 @@ body.no-player #hidden-sc-player.sc-keepalive {
   }
 }
 
-
 /* iPhone / PC 共通：プロフィール編集ページのレイアウト調整 */
 .profile-edit-container {
   min-height: 100dvh;          /* 画面の高さぶん確保（PCでもOK） */
@@ -554,8 +553,8 @@ body.no-player #hidden-sc-player.sc-keepalive {
   }
 }
 
-
-
+/* ▼ Record emotions 用モーダル（検索フォーム⇔フォーム切替の親） */
+/* bottom-player に勝たせないため z-index は Bootstrap 標準付近にしておく */
 #record-modal {
-  z-index: 25000 !important;
+  z-index: 1500 !important;  /* 普通のモーダル扱い。bottom-player(20000) には負ける */
 }
