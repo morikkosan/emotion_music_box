@@ -176,9 +176,9 @@
 
 #track-artist-mobile {
   position: absolute !important;
-  left: 50% !important;
+  left: 12px !important;            /* ← 画面左から12px に固定 */
   top: 15px !important;
-  transform: translateX(-250%) !important;
+  transform: none !important;       /* ← 中央基準のずらしをやめる */
   color: #bbb !important;
   font-size: 13px !important;
   max-width: 110px !important;
@@ -187,8 +187,9 @@
   text-overflow: ellipsis !important;
   z-index: 9999 !important;
   display: inline-block !important;
-   /* background: yellow !important;  テスト用 */
+  /* background: yellow !important;  テスト用 */
 }
+
 
 
 
