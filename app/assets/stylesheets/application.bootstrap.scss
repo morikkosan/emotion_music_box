@@ -38,9 +38,9 @@
   .mobile-only  { display: block !important; }
 }
 
-/* モーダル時もフッタープレーヤーは前面維持（従来どおり） */
-/* モーダル時もフッタープレーヤーは前面維持（ただし super-search-open 中は除外） */
-body.modal-open:not(.super-search-open) #bottom-player {
+/* モーダル時もフッタープレーヤーは前面維持 */
+/* ★ ここ：:not(.super-search-open) を外して、ふつうに modal-open だけにする */
+body.modal-open #bottom-player {
   z-index: 20000 !important;
 }
 
@@ -456,8 +456,6 @@ body.no-player #hidden-sc-player.sc-keepalive {
 
 
 
-
-
 /* ==== HOTFIX: notifications modal height ==== */
 #notifications-modal .modal-body {
   /* 共通は 72vh に統一 */
@@ -542,17 +540,21 @@ body.no-player #hidden-sc-player.sc-keepalive {
 // 上書き修正：モバイルスーパーサーチパネルの z-index を最前面に
 /* ===== Super Search が開いている間は bottom-player を降格させる ===== */
 @media (max-width: 996px) {
-  /* フラグクラスが body に付いているときだけ有効にする */
-  body.super-search-open #bottom-player {
+  /* ★ ここ：super-search-open が body でも html でも効くようにする */
+  body.super-search-open #bottom-player,
+  html.super-search-open body #bottom-player {
     z-index: 50 !important;           /* 普通の要素よりちょい上くらいに落とす */
     pointer-events: none !important;  /* タップも奪わないようにする */
   }
 
-  body.super-search-open #hidden-sc-player {
+  body.super-search-open #hidden-sc-player,
+  html.super-search-open body #hidden-sc-player {
     pointer-events: none !important;  /* 念のため iframe 側もタップ不可 */
   }
 
-  body.super-search-open #super-search-panel {
+  body.super-search-open #super-search-panel,
+  html.super-search-open #super-search-panel,
+  html.super-search-open body #super-search-panel {
     position: fixed !important;
     inset: 0 !important;              /* 画面全体を覆う */
     z-index: 25000 !important;        /* bottom-player より前に出す */
