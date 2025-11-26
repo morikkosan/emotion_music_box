@@ -574,3 +574,10 @@ body.no-player #hidden-sc-player.sc-keepalive {
     bottom: var(--mobile-footer-h) !important;
   }
 }
+
+
+/* ==== フラッシュ（SweetAlert2）を必ず最前面に出す ==== */
+/*  bottom-player(20000) / playlist-modal-mobile(25000) より上にする */
+.swal2-container {
+  z-index: 30000 !important;
+}
