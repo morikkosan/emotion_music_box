@@ -28,6 +28,7 @@ ja:
       too_long: "は%{count}文字以内で入力してください"
       not_a_number: "は数値で入力してください"
       confirmation: "が一致しません"
+      not_saved: "保存に失敗しました。入力内容を確認してください。"
 
   activerecord:
     errors:

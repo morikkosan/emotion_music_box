@@ -571,3 +571,20 @@ body.no-player #hidden-sc-player.sc-keepalive {
     pointer-events: auto !important;
   }
 }
+
+
+/* iPhone / PC 共通：プロフィール編集ページのレイアウト調整 */
+.profile-edit-container {
+  min-height: 100dvh;          /* 画面の高さぶん確保（PCでもOK） */
+  padding-top: 2rem;           /* 上に余裕 */
+  padding-bottom: 2rem;        /* 下にも余裕 */
+  align-items: flex-start !important; 
+  /* ↑ 元の align-items-center を打ち消して、上から並べる */
+}
+
+/* iOS Safari 向けに、下の安全領域ぶんだけ少し引いておく */
+@supports (-webkit-touch-callout: none) {
+  .profile-edit-container {
+    min-height: calc(100dvh - env(safe-area-inset-bottom));
+  }
+}
