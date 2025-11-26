@@ -826,11 +826,6 @@ h1 i.bi bi-heart-pulse {
 }
 
 
-@media (max-width: 996px) {
-  #super-search-panel {
-    z-index: 21000;  /* bottom-player の 20000 を超える */
-  }
-}
 
 /* プレイリスト用：中身のHTMLは弄らない */
 #playlist-sidebar {

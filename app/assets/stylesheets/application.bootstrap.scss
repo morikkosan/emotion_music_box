@@ -39,7 +39,10 @@
 }
 
 /* モーダル時もフッタープレーヤーは前面維持（従来どおり） */
-body.modal-open #bottom-player { z-index: 20000 !important; }
+/* モーダル時もフッタープレーヤーは前面維持（ただし super-search-open 中は除外） */
+body.modal-open:not(.super-search-open) #bottom-player {
+  z-index: 20000 !important;
+}
 
 /* showページのプレーヤー高さ（従来どおり） */
 body.playlist-show-page .bottom-player {
