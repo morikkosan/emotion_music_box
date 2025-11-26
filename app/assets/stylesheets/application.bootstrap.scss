@@ -553,3 +553,9 @@ body.no-player #hidden-sc-player.sc-keepalive {
     min-height: calc(100dvh - env(safe-area-inset-bottom));
   }
 }
+
+
+
+#record-modal {
+  z-index: 25000 !important;
+}
