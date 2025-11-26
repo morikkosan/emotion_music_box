@@ -219,7 +219,7 @@ html.preload body { visibility: visible !important; }
   [data-controller~="view-switcher"] #mobile-view {
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
-    transform: translateZ(0);
+    // transform: translateZ(0);
   }
 }
 
@@ -237,7 +237,7 @@ html.preload body { visibility: visible !important; }
     background-repeat: no-repeat;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
-    transform: translateZ(0);
+    // transform: translateZ(0);  /* ← ここを消す or コメントアウト */
   }
 }
 
@@ -537,8 +537,22 @@ body.no-player #hidden-sc-player.sc-keepalive {
 
 
 // 上書き修正：モバイルスーパーサーチパネルの z-index を最前面に
+/* ===== Super Search が開いている間は bottom-player を降格させる ===== */
 @media (max-width: 996px) {
-  html body #super-search-panel {
-    z-index: 25000 !important;
+  /* フラグクラスが body に付いているときだけ有効にする */
+  body.super-search-open #bottom-player {
+    z-index: 50 !important;           /* 普通の要素よりちょい上くらいに落とす */
+    pointer-events: none !important;  /* タップも奪わないようにする */
+  }
+
+  body.super-search-open #hidden-sc-player {
+    pointer-events: none !important;  /* 念のため iframe 側もタップ不可 */
+  }
+
+  body.super-search-open #super-search-panel {
+    position: fixed !important;
+    inset: 0 !important;              /* 画面全体を覆う */
+    z-index: 25000 !important;        /* bottom-player より前に出す */
+    pointer-events: auto !important;
   }
 }
