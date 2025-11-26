@@ -558,3 +558,19 @@ body.no-player #hidden-sc-player.sc-keepalive {
 #record-modal {
   z-index: 1500 !important;  /* 普通のモーダル扱い。bottom-player(20000) には負ける */
 }
+
+/* =========================================================
+   ▼▼ ここから追記：モバイルで bottom-player を
+       フッターメニューの“ちょうど上”にずらすだけ ▼▼
+   ========================================================= */
+@media (max-width: 996px) {
+  /* 実際のフッターメニューの高さに少し余裕を足した値 */
+  :root {
+    --mobile-footer-h: 80px;   /* 64px だと足りない可能性があるので 80px に増やす */
+  }
+
+  /* プレーヤーの下端を、フッターの高さぶんだけ持ち上げる */
+  #bottom-player {
+    bottom: var(--mobile-footer-h) !important;
+  }
+}

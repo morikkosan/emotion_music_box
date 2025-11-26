@@ -1775,7 +1775,7 @@ _onAudioDur = () => {
       hint.className = "ios-volume-hint";
       hint.setAttribute("role","note");
       hint.setAttribute("aria-live","polite");
-      hint.textContent = "iPhone / iPad は本体の音量ボタンで調整してください";
+      hint.textContent = "本体ボタンで音量";
       const container = this.bottomPlayer?.querySelector(".bottom-player-extra-controls") || this.bottomPlayer || document.body;
       container?.appendChild(hint);
     }

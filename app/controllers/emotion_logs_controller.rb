@@ -42,7 +42,7 @@ class EmotionLogsController < ApplicationController
     @emotion_logs = paginate_with_total_fix(base, per: 7)
 
     @user_bookmark_ids = current_user.bookmarks.pluck(:emotion_log_id)
-    @mypage_title = "👮マイページ👮"
+    @mypage_title = "🤖マイページ🤖"
 
     return if render_mobile_frame_if_needed
 
