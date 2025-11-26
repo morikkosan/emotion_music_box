@@ -1,4 +1,4 @@
-// すべての @use はファイルの本当の先頭に！コメントもOK
+// すべての @use はファイルの本当の先頭に！コメントもOK 
 @use "bootstrap/scss/bootstrap";
 @use "bootstrap-icons/font/bootstrap-icons";
 @use "components/floating_button";
@@ -39,8 +39,8 @@
 }
 
 /* モーダル時もフッタープレーヤーは前面維持 */
-/* ★ ここ：:not(.super-search-open) を外して、ふつうに modal-open だけにする */
-body.modal-open #bottom-player {
+/* ★ super-search-open 中だけは別制御にしたかった元の形に戻す */
+body.modal-open:not(.super-search-open) #bottom-player {
   z-index: 20000 !important;
 }
 
@@ -70,15 +70,6 @@ body.playlist-show-page .bottom-player {
   .playlist-link {
     pointer-events: auto !important;
   }
-}
-
-
-/* ===== モバイル：プレイリスト“一覧”モーダル内は必ずタップ可 ===== */
-#playlist-modal-mobile {
-  #super-search-panel { pointer-events: auto !important; }
-  #playlist-sidebar-home,
-  .filter-box,
-  a, button, .playlist-link { pointer-events: auto !important; }
 }
 
 /* モーダル中はフッターがタップを奪わない */
@@ -543,32 +534,6 @@ body.no-player #hidden-sc-player.sc-keepalive {
   #emotion-log-edit-modal .modal-body h1.text-center.mt-4 {
     margin-top: 0.75rem;
     margin-bottom: 1rem;
-  }
-}
-
-
-// 上書き修正：モバイルスーパーサーチパネルの z-index を最前面に
-/* ===== Super Search が開いている間は bottom-player を降格させる ===== */
-@media (max-width: 996px) {
-  /* ★ ここ：super-search-open が body でも html でも効くようにする */
-  body.super-search-open #bottom-player,
-  html.super-search-open body #bottom-player {
-    z-index: 50 !important;           /* 普通の要素よりちょい上くらいに落とす */
-    pointer-events: none !important;  /* タップも奪わないようにする */
-  }
-
-  body.super-search-open #hidden-sc-player,
-  html.super-search-open body #hidden-sc-player {
-    pointer-events: none !important;  /* 念のため iframe 側もタップ不可 */
-  }
-
-  body.super-search-open #super-search-panel,
-  html.super-search-open #super-search-panel,
-  html.super-search-open body #super-search-panel {
-    position: fixed !important;
-    inset: 0 !important;              /* 画面全体を覆う */
-    z-index: 25000 !important;        /* bottom-player より前に出す */
-    pointer-events: auto !important;
   }
 }
 
