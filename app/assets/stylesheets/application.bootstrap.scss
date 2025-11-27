@@ -647,3 +647,19 @@ body.playlist-show-page .playlist-show-main {
 }
 
 
+/* ============================================
+   プレイリスト詳細ページの黒幕残留リセット
+   ============================================ */
+
+body.playlist-show-page .modal-backdrop,
+body.playlist-show-page #loading-overlay {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* body に modal-open が残っていた場合の緊急解除 */
+body.playlist-show-page.modal-open {
+  overflow: auto !important;
+}
