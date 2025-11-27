@@ -12,7 +12,7 @@ class SoundCloudController < ApplicationController
   # before_action :authenticate_user!, only: [:resolve, :search]
 
   # 🔹検索APIにだけレート制限をかける（アプリ側の独自リミット）
-  before_action :enforce_search_limit!, only: [:search]
+  before_action :enforce_search_limit!, only: [ :search ]
 
   # GET /sc_resolve?url=…
   # SoundCloudのページURLを、APIで扱いやすい曲データに**変換（resolve）する
@@ -139,10 +139,10 @@ class SoundCloudController < ApplicationController
       # 3️⃣ 有効期限：expires_in があればそれを基準に、少し余裕を持って短めにしておく
       #    ざっくり 50分〜ぐらいで十分（なければデフォルト 50 分）
       ttl_seconds = if expires_in.positive?
-                      [expires_in - 60, 60].max # 1分マイナス、最低60秒
-                    else
+                      [ expires_in - 60, 60 ].max # 1分マイナス、最低60秒
+      else
                       50.minutes.to_i
-                    end
+      end
 
       @@soundcloud_app_token            = token
       @@soundcloud_app_token_expires_at = now + ttl_seconds
