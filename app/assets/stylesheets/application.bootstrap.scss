@@ -294,6 +294,23 @@ body.logged-in [data-controller~="view-switcher"] turbo-frame#logs_list_mobile {
   overscroll-behavior-y: contain; /* 上端での連鎖スクロールを遮断 */
 }
 
+
+/* 🔧 デスクトップChrome など「ポインタがマウス」の環境で、
+   ウィンドウ幅だけスマホサイズにしたときは
+   モバイル用のスクロールロックを解除する */
+@media (max-width: 996px) and (pointer: fine) {
+  body.logged-in [data-controller~="view-switcher"] #mobile-view {
+    height: auto;
+    overflow-y: auto;
+  }
+
+  body.logged-in [data-controller~="view-switcher"] turbo-frame#logs_list_mobile {
+    height: auto;
+    overflow: visible;
+  }
+}
+
+
 /* －－－－ 未ログイン（guest）は“ページ全体スクロール”へ（追加） －－－－ */
 body.guest [data-controller~="view-switcher"] #mobile-view {
   height: auto;            /* ロック解除 */
@@ -587,4 +604,20 @@ body.no-player #hidden-sc-player.sc-keepalive {
 #swal-fake-modal .modal-dialog,
 #swal-fake-modal .modal-content {
   z-index: 40001 !important;
+}
+
+
+
+
+/* プレイリスト詳細ページ：下のプレイヤー＋フッターに被らないよう余白を追加 */
+body.playlist-show-page .playlist-show-main {
+  /* PC でも一応少し余裕を入れておく（プレイヤー高さぶん + ちょい） */
+  padding-bottom: calc(var(--footer-player-h) + 40px);
+}
+
+@media (max-width: 996px) {
+  body.playlist-show-page .playlist-show-main {
+    /* モバイルは「プレイヤー高さ + モバイルフッター + 余裕」ぶん空ける */
+    padding-bottom: calc(var(--footer-player-h) + var(--mobile-footer-h) + 40px);
+  }
 }

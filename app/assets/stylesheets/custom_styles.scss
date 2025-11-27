@@ -9,6 +9,7 @@ body {
   background-position: center center;  /* 中央に配置 */
   background-attachment: fixed;        /* スクロールしても固定 */
   background-blend-mode: multiply;     /* 色と合成 */
+
 }
 
 
@@ -592,11 +593,12 @@ h1 i.bi bi-heart-pulse {
   position: fixed;
   inset: 0;
   background: #18182a; /* ←背景色お好みで */
-  z-index: 2147483647; /* 他全部より上！ */
+  z-index: 30000;      /* 🔽 ここを 2147483647 から 30000 に下げる */
   display: flex;
   align-items: center;
   justify-content: center;
 }
+
 
 
 
@@ -615,9 +617,10 @@ h1 i.bi bi-heart-pulse {
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 2147483647; /* ← 最大値に近い */
+  z-index: 35000;      /* 🔽 ここを 2147483647 から 35000 に下げる */
   pointer-events: none;
 }
+
 
 
 
