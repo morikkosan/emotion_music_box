@@ -48,7 +48,7 @@
           <% if user_signed_in? %>
             <%= link_to log.emotion,
                         emotion_log_path(log, view: "mobile"),
-                        class: "text-decoration-none text-light",
+                        class: "text-decoration-none text-light button emotion-badge-mobile",
                         data: { turbo_frame: "logs_list_mobile", turbo_action: "advance" } %>
           <% else %>
             <%= link_to log.emotion,

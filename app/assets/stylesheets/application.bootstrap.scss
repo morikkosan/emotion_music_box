@@ -194,11 +194,11 @@ html.preload body { visibility: visible !important; }
 
 
 /* =========================================================
-  ▼▼ モバイル背景の安定化（iOS Safari対策込み）9/3寝る前に行った ▼▼
-  - 背景を body に設定している場合でも縮み/タイル化を防ぐ
-  - view-switcher 配下のみ副作用を最小化
+/* =========================================================
+  モバイル背景の安定化（iOS Safari 対策）
+  → タッチデバイスだけに適用（pointer: coarse）
    ========================================================= */
-@media (max-width: 996px) {
+@media (max-width: 996px) and (pointer: coarse) {
   /* ビューポートの高さ基準を安定させる */
   html, body {
     height: auto !important;
@@ -211,15 +211,19 @@ html.preload body { visibility: visible !important; }
     min-height: 100vh;   /* 旧端末向け */
     min-height: 100dvh;  /* iOS 16+／Android Chrome */
     overflow-x: hidden;
-    background: transparent !important; /* ラッパに余計な背景があれば無効化 */
+    background: transparent !important;
+
+    /* Safari の描画安定 */
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   }
 
   /* 背景が body にある想定の“汎用”安定化（画像パスは触らない） */
   body {
-    background-attachment: scroll !important;  /* iOSの fixed バグ回避 */
-    background-size: cover !important;         /* 全面カバーで縮み防止 */
+    background-attachment: scroll !important;  /* iOS の fixed バグ回避 */
+    background-size: cover !important;
     background-position: center center !important;
-    background-repeat: no-repeat !important;   /* タイル化防止 */
+    background-repeat: no-repeat !important;
   }
 
   /* もし container 側に背景が設定されていた場合は打ち消してラッパで見せる */
@@ -228,134 +232,125 @@ html.preload body { visibility: visible !important; }
     background: transparent !important;
     background-image: none !important;
   }
+}
 
-  /* Safari の描画安定の小手先（副作用なし） */
-  [data-controller~="view-switcher"] #mobile-view {
+/* モバイル全面背景を #mobile-view の擬似要素で表示（fixedバグ回避） */
+/* モバイル全面背景を #mobile-view の擬似要素で表示（fixedバグ回避）
+   → これもタッチデバイス専用に絞る */
+@media (max-width: 996px) and (pointer: coarse) {
+  [data-controller~="view-switcher"] #mobile-view::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image: inherit;   /* body と同じ背景を引き継ぐ想定 */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
     // transform: translateZ(0);
   }
 }
 
-/* モバイル全面背景を #mobile-view の擬似要素で表示（fixedバグ回避） */
-@media (max-width: 996px) {
-  [data-controller~="view-switcher"] #mobile-view::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    /* ここに“今使ってる背景画像”を指定（例：bodyの background-image と同じもの） */
-    background-image: inherit;          /* body と同じ指定を継承できるならこれでOK */
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-    // transform: translateZ(0);  /* ← ここを消す or コメントアウト */
-  }
-}
 
 /* ===== モバイルスクロール安定化 追加（9/3）— ここから ===== */
 
 /* 1) 上端オーバースクロールの連鎖を止める（Pull-to-Refresh抑止） */
+/* これはどの環境でも害がないのでグローバルのまま残す */
 html, body {
   overscroll-behavior-y: none;
 }
 
-/* 2) モバイルラッパ固定は“ログイン時だけ”適用（修復） */
-body.logged-in [data-controller~="view-switcher"] #mobile-view {
-  height: 100dvh;
-  overflow: hidden;
-}
+/* ここから下は「タッチデバイス専用」に限定する */
+@media (pointer: coarse) {
 
-/* 旧端末フォールバック（ログイン時のみ） */
-@supports not (height: 100dvh) {
-  body.logged-in [data-controller~="view-switcher"] #mobile-view { height: 100vh; }
-}
-
-/* 3) フッターと上部ヘッダ分を変数化（値は実UIに合わせて調整） */
-:root {
-  --mobile-footer-h: 64px;    /* ← フッターの実高さに合わせる（例: 56〜80px） */
-  --mobile-headroom: 140px;   /* ← ロゴ/タイトル/ユーザーバー等の上部余白合計 */
-}
-
-/* ▼ ログイン後スマホ時のヘッダ余白を中間くらいに（140px → お好みの値に） */
-@media (max-width: 996px) {
-  body.logged-in { --mobile-headroom: 104px; }  /* 例：104px。好みに合わせて微調整OK */
-}
-
-
-/* 4) フレーム内部スクロールは“ログイン時だけ”（修復） */
-body.logged-in [data-controller~="view-switcher"] turbo-frame#logs_list_mobile {
-  display: block;
-  height: calc(100dvh - var(--mobile-footer-h) - var(--mobile-headroom));
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain; /* 上端での連鎖スクロールを遮断 */
-}
-
-
-/* 🔧 デスクトップChrome など「ポインタがマウス」の環境で、
-   ウィンドウ幅だけスマホサイズにしたときは
-   モバイル用のスクロールロックを解除する */
-@media (max-width: 996px) and (pointer: fine) {
+  /* 2) モバイルラッパ固定は“ログイン時だけ”適用（修復） */
   body.logged-in [data-controller~="view-switcher"] #mobile-view {
-    height: auto;
-    overflow-y: auto;
+    height: 100dvh;
+    overflow: hidden;
   }
 
+  /* 旧端末フォールバック（ログイン時のみ） */
+  @supports not (height: 100dvh) {
+    body.logged-in [data-controller~="view-switcher"] #mobile-view {
+      height: 100vh;
+    }
+  }
+
+  /* 3) フッターと上部ヘッダ分を変数化（値は実UIに合わせて調整） */
+  :root {
+    --mobile-footer-h: 64px;    /* ← フッターの実高さに合わせる（例: 56〜80px） */
+    --mobile-headroom: 140px;   /* ← ロゴ/タイトル/ユーザーバー等の上部余白合計 */
+  }
+
+  /* ▼ ログイン後スマホ時のヘッダ余白を中間くらいに（140px → お好みの値に） */
+  @media (max-width: 996px) {
+    body.logged-in {
+      --mobile-headroom: 104px;  /* 例：104px。好みに合わせて微調整OK */
+    }
+  }
+
+  /* 4) フレーム内部スクロールは“ログイン時だけ”（修復） */
   body.logged-in [data-controller~="view-switcher"] turbo-frame#logs_list_mobile {
-    height: auto;
-    overflow: visible;
-  }
-}
-
-
-/* －－－－ 未ログイン（guest）は“ページ全体スクロール”へ（追加） －－－－ */
-body.guest [data-controller~="view-switcher"] #mobile-view {
-  height: auto;            /* ロック解除 */
-  min-height: 100dvh;      /* 画面は満たす */
-  overflow-y: auto;        /* 全体スクロール */
-  -webkit-overflow-scrolling: touch;
-}
-body.guest [data-controller~="view-switcher"] turbo-frame#logs_list_mobile {
-  height: auto;            /* 固定解除 */
-  overflow: visible;       /* 自然な縦流し */
-}
-
-/* 5) 念のため内部のリスト領域にも連鎖遮断 */
-[data-controller~="view-switcher"] .mobile-content {
-  overscroll-behavior-y: contain;
-}
-
-/* 6) 誤タップ軽減（フッターナビ） */
-.mobile-footer a,
-.mobile-footer button {
-  -webkit-user-select: none;
-  user-select: none;
-  touch-action: pan-y;
-}
-
-/* スマホ表示でフッターメニューを一番上に置いた場合の補正 */
-/* 👇 こちらを追加（ログイン後のみヘッダ分の余白を確保）*/
-@media (max-width: 996px) {
-  body.logged-in [data-controller~="view-switcher"] #mobile-view {
-    padding-top: var(--mobile-headroom) !important;
-  }
-
-  /* フレーム高さは既に --mobile-headroom を引いているのでOK。明示しておくなら再掲： */
-  body.logged-in [data-controller~="view-switcher"] turbo-frame#logs_list_mobile {
+    display: block;
     height: calc(100dvh - var(--mobile-footer-h) - var(--mobile-headroom));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain; /* 上端での連鎖スクロールを遮断 */
   }
 
-  /* 端末対応を強めたい場合（任意） */
-  @supports (height: 100svh) {
-    body.logged-in [data-controller~="view-switcher"] #mobile-view { height: 100svh; }
+  /* －－－－ 未ログイン（guest）は“ページ全体スクロール”へ（追加） －－－－ */
+  body.guest [data-controller~="view-switcher"] #mobile-view {
+    height: auto;            /* ロック解除 */
+    min-height: 100dvh;      /* 画面は満たす */
+    overflow-y: auto;        /* 全体スクロール */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.guest [data-controller~="view-switcher"] turbo-frame#logs_list_mobile {
+    height: auto;            /* 固定解除 */
+    overflow: visible;       /* 自然な縦流し */
+  }
+
+  /* 5) 念のため内部のリスト領域にも連鎖遮断 */
+  [data-controller~="view-switcher"] .mobile-content {
+    overscroll-behavior-y: contain;
+  }
+
+  /* 6) 誤タップ軽減（フッターナビ） */
+  .mobile-footer a,
+  .mobile-footer button {
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: pan-y;
+  }
+
+  /* スマホ表示でフッターメニューを一番上に置いた場合の補正 */
+  /* 👇 ログイン後のみヘッダ分の余白を確保 */
+  @media (max-width: 996px) {
+    body.logged-in [data-controller~="view-switcher"] #mobile-view {
+      padding-top: var(--mobile-headroom) !important;
+    }
+
+    /* フレーム高さは既に --mobile-headroom を引いているのでOK。明示しておくなら再掲： */
     body.logged-in [data-controller~="view-switcher"] turbo-frame#logs_list_mobile {
-      height: calc(100svh - var(--mobile-footer-h) - var(--mobile-headroom));
+      height: calc(100dvh - var(--mobile-footer-h) - var(--mobile-headroom));
+    }
+
+    /* 端末対応を強めたい場合（任意） */
+    @supports (height: 100svh) {
+      body.logged-in [data-controller~="view-switcher"] #mobile-view {
+        height: 100svh;
+      }
+      body.logged-in [data-controller~="view-switcher"] turbo-frame#logs_list_mobile {
+        height: calc(100svh - var(--mobile-footer-h) - var(--mobile-headroom));
+      }
     }
   }
 }
+
+/* ===== モバイルスクロール安定化 追加（9/3）— ここまで ===== */
 
 
 
@@ -621,3 +616,34 @@ body.playlist-show-page .playlist-show-main {
     padding-bottom: calc(var(--footer-player-h) + var(--mobile-footer-h) + 40px);
   }
 }
+
+
+
+/* ============================================
+   モバイル：感情バッジの左に「▶」マーカーを付ける
+   （emotion-badge-mobile クラスだけに適用）
+   ============================================ */
+/* ============================================
+   モバイル：感情バッジの左に「👇」アイコンを付ける
+   ============================================ */
+@media (max-width: 996px) {
+  /* ボタンの左側にアイコンぶんの余白を追加 */
+  .mobile-content .emotion-badge-mobile {
+    position: relative;
+    padding-left: 1.0em !important;  /* ← テキストのスタート位置 */
+  }
+  .mobile-content .emotion-badge-mobile::before {
+    content: "👉";
+    position: absolute;
+    left: 0.85em;                    /* ← 絵文字の位置（テキストに寄せる） */
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.9rem;
+    opacity: 0.9;
+
+    color: inherit;
+    pointer-events: none;
+  }
+}
+
+
