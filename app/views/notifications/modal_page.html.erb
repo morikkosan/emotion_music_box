@@ -2,7 +2,8 @@
   <div class="p-3"
        data-controller="notif-page"
        data-notif-page-role-value="page"
-       data-notif-page-current-page-value="<%= params[:page].to_i %>">
+       data-notif-page-current-page-value="<%= (params[:page].presence || 1).to_i %>">
+
     <% if @notifications.blank? %>
       <div class="alert alert-light border m-3">通知はありません。</div>
     <% else %>
@@ -21,7 +22,6 @@
               <% if n.body.present? %>
                 <p class="mb-1 text-break"><%= n.body %></p>
               <% end %>
-              <%# ※ 「開く」リンク関連の処理は削除 %>
             </div>
           </div>
         <% end %>
@@ -29,27 +29,35 @@
 
       <div class="border-top mt-2"></div>
 
-      <% per_page = 10
-         total_pages  = (@total_count.to_i <= 0) ? 1 : ((@total_count.to_f / per_page).ceil)
-         current_page = params[:page].to_i
+      <% per_page    = 10
+         total_count = @total_count.to_i
+         total_pages = (total_count <= 0) ? 1 : (total_count.to_f / per_page).ceil
+
+         current_page = (params[:page].presence || 1).to_i
          current_page = 1 if current_page < 1
          current_page = total_pages if current_page > total_pages
+
          prev_page = (current_page > 1) ? (current_page - 1) : nil
          next_page = (current_page < total_pages) ? (current_page + 1) : nil
+
          range_start = (current_page - 1) * per_page + 1
-         range_end   = (range_start + @notifications.size - 1)
+         range_end   = [range_start + @notifications.size - 1, total_count].min
       %>
 
-      <div class="p-3 d-flex justify-content-between align-items-center">
-        <small class="text-muted">
-          全<%= @total_count %>件中 <%= range_start %>–<%= range_end %>件を表示
+      <!-- ▼ ページネーション行 -->
+      <div class="p-3 notif-pagination-row">
+        <small class="text-muted d-block mb-2 text-center">
+          全<%= total_count %>件中 <%= range_start %>–<%= range_end %>件を表示
         </small>
 
-        <nav aria-label="通知ページ">
-          <ul class="pagination pagination-sm mb-0">
+        <nav class="w-100" aria-label="通知ページ">
+          <ul class="pagination pagination-sm mb-0 justify-content-center flex-wrap">
+
+            <!-- « 前へ -->
             <li class="page-item <%= 'disabled' unless prev_page %>">
               <% if prev_page %>
-                <%= link_to '«', modal_page_notifications_path(page: prev_page),
+                <%= link_to '«',
+                      modal_page_notifications_path(page: prev_page),
                       data: { turbo_frame: "notifications-modal-frame" },
                       class: "page-link" %>
               <% else %>
@@ -57,30 +65,37 @@
               <% end %>
             </li>
 
+            <!-- 中央のページ番号 -->
             <% (1..total_pages).each do |pnum| %>
               <li class="page-item <%= 'active' if pnum == current_page %>">
                 <% if pnum == current_page %>
                   <span class="page-link"><%= pnum %></span>
                 <% else %>
-                  <%= link_to pnum, modal_page_notifications_path(page: pnum),
+                  <%= link_to pnum,
+                        modal_page_notifications_path(page: pnum),
                         data: { turbo_frame: "notifications-modal-frame" },
                         class: "page-link" %>
                 <% end %>
               </li>
             <% end %>
 
+            <!-- 次へ » -->
             <li class="page-item <%= 'disabled' unless next_page %>">
               <% if next_page %>
-                <%= link_to '»', modal_page_notifications_path(page: next_page),
+                <%= link_to '»',
+                      modal_page_notifications_path(page: next_page),
                       data: { turbo_frame: "notifications-modal-frame" },
                       class: "page-link" %>
               <% else %>
                 <span class="page-link">»</span>
               <% end %>
             </li>
+
           </ul>
         </nav>
       </div>
+      <!-- ▲ ページネーション行ここまで -->
+
     <% end %>
   </div>
 <% end %>
