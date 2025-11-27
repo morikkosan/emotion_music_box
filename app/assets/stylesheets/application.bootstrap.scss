@@ -256,10 +256,16 @@ html.preload body { visibility: visible !important; }
 
 /* ===== モバイルスクロール安定化 追加（9/3）— ここから ===== */
 
-/* 1) 上端オーバースクロールの連鎖を止める（Pull-to-Refresh抑止） */
 /* これはどの環境でも害がないのでグローバルのまま残す */
 html, body {
   overscroll-behavior-y: none;
+}
+
+/* ★ ここから追加：デスクトップだけ横スクロール禁止にする */
+@media (min-width: 997px) {
+  html, body {
+    overflow-x: hidden;
+  }
 }
 
 /* ここから下は「タッチデバイス専用」に限定する */
@@ -663,3 +669,16 @@ body.playlist-show-page #loading-overlay {
 body.playlist-show-page.modal-open {
   overflow: auto !important;
 }
+
+
+/* ▼ PC版：エモログ一覧（index）のページネーションを bottom-player より手前に出す */
+@media (min-width: 996px) {
+  body.emotion_logs-index .pagination,
+  body.emotion_logs .pagination,
+  .emotion-log-index .pagination,
+  .index-logs .pagination {
+    position: relative !important;
+    z-index: 26000 !important;
+  }
+}
+
