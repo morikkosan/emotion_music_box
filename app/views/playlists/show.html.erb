@@ -7,25 +7,25 @@
 <% back_path = mobile_device? ? bookmarks_emotion_logs_path(view: "mobile") : bookmarks_emotion_logs_path %>
 <% back_link_data = { turbo_frame: "_top", turbo_action: "advance" } %>
 
-<% if !@has_items %>
-  <div id="<%= dom_id(@playlist, :contents) %>">
-    <p class="text-center">まだ曲が追加されていません。</p>
-  </div>
-<% else %>
-  <div class="playlist-container">
-    <%= render "playlists/playlist_contents",
-               playlist: @playlist,
-               playlist_items: @playlist_items %>
-  </div>
-<% end %>
-
+<div class="playlist-show-main">
+  <% if !@has_items %>
+    <div id="<%= dom_id(@playlist, :contents) %>">
+      <p class="text-center">まだ曲が追加されていません。</p>
+    </div>
+  <% else %>
+    <div class="playlist-container">
+      <%= render "playlists/playlist_contents",
+                 playlist: @playlist,
+                 playlist_items: @playlist_items %>
+    </div>
+  <% end %>
+</div>
 
 <nav class="mobile-footer-menu">
   <!-- 再生（曲がない時はCSSで無効化するのでJSはそのまま） -->
   <button type="button"
           class="footer-btn playfirst"
-          data-action="click->global-player#playFirstTrack"
-          >
+          data-action="click->global-player#playFirstTrack">
     <i class="fa fa-play"></i><span>再生</span>
   </button>
 
