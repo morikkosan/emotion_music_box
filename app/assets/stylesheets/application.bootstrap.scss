@@ -480,18 +480,6 @@ body.no-player #hidden-sc-player.sc-keepalive {
   z-index: 2147483647 !important; /* 最前面へ */
 }
 
-/* ==== HOTFIX: notifications modal height ==== */
-#notifications-modal .modal-body {
-  /* 共通は 72vh に統一 */
-  max-height: 72vh !important;
-}
-
-@media (max-width:576px){
-  #notifications-modal .modal-body {
-    /* スマホでは 100dvh からヘッダーぶん引いた高さ */
-    max-height: calc(100dvh - 138px) !important;
-  }
-}
 
 /* ==== PC版：感情記録モーダルの中身だけスクロールさせる ==== */
 @media (min-width: 768px) {
@@ -681,4 +669,8 @@ body.playlist-show-page.modal-open {
     z-index: 26000 !important;
   }
 }
+
+
+
+
 
