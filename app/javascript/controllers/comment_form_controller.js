@@ -10,14 +10,25 @@ export default class extends Controller {
   }
 
   sent(event) {
-    if (event.detail.success) {
+    if (event.detail?.success) {
       this.showToast("送信しました ✅", 1500)
       this.scrollToBottom()
       this.element.reset()
-      this.textareaTarget.focus()
+
+      // ★ ここが今回の修正ポイント
+      //    textareaTarget が本当に存在するときだけ focus する
+      if (this.hasTextareaTarget && this.textareaTarget) {
+        try {
+          this.textareaTarget.focus()
+        } catch (e) {
+          // 念のため：ブラウザの都合などで focus に失敗してもアプリを落とさない
+          console.warn("[comment_form_controller] focus failed:", e)
+        }
+      }
     } else {
       this.showToast("送信に失敗しました ❌", 3000)
     }
+
     this.submitTarget.disabled = false
   }
 
@@ -43,9 +54,12 @@ export default class extends Controller {
   }
 
   scrollToBottom() {
-    const list = this.hasCommentsTarget ? this.commentsTarget
-                                        : document.getElementById("comments")
+    const list = this.hasCommentsTarget
+      ? this.commentsTarget
+      : document.getElementById("comments")
+
     if (!list) return
+
     list.scrollTo({ top: list.scrollHeight, behavior: "smooth" })
   }
 }
