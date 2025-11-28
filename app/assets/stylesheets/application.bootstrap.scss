@@ -674,3 +674,45 @@ body.playlist-show-page.modal-open {
 
 
 
+/* ============================================
+   PC版：モバイルスーパーサーチモーダル調整（がっつり上げる版）
+   - マウス環境(pointer: fine)だけに限定
+   - モーダル本体を画面上部に固定
+   - 中身だけスクロール
+   - bottom-player に絶対かぶらない高さに制限
+   ============================================ */
+@media (pointer: fine) {
+  /* ダイアログ自体を画面上部寄せに“固定” */
+  #mobile-super-search-modal .modal-dialog {
+    position: fixed;
+    left: 50%;
+    top: 40px;               /* ← ここで「どれだけ上に寄せるか」を決める（必要なら数値だけ調整してOK） */
+    transform: translateX(-50%);
+    margin: 0 !important;    /* Bootstrap の自動マージンを殺す */
+    width: auto;
+    max-width: 640px;        /* 今の実サイズに合わせてOK。広げたければここだけ変更 */
+  }
+
+  /* モーダルの中身：上40px + bottom-player 高さぶんを引いた高さまでに制限 */
+  #mobile-super-search-modal .mobile-super-search-modal-content {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(
+      100vh
+      - 40px                         /* ← 上の余白（top） */
+      - var(--footer-player-h, 84px) /* ← 下の bottom-player の高さぶん */
+      - 32px                         /* ← モーダルの下マージン・影などの余裕 */
+    );
+  }
+
+  /* フォーム部分だけスクロール領域にする */
+  #mobile-super-search-modal .mobile-super-search-form {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+
+    /* 一番下までスクロールしたときに
+       ボタンが bottom-player の上にきちんと乗るように余白を多めに確保 */
+    padding-bottom: calc(var(--footer-player-h, 84px) + 24px);
+  }
+}
