@@ -196,7 +196,7 @@ EMOMU は **Web Push（VAPID）** に対応しており、
 | カテゴリ | 技術 |
 |---------|------|
 | **ランタイム / 基盤** | Ruby 3.2.3 / Rails 7.2.2.1（Hotwire: Turbo / Stimulus） / Docker / Docker Compose |
-| **インフラ・ミドルウェア** | **Render（本番ホスティング）** / **Neon（PostgreSQL 本番 DB）** / PostgreSQL（ローカル） / Redis（セッションストア） / Puma（Render 上で稼働）※ローカルは自己署名HTTPS |
+| **インフラ・ミドルウェア** | **Render（本番ホスティング）** / **Neon（PostgreSQL 本番 DB）** / PostgreSQL（ローカル） / Puma（Render 上で稼働）※ローカルは自己署名HTTPS |
 | **フロントエンド（Rails 内）** | Hotwire（Turbo / Stimulus） / Bootstrap 5.3 / jsbundling-rails（esbuild） / cssbundling-rails（sass + postcss） / Sprockets（一部） |
 | **PWA / Web API** | Service Worker（Web Push / VAPID） / manifest.json / Audio API / Fetch API / IntersectionObserver / MutationObserver |
 | **認証・認可** | Devise / OmniAuth（SoundCloud OAuth2 / Generic OAuth2） |
