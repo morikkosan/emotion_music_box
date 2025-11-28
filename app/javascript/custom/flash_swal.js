@@ -62,7 +62,7 @@
     return { type, text };
   }
 
-  // ===== 表示（同一ナビ・同一内容なら抑止） =====
+    // ===== 表示（同一ナビ・同一内容なら抑止） =====
   function showSwalOnce(payload, _source = "auto") {
     if (!payload) return;
     if (rateLimit()) return;
@@ -96,7 +96,13 @@
       text: payload.text,
       icon: isAlert ? "error" : "success",
       confirmButtonText: isAlert ? "閉じる" : "OK",
-      // テーマは必要に応じてどうぞ
+
+      // 🔽 ここが今回の追加ポイント（フォーカス戻しを無効化）
+      returnFocus: false,   // 元のボタン等にフォーカスを戻さない
+      focusConfirm: false,  // OKボタンに自動フォーカスしない
+      // 🔼 ここまで追加
+
+      // テーマはそのまま
       background: "linear-gradient(135deg, #00b3ff, #ff0088)",
       color: "#fff",
       timer: isAlert ? undefined : 3000,
@@ -108,6 +114,7 @@
       }
     });
   }
+
 
   // ===== 消費＆削除（他スクリプトに拾わせない） =====
   function consumeAndRemove(el) {
