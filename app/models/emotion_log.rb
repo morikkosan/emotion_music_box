@@ -38,6 +38,7 @@ class EmotionLog < ApplicationRecord
   scope :newest, -> { order(created_at: :desc) }
   scope :oldest, -> { order(created_at: :asc) }
 
+  # いいね数順（ブックマーク数）
   scope :by_bookmarks, -> {
     left_joins(:bookmarks, :user)
       .select(
@@ -51,17 +52,11 @@ class EmotionLog < ApplicationRecord
       .order("COUNT(bookmarks.id) DESC, emotion_logs.created_at DESC, emotion_logs.id DESC")
   }
 
+  # ★ 修正：コメント数順
+  #   - counter_cache の comments_count カラムだけでソートする
+  #   - 余計な JOIN / SELECT / GROUP をしないので、水増しも起きない
   scope :by_comments, -> {
-    left_joins(:comments, :user)
-      .select(
-        "emotion_logs.*, " \
-        "users.id as user_id, " \
-        "users.name as user_name, " \
-        "users.avatar_url as user_avatar_url, " \
-        "COUNT(comments.id) AS comments_count"
-      )
-      .group("emotion_logs.id, users.id, users.name, users.avatar_url")
-      .order("COUNT(comments.id) DESC, emotion_logs.created_at DESC, emotion_logs.id DESC")
+    order(comments_count: :desc, created_at: :desc, id: :desc)
   }
 
   # ==== モデル内メソッド ====
